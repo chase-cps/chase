@@ -1,0 +1,149 @@
+TYPES
+
+ECU: Sink(DATA);
+data bus: Bus(DATA);
+peripheral: Bus(DATA);
+low packet: Converter(LOW, DATA);
+high packet: Converter(HIGH, DATA);
+high signal: Source(HIGH);
+low signal: Source(LOW);
+nw switch: Switch;
+cpu switch: Switch;
+
+
+COMPONENTS
+
+main ECU: 2;
+main data bus: 1;
+sensor peripheral: 4;
+rain low packet: 1;
+rain high packet: 1;
+collision low packet: 1;
+collision high packet: 1;
+lane low packet: 1;
+lane high packet: 1;
+light low packet: 1;
+light high packet: 1;
+rain low signal: 1;
+rain high signal: 1;
+collision low signal: 1;
+collision high signal: 1;
+lane low signal: 1;
+lane high signal: 1;
+light low signal: 1;
+light high signal: 1;
+
+nw switch: *;
+cpu switch: *;
+
+
+ABBREVIATIONS
+
+main ECU 1: CPU1;
+main ECU 2: CPU2;
+main data bus 1: DBUS;
+sensor peripheral 1: RAIN;
+sensor peripheral 2: COLLISION;
+sensor peripheral 3: LANE;
+sensor peripheral 4: LIGHT;
+rain low packet 1: RLP;
+rain high packet 1: RHP;
+collision low packet 1: CLP;
+collision high packet 1: CHP;
+lane low packet 1: LDLP;
+lane high packet 1: LDHP;
+light low packet 1: LLP;
+light high packet 1: LHP;
+rain low signal 1: RLS;
+rain high signal 1: RHS;
+collision low signal 1: CLS;
+collision high signal 1: CHS;
+lane low signal 1: LDLS;
+lane high signal 1: LDHS;
+light low signal 1: LLS;
+light high signal 1: LHS;
+
+
+CONNECTIONS
+
+DBUS -(cpu switch 1)- CPU1;
+DBUS -(cpu switch 2)- CPU2;
+
+RAIN -(nw switch 1)- DBUS;
+COLLISION -(nw switch 2)- DBUS;
+LANE -(nw switch 3)- DBUS;
+LIGHT -(nw switch 4)- DBUS;
+
+RLP -(nw switch 5)- RAIN;
+RHP -(nw switch 6)- RAIN;
+
+CLP -(nw switch 7)- COLLISION;
+CHP -(nw switch 8)- COLLISION;
+
+LDLP -(nw switch 9)- LANE;
+LDHP -(nw switch 10)- LANE;
+
+LLP -(nw switch 11)- LIGHT;
+LHP -(nw switch 12)- LIGHT;
+
+
+UNSWITCHED
+
+RLS -- RLP;
+RHS -- RHP;
+
+CLS -- CLP;
+CHS -- CHP;
+
+LDLS -- LDLP;
+LDHS -- LDHP;
+
+LLS -- LLP;
+LHS -- LHP;
+
+
+REQUIREMENTS
+
+never-connect(ECU, ECU, data bus);
+never-connect(peripheral, peripheral, data bus);
+never-connect(high packet, low packet, peripheral);
+
+never-disconnect(high signal, ECU, 5, MS);
+never-disconnect(RLS, ECU, 14, MS);
+never-disconnect(CLS, ECU, 12, MS);
+never-disconnect(LDLS, ECU, 10, MS);
+never-disconnect(LLS, ECU, 14, MS);
+
+
+ASSUMPTIONS
+
+initial-state(nw switch 1, 1);
+initial-state(nw switch 2, 0);
+initial-state(nw switch 3, 0);
+initial-state(nw switch 4, 0);
+initial-state(nw switch 5, 0);
+initial-state(nw switch 6, 1);
+initial-state(nw switch 7, 0);
+initial-state(nw switch 8, 0);
+initial-state(nw switch 9, 0);
+initial-state(nw switch 10, 0);
+initial-state(nw switch 11, 0);
+initial-state(nw switch 12, 0);
+
+initial-state(cpu switch 1, 1);
+initial-state(cpu switch 2, 0);
+
+no-failures(ECU);
+no-failures(data bus);
+no-failures(peripheral);
+no-failures(low packet);
+no-failures(high packet);
+no-failures(low signal);
+no-failures(high signal);
+
+switch-on-time(nw switch, 1, MS);
+switch-off-time(nw switch, 1, MS);
+
+switch-on-time(cpu switch, 1, MS);
+switch-off-time(cpu switch, 1, MS);
+

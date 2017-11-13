@@ -1,0 +1,15 @@
+[REQUIREMENTS]
+2 failures are allowed for the generators
+
+ac_buses are never failing
+rectifiers are never failing
+dc_buses are never failing
+loads are never failing
+
+generators are never connected in parallel through ac_buses
+generators do not recover after failures
+generators must be disconnected when unhealthy
+left_dc_buses should be powered by left_generators
+right_dc_buses should be powered by right_generators
+dc_buses must never be disconnected from generators
+

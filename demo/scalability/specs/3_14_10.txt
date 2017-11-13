@@ -1,0 +1,101 @@
+TYPES
+generator: Source(AC);
+AC bus: Bus(AC);
+DC bus: Bus(DC);
+rectifier: Converter(AC, DC);
+load: Sink(DC);
+contactor: Switch;
+
+
+COMPONENTS
+left generator: 1;
+right generator: 1;
+center generator: 1;
+left AC bus: 1;
+right AC bus: 1;
+center AC bus: 1;
+left rectifier: 1;
+right rectifier: 1;
+center rectifier: 1;
+left DC bus: 1;
+right DC bus: 1;
+center DC bus: 1;
+left load: 1;
+right load: 1;
+center load: 1;
+contactor: *;
+
+ABBREVIATIONS
+left generator 1: LG1;
+right generator 1: RG1;
+center generator 1: CG1;
+left AC bus 1: LB1;
+right AC bus 1: RB1;
+center AC bus 1: CB1;
+left rectifier 1: LR1;
+right rectifier 1: RR1;
+center rectifier 1: CR1;
+right DC bus 1: RD1;
+left DC bus 1: LD1;
+center DC bus 1: CD1;
+left load 1: LL1;
+right load 1: RL1;
+center load 1: CL1;
+
+CONNECTIONS
+
+LG1 -(contactor 1)- LB1;
+CG1 -(contactor 2)- CB1;
+RG1 -(contactor 3)- RB1;
+LB1 -(contactor 4)- CB1;
+CB1 -(contactor 5)- RB1;
+
+UNSWITCHED
+
+LB1 -- LR1;
+LR1 -- LD1;
+LD1 -- LL1;
+RB1 -- RR1;
+RR1 -- RD1;
+RD1 -- RL1;
+CB1 -- CR1;
+CR1 -- CD1;
+CD1 -- CL1;
+
+REQUIREMENTS
+keep-connection-stable(generator, DC bus);
+never-connect(generator, generator, AC bus);
+must-disconnect-failed(generator, 21, MS);
+prefer-active-connection(left DC bus, left generator);
+prefer-active-connection(right DC bus, right generator);
+prefer-active-connection(center DC bus, center generator);
+never-disconnect(DC bus, generator, 30, MS);
+
+ASSUMPTIONS
+switch-on-time(contactor 1, 9, MS);
+switch-off-time(contactor 1, 9, MS);
+
+
+switch-on-time(contactor 3, 9, MS);
+switch-off-time(contactor 3, 9, MS);
+switch-on-time(contactor 4, 9, MS);
+switch-off-time(contactor 4, 9, MS);
+switch-on-time(contactor 5, 9, MS);
+switch-off-time(contactor 5, 9, MS);
+
+no-recovery(generator);
+max-failures(generator, 1);
+no-failures(load);
+no-failures(DC bus);
+no-failures(AC bus);
+no-failures(rectifier);
+no-control(generator);
+no-control(AC bus);
+no-control(DC bus);
+no-control(load);
+no-control(rectifier);
+initial-state(contactor 1, 1);
+initial-state(contactor 2, 1);
+initial-state(contactor 3, 1);
+initial-state(contactor 4, 0);
+initial-state(contactor 5, 0);
