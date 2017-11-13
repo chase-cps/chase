@@ -1,6 +1,3 @@
-**CHASE**: Contract-based Heterogeneous Analysis and Systems Exploration
-=================================================
-
 # News: 
 ## A paper about CHASE has been accepted at the IEEE/ACM Design Automation and Test in Europe (DATE) conference 2018
 Pierluigi Nuzzo, Michele Lora, Yishai Feldman, Alberto L. Sangiovanni-Vincentelli,  
