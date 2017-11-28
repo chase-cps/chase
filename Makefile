@@ -15,7 +15,7 @@ LD=$(CXX)
 ANTLR4=$(ANTLR4_HOME)
 
 ifeq ($(ANTLR4),)
-ANTLR4=third_party/antlr4-runtime/$(PLATFORM)/x86_$(ARCH)
+ANTLR4=third_party/runtime-sources/Cpp/run
 endif
 
 ANTLR4_INCLUDE=$(ANTLR4)/include

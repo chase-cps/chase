@@ -28,6 +28,17 @@ The framework mostly relies on the C++11 Standard and  should be portable to any
 - Install [TuLiP][3]
 - Install the [ANTLR 4 C++ Runtime library][5]
 
+## Notes on ANTLR4
+
+- Due to potential incompatibilites with of CHASE with some releases of ANTLR4, a compatible version of the sources of ANTLR4 Runtime for C++ is provided in the `third_party/` directory of the CHASE release. To install the furnished version of ANTLR4, please refer to the Readme file in the antlr4 release available in the third party directory.
+
+- To uncompress the given antlr4 release
+`$> cd third_party`
+`$> tar xjf antlr4_runtime_sources.tar.bz2`
+`$> cd runtime-sources`
+
+- To use your own ANTLR4 release, please set the `ANTLR4_HOME` environment variable. In Linux:
+`$> export ANTLR4_HOME=<path to your ANTLR4 C++ runtime installation>`
 
 ## Building CHASE
 
@@ -60,6 +71,9 @@ Documentation requires Doxygen. The Doxyfile is in `doc/Doxyfile`. The Makefile 
 It will generate HTML and LaTeX documentation in `doc/apidoc`.
 
 N.B.: The use of the target `clean` will also delete the documentation.
+
+
+[<-- Go back to the main page][HOME]
 
 [1]: http://tulip-control.sourceforge.net/
 [2]: https://github.com/slivingston/gr1c

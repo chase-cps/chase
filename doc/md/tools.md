@@ -74,5 +74,5 @@ For instance, type the following command to generate both the graphical (`eps` f
 
 `$> python out.py -g -f fsm.eps -i -p fsm.py`
 
-
+[<-- Go back to the main page][HOME]
 [HOME]: ../../README.md
