@@ -38,7 +38,7 @@ The framework mostly relies on the C++11 Standard and  should be portable to any
 
 `$> tar xjf antlr4_runtime_sources.tar.bz2`
 
-`$> cd runtime-sources`
+`$> cd runtime-source`
 
 - To use your own ANTLR4 release, please set the `ANTLR4_HOME` environment variable. In Linux:
 
