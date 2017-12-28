@@ -15,7 +15,7 @@ LD=$(CXX)
 ANTLR4=$(ANTLR4_HOME)
 
 ifeq ($(ANTLR4),)
-ANTLR4=third_party/runtime-sources/Cpp/run
+ANTLR4=third_party/runtime-source/run
 endif
 
 ANTLR4_INCLUDE=$(ANTLR4)/include
@@ -225,27 +225,27 @@ dirs:
 
 obj/frontend/ChaseBaseListener.o: src/frontend/src/DSLParser/ChaseBaseListener.cpp
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 obj/frontend/ChaseLexer.o: src/frontend/src/DSLParser/ChaseLexer.cpp
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 obj/frontend/ChaseListener.o: src/frontend/src/DSLParser/ChaseListener.cpp
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 obj/frontend/ChaseParser.o: src/frontend/src/DSLParser/ChaseParser.cpp
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 obj/frontend/SpecBuilder.o: src/frontend/src/DSLParser/SpecBuilder.cc
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 obj/main.o: src/chase/src/main.cc
 	@echo Compiling $@
-	@$(CXX) $(PARSERFLAGS) $(INCDIR) -o $@ $<
+	@$(CXX) $(PARSERFLAGS) $(INCDIRS) -o $@ $<
 
 
 ### COMPILATION FOR PATTERNS2CHASE FRONTEND TOOL
