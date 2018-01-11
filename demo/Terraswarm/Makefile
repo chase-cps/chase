@@ -49,7 +49,7 @@ SYNTHESIZABLE_WITHOUT_COUNTERS:
 	@echo "Press enter to start."	
 	@read -r dummy
 	@echo "Generating contract from specification…"
-	@ $(TOOL) -i specs/$(MODEL)_synthesizable.txt \
+	@ $(TOOL) -b tulip -i specs/$(MODEL)_synthesizable.txt \
 		-o TuLiP/$(MODEL)_synthesizable.py -V | less -R
 	@echo "Generated contract in TuLiP format (press Enter to read and q when finished)."
 	@read -r dummy
@@ -73,7 +73,7 @@ NON_SYNTHESIZABLE_WITHOUT_COUNTERS:
 		@sdiff specs/$(MODEL)_synthesizable.txt \
 			  specs/$(MODEL)_failing.txt | less
 	@echo "Generating contract from specification…"
-	@$(TOOL) -i specs/$(MODEL)_failing.txt \
+	@$(TOOL) -b tulip -i specs/$(MODEL)_failing.txt \
 		-o TuLiP/$(MODEL)_failing.py -V
 	@echo "Generated contract in TuLiP format (press Enter to read and q when finished)."
 	@read -r dummy

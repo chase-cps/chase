@@ -108,11 +108,11 @@ never-connect(ECU, ECU, data bus);
 never-connect(peripheral, peripheral, data bus);
 never-connect(high packet, low packet, peripheral);
 
-never-disconnect(high signal, ECU, 5, MS);
-never-disconnect(RLS, ECU, 14, MS);
-never-disconnect(CLS, ECU, 12, MS);
-never-disconnect(LDLS, ECU, 12, MS);
-never-disconnect(LLS, ECU, 14, MS);
+never-disconnect(high signal, ECU, 8, MS);
+never-disconnect(RLS, ECU, 8, MS);
+never-disconnect(CLS, ECU, 8, MS);
+never-disconnect(LDLS, ECU, 8, MS);
+never-disconnect(LLS, ECU, 8, MS);
 
 
 ASSUMPTIONS
