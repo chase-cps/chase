@@ -10,6 +10,11 @@ The *scalability* directory, within the *demo* directory contains the specificat
 - [Tools and usage][TOOLS]
 - [Demonstrators][DEMO]
 
+# Acknowledgement
+
+This work was supported in part by the TerraSwarm Research Center, one of six 
+centers supported by the STARnet phase of the Focus Center Research Program 
+(FCRP) a Semiconductor Research Corporation program sponsored by MARCO and DARPA.
 
 [INST]: doc/md/installation.md
 [TOOLS]: doc/md/tools.md
