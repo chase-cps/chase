@@ -114,6 +114,7 @@ OBJS =  obj/Behaviors/Logics/Globals.o \
 		obj/Specification/BaseFunctionsLibrary/BaseFunctionsLibrary.o \
 		obj/Specification/BaseFunctionsLibrary/AlwaysActiveConnection.o \
 		obj/Specification/BaseFunctionsLibrary/MaxFailures.o \
+		obj/Specification/BaseFunctionsLibrary/MaxFailuresPerStep.o \
 		obj/Specification/BaseFunctionsLibrary/MustDisconnectFailed.o \
 		obj/Specification/BaseFunctionsLibrary/NeverConnect.o \
 		obj/Specification/BaseFunctionsLibrary/NeverDisconnect.o \
@@ -615,6 +616,11 @@ obj/Specification/BaseFunctionsLibrary/AlwaysActiveConnection.o: \
 
 obj/Specification/BaseFunctionsLibrary/MaxFailures.o: \
 	src/chase/src/Specification/BaseFunctionsLibrary/MaxFailures.cc
+	@echo Compiling $@
+	@$(CXX) $(CXXFLAGS) -o $@ $<
+
+obj/Specification/BaseFunctionsLibrary/MaxFailuresPerStep.o: \
+	src/chase/src/Specification/BaseFunctionsLibrary/MaxFailuresPerStep.cc
 	@echo Compiling $@
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 

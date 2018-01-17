@@ -84,6 +84,5 @@ std::string Variable::print()
             break;
     }
 
-    toRet += GetVarType();
     return toRet;
 }
