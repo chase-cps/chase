@@ -4,6 +4,8 @@ import logging
 import pprint
 import warnings
 
+import time
+
 import tulip
 from tulip.spec import GRSpec
 from tulip import transys
@@ -109,8 +111,6 @@ def synthesize_rabin_controller(b):
     @param b: game with <>[] & []<> winning
     @type b: `symbolic.Automaton`
     """
-
-    b.qinit = '\E \E' #pick one state that satisfies env_init
     qinit = b.qinit
     aut_rabin = b.build()
     zk, yki, xkijr = gr1.solve_rabin_game(aut_rabin)
@@ -135,6 +135,7 @@ def generate_complement(aut_streett):
         owner = 'env' if owner == 'sys' else 'sys'
         d['owner'] = owner
         aut_rabin.vars[var] = d
+
     aut_rabin.init['env']=aut_streett.init['sys']
     aut_rabin.init['sys']=aut_streett.init['env']
     aut_rabin.action['env'] = aut_streett.action['sys']
@@ -144,6 +145,14 @@ def generate_complement(aut_streett):
     win = ['!({w})'.format(w=w) for w in aut_streett.win['[]<>']]
     aut_rabin.win['<>[]'] = win
     sym.fill_blanks(aut_rabin, rabin=True)
+    aut_rabin.qinit = '\E \E'
+    f1 = open('rabin.txt', 'w')
+    print >> f1, aut_rabin
+    f1.close()
+    f2 = open('streett.txt', 'w')
+    print >> f2, aut_streett
+    f2.close()
+
     return aut_rabin
 
 
