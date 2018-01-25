@@ -21,6 +21,7 @@
 
 #include "Specification/BaseFunctionsLibrary/AlwaysActiveConnection.hh"
 #include "Specification/BaseFunctionsLibrary/MaxFailures.hh"
+#include "Specification/BaseFunctionsLibrary/MaxFailuresPerStep.hh"
 #include "Specification/BaseFunctionsLibrary/MustDisconnectFailed.hh"
 #include "Specification/BaseFunctionsLibrary/NeverConnect.hh"
 #include "Specification/BaseFunctionsLibrary/NeverDisconnect.hh"

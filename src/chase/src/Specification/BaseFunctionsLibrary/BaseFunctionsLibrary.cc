@@ -27,6 +27,7 @@ BaseFunctionsLibrary::BaseFunctionsLibrary() :
     _functions.push_back(new InitialState());
     _functions.push_back(new InitialCommand());
     _functions.push_back(new MaxFailures());
+    _functions.push_back(new MaxFailuresPerStep());
     _functions.push_back(new MustDisconnectFailed());
     _functions.push_back(new NeverConnect());
     _functions.push_back(new NeverDisconnect());
