@@ -19,7 +19,7 @@
 
 #include "Behaviors/Behavior.hh"
 #include "Behaviors/Logics/Logics.hh"
-#include "Manipulation.hh"
+#include "Manipulation/Manipulation.hh"
 
 namespace Behaviors
 {

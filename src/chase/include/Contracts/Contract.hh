@@ -24,7 +24,7 @@
 #ifndef CONTRACT_HH
 #define CONTRACT_HH
 
-#include "Behaviors.hh"
+#include "Behaviors/Behaviors.hh"
 #include "Behaviors/Timing/Timing.hh"
 #include "Utilities/Timing/CounterUtilities.hh"
 #include <list>

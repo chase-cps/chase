@@ -14,7 +14,7 @@
 
 
 
-#include "LogicConstant.hh"
+#include "Behaviors/Logics/LogicConstant.hh"
 
 using namespace Behaviors::Logics;
 

@@ -3,8 +3,6 @@
 ###############################################################################
 # @author Michele Lora
 #
-    
-cmake_minimum_required (VERSION 2.4)
-project (Chase)
+  
+add_subdirectory(chase)
 
-add_subdirectory(src)

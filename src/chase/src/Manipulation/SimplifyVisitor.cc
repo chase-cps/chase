@@ -14,7 +14,7 @@
 
 
 
-#include "SimplifyVisitor.hh"
+#include "Manipulation/SimplifyVisitor.hh"
 #include <iostream>
 
 

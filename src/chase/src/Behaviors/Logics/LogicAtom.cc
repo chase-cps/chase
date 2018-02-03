@@ -14,7 +14,7 @@
 
 
 
-#include "LogicAtom.hh"
+#include "Behaviors/Logics/LogicAtom.hh"
 
 using namespace Behaviors::Logics;
 

@@ -14,7 +14,7 @@
 
 
 
-#include "TemporalFormula.hh"
+#include "Behaviors/Logics/TemporalFormula.hh"
 
 using namespace Behaviors::Logics;
 
