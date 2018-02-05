@@ -146,13 +146,7 @@ def generate_complement(aut_streett):
     aut_rabin.win['<>[]'] = win
     sym.fill_blanks(aut_rabin, rabin=True)
     aut_rabin.qinit = '\E \E'
-    f1 = open('rabin.txt', 'w')
-    print >> f1, aut_rabin
-    f1.close()
-    f2 = open('streett.txt', 'w')
-    print >> f2, aut_streett
-    f2.close()
-
+    
     return aut_rabin
 
 
