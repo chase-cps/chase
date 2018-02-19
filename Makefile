@@ -64,7 +64,8 @@ PARSER_OBJS = \
 			  obj/frontend/ChaseParser.o \
 			  obj/frontend/SpecBuilder.o
 
-OBJS =  obj/Behaviors/Logics/Globals.o \
+OBJS =  obj/ChaseASTObject.o \
+		obj/Behaviors/Logics/Globals.o \
 		obj/Manipulation/BaseVisitor.o \
 		obj/Manipulation/GuideVisitor.o \
 		obj/Manipulation/SimplifyVisitor.o \
@@ -436,6 +437,11 @@ library: $(CHASE_LIB)
 $(CHASE_LIB): $(OBJS) 
 	@echo Linking the library $(CHASE_LIB) 
 	@ar cr $(CHASE_LIB) $^
+
+obj/ChaseASTObject.o: \
+		src/chase/src/ChaseASTObject.cc
+	@echo Compiling $@
+	@$(CXX) $(CXXFLAGS) -o $@ $<
 
 obj/Manipulation/findComponents.o: \
 		src/chase/src/Manipulation/findComponents.cc
