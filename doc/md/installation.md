@@ -25,7 +25,7 @@ The framework mostly relies on the C++11 Standard and  should be portable to any
 
 ## Preliminaries
 - Install [GR1C][2]
-- Install [TuLiP][3]
+- Install [TuLiP][1]
 - Install the [ANTLR 4 C++ Runtime library][5]
 
 ## Notes on ANTLR4
