@@ -14,9 +14,7 @@ LD=$(CXX)
 
 ANTLR4=$(ANTLR4_HOME)
 
-ifeq ($(ANTLR4),)
-ANTLR4=third_party/runtime-source/run
-endif
+ANTLR4=third_party/antlr4_runtime/run
 
 ANTLR4_INCLUDE=$(ANTLR4)/include
 ANTLR4_LIB=$(ANTLR4)/lib/libantlr4-runtime.a
@@ -214,7 +212,7 @@ test: $(EXECUTBALE)
 
 $(EXECUTABLE): obj/main.o $(PARSER_OBJS) $(CHASE_LIB) $(ANTLR4_LIB) 
 	@echo Linking $@
-	@$(LD) -o $@ $^ $(LDFLAGS) 
+	@$(LD) -o $@ $^ $(LDFLAGS)
 
 epstool: $(EPSTOOL_EXECUTABLE)
 

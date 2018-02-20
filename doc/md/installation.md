@@ -32,17 +32,10 @@ The framework mostly relies on the C++11 Standard and  should be portable to any
 
 - Due to potential incompatibilites with of CHASE with some releases of ANTLR4, a compatible version of the sources of ANTLR4 Runtime for C++ is provided in the `third_party/` directory of the CHASE release. To install the furnished version of ANTLR4, please refer to the Readme file in the antlr4 release available in the third party directory.
 
-- To uncompress the given antlr4 release
+However, it should be sufficient to run the install-deps script in the main chase project directory:
 
-`$> cd third_party`
+`$> sh install-deps.sh`
 
-`$> tar xjf antlr4_runtime_sources.tar.bz2`
-
-`$> cd runtime-source`
-
-- To use your own ANTLR4 release, please set the `ANTLR4_HOME` environment variable. In Linux:
-
-`$> export ANTLR4_HOME=<path to your ANTLR4 C++ runtime installation>`
 
 ## Building CHASE
 
