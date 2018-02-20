@@ -27,9 +27,6 @@
 #include "Behaviors/Behaviors.hh"
 #include "Behaviors/Timing/Timing.hh"
 #include "Utilities/Timing/CounterUtilities.hh"
-
-#include "ChaseASTObject.hh"
-
 #include <list>
 
 #include <iostream>
@@ -37,7 +34,7 @@
 namespace Contracts
 {
     // @brief Abstract class to represent the concept of contract (or requirement)
-    class Contract : public chase::ChaseASTObject 
+    class Contract    
     {
         public:
 

@@ -25,12 +25,10 @@
 #include "Behaviors/Behaviors.hh"
 #include "Behaviors/Timing/TimingDefinitions.hh"
 
-#include "ChaseASTObject.hh"
-
 namespace Specification
 {
 
-    class Problem : public chase::ChaseASTObject
+    class Problem
     {
         protected:
             Architecture::Network * _network;

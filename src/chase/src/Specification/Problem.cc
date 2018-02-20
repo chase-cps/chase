@@ -16,7 +16,6 @@
 
 #include "Specification/Problem.hh"
 
-using namespace chase;
 using namespace Specification;
 using namespace Behaviors;
 using namespace Behaviors::Logics;
@@ -24,7 +23,6 @@ using namespace Behaviors::Timing;
 
 
 Problem::Problem() :
-    ChaseASTObject(),
     _network(NULL),
     _state_variables(),
     _intention_variables(),

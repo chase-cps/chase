@@ -4,7 +4,6 @@
 ###############################################################################
 
 set( chase_ast_srcs
-    ${PROJECT_SOURCE_DIR}/src/chase/src/ChaseASTObject.cc 
     ${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Logics/Globals.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/BaseVisitor.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/GuideVisitor.cc 
@@ -72,7 +71,6 @@ set( chase_ast_srcs
 	${PROJECT_SOURCE_DIR}/src/chase/src/Utilities/Timing/CounterUtilities.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Utilities/Portability/Portability.cc 
     )
-
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/chase/include
