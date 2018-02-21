@@ -8,7 +8,7 @@
  *              All rights reserved.\n
  *              This project is released under the 3-Clause BSD License.
  *
- * @file	chase/src/ChaseASTObject.cc
+ * @file	chase/src/AST/BaseObject.cc
  * @brief
  */
 
@@ -18,36 +18,36 @@
 /// @version 1.0
 
 
-#include "ChaseASTObject.hh"
+#include "AST/BaseObject.hh"
 
 
 using namespace chase;
 
-ChaseASTObject::ChaseASTObject() :
+BaseObject::BaseObject() :
     _parent(nullptr)
 {
 }
 
-ChaseASTObject::~ChaseASTObject()
+BaseObject::~BaseObject()
 {
 }
 
-ChaseASTObject::ChaseASTObject( const ChaseASTObject & o ) :
+BaseObject::BaseObject( const BaseObject & o ) :
     _parent( o._parent )
 {
 }
 
-ChaseASTObject & ChaseASTObject::operator=( const ChaseASTObject & )
+BaseObject & BaseObject::operator=( const BaseObject & )
 {
     return *this;
 }
 
-ChaseASTObject * ChaseASTObject::getParent()
+BaseObject * BaseObject::getParent()
 {
     return _parent;
 }
 
-void ChaseASTObject::setParent( ChaseASTObject * p )
+void BaseObject::setParent( BaseObject * p )
 {
     _parent = p;
 }

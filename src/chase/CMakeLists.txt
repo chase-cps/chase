@@ -4,6 +4,7 @@
 ###############################################################################
 
 set( chase_ast_srcs
+    ${PROJECT_SOURCE_DIR}/src/chase/src/AST/BaseObject.cc
     ${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Logics/Globals.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/BaseVisitor.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/GuideVisitor.cc 
@@ -77,3 +78,7 @@ include_directories(
         )
 
 add_library(chase ${chase_ast_srcs})
+
+set_property(TARGET chase PROPERTY CXX_STANDARD 11)
+
+install(TARGETS chase DESTINATION ${PROJECT_SOURCE_DIR}/chase-${CMAKE_BUILD_TYPE}/lib)

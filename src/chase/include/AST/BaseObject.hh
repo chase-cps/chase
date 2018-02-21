@@ -8,7 +8,7 @@
  *              All rights reserved.\n
  *              This project is released under the 3-Clause BSD License.
  *
- * @file	chase/include/ChaseASTObject.hh
+ * @file	chase/include/AST/BaseObject.hh
  * @brief
  */
 
@@ -24,32 +24,32 @@ namespace chase
 {
 
 
-    class ChaseASTObject
+    class BaseObject
     {
         protected:
             /// @brief Pointer to the parent node in the Abstract Syntax Tree.
-            ChaseASTObject * _parent;
+            BaseObject * _parent;
 
         public:
 
-            ChaseASTObject();
-            ~ChaseASTObject();
+            BaseObject();
+            ~BaseObject();
 
             /// @brief Copy constructor.
-            ChaseASTObject( const ChaseASTObject & );
-            ChaseASTObject & operator=( const ChaseASTObject & );
+            BaseObject( const BaseObject & );
+            BaseObject & operator=( const BaseObject & );
 
             /// @brief Getter function to the parent pointer.
             /// @return a pointer to the parent node.
-            ChaseASTObject * getParent();
+            BaseObject * getParent();
             /// @brief Setter function for the parent pointer.
             /// @param p Pointer to the node to set as a pointer.
-            void setParent( ChaseASTObject * p );
+            void setParent( BaseObject * p );
 
 
     };
 
-    typedef ChaseASTObject Object;
+    typedef BaseObject Object;
 
 }
 
