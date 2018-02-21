@@ -126,7 +126,7 @@ add_library(chase ${chase_ast_srcs})
 
 set_property(TARGET chase PROPERTY CXX_STANDARD 11)
 
-install(TARGETS chase DESTINATION ${PROJECT_SOURCE_DIR}/chase-${CMAKE_BUILD_TYPE}/lib)
+install(TARGETS chase DESTINATION lib)
 
 
 link_directories(${PROJECT_SOURCE_DIR}/third_party/antlr4_runtime/run/lib/)
@@ -142,5 +142,5 @@ set_property(TARGET chasetool PROPERTY CXX_STANDARD 11)
 set_property(TARGET chasetool PROPERTY OUTPUT_NAME chase)
 
 
-install(TARGETS chasetool DESTINATION ${PROJECT_SOURCE_DIR}/chase-${CMAKE_BUILD_TYPE}/bin)
+install(TARGETS chasetool DESTINATION bin)
 

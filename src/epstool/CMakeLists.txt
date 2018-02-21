@@ -57,4 +57,4 @@ add_dependencies(epstool chase)
 set_property(TARGET epstool PROPERTY CXX_STANDARD 11)
 
 target_link_libraries(epstool chase)
-install(TARGETS epstool DESTINATION ${PROJECT_SOURCE_DIR}/chase-${CMAKE_BUILD_TYPE}/bin)
+install(TARGETS epstool DESTINATION bin)
