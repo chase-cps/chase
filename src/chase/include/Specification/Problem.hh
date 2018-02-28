@@ -24,11 +24,12 @@
 #include "Behaviors/Logics/Logics.hh"
 #include "Behaviors/Behaviors.hh"
 #include "Behaviors/Timing/TimingDefinitions.hh"
+#include "AST/BaseObject.hh"
 
 namespace Specification
 {
 
-    class Problem
+    class Problem : public chase::BaseObject
     {
         protected:
             Architecture::Network * _network;

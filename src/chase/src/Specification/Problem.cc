@@ -23,6 +23,7 @@ using namespace Behaviors::Timing;
 
 
 Problem::Problem() :
+    BaseObject(),
     _network(NULL),
     _state_variables(),
     _intention_variables(),
@@ -37,6 +38,7 @@ Problem::Problem() :
     requirements()
 {
     _contract = new Contracts::AGContract();
+    _contract->setParent( this );
 }
 
 Problem::~Problem()
