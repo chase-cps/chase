@@ -117,10 +117,15 @@ set( chase_tool_srcs
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/chase/include
         ${PROJECT_SOURCE_DIR}/src/backend/include
-        ${PROJECT_SOURCE_DIR}/src/frontend/include
         ${PROJECT_SOURCE_DIR}/third_party/antlr4_runtime/run/include
         ${PROJECT_SOURCE_DIR}/src/epstool/include
         )
+
+include_directories( SYSTEM
+        ${PROJECT_SOURCE_DIR}/src/frontend/include
+        )
+
+
 
 add_library(chase ${chase_ast_srcs})
 
