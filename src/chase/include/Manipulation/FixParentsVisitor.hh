@@ -26,6 +26,9 @@ namespace Manipulation {
     /// @TODO Extend to the entire AST.
     class FixParentsVisitor : public GuideVisitor
     {
+        public:
+            FixParentsVisitor();
+            ~FixParentsVisitor();
 
             int visitBinaryFormula(
                     Behaviors::Logics::BinaryFormula & o );
@@ -50,11 +53,6 @@ namespace Manipulation {
 
             int visitUnaryTemporalFormula(
                     Behaviors::Logics::UnaryTemporalFormula & o );
-
-
-        public:
-            FixParentsVisitor();
-            ~FixParentsVisitor();
 
         protected:
             FixParentsVisitor( const FixParentsVisitor & );

@@ -52,6 +52,9 @@ namespace Manipulation
             int visitUnaryTemporalFormula(
                     Behaviors::Logics::UnaryTemporalFormula & o );
 
+            int visitLogicConstant(
+                    Behaviors::Logics::LogicConstant & o );
+
         protected:
 
             SimplifyVisitor( const SimplifyVisitor & );

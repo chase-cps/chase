@@ -33,7 +33,7 @@ namespace chase
         public:
 
             BaseObject();
-            ~BaseObject();
+            virtual ~BaseObject();
 
             /// @brief Copy constructor.
             BaseObject( const BaseObject & );

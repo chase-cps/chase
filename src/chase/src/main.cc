@@ -211,13 +211,19 @@ int main(int argc, char * argv[] )
 
     if( gb != NULL )
     {
-        Manipulation::SimplifyVisitor v;
-        v.visitBinaryLogicCombination(*gb);
+        Manipulation::FixParentsVisitor pv;
+        pv.visitBinaryLogicCombination(*gb);
+
+        Manipulation::SimplifyVisitor sv;
+        sv.visitBinaryLogicCombination(*gb);
     }
     if( ab != NULL )
     {
-        Manipulation::SimplifyVisitor v;
-        v.visitBinaryLogicCombination(*ab);
+        Manipulation::FixParentsVisitor pv;
+        pv.visitBinaryLogicCombination(*ab);
+
+        Manipulation::SimplifyVisitor sv;
+        sv.visitBinaryLogicCombination(*ab);
     }
 
     chaseMessage(
