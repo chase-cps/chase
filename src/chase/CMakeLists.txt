@@ -8,7 +8,8 @@ set( chase_ast_srcs
     ${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Logics/Globals.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/BaseVisitor.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/GuideVisitor.cc 
-	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/SimplifyVisitor.cc 
+	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/SimplifyVisitor.cc
+    ${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/FixParentsVisitor.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/findComponents.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Variable.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Constant.cc 

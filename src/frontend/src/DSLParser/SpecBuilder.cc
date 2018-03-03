@@ -146,6 +146,7 @@ SpecBuilder::SpecBuilder() :
     _network = new Architecture::Network();
     _problem = new Specification::Problem();
     _problem->setNetwork(_network);
+    _network->setParent( _problem );
 }
 
 SpecBuilder::~SpecBuilder()
