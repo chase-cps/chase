@@ -19,7 +19,8 @@
 using namespace Behaviors::Logics;
 
 LogicProposition::LogicProposition() :
-    Variable("anonimous", t_bool){
+    Variable("anonimous", t_bool)
+{
 }
 
 LogicProposition::LogicProposition( std::string name ) :
@@ -39,5 +40,11 @@ std::string LogicProposition::print()
 int LogicProposition::accept_visitor( Manipulation::BaseVisitor & v )
 {
     return v.visitLogicProposition(* this);
+}
+
+chase::BaseObject * LogicProposition::copy()
+{
+    LogicProposition * prop = new LogicProposition( _name );
+    return prop;
 }
 
