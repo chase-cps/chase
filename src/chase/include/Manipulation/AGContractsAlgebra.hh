@@ -36,8 +36,9 @@ namespace Manipulation
     class AGContractsAlgebra
     {
         public:
-
-         //   static
+            
+            static Contracts::AGContract * conjunction(
+                    Contracts::AGContract * c1, Contracts::AGContract * c2 );
 
     };
 }

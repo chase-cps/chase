@@ -43,6 +43,7 @@ namespace Behaviors
 
                 int accept_visitor( Manipulation::BaseVisitor & v );
 
+
             protected:
 
                 WellFormedFormula * _op1;
