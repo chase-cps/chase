@@ -31,10 +31,12 @@
 
 #include <iostream>
 
+#include "AST/BaseObject.hh"
+
 namespace Contracts
 {
     // @brief Abstract class to represent the concept of contract (or requirement)
-    class Contract    
+    class Contract : public chase::BaseObject 
     {
         public:
 

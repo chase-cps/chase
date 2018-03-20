@@ -18,6 +18,7 @@
 #define LOGICS_GLOBALS_HH
 
 #include <string>
+#include <iostream>
 
 namespace Behaviors {
     namespace Logics

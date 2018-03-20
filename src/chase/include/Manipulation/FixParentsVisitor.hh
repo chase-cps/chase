@@ -1,6 +1,6 @@
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
- * @date        2015-2016
+ * @date        March 3, 2018
  * @copyright   Copyright (c) 2015-2018 by University of California, Berkeley.\n
  *              Copyright (c) 2015-2018 by University of Verona.\n
  *              Copyright (c) 2015-2018 by International Business Machines Corporation.\n
@@ -8,25 +8,27 @@
  *              All rights reserved.\n
  *              This project is released under the 3-Clause BSD License.
  *
- * @file	chase/include/Manipulation/SimplifyVisitor.hh
+ * @file	chase/include/Manipulation/FixParentsVisitor.hh
  * @brief
  */
 
 
 
-#ifndef SIMPLIFY_VISITOR_HH
-#define SIMPLIFY_VISITOR_HH
+#pragma once
 
 #include "Manipulation/GuideVisitor.hh"
 #include "Behaviors/Logics/Logics.hh"
 
-namespace Manipulation
-{
-    class SimplifyVisitor : public Manipulation::GuideVisitor
+
+namespace Manipulation {
+
+    /// @brief This visitor fixes the parents pointers of a Well Formed Formula.
+    /// @TODO Extend to the entire AST.
+    class FixParentsVisitor : public GuideVisitor
     {
         public:
-            SimplifyVisitor();
-            ~SimplifyVisitor();
+            FixParentsVisitor();
+            ~FixParentsVisitor();
 
             int visitBinaryFormula(
                     Behaviors::Logics::BinaryFormula & o );
@@ -52,18 +54,13 @@ namespace Manipulation
             int visitUnaryTemporalFormula(
                     Behaviors::Logics::UnaryTemporalFormula & o );
 
-            int visitLogicConstant(
-                    Behaviors::Logics::LogicConstant & o );
-
         protected:
-
-            SimplifyVisitor( const SimplifyVisitor & );
-            SimplifyVisitor & operator=( const SimplifyVisitor & );
-
-            Behaviors::Logics::WellFormedFormula * 
-                _verifyDoubleNot( Behaviors::Logics::WellFormedFormula * wff );
+            FixParentsVisitor( const FixParentsVisitor & );
+            FixParentsVisitor & operator=( const FixParentsVisitor & );
 
     };
+
 }
 
-#endif // SimplifyVisitor
+
+

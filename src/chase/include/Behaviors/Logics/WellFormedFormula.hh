@@ -33,6 +33,8 @@ namespace Logics
             virtual formula_type getType() = 0;
             virtual std::string print() = 0;
 
+            virtual chase::BaseObject * copy() = 0;
+
         protected:
             formula_type _type;
     };

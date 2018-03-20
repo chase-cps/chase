@@ -18,6 +18,7 @@
 #define ARCHITECTURE_DOMAIN_SPECIFIC_TYPE_HH
 
 #include "Architecture/NetworkDefinitions.hh"
+#include "AST/BaseObject.hh"
 
 namespace Architecture
 {
@@ -29,7 +30,7 @@ namespace Architecture
     /// a Generic Network Type (GNT), that is a generalization. E.g., considering
     /// the rectifier example, its GNT is "converter": as such, it uses the 
     /// component type ct_converter.
-    class DomainSpecificType
+    class DomainSpecificType : public chase::BaseObject
     {
         protected:
 

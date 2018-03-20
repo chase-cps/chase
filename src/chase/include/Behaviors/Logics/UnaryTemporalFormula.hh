@@ -40,6 +40,8 @@ namespace Behaviors
 
                 int accept_visitor( Manipulation::BaseVisitor & v );
 
+                chase::BaseObject * copy();
+
             protected:
 
                 UnaryTemporalFormula & operator=(

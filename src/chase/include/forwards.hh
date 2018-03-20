@@ -17,6 +17,11 @@
 #ifndef FORWARDS__HH
 #define FORWARDS__HH
 
+namespace chase
+{
+    class BaseObject;
+}
+
 namespace Behaviors
 {
     class Behavior;

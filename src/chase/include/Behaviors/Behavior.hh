@@ -29,12 +29,13 @@
 // Library includes
 #include "Manipulation/Visitable.hh"
 #include "Manipulation/BaseVisitor.hh"
+#include "AST/BaseObject.hh"
 
 namespace Behaviors
 {
     /// @brief Abstract class for behavior classes (e.g., WellFormedFomula)
     ///
-    class Behavior : public Manipulation::Visitable
+    class Behavior : public Manipulation::Visitable, public chase::BaseObject
     {
         public:
             /// @brief Print the behavior specification represented by the instance in the default fashion.

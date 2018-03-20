@@ -51,3 +51,4 @@ int BinaryFormula::accept_visitor( Manipulation::BaseVisitor & v )
     return v.visitBinaryFormula(* this);
 }
 
+

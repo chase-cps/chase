@@ -63,4 +63,21 @@ int UnaryTemporalFormula::accept_visitor( Manipulation::BaseVisitor & v )
     return v.visitUnaryTemporalFormula( * this );
 }
 
+chase::BaseObject * UnaryTemporalFormula::copy()
+{
+    temporal_operators op = getOp();
+    WellFormedFormula * op1 = 
+        static_cast< WellFormedFormula * >( getOp1()->copy() );
+
+    if( op1 == NULL )
+    {
+        std::cerr << "ERROR: odd configuration." << std::endl;
+        exit(-1);
+    }
+
+
+    UnaryTemporalFormula * ret = new UnaryTemporalFormula( op, op1 );
+    return ret;
+}
+
 
