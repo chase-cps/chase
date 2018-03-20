@@ -40,6 +40,9 @@ namespace Manipulation
             static Contracts::AGContract * conjunction(
                     Contracts::AGContract * c1, Contracts::AGContract * c2 );
 
+            static Contracts::AGContract * composition(
+                    Contracts::AGContract * c1, Contracts::AGContract * c2 );
+
     };
 }
 #endif // AG_CONTRACTS_ALGEBRA_HH

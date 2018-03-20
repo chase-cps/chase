@@ -50,4 +50,44 @@ Contracts::AGContract * AGContractsAlgebra::conjunction(
 }
 
 
+Contracts::AGContract * AGContractsAlgebra::composition( 
+        Contracts::AGContract * c1, Contracts::AGContract * c2 )
+{
+    Contracts::AGContract * result = new AGContract();
 
+    WellFormedFormula * A1 = dynamic_cast< WellFormedFormula * >(c1->getAssumptions());
+    WellFormedFormula * A2 = dynamic_cast< WellFormedFormula * >(c2->getAssumptions());
+
+    WellFormedFormula * G1 = dynamic_cast< WellFormedFormula * >(c1->getGuarantees());
+    WellFormedFormula * G2 = dynamic_cast< WellFormedFormula * >(c2->getGuarantees());
+
+    if( A1 == nullptr || A2 == nullptr || G1 == nullptr || G2 == nullptr )
+    {
+        return nullptr;
+    }
+
+    result->setAssumptions(
+            new BinaryLogicCombination(
+                op_lor,
+                new BinaryLogicCombination(
+                    op_land, 
+                    static_cast< WellFormedFormula * >(A1->copy()), 
+                    static_cast< WellFormedFormula * >(A2->copy())),
+                new UnaryLogicCombination(
+                    op_lnot,
+                    new BinaryLogicCombination(
+                        op_land, 
+                        static_cast< WellFormedFormula * >(G1->copy()), 
+                        static_cast< WellFormedFormula * >(G2->copy()))
+                    )
+                )
+            );
+
+    result->setGuarantees(
+            new BinaryLogicCombination( op_land, 
+                static_cast< WellFormedFormula * >(G1->copy()), 
+                static_cast< WellFormedFormula * >(G2->copy()) ));
+
+    return result;
+
+}
