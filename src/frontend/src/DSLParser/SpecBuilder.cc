@@ -29,7 +29,7 @@ std::string SpecBuilder::_gen_random( const int len, Architecture::Network * n )
     std::string ret;
     while(needed)
     {
-        char s[len];
+        std::string s;
         static const char alphanum[] =
             "0123456789"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -146,6 +146,7 @@ SpecBuilder::SpecBuilder() :
     _network = new Architecture::Network();
     _problem = new Specification::Problem();
     _problem->setNetwork(_network);
+    _network->setParent( _problem );
 }
 
 SpecBuilder::~SpecBuilder()
@@ -282,7 +283,7 @@ void SpecBuilder::enterComponent( ChaseParser::ComponentContext * ctx )
 
                 std::list< Architecture::NetworkComponent * > components;
 
-                for( int i = 1; i <= number; ++i )
+                for( unsigned int i = 1; i <= number; ++i )
                 {
 
                     std::string cname(name);
@@ -348,6 +349,7 @@ void SpecBuilder::enterAbbrev( ChaseParser::AbbrevContext * ctx )
 
 void SpecBuilder::enterConnections(ChaseParser::ConnectionsContext * ctx)
 {
+    assert(ctx);
     _inConnections = true;
     _inSwitched = false;
     _inUnswitched = false;
@@ -356,6 +358,7 @@ void SpecBuilder::enterConnections(ChaseParser::ConnectionsContext * ctx)
 
 void SpecBuilder::exitConnections(ChaseParser::ConnectionsContext * ctx)
 {
+    assert(ctx);
     _inConnections = false;
     _inSwitched = false;
     _inUnswitched = false;
@@ -364,6 +367,7 @@ void SpecBuilder::exitConnections(ChaseParser::ConnectionsContext * ctx)
 
 void SpecBuilder::enterSwitched(ChaseParser::SwitchedContext * ctx)
 {
+    assert(ctx);
     _inSwitched = true;
     _inUnswitched = false;
     std::string sw = _getNameFromContext(ctx->sw);
@@ -384,6 +388,7 @@ void SpecBuilder::enterSwitched(ChaseParser::SwitchedContext * ctx)
 
 void SpecBuilder::enterUnswitched(ChaseParser::UnswitchedContext * ctx)
 {
+    assert(ctx);
     _inUnswitched = true;
     _inSwitched = false;
 }
@@ -615,23 +620,27 @@ void SpecBuilder::_enterSpecificConn( ChaseParser::ConnContext * ctx )
 
 void SpecBuilder::enterRequirements(ChaseParser::RequirementsContext * ctx)
 {
+    assert(ctx);
     _inRequirements = true;
     _inAssumptions = false;
 }
 
 void SpecBuilder::enterAssumptions(ChaseParser::AssumptionsContext * ctx)
 {
+    assert(ctx);
     _inRequirements = false;
     _inAssumptions = true;
 }
 
 void SpecBuilder::exitRequirements(ChaseParser::RequirementsContext * ctx)
 {
+    assert(ctx);
     _inRequirements = false;
 }
 
 void SpecBuilder::exitAssumptions(ChaseParser::AssumptionsContext * ctx)
 {
+    assert(ctx);
     _inAssumptions = false;
 }
 

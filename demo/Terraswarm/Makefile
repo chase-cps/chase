@@ -3,7 +3,7 @@ MODEL=template_0
 endif
 
 
-TOOL=../../bin/chase
+TOOL=chase
 
 ifeq ($(OS),Windows_NT)
 PLATFORM= Windows

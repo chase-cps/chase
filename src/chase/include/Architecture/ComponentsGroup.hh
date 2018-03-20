@@ -20,11 +20,13 @@
 #include "Architecture/NetworkDefinitions.hh"
 #include "Architecture/DomainSpecificType.hh"
 
+#include "AST/BaseObject.hh"
+
 namespace Architecture
 {
     /// @brief Represents a group of components through their attributes and parameters.
     //
-    class ComponentsGroup
+    class ComponentsGroup : public chase::BaseObject
     {
         protected:
             DomainSpecificType * _type;

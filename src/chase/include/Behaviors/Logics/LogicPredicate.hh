@@ -29,6 +29,7 @@ namespace Behaviors
         {
             public:
 
+                /// \TODO Manage the terms in a better way. A vector maybe???
                 Term ** arguments;
 
                 LogicPredicate( 
@@ -43,6 +44,8 @@ namespace Behaviors
 
                 unsigned int getArity();
                 std::string getName();
+
+                chase::BaseObject * copy();
 
 
             protected:

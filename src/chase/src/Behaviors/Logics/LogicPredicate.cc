@@ -52,3 +52,11 @@ std::string LogicPredicate::getName()
 {
     return _name;
 }
+
+/// \TODO Implement better the thing. The problem is with the
+/// copy of the terms.
+chase::BaseObject * LogicPredicate::copy()
+{
+    return this;
+}
+

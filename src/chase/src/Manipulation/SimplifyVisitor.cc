@@ -1,10 +1,10 @@
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
  * @date        2015-2016
- * @copyright   Copyright (c) 2015-2017 by University of California, Berkeley.\n
- *              Copyright (c) 2015-2017 by University of Verona.\n
- *              Copyright (c) 2015-2017 by International Business Machines Corporation.\n
- *              Copyright (c) 2016-2017 by University of Southern California.\n
+ * @copyright   Copyright (c) 2015-2018 by University of California, Berkeley.\n
+ *              Copyright (c) 2015-2018 by University of Verona.\n
+ *              Copyright (c) 2015-2018 by International Business Machines Corporation.\n
+ *              Copyright (c) 2016-2018 by University of Southern California.\n
  *              All rights reserved.\n
  *              This project is released under the 3-Clause BSD License.
  *
@@ -15,12 +15,15 @@
 
 
 #include "Manipulation/SimplifyVisitor.hh"
+#include "Contracts/AGContract.hh"
+
 #include <iostream>
 
 
 using namespace Manipulation;
 using namespace Behaviors;
 using namespace Logics;
+using namespace chase;
 
 SimplifyVisitor::SimplifyVisitor() :
     GuideVisitor(0)
@@ -113,6 +116,8 @@ int SimplifyVisitor::visitUnaryLogicCombination(
         Behaviors::Logics::UnaryLogicCombination & o )
 {
     o.setOp1( _verifyDoubleNot(o.getOp1() ));
+    o.getOp1()->setParent( &o );
+
     int rv = o.getOp1()->accept_visitor(*this);
     return rv;
 }
@@ -121,9 +126,14 @@ int SimplifyVisitor::visitBinaryLogicCombination(
         Behaviors::Logics::BinaryLogicCombination & o )
 {
     o.setOp1( _verifyDoubleNot(o.getOp1() ));
+    o.getOp1()->setParent( &o );
+
     int rv = o.getOp1()->accept_visitor(*this);
+
     o.setOp2( _verifyDoubleNot(o.getOp2() ));
-    rv |=  o.getOp2()->accept_visitor(*this); 
+    o.getOp2()->setParent( &o );
+
+    rv |=  o.getOp2()->accept_visitor(*this);
 
     return rv;
 }
@@ -132,8 +142,13 @@ int SimplifyVisitor::visitBinaryTemporalFormula(
         Behaviors::Logics::BinaryTemporalFormula & o )
 {
     o.setOp1( _verifyDoubleNot(o.getOp1() ));
+    o.getOp1()->setParent( &o );
+
     int rv = o.getOp1()->accept_visitor(*this);
+
     o.setOp2( _verifyDoubleNot(o.getOp2() ));
+    o.getOp2()->setParent( &o );
+
     rv |=  o.getOp2()->accept_visitor(*this);
 
     return rv;
@@ -143,6 +158,8 @@ int SimplifyVisitor::visitUnaryTemporalFormula(
         Behaviors::Logics::UnaryTemporalFormula & o )
 {
     o.setOp1( _verifyDoubleNot(o.getOp1() ));
+    o.getOp1()->setParent( &o );
+
     int rv = o.getOp1()->accept_visitor(*this);
 
     return rv;
@@ -169,4 +186,106 @@ Behaviors::Logics::WellFormedFormula *
     }
     return wff;
 }
+
+int SimplifyVisitor::visitLogicConstant( Behaviors::Logics::LogicConstant & o )
+{
+    BaseObject * parent = o.getParent();
+
+    BinaryLogicCombination * pbf = 
+        dynamic_cast< BinaryLogicCombination * >(parent);
+    if( pbf == NULL )
+    {
+        return 1;
+    }
+
+    if(! ((o.getValue() == lc_true && pbf->getOp() == op_land) ||
+            ( o.getValue() == lc_false && pbf->getOp() == op_lor )))
+    {
+        return 1;
+    }
+
+    // FIX BY REMOVING THE FORMULA!
+    
+    // Manage the grandparent to understand if the parent is its
+    // first or second operand.
+    BaseObject * grandparent = parent->getParent();
+
+    BinaryFormula * gpbf = 
+        dynamic_cast< BinaryFormula * >( grandparent );
+    UnaryFormula * gpuf =
+        dynamic_cast< UnaryFormula * >( grandparent );
+
+    Contracts::AGContract * cp = 
+        dynamic_cast< Contracts::AGContract * >( grandparent );
+
+    if( gpbf == nullptr && gpuf == nullptr && cp == nullptr )
+    {
+        std::cerr << "ERROR: Unknown condition during simplification" << std::endl;
+        exit(-1);
+    }
+
+    WellFormedFormula * sibling;
+
+    if( pbf->getOp1() == &o )
+    {
+        sibling = pbf->getOp2();
+    }
+    else
+    {
+        sibling = pbf->getOp1();
+    }
+
+    // replace the parent in the grandparent with the sibling.
+
+    sibling->setParent(grandparent);    
+    if( cp != nullptr )
+    {
+        if( cp->getAssumptions() == parent )
+        {
+            cp->setAssumptions( sibling );
+        }
+        else
+        {
+            cp->setGuarantees( sibling );
+        }
+    }
+
+    if( gpbf != nullptr )
+    {
+        if( gpbf->getOp1() == parent )
+        {
+            gpbf->setOp1( sibling );
+        } 
+        else if( gpbf->getOp2() == parent )
+        {
+            gpbf->setOp2( sibling );
+        }
+        else
+        {
+            std::cerr << 
+                "ERROR: Unknown condition during simplification" 
+                << std::endl;
+            exit(-1);
+        }
+    }
+
+    if( gpuf != nullptr )
+    {
+        if( gpbf->getOp1() == parent )
+        {
+            gpbf->setOp1( sibling );
+        } 
+        else
+        {
+            std::cerr << 
+                "ERROR: Unknown condition during simplification" 
+                << std::endl;
+            exit(-1);
+        }
+    }
+
+    return 1;
+}
+
+
 

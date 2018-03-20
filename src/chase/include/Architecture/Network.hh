@@ -31,13 +31,14 @@
 #include "Architecture/DomainSpecificSourceType.hh"
 #include "Architecture/DomainSpecificSwitchType.hh"
 
+#include "AST/BaseObject.hh"
 
 #include "Utilities/Graphs/Graphs.hh"
 
 namespace Architecture
 {
 
-    class Network
+    class Network : public chase::BaseObject
     {
         protected:
             Network( const Network & );

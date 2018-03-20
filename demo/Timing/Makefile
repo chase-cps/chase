@@ -5,7 +5,7 @@ endif
 endif
 
 
-EXECUTABLE=../../bin/chase
+EXECUTABLE=chase
 
 ifeq ($(OS),Windows_NT)
 PLATFORM= Windows
