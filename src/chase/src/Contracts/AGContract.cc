@@ -41,7 +41,10 @@ AGContract::AGContract() :
             f3 );
 
     setAssumptions(f2);
+    f2->setParent(this);
+
     setGuarantees(f4);
+    f4->setParent(this);
 
 }
 

@@ -33,12 +33,16 @@ namespace Behaviors{
                 std::string print();
                 logic_constants getValue();
                 int accept_visitor( Manipulation::BaseVisitor & v );
+
+                chase::BaseObject * copy();
                
             protected:
                 logic_constants _value;
 
                 LogicConstant & operator=(const LogicConstant & c);
                 LogicConstant(const LogicConstant & c);
+
+
         };
     }
 }

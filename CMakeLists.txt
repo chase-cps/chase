@@ -8,6 +8,12 @@ cmake_minimum_required (VERSION 2.4)
 
 project (Chase)
 
+set(CMAKE_BUILD_TYPE DEBUG)
+set(CMAKE_C_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 
 # Set a default build type if none was specified
 set(default_build_type "Release")

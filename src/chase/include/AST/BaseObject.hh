@@ -33,7 +33,7 @@ namespace chase
         public:
 
             BaseObject();
-            ~BaseObject();
+            virtual ~BaseObject();
 
             /// @brief Copy constructor.
             BaseObject( const BaseObject & );
@@ -46,6 +46,10 @@ namespace chase
             /// @param p Pointer to the node to set as a pointer.
             void setParent( BaseObject * p );
 
+            /// @brief Function copying the object onto a new Object.
+            /// @param o Object to copy.
+            /// return Copy of the object.
+            //virtual BaseObject * copy( BaseObject * o ) = 0;
 
     };
 

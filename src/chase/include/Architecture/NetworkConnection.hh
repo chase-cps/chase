@@ -19,11 +19,12 @@
 
 #include "Architecture/NetworkDefinitions.hh"
 #include "Architecture/NetworkComponent.hh"
+#include "AST/BaseObject.hh"
 #include <cassert>
 
 namespace Architecture
 {
-    class NetworkConnection
+    class NetworkConnection : public chase::BaseObject
     {
         protected:
             NetworkComponent * _source;

@@ -67,3 +67,9 @@ int LogicConstant::accept_visitor( Manipulation::BaseVisitor & v )
     return v.visitLogicConstant(* this);
 } 
 
+chase::BaseObject * LogicConstant::copy()
+{
+    LogicConstant * c = new LogicConstant( _value );
+    return c;
+}
+

@@ -8,8 +8,10 @@ set( chase_ast_srcs
     ${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Logics/Globals.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/BaseVisitor.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/GuideVisitor.cc 
-	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/SimplifyVisitor.cc 
-	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/findComponents.cc 
+	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/SimplifyVisitor.cc
+    ${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/FixParentsVisitor.cc 
+	${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/findComponents.cc
+    ${PROJECT_SOURCE_DIR}/src/chase/src/Manipulation/AGContractsAlgebra.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Variable.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Constant.cc 
 	${PROJECT_SOURCE_DIR}/src/chase/src/Behaviors/Function.cc 
@@ -117,10 +119,15 @@ set( chase_tool_srcs
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/chase/include
         ${PROJECT_SOURCE_DIR}/src/backend/include
-        ${PROJECT_SOURCE_DIR}/src/frontend/include
         ${PROJECT_SOURCE_DIR}/third_party/antlr4_runtime/run/include
         ${PROJECT_SOURCE_DIR}/src/epstool/include
         )
+
+include_directories( SYSTEM
+        ${PROJECT_SOURCE_DIR}/src/frontend/include
+        )
+
+
 
 add_library(chase ${chase_ast_srcs})
 

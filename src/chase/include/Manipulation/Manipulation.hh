@@ -22,6 +22,7 @@
 #include "GuideVisitor.hh"
 #include "Visitable.hh"
 #include "SimplifyVisitor.hh"
+#include "FixParentsVisitor.hh"
 
 
 #endif // MANIPULATION_HH

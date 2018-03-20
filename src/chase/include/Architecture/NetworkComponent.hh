@@ -19,10 +19,11 @@
 
 #include "Architecture/NetworkDefinitions.hh"
 #include "Architecture/DomainSpecificType.hh"
+#include "AST/BaseObject.hh"
 
 namespace Architecture
 {
-    class NetworkComponent
+    class NetworkComponent : public chase::BaseObject
     {
         protected:
 
