@@ -46,8 +46,11 @@ project directory you must create a working directory:
 `$> mkdir objdir`
 
 Move in the directory just created, run cmake and compile:
+
 `$> cd objdir`
+
 `$> cmake ..`
+
 `$> make`
 
 Indeed, you may want to specify a installation directory through the CMake
