@@ -8,6 +8,7 @@ The framework requires the following third party software in order to be built a
 - GCC or Clang toolchain for C++:
 	- tested with *g++-5* and *clang++-3.8*
 	- any compiler supporting C++-11 can be used
+- CMake 2.6+
 - GNU Make
 - [The Temporal Logic Planning (TuLiP) toolbox][1]: a Python package for automatic synthesis of correct-by-construction embedded control software. Supported versions: 1.1+ 
 - [gr1c][2]: a collection of tools for GR(1) synthesis,  used to check realizability of GR(1) specifications and synthesize discrete control strategies from them
@@ -39,25 +40,27 @@ However, it should be sufficient to run the install-deps script in the main chas
 
 ## Building CHASE
 
-`$> export CHASE_COMPILER=compiler`
+The compilation relies on CMake. To compile the source code, from the main
+project directory you must create a working directory:
 
-e.g., type
+`$> mkdir objdir`
 
-`$> export CHASE_COMPILER=clang++`
+Move in the directory just created, run cmake and compile:
 
-to use *Clang* rather than *GCC*.
-The compilation is based on *GNU Make*. The `Makefile` is located in the main directory of the release. Use the command:
+`$> cd objdir`
+
+`$> cmake ..`
 
 `$> make`
 
-which creates two executables in the `bin/` directory:
+Indeed, you may want to specify a installation directory through the CMake
+parameter CMAKE_INSTALL_PREFIX. Then, you can install the compiled version of
+the software:
 
-- `chase`: takes as input a problem expressed using the CHASE formal specification language, creates an internal representation of the specification as a contract, checks the contract consistency (realizability of the specification) and produces a design artifact (e.g., a finite automaton representing the discrete control protocol) if the contract is consistent.
-- `epstool`: provides a demonstration of the capabilities of CHASE (a small example of contract-based requirement engineering) specifically targeted to an aircraft Electric Power System (EPS).
+`$> make install`
 
-It is possible to clean the generated binary files through the command:
-
-`$> make clean`
+For further configurations of the compilation, please refer to the documentation
+of CMake.
 
 ## Building the API documentation
 
