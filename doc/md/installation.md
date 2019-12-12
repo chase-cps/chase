@@ -22,24 +22,22 @@ and executed:
 ## Operating Systems
 The framework mostly relies on the C++11 Standard and  should be portable to any
 architecture and operating system supporting it. However, due to external
-dependencies, CHASE is tested on:
-- Linux Ubuntu 14.04+
-- Mac OSX 10.11 (El Capitan)+
+dependencies, CHASE has been tested on:
+- Linux Ubuntu 18.04+
 - Windows 10 Anniversary Edition, using [*Bash on Ubuntu on Windows*][WSL] 
 
 # Installation
 
 ## Preliminaries
 - Install [GR1C][GR1C]
-- Install the [ANTLR 4 C++ Runtime library][ANTLR-CPP]
 
 ## Notes on ANTLR4
 
 Due to potential incompatibilites with of CHASE with some releases of ANTLR4, a
 compatible version of the sources of ANTLR4 Runtime for C++ is provided in the
 `third_party/` directory of the CHASE release. While you may want to install
-your own version fo ANTLR4, you do not need to do so to use CHASE. The
-compilation of CHASE takes also care of building ANTLR4 libraries. 
+your own version fo ANTLR4, you do not need to do so to use CHASE. 
+*The compilation of CHASE takes also care of building ANTLR4 libraries.*
 
 ## Building CHASE
 
