@@ -12,24 +12,9 @@ if(NOT CMAKE_BUILD_TYPE)
        FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-if(NOT WITH_DEMO)
-  message(STATUS "Building without demo. To enable demo build use: -DWITH_DEMO=True")
-  set(WITH_DEMO False CACHE STRING
-    "Chose to build with or without demo executable"
-    FORCE)
-endif(NOT WITH_DEMO)
-
 option(WITH_LIBCXX "Building with clang++ and libc++(in Linux). To enable with: -DWITH_LIBCXX=On" On)
 
 project(LIBANTLR4)
-
-if(CMAKE_VERSION VERSION_EQUAL "3.0.0" OR
-   CMAKE_VERSION VERSION_GREATER "3.0.0")
-  CMAKE_POLICY(SET CMP0026 OLD)
-  CMAKE_POLICY(SET CMP0045 OLD)
-  CMAKE_POLICY(SET CMP0042 OLD)
-  CMAKE_POLICY(SET CMP0059 OLD)
-endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   find_package(PkgConfig REQUIRED)
@@ -40,22 +25,6 @@ if(APPLE)
 endif()
 
 file(STRINGS "VERSION" ANTLR_VERSION)
-
-if (WITH_DEMO)
-  # Java is not necessary if building without demos.
-  find_package(Java COMPONENTS Runtime REQUIRED)
-
-  if (NOT ANTLR_JAR_LOCATION)
-    message(FATAL_ERROR "Missing antlr4.jar location. You can specify it's path using: -DANTLR_JAR_LOCATION=<path>")
-  else()
-    get_filename_component(ANTLR_NAME ${ANTLR_JAR_LOCATION} NAME_WE)
-    if(NOT EXISTS "${ANTLR_JAR_LOCATION}")
-      message(FATAL_ERROR "Unable to find ${ANTLR_NAME} in ${ANTLR_JAR_LOCATION}")
-    else()
-      message(STATUS "Found ${ANTLR_NAME}: ${ANTLR_JAR_LOCATION}")
-    endif()
-  endif()
-endif(WITH_DEMO)
 
 set(MY_CXX_WARNING_FLAGS "  -Wall -pedantic -W")
 
@@ -93,10 +62,7 @@ else ()
 endif ()
 
 
+set(ANTLR_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 add_subdirectory(runtime)
-if (WITH_DEMO)
- add_subdirectory(demo)
-endif(WITH_DEMO)
-
-
-set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/run)
+set(CMAKE_INSTALL_PREFIX antlr4-runtime)

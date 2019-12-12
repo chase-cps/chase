@@ -1,30 +1,30 @@
 include_directories(
-  ${PROJECT_SOURCE_DIR}/runtime/src
-  ${PROJECT_SOURCE_DIR}/runtime/src/atn
-  ${PROJECT_SOURCE_DIR}/runtime/src/dfa
-  ${PROJECT_SOURCE_DIR}/runtime/src/misc
-  ${PROJECT_SOURCE_DIR}/runtime/src/support
-  ${PROJECT_SOURCE_DIR}/runtime/src/tree
-  ${PROJECT_SOURCE_DIR}/runtime/src/tree/pattern
-  ${PROJECT_SOURCE_DIR}/runtime/src/tree/xpath
+  ${ANTLR_SOURCE_DIR}/runtime/src
+  ${ANTLR_SOURCE_DIR}/runtime/src/atn
+  ${ANTLR_SOURCE_DIR}/runtime/src/dfa
+  ${ANTLR_SOURCE_DIR}/runtime/src/misc
+  ${ANTLR_SOURCE_DIR}/runtime/src/support
+  ${ANTLR_SOURCE_DIR}/runtime/src/tree
+  ${ANTLR_SOURCE_DIR}/runtime/src/tree/pattern
+  ${ANTLR_SOURCE_DIR}/runtime/src/tree/xpath
 )
 
 
 file(GLOB libantlrcpp_SRC
-  "${PROJECT_SOURCE_DIR}/runtime/src/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/atn/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/dfa/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/misc/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/support/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/tree/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/tree/pattern/*.cpp"
-  "${PROJECT_SOURCE_DIR}/runtime/src/tree/xpath/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/atn/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/dfa/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/misc/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/support/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/tree/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/tree/pattern/*.cpp"
+  "${ANTLR_SOURCE_DIR}/runtime/src/tree/xpath/*.cpp"
 )
 
 add_library(antlr4_shared SHARED ${libantlrcpp_SRC})
 add_library(antlr4_static STATIC ${libantlrcpp_SRC})
 
-set(LIB_OUTPUT_DIR "${CMAKE_HOME_DIRECTORY}/dist") # put generated libraries here.
+set(LIB_OUTPUT_DIR "dist") # put generated libraries here.
 message(STATUS "Output libraries to ${LIB_OUTPUT_DIR}")
 
 # make sure 'make' works fine even if ${LIB_OUTPUT_DIR} is deleted.
@@ -73,7 +73,7 @@ install(TARGETS antlr4_shared
 install(TARGETS antlr4_static
         ARCHIVE DESTINATION lib)
 
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/runtime/src/" 
+install(DIRECTORY "${ANTLR_SOURCE_DIR}/runtime/src/" 
         DESTINATION "include" 
         COMPONENT dev 
         FILES_MATCHING PATTERN "*.h"

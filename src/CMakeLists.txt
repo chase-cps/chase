@@ -1,9 +1,10 @@
-###############################################################################
-# Main CMake file for the Chase project
-###############################################################################
 # @author Michele Lora
-#
-  
-add_subdirectory(chase)
-add_subdirectory(epstool)
 
+###############################################################################
+# CMake file for the CHASE Library
+# @author Michele Lora
+###############################################################################
+
+add_subdirectory(core)
+add_subdirectory(test)
+add_subdirectory(patternsOnNetworks)

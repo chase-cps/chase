@@ -1,12 +1,14 @@
 ###############################################################################
-# Main CMake file for the Chase project
+# Main CMake file for the CHASE project
 ###############################################################################
 # @author Michele Lora
 #
 
 cmake_minimum_required (VERSION 2.4)
 
-project (Chase)
+add_subdirectory(third_party)
+
+project (CHASE)
 
 set(CMAKE_BUILD_TYPE DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb")
@@ -14,12 +16,16 @@ set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
 if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
     set(default_build_type "Debug")
 endif()
+
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
@@ -39,4 +45,7 @@ else()
         set (CMAKE_INSTALL_PREFIX ${DEFAULT_INSTALL_LOCATION} CACHE PATH "Installation root" FORCE)
 endif()
 
+
 add_subdirectory(src)
+add_subdirectory(doc)
+
