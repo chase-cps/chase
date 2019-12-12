@@ -2,3 +2,9 @@ cmake-build-debug/
 .idea/workspace.xml
 /2_04_03.spc
 ref.spc
+.idea/vcs.xml
+.idea/misc.xml
+.idea/deployment.xml
+.idea/.name
+.idea/modules.xml
+.idea/chase.iml
