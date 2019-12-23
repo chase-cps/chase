@@ -13,6 +13,7 @@
 
 #include "DSLParser/SpecBuilder.hh"
 #include "Backends/GR1CPrinter.hh"
+#include "Backends/SlugsPrinter.hh"
 
 namespace patternsOnNetworks
 {
@@ -24,6 +25,8 @@ namespace patternsOnNetworks
         std::string fileIn;
         /// @brief Output file path.
         std::string fileOut;
+        /// @brief Backend choice.
+        std::string backend; 
         /// @brief Verbose flag. Execution is verbose when flag is set to true.
         bool verbose;
 
