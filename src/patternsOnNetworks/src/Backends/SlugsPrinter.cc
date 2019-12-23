@@ -186,7 +186,6 @@ void SlugsPrinter::_printSafety() {
             messageError("Not a GR1 Specification.");
 
         _curr = std::string("");
-        std::cout << lbf->getString() << std::endl;
 
         for( size_t f = 0; f < lbf->operands.size(); ++f )
         {
