@@ -7,4 +7,5 @@ ref.spc
 .idea/deployment.xml
 .idea/.name
 .idea/modules.xml
-.idea/chase.iml
+.idea/chase.ims
+obj_linux_64
