@@ -84,8 +84,8 @@ ASSUMPTIONS
 
 
 
-
-
+switch-on-time(contactor 5, 8, MS);
+switch-off-time(contactor 5, 8, MS);
 
 
 no-failures(load);

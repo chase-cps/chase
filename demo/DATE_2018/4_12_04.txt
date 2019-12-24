@@ -82,12 +82,12 @@ ASSUMPTIONS
 
 
 
+switch-on-time(contactor 4, 8, MS);
+switch-off-time(contactor 4, 8, MS);
 
 
-
-
-
-
+switch-on-time(contactor 6, 8, MS);
+switch-off-time(contactor 6, 8, MS);
 no-failures(load);
 no-failures(left DC bus);
 no-failures(right DC bus);

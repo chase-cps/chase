@@ -68,20 +68,20 @@ RD2 -- RL1;
 REQUIREMENTS
 keep-connection-stable(generator, DC bus);
 never-connect(generator, generator, AC bus);
-must-disconnect-failed(generator, 16, MS);
+must-disconnect-failed(generator, 15, MS);
 prefer-active-connection(left DC bus, left generator);
 prefer-active-connection(right DC bus, right generator);
-never-disconnect(DC bus, generator, 32, MS);
+never-disconnect(DC bus, generator, 30, MS);
 
 ASSUMPTIONS
-
-
-
-
-
-
-
-
+switch-on-time(contactor 0, 10, MS);
+switch-off-time(contactor 0, 10, MS);
+switch-on-time(contactor 1, 10, MS);
+switch-off-time(contactor 1, 10, MS);
+switch-on-time(contactor 2, 10, MS);
+switch-off-time(contactor 2, 10, MS);
+switch-on-time(contactor 3, 10, MS);
+switch-off-time(contactor 3, 10, MS);
 
 
 
