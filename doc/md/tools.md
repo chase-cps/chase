@@ -28,14 +28,28 @@ More information about the language will be soon available in a language guide.
 >
 > - -i _Specifies the `.txt` input file containing the specification._
 > - -o _Specifies the output file._
+> - -b _Specifies the backend to be used. It may either be: `slugs` (default value) or `gr1c`._
 > - -V _Enables verbose mode._
 
 To execute (in verbose mode) the `chase` on a simple example, go to the main directory of Chase and type
 
-`./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -o out.spc -V`
+`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -o out.structuredSlugs -V`
 
+It will generate a  _structured slugs_ file. The same can be obtained by using the following command:
 
+`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -b slugs -o out.structuredSlugs -V`
+
+Meanwhile, the following command:
+
+`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -b gr1c -o out.spc -V`
+
+will generate a _GR1C_ specification.
+
+For the usage of [slugs][SLUGS] and [GR1C][GR1C], we refer the reader to the tools documentation.
 
 [<-- Go back to the main page][HOME]
+
+[SLUGS]: https://github.com/VerifiableRobotics/slugs
+[GR1C]: https://github.com/slivingston/gr1c
 
 [HOME]: ../../README.md

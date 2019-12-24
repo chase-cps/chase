@@ -29,7 +29,9 @@ dependencies, CHASE has been tested on:
 # Installation
 
 ## Preliminaries
-- Install [GR1C][GR1C]
+- Install [slugs][SLUGS].
+- Install [GR1C][GR1C].
+
 
 ## Notes on ANTLR4
 
@@ -78,6 +80,7 @@ N.B.: The use of the target `clean` will also delete the documentation.
 
 [<-- Go back to the main page][HOME]
 
+[SLUGS]: https://github.com/VerifiableRobotics/slugs
 [GR1C]: https://github.com/slivingston/gr1c
 [ANTLR]: http://www.antlr.org/
 [WSL]: https://msdn.microsoft.com/en-us/commandline/wsl/about
