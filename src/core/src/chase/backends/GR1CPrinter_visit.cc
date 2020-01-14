@@ -4,7 +4,7 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
-#include "Backends/GR1CPrinter.hh"
+#include "backends/GR1CPrinter.hh"
 
 using namespace chase;
 

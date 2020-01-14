@@ -25,8 +25,6 @@ namespace chase {
         /// @brief Destructor.
         ~GuideVisitor() override;
 
-        /// @cond
-
         /// Visit functions
         //
         //  Values
@@ -66,8 +64,6 @@ namespace chase {
         virtual int visitEdge( Edge &o );
         virtual int visitVertex(Vertex &o);
         virtual int visitGraph(Graph &o);
-
-        /// @endcond
 
     protected:
 

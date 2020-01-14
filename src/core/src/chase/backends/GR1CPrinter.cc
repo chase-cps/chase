@@ -4,22 +4,22 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
-#include "Backends/SlugsPrinter.hh"
+#include "backends/GR1CPrinter.hh"
 
 using namespace chase;
 
-SlugsPrinter::SlugsPrinter() :
+GR1CPrinter::GR1CPrinter() :
     GuideVisitor()
 {
 }
 
-SlugsPrinter::~SlugsPrinter()
+GR1CPrinter::~GR1CPrinter()
 {
     if(fout.is_open())
         fout.close();
 }
 
-void SlugsPrinter::print(Contract *contract, std::string path)
+void GR1CPrinter::print(Contract *contract, std::string path)
 {
     // Open the file and get the contract to be printed.
     _contract = contract;
@@ -36,10 +36,10 @@ void SlugsPrinter::print(Contract *contract, std::string path)
 
 
 
-void SlugsPrinter::_printDeclarations()
+void GR1CPrinter::_printDeclarations()
 {
     // Print the environment variables.
-    fout << "[INPUT]" << std::endl;
+    fout << "ENV:" << std::endl;
     for( auto vit = _contract->declarations.begin();
         vit != _contract->declarations.end(); ++vit)
     {
@@ -49,7 +49,7 @@ void SlugsPrinter::_printDeclarations()
         {
             std::string name = var->getName()->getString();
             Type * type = var->getType();
-            fout << name;
+            fout << "\t" << name;
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
@@ -63,17 +63,17 @@ void SlugsPrinter::_printDeclarations()
                 auto ilv = reinterpret_cast<IntegerValue *>(lv);
                 auto irv = reinterpret_cast<IntegerValue *>(rv);
 
-                fout << ": " << ilv->getValue()
-                    << "..." << irv->getValue();
+                fout << "[" << ilv->getValue()
+                    << ", " << irv->getValue() << "]";
             }
             fout << std::endl;
         }
     }
-    fout << std::endl << std::endl;
+    fout << ";" << std::endl << std::endl;
 
 
     // Print the system variables.
-    fout << "[OUTPUT]" << std::endl;
+    fout << "SYS:" << std::endl;
     for( auto vit = _contract->declarations.begin();
          vit != _contract->declarations.end(); ++vit)
     {
@@ -83,7 +83,7 @@ void SlugsPrinter::_printDeclarations()
         {
             std::string name = var->getName()->getString();
             Type * type = var->getType();
-            fout << name;
+            fout << "\t" << name;
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
@@ -97,20 +97,20 @@ void SlugsPrinter::_printDeclarations()
                 auto ilv = reinterpret_cast<IntegerValue *>(lv);
                 auto irv = reinterpret_cast<IntegerValue *>(rv);
 
-                fout << ": " << ilv->getValue()
-                     << "..." << irv->getValue();
+                fout << "[" << ilv->getValue()
+                     << ", " << irv->getValue() << "]";
             }
             fout << std::endl;
         }
     }
 
-    fout << std::endl << std::endl;
+    fout << ";" << std::endl << std::endl;
 
 }
 
 
 
-void SlugsPrinter::_printInit() {
+void GR1CPrinter::_printInit() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -131,15 +131,18 @@ void SlugsPrinter::_printInit() {
             if( lbf->operands[f]->IsA() != unaryTemporalOperation_node &&
                     lbf->operands[f]->IsA() != binaryTemporalOperation_node )
             {
-                _curr += "\n";
+                if(_curr != "")
+                    _curr += "\n\t& ";
+                else
+                    _curr += "\n\t";
 
                 lbf->operands[f]->accept_visitor(*this);
 
             }
         }
         if(_curr != "")
-            fout<< "[ENV_INIT]" << _curr
-                << std::endl << std::endl;
+            fout<< "ENVINIT:" << _curr
+                << std::endl << ";" << std::endl << std::endl;
     }
 
     // Guarantees
@@ -161,18 +164,21 @@ void SlugsPrinter::_printInit() {
             if( lbf->operands[f]->IsA() != unaryTemporalOperation_node &&
                 lbf->operands[f]->IsA() != binaryTemporalOperation_node )
             {
-                _curr += "\n";
+                if(_curr != "")
+                    _curr += "\n\t& ";
+                else
+                    _curr += "\n\t";
                 lbf->operands[f]->accept_visitor(*this);
             }
 
         }
         if(_curr != "")
-            fout<< "[SYS_INIT]" << _curr
-                << std::endl << std::endl;
+            fout<< "SYSINIT:" << _curr
+                << std::endl << ";" << std::endl << std::endl;
     }
 }
 
-void SlugsPrinter::_printSafety() {
+void GR1CPrinter::_printSafety() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -203,14 +209,17 @@ void SlugsPrinter::_printSafety() {
                     if( inner->getOp() == op_future )
                         continue; // Is a Liveness Property.
                 }
-                _curr += "\n";
+                if(_curr != "")
+                    _curr += "\n\t& ";
+                else
+                    _curr += "\n\t";
                 uto->accept_visitor(*this);
             }
         }
 
         if(_curr != "")
-            fout<< "[ENV_TRANS]"
-                << _curr << std::endl << std::endl;
+            fout<< "ENVTRANS:"
+                << _curr << std::endl  << ";" << std::endl << std::endl;
     }
 
     // Guarantees
@@ -239,17 +248,20 @@ void SlugsPrinter::_printSafety() {
                     if (inner->getOp() == op_future)
                         continue; // Is a Liveness Property.
                 }
-                _curr += "\n";
+                if(_curr != "")
+                    _curr += "\n\t& ";
+                else
+                    _curr += "\n\t";
                 uto->accept_visitor(*this);
             }
         }
         if (_curr != "")
-            fout << "[SYS_TRANS]"
-                 << _curr << std::endl << std::endl;
+            fout << "SYSTRANS:"
+                 << _curr << std::endl  << ";" << std::endl << std::endl;
     }
 }
 
-void SlugsPrinter::_printLiveness() {
+void GR1CPrinter::_printLiveness() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -275,15 +287,18 @@ void SlugsPrinter::_printLiveness() {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
                             uto->getFormula());
                     if (inner->getOp() == op_future) {
-                        _curr += "\n";
-                        uto->accept_visitor(*this);
+                        if(_curr != "")
+                            _curr += "\n\t& ";
+                        else
+                            _curr += "\n\t";
+                       uto->accept_visitor(*this);
                     }
                 }
             }
         }
         if (_curr != "")
-            fout << "[ENV_LIVENESS]"
-                 << _curr << std::endl << std::endl;
+            fout << "ENVGOAL:"
+                 << _curr << std::endl << ";" << std::endl << std::endl;
     }
 
     // Guarantees
@@ -315,7 +330,10 @@ void SlugsPrinter::_printLiveness() {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
                             uto->getFormula());
                     if( inner->getOp() == op_future ) {
-                        _curr += "\n\t";
+                        if(_curr != "")
+                            _curr += "\n\t& ";
+                        else
+                            _curr += "\n\t";
                         uto->accept_visitor(*this);
                     }
                 }
@@ -323,7 +341,7 @@ void SlugsPrinter::_printLiveness() {
             }
         }
         if (_curr != "")
-            fout << "[SYS_LIVENESS]"
-                  << _curr << std::endl << std::endl;
+            fout << "SYSGOAL:"
+                  << _curr << std::endl << ";" << std::endl << std::endl;
     }
 }

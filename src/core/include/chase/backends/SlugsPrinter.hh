@@ -37,26 +37,32 @@ namespace chase {
         int visitUnaryTemporalOperation(UnaryTemporalFormula &o) override;
         int visitBinaryTemporalOperation(BinaryTemporalFormula &o) override;
 
-
-
     protected:
 
         /// @brief The contract to be printed.
         Contract * _contract;
         /// @brief The file to print.
         std::ofstream fout;
-
+        /// @brief The current string being built by the visit.
         std::string _curr;
 
+        /// @brief Flag indicating if the visit of the AST reached a section
+        /// under a next operator.
         bool _inNext;
 
         /// @brief Procedure printing the variables declarations.
         void _printDeclarations();
 
+        /// @brief Procedure printing the Initial conditions of the GR1 spec.
         void _printInit();
+        /// @brief Procedure printing the Safety conditions of the GR1 spec.
         void _printSafety();
+        /// @brief Procedure printing the Liveness conditions of the GR1 spec.
         void _printLiveness();
 
+        /// @brief Function managing the visit when an object is generic.
+        /// @param o A pointer to the object to be visited.
+        /// @return The return value of the visitor.
         int _continueVisit( ChaseObject *o );
 
     };
