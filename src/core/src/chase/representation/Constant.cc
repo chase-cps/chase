@@ -12,8 +12,9 @@
 
 using namespace chase;
 
-Constant::Constant( Type * type, Name * name ) :
-    DataDeclaration( type, name )
+Constant::Constant( Type * type, Name * name, Value * value ) :
+    DataDeclaration( type, name ),
+    _value(value)
 {
     _node_type = constant_node;
 
@@ -63,4 +64,12 @@ std::string Constant::getString()
 int Constant::accept_visitor( BaseVisitor &v )
 {
     return v.visitConstant(*this);
+}
+
+void Constant::setValue(Value *value) {
+    _value = value;
+}
+
+Value *Constant::getValue() {
+    return _value;
 }

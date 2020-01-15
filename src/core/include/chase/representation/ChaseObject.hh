@@ -44,7 +44,7 @@ namespace chase {
         unaryBooleanOperation_node,
         binaryBooleanOperation_node,
         booleanConstant_node,
-        modalOperation_node,
+        modalFormula_node,
         large_boolean_formula_node,
         unaryTemporalOperation_node,
         binaryTemporalOperation_node,

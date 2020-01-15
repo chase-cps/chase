@@ -186,6 +186,10 @@ namespace chase {
         /// associated to a Vertex object.
         Vertex * getVertex( unsigned int vertex_id );
 
+        /// @brief Return the size of the graph, i.e., the number of nodes.
+        /// @return The number of nodes.
+        unsigned int getSize() const;
+
         /// @brief Function searching a Vertex by name in a graph. It returns
         /// the index of the vertex.
         /// @param name The name to search.

@@ -162,4 +162,8 @@ int Graph::getVertexIndex(std::string name)
     return -1;
 }
 
+unsigned int Graph::getSize() const {
+    return _size;
+}
+
 Graph::~Graph() = default;

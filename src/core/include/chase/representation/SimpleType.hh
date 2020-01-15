@@ -23,7 +23,7 @@ namespace chase {
             SimpleType();
 
             /// @brief Destructor.
-            ~SimpleType() override;
+            virtual ~SimpleType();
 
             /// @TODO Consider the possibility of defining constant types.
             /// Something that is able to represent const int.

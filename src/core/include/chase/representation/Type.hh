@@ -29,7 +29,7 @@ namespace chase {
             /// @brief Constructor.
             Type();
             /// @brief Destructor.
-            ~Type() override;
+            virtual ~Type();
 
             /// @brief Returns the type variant attribute.
             /// @return The type variant.

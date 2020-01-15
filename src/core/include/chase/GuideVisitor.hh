@@ -9,6 +9,7 @@
 #pragma  once
 
 #include "BaseVisitor.hh"
+
 #include <set>
 #include <list>
 #include <vector>
@@ -27,43 +28,56 @@ namespace chase {
 
         /// Visit functions
         //
+        /// @cond
+
+        /// Visit functions
+        //
         //  Values
-        virtual int visitRange( Range &o );
-        virtual int visitIntegerValue( IntegerValue &o );
-        virtual int visitRealValue( RealValue &o );
-        virtual int visitBooleanValue(BooleanValue &o );
-        virtual int visitExpression(Expression &o );
+        int visitRange( Range & ) override;
+        int visitIntegerValue( IntegerValue & ) override;
+        int visitRealValue( RealValue & ) override;
+        int visitBooleanValue(BooleanValue & ) override;
+        int visitExpression(Expression & ) override;
+        int visitIdentifier(Identifier & ) override;
 
-        virtual int visitIdentifier(Identifier &o);
-
-        /// Types
-        virtual int visitInteger( Integer &o );
-        virtual int visitReal( Real &o );
-        virtual int visitBoolean( Boolean &o );
+        // Types
+        int visitInteger( Integer & ) override;
+        int visitReal( Real & ) override;
+        int visitBoolean( Boolean & ) override;
 
 
-        /// Declarations
-        virtual int visitName( Name &o );
-        virtual int visitVariable( Variable &o );
-        virtual int visitConstant( Constant &o );
+        // Declarations
+        int visitName( Name & ) override;
+        int visitVariable( Variable & ) override;
+        int visitConstant( Constant & ) override;
 
-        /// Boolean Formulas
-        virtual int visitProposition( Proposition &o );
-        virtual int visitBooleanConstant( BooleanConstant &o );
-        virtual int visitBinaryBooleanOperation(BinaryBooleanFormula &o );
-        virtual int visitUnaryBooleanOperation(UnaryBooleanFormula &o );
-        virtual int visitLargeBooleanFormula(LargeBooleanFormula &o );
+        // Boolean Formulas
+        int visitProposition( Proposition & ) override;
+        int visitBooleanConstant( BooleanConstant & ) override;
+        int visitBinaryBooleanOperation(BinaryBooleanFormula & ) override;
+        int visitUnaryBooleanOperation(UnaryBooleanFormula & ) override;
+        int visitLargeBooleanFormula(LargeBooleanFormula & ) override;
 
-        virtual int visitModalOperation(ModalFormula &o );
-        virtual int visitUnaryTemporalOperation(UnaryTemporalFormula &o );
-        virtual int visitBinaryTemporalOperation(
-                BinaryTemporalFormula &o );
+        // Modal Formulas
+        int visitModalFormula(ModalFormula & ) override;
+        int visitUnaryTemporalOperation(UnaryTemporalFormula & ) override;
+        int visitBinaryTemporalOperation(BinaryTemporalFormula & ) override;
 
-        virtual int visitContract(Contract &o );
+        // Interfaces
+        int visitContract(Contract & ) override;
 
-        virtual int visitEdge( Edge &o );
-        virtual int visitVertex(Vertex &o);
-        virtual int visitGraph(Graph &o);
+        // Graphs
+        int visitGraph(Graph & ) override;
+        int visitEdge( Edge & ) override;
+        int visitVertex(Vertex & ) override;
+        /// @endcond
+
+        // Generic methods for continue the visit in special cases.
+
+        virtual int continueVisit( ChaseObject *o );
+        virtual int visitList( std::list< ChaseObject * > &l );
+        virtual int visitVector( std::vector< ChaseObject * > &v );
+        virtual int visitSet( std::set< ChaseObject * >  &s );
 
     protected:
 

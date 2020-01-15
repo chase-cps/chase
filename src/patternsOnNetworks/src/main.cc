@@ -29,7 +29,7 @@ int main( int argc, char * argv[] )
         SlugsPrinter printer;
         printer.print(c, parameters->fileOut);
     }
-
+    
     delete(c);
 
     return 0;
