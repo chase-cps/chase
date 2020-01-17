@@ -113,8 +113,7 @@ chase::GuideVisitor::visitUnaryBooleanOperation(chase::UnaryBooleanFormula &o)
 int
 chase::GuideVisitor::visitLargeBooleanFormula(chase::LargeBooleanFormula &o)
 {
-    auto v = reinterpret_cast< std::vector< ChaseObject * > * >(& o.operands);
-    return visitVector(*v);
+    return visitVector(o.operands);
 }
 
 int chase::GuideVisitor::visitModalFormula(chase::ModalFormula &o)
@@ -140,8 +139,7 @@ int chase::GuideVisitor::visitContract(chase::Contract &o)
 {
     int rv = visitName(*o.getName());
 
-    auto v = reinterpret_cast< std::list<ChaseObject *> *>(&o.declarations);
-    rv |= visitList(*v);
+    rv |= visitList(o.declarations);
 
     for (auto it = o.assumptions.begin(); it != o.assumptions.end(); ++it)
     {
@@ -313,29 +311,9 @@ int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
     return _rv;
 }
 
-int chase::GuideVisitor::visitList(std::list<ChaseObject *> &l) {
-    int rv = _rv;
-    for(auto it = l.begin(); it != l.end(); ++it)
-    {
-        rv |= continueVisit(*it);
-    }
-    return rv;
-}
 
-int chase::GuideVisitor::visitSet(std::set<ChaseObject *> &s) {
-    int rv = _rv;
-    for(auto it = s.begin(); it != s.end(); ++it)
-    {
-        rv |= continueVisit(*it);
-    }
-    return rv;
-}
 
-int chase::GuideVisitor::visitVector(std::vector<ChaseObject *> &v) {
-    int rv = _rv;
-    for(auto it = v.begin(); it != v.end(); ++it)
-    {
-        rv |= continueVisit(*it);
-    }
-    return rv;
-}
+
+
+
+

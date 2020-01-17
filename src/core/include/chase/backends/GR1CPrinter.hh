@@ -12,6 +12,7 @@
 
 namespace chase {
 
+    /// @brief Main class for the GR1C backend.
     class GR1CPrinter : public GuideVisitor {
     public:
         /// @brief Constructor.
@@ -25,6 +26,7 @@ namespace chase {
         /// @param path The path of the output file.
         void print(Contract * contract, std::string path);
 
+        /// @cond
 
         // Visit functions.
         int visitIntegerValue(IntegerValue &o) override;
@@ -37,6 +39,7 @@ namespace chase {
         int visitUnaryTemporalOperation(UnaryTemporalFormula &o) override;
         int visitBinaryTemporalOperation(BinaryTemporalFormula &o) override;
 
+        /// @endcond
 
 
     protected:

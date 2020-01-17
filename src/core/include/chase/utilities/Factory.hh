@@ -14,7 +14,11 @@
 namespace chase
 {
 
+    /// @brief Factory building a True boolean constant.
+    /// @return A pointer to a new object representing a True boolean constant.
     BooleanConstant * True();
+    /// @brief Factory building a False boolean constant.
+    /// @return A pointer to a new object representing a False boolean constant.
     BooleanConstant * False();
 
     /// @brief Factory for the NOT operation.

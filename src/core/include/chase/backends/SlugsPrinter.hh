@@ -12,6 +12,7 @@
 
 namespace chase {
 
+    /// @brief Main class for the SLUGS backend.
     class SlugsPrinter : public GuideVisitor {
     public:
         /// @brief Constructor.
@@ -26,6 +27,7 @@ namespace chase {
         void print(Contract * contract, std::string path);
 
 
+        /// @cond
         // Visit functions.
         int visitIntegerValue(IntegerValue &o) override;
         int visitExpression(Expression &o) override;
@@ -36,6 +38,8 @@ namespace chase {
         int visitUnaryBooleanOperation(UnaryBooleanFormula &o) override;
         int visitUnaryTemporalOperation(UnaryTemporalFormula &o) override;
         int visitBinaryTemporalOperation(BinaryTemporalFormula &o) override;
+
+        /// @endcond
 
     protected:
 
