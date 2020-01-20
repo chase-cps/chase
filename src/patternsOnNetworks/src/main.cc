@@ -15,9 +15,6 @@ int main( int argc, char * argv[] )
 {
     Params * parameters = parseCmdLine(argc, argv);
 
-    std::string path(getcwd(nullptr, 0));
-    std::cout << "MY PATH IS: " << path << std::endl;
-
     if(parameters == nullptr) return -1;
 
     // Start parsing the input file.
@@ -35,7 +32,7 @@ int main( int argc, char * argv[] )
         SlugsPrinter printer;
         printer.print(c, parameters->fileOut);
     }
-    
+
     delete(c);
     return 0;
 }
