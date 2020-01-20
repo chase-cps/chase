@@ -14,6 +14,7 @@ Proposition::Proposition() :
     _name(nullptr)
 {
     _node_type = proposition_node;
+    _type->setParent(this);
 }
 
 Proposition::~Proposition()
@@ -68,6 +69,7 @@ Value *Proposition::getValue() {
 
 void Proposition::setValue(Value *v) {
     _value = v;
+    if(_value->getParent() == nullptr ) _value->setParent(this);
 }
 
 Name *Proposition::getName() {
@@ -76,6 +78,7 @@ Name *Proposition::getName() {
 
 void Proposition::setName(Name *n) {
     _name = n;
+    if(_name->getParent() == nullptr ) _name->setParent(this);
 }
 
 int Proposition::accept_visitor(chase::BaseVisitor &v) {
@@ -88,5 +91,13 @@ std::string Proposition::getString() {
         ret = _name->getString();
     else if( _value->IsA() == expression_node )
         ret = static_cast< Expression * >(_value)->getString();
+    return ret;
+}
+
+Proposition * Proposition::clone()
+{
+    auto ret = new Proposition();
+    if( _name != nullptr ) ret->setName(_name->clone());
+    if( _value != nullptr ) ret->setValue(_value->clone());
     return ret;
 }

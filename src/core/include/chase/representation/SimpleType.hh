@@ -28,5 +28,9 @@ namespace chase {
             /// @TODO Consider the possibility of defining constant types.
             /// Something that is able to represent const int.
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            SimpleType * clone() override = 0;
+
     };
 }

@@ -39,6 +39,10 @@ namespace chase {
             /// @param name The Name to be setted.
             void setName( Name * name );
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Declaration * clone() override = 0;
+
         protected:
 
             /// @brief Name of the declaration.

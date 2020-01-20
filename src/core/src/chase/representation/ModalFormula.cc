@@ -52,4 +52,9 @@ std::string ModalFormula::getString() {
     return ret;
 }
 
+ModalFormula *ModalFormula::clone()
+{
+    return new ModalFormula(_operator, _formula->clone());
+}
+
 

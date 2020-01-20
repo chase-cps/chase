@@ -17,11 +17,9 @@ chase::GuideVisitor::GuideVisitor(int rv) :
 {
 }
 
-int chase::GuideVisitor::visitRange(chase::Range &o)
+int chase::GuideVisitor::visitRange(chase::Range &)
 {
-    int rv = continueVisit(o.getLeftValue());
-    rv |= continueVisit(o.getRightValue());
-    return rv;
+    return _rv;
 }
 
 int chase::GuideVisitor::visitIntegerValue(chase::IntegerValue &o )

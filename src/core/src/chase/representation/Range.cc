@@ -14,15 +14,9 @@ using namespace chase;
 
 Range::Range() :
     Value(),
-    _lbound( nullptr ),
-    _rbound( nullptr )
+    _lbound(INT32_MIN),
+    _rbound(INT32_MAX)
 {
-    _lbound = new IntegerValue(0);
-    _rbound = new IntegerValue(INT64_MAX);
-
-    _lbound->setParent( this );
-    _rbound->setParent( this );
-
     _node_type = range_node;
 
     _checkConsistency();
@@ -30,86 +24,54 @@ Range::Range() :
 
 Range::~Range()
 {
-    delete _lbound;
-    delete _rbound;
-}
-
-Range::Range( NumericValue * lbound,  NumericValue * rbound ) :
-    Value(),
-    _lbound(lbound),
-    _rbound(rbound)
-{
-    _lbound->setParent( this );
-    _rbound->setParent( this );
-    _node_type = range_node;
-
-    _checkConsistency();
 }
 
 Range::Range(int lbound, int rbound ) :
     Value(),
-    _lbound(nullptr),
-    _rbound(nullptr)
+    _lbound(lbound),
+    _rbound(rbound)
 {
-    _lbound = new IntegerValue(lbound);
-    _rbound = new IntegerValue(rbound);
-
     _node_type = range_node;
-
     _checkConsistency();
 }
 
-Range::Range( double lbound, double rbound ) :
-    Value(),
-    _lbound(nullptr),
-    _rbound(nullptr)
-{
-    _lbound = new RealValue(lbound);
-    _rbound = new RealValue(rbound);
-
-    _node_type = range_node;
-    
-    _checkConsistency();
-}
-
-
-void Range::setLeftValue( NumericValue * lbound )
+void Range::setLeftValue( int lbound )
 {
     _lbound = lbound;
     _checkConsistency();
 }
 
-void Range::setRightValue( NumericValue * rbound )
+void Range::setRightValue( int rbound )
 {
     _rbound = rbound;
     _checkConsistency();
 }
 
-NumericValue * Range::getLeftValue()
+int Range::getLeftValue()
 {
     return _lbound;
 }
 
-NumericValue * Range::getRightValue()
+int Range::getRightValue()
 {
     return _rbound;
 }  
 
 void Range::_checkConsistency()
 {
-    if( _lbound != nullptr && _rbound != nullptr )
-    {
-        /// @todo Implement here what should happen.
-    }
+    if(_lbound > _rbound)
+        messageError(
+                "Bad Range: " + std::to_string(_lbound) +
+                ":" + std::to_string(_rbound));
 }
 
 
 std::string Range::getString()
 {
     std::string ret("[");
-    ret += _lbound->getString();
+    ret += std::to_string(_lbound);
     ret += ", ";
-    ret += _rbound->getString();
+    ret += std::to_string(_rbound);
     ret += "]";
     return ret;
 }
@@ -120,11 +82,10 @@ int Range::accept_visitor( BaseVisitor &v )
 }
 
 Type *Range::getType() {
-    Type * left = _lbound->getType();
-    Type * right = _rbound->getType();
-
-    if( left->IsA() != integer_node || right->IsA() != integer_node )
-        return new Real();
-    else return new Integer();
-
+    return new Integer();
 }
+
+Range *Range::clone() {
+    return new Range(_lbound, _rbound);
+}
+

@@ -166,4 +166,9 @@ unsigned int Graph::getSize() const {
     return _size;
 }
 
+Graph *Graph::clone() {
+    /// \todo Manage the graph copy with correspondences.
+    return this;
+}
+
 Graph::~Graph() = default;

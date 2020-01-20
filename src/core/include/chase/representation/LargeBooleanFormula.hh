@@ -38,6 +38,11 @@ namespace chase {
         /// @param op The operator to set.
         void setOp(BooleanOperator op);
 
+        /// @brief Function to add a operand in the formula. It manages also the
+        /// parent link.
+        /// @param f The operand to add.
+        void addOperand( LogicFormula *f );
+
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be used.
         /// @return the return value of the visitor.
@@ -46,6 +51,10 @@ namespace chase {
         /// @brief Function to print the operation.
         /// @return the string representing the operation.
         std::string getString() override;
+
+        /// @brief Clone method.
+        /// @return The cloned object.
+        LargeBooleanFormula * clone() override;
 
     protected:
 

@@ -58,3 +58,10 @@ std::string RealValue::getString()
 {
     return std::to_string(_value);
 }
+
+RealValue * RealValue::clone()
+{
+    auto ret = new RealValue(_value);
+    ret->setType(_type->clone());
+    return ret;
+}

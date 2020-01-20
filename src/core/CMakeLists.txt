@@ -55,9 +55,9 @@ set(chase_library_representation
 
 set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/IOUtils.cc
-        ${SRC_CHASELIB_PATH}/utilities/Copy.cc
         ${SRC_CHASELIB_PATH}/utilities/UtilityFunctions.cc
         ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
+        ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
 )
 
 set(chase_library_backends

@@ -46,6 +46,8 @@ std::string Edge::getString() {
     return ret;
 }
 
+
+
 Edge::~Edge() = default;
 
 WeightedEdge::WeightedEdge(unsigned int source, unsigned int target,
@@ -79,5 +81,17 @@ std::string WeightedEdge::getString() {
     ret += " )--> ";
     ret += std::to_string(_target);
     return ret;
+}
+
+
+
+/// \todo Implement the clone for the edges.
+Edge *Edge::clone() {
+    return nullptr;
+}
+
+/// \todo Implement the clone for the WeightedEdges.
+WeightedEdge *WeightedEdge::clone() {
+    return nullptr;
 }
 

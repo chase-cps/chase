@@ -44,3 +44,9 @@ std::string Real::getString()
 {
     return "real";
 }
+
+Real * Real::clone() {
+    auto ret = new Real();
+    if( _range != nullptr ) ret->setRange(_range->clone());
+    return ret;
+}

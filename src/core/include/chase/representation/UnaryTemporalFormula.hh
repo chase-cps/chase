@@ -48,6 +48,10 @@ namespace chase {
         /// @return The string representing the formula.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return The cloned object.
+        UnaryTemporalFormula * clone() override;
+
     protected:
 
         /// @brief The temporal operator.

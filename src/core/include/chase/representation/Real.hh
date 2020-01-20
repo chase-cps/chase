@@ -43,6 +43,10 @@ namespace chase {
             /// @return the type as a string.
             std::string getString() override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Real * clone() override ;
+
         protected:
             /// @brief Range of value for the type.
             Range * _range;
