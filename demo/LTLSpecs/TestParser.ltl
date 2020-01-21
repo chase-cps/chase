@@ -7,6 +7,7 @@ Contract C_1:
 
     Assumptions:
         [](A=2);
+
     Guarantees:
         [](A=2 -> X(B));
 
@@ -15,6 +16,7 @@ Contract C_2:
 
     Assumptions:
         [](A=1);
+
     Guarantees:
         [](A=1 -> X(~C));
 

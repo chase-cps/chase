@@ -114,12 +114,16 @@ formula:
     '(' formula ')' |
     prop_formula;
 
+single_formula:
+    formula ENDST;
 
 assumptions:
-    assumptionsKW formula+ ENDST;
+    assumptionsKW ':'
+    single_formula+;
 
 guarantees:
-    guaranteesKW formula+ ENDST;
+    guaranteesKW ':'
+    single_formula+;
 
 
 declaration:
@@ -128,7 +132,10 @@ declaration:
     constantKW ID booleanKW logic_constant ENDST ;
 
 contract:
-    declaration+ assumptions guarantees;
+    contractKW ':' 
+    declaration+
+    assumptions
+    guarantees;
     
 problem:
     declaration+ contract+;
