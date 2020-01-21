@@ -71,10 +71,9 @@ Contract * DesignProblem::_generateContract()
     if(! assump.empty() ) {
         auto large = new LargeBooleanFormula();
         for (auto f : assump) {
-            large->operands.push_back(f);
+            large->addOperand(f);
         }
-        std::pair< semantic_domain , Specification * > p(temporal_logic, large);
-        _contract->assumptions.insert(p);
+        _contract->addAssumptions(temporal_logic, large);
     }
 
     // Perform Union of all the sets (ENV, SYS, INIT) for Guarantees.
@@ -87,10 +86,9 @@ Contract * DesignProblem::_generateContract()
     if(! guarant.empty() ) {
         auto large = new LargeBooleanFormula();
         for (auto f : guarant) {
-            large->operands.push_back(f);
+            large->addOperand(f);
         }
-        std::pair< semantic_domain , Specification * > p(temporal_logic, large);
-        _contract->guarantees.insert(p);
+        _contract->addGuarantees(temporal_logic, large);
     }
 
     return _contract;

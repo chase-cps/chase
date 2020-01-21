@@ -44,7 +44,7 @@ namespace chase {
         unaryBooleanOperation_node,
         binaryBooleanOperation_node,
         booleanConstant_node,
-        modalOperation_node,
+        modalFormula_node,
         large_boolean_formula_node,
         unaryTemporalOperation_node,
         binaryTemporalOperation_node,
@@ -88,6 +88,8 @@ namespace chase {
             /// @brief Print the object into a string.
             /// @return a String representation of the object.
             virtual std::string getString() = 0;
+
+            virtual ChaseObject * clone() = 0;
 
             /// @brief Function providing the node type ID of the object.
             /// @return the node type of the AST node.

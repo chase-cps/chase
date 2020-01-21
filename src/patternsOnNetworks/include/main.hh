@@ -12,8 +12,8 @@
 #include <fstream>
 
 #include "DSLParser/SpecBuilder.hh"
-#include "Backends/GR1CPrinter.hh"
-#include "Backends/SlugsPrinter.hh"
+#include "backends/GR1CPrinter.hh"
+#include "backends/SlugsPrinter.hh"
 
 namespace patternsOnNetworks
 {

@@ -51,4 +51,8 @@ std::string UnaryTemporalFormula::getString() {
     return ret;
 }
 
+UnaryTemporalFormula *UnaryTemporalFormula::clone() {
+    return new UnaryTemporalFormula(_op, _formula->clone());
+}
+
 UnaryTemporalFormula::~UnaryTemporalFormula() = default;

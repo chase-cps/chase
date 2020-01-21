@@ -53,6 +53,10 @@ namespace chase {
         /// @return Return the textual representation of the edge.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        Edge * clone() override;
+
     protected:
         /// @brief The index of the source node.
         unsigned int _source;
@@ -91,6 +95,10 @@ namespace chase {
         /// @return The string representing the node.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        Vertex * clone() override;
+
     protected:
         /// @brief Pointer to the name object of the vertex.
         Name * _name;
@@ -119,6 +127,10 @@ namespace chase {
         /// @brief Function to print the edge.
         /// @return Return the textual representation of the edge.
         std::string getString() override;
+
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        WeightedEdge * clone() override;
 
     protected:
         /// @brief The weight of the edge, expressed as a Value object.
@@ -186,6 +198,10 @@ namespace chase {
         /// associated to a Vertex object.
         Vertex * getVertex( unsigned int vertex_id );
 
+        /// @brief Return the size of the graph, i.e., the number of nodes.
+        /// @return The number of nodes.
+        unsigned int getSize() const;
+
         /// @brief Function searching a Vertex by name in a graph. It returns
         /// the index of the vertex.
         /// @param name The name to search.
@@ -210,6 +226,10 @@ namespace chase {
         /// @param id The ID of the node to where to start the search.
         /// @return a vector containing the indexes of the adjacent nodes to id.
         std::set< unsigned int > getAdjacentNodes( unsigned int id );
+
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        Graph * clone() override;
 
     protected:
 

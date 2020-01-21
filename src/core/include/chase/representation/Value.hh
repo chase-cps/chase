@@ -30,6 +30,10 @@ namespace chase {
             /// @return The type of the value;
             virtual Type * getType() = 0;
 
+            /// @brief Clone method.
+            /// @return A clone of the value.
+            Value * clone() override = 0;
+
         protected:
 
 

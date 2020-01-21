@@ -4,7 +4,7 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
-#include "Backends/SlugsPrinter.hh"
+#include "backends/SlugsPrinter.hh"
 
 using namespace chase;
 

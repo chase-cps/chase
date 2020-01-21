@@ -29,10 +29,10 @@ namespace chase {
         std::map< semantic_domain, Specification * > guarantees;
 
         /// @brief Constructor.
-        Contract(std::string name = std::string("contract"));
+        explicit Contract(std::string name = std::string("contract"));
 
         /// @brief Destructor.
-        ~Contract();
+        ~Contract() override;
 
         /// @brief Getter of the contract's name.
         /// @return The contract name.
@@ -65,6 +65,17 @@ namespace chase {
         /// @brief Function printing the contract into a string.
         /// @return The string representing the contract.
         std::string getString() override;
+
+        /// @brief Clone method.
+        /// @return A clone of the contract.
+        Contract * clone() override;
+
+
+        // -- Methods for the Contract Algebra.
+
+//        static Contract * composition(
+//                Contract * C1, Contract * C2,
+//                std::map< std::string, std::string >& correspondences );
 
     protected:
 

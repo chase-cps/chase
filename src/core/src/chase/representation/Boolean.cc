@@ -34,4 +34,9 @@ std::string Boolean::getString()
     return "boolean";
 }
 
+Boolean *Boolean::clone()
+{
+    return new Boolean();
+}
+
 

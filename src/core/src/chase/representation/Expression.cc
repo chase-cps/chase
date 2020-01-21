@@ -91,3 +91,7 @@ Type * Expression::getType()
     /// \todo Fix this to find the actual type.
 }
 
+Expression *Expression::clone() {
+    return new Expression(_op, _op1->clone(), _op2->clone());
+}
+

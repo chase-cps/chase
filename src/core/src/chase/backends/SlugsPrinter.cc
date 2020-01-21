@@ -4,22 +4,22 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
-#include "Backends/GR1CPrinter.hh"
+#include "backends/SlugsPrinter.hh"
 
 using namespace chase;
 
-GR1CPrinter::GR1CPrinter() :
+SlugsPrinter::SlugsPrinter() :
     GuideVisitor()
 {
 }
 
-GR1CPrinter::~GR1CPrinter()
+SlugsPrinter::~SlugsPrinter()
 {
     if(fout.is_open())
         fout.close();
 }
 
-void GR1CPrinter::print(Contract *contract, std::string path)
+void SlugsPrinter::print(Contract *contract, std::string path)
 {
     // Open the file and get the contract to be printed.
     _contract = contract;
@@ -36,10 +36,10 @@ void GR1CPrinter::print(Contract *contract, std::string path)
 
 
 
-void GR1CPrinter::_printDeclarations()
+void SlugsPrinter::_printDeclarations()
 {
     // Print the environment variables.
-    fout << "ENV:" << std::endl;
+    fout << "[INPUT]" << std::endl;
     for( auto vit = _contract->declarations.begin();
         vit != _contract->declarations.end(); ++vit)
     {
@@ -49,31 +49,23 @@ void GR1CPrinter::_printDeclarations()
         {
             std::string name = var->getName()->getString();
             Type * type = var->getType();
-            fout << "\t" << name;
+            fout << name;
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
-                if(lv->IsA() != integerValue_node ||
-                    rv->IsA() != integerValue_node)
-                    messageError("Non integer range.");
-
-                auto ilv = reinterpret_cast<IntegerValue *>(lv);
-                auto irv = reinterpret_cast<IntegerValue *>(rv);
-
-                fout << "[" << ilv->getValue()
-                    << ", " << irv->getValue() << "]";
+                fout << ": " << lv << "..." << rv;
             }
             fout << std::endl;
         }
     }
-    fout << ";" << std::endl << std::endl;
+    fout << std::endl << std::endl;
 
 
     // Print the system variables.
-    fout << "SYS:" << std::endl;
+    fout << "[OUTPUT]" << std::endl;
     for( auto vit = _contract->declarations.begin();
          vit != _contract->declarations.end(); ++vit)
     {
@@ -83,34 +75,26 @@ void GR1CPrinter::_printDeclarations()
         {
             std::string name = var->getName()->getString();
             Type * type = var->getType();
-            fout << "\t" << name;
+            fout << name;
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
-                if(lv->IsA() != integerValue_node ||
-                   rv->IsA() != integerValue_node)
-                    messageError("Non integer range.");
-
-                auto ilv = reinterpret_cast<IntegerValue *>(lv);
-                auto irv = reinterpret_cast<IntegerValue *>(rv);
-
-                fout << "[" << ilv->getValue()
-                     << ", " << irv->getValue() << "]";
+                fout << ": " << lv << "..." << rv;
             }
             fout << std::endl;
         }
     }
 
-    fout << ";" << std::endl << std::endl;
+    fout << std::endl << std::endl;
 
 }
 
 
 
-void GR1CPrinter::_printInit() {
+void SlugsPrinter::_printInit() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -131,18 +115,15 @@ void GR1CPrinter::_printInit() {
             if( lbf->operands[f]->IsA() != unaryTemporalOperation_node &&
                     lbf->operands[f]->IsA() != binaryTemporalOperation_node )
             {
-                if(_curr != "")
-                    _curr += "\n\t& ";
-                else
-                    _curr += "\n\t";
+                _curr += "\n";
 
                 lbf->operands[f]->accept_visitor(*this);
 
             }
         }
         if(_curr != "")
-            fout<< "ENVINIT:" << _curr
-                << std::endl << ";" << std::endl << std::endl;
+            fout<< "[ENV_INIT]" << _curr
+                << std::endl << std::endl;
     }
 
     // Guarantees
@@ -164,21 +145,18 @@ void GR1CPrinter::_printInit() {
             if( lbf->operands[f]->IsA() != unaryTemporalOperation_node &&
                 lbf->operands[f]->IsA() != binaryTemporalOperation_node )
             {
-                if(_curr != "")
-                    _curr += "\n\t& ";
-                else
-                    _curr += "\n\t";
+                _curr += "\n";
                 lbf->operands[f]->accept_visitor(*this);
             }
 
         }
         if(_curr != "")
-            fout<< "SYSINIT:" << _curr
-                << std::endl << ";" << std::endl << std::endl;
+            fout<< "[SYS_INIT]" << _curr
+                << std::endl << std::endl;
     }
 }
 
-void GR1CPrinter::_printSafety() {
+void SlugsPrinter::_printSafety() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -209,17 +187,14 @@ void GR1CPrinter::_printSafety() {
                     if( inner->getOp() == op_future )
                         continue; // Is a Liveness Property.
                 }
-                if(_curr != "")
-                    _curr += "\n\t& ";
-                else
-                    _curr += "\n\t";
+                _curr += "\n";
                 uto->accept_visitor(*this);
             }
         }
 
         if(_curr != "")
-            fout<< "ENVTRANS:"
-                << _curr << std::endl  << ";" << std::endl << std::endl;
+            fout<< "[ENV_TRANS]"
+                << _curr << std::endl << std::endl;
     }
 
     // Guarantees
@@ -248,20 +223,17 @@ void GR1CPrinter::_printSafety() {
                     if (inner->getOp() == op_future)
                         continue; // Is a Liveness Property.
                 }
-                if(_curr != "")
-                    _curr += "\n\t& ";
-                else
-                    _curr += "\n\t";
+                _curr += "\n";
                 uto->accept_visitor(*this);
             }
         }
         if (_curr != "")
-            fout << "SYSTRANS:"
-                 << _curr << std::endl  << ";" << std::endl << std::endl;
+            fout << "[SYS_TRANS]"
+                 << _curr << std::endl << std::endl;
     }
 }
 
-void GR1CPrinter::_printLiveness() {
+void SlugsPrinter::_printLiveness() {
     // Assumptions.
     auto formulae = _contract->assumptions.find(temporal_logic);
     if( formulae == _contract->assumptions.end() )
@@ -287,18 +259,15 @@ void GR1CPrinter::_printLiveness() {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
                             uto->getFormula());
                     if (inner->getOp() == op_future) {
-                        if(_curr != "")
-                            _curr += "\n\t& ";
-                        else
-                            _curr += "\n\t";
-                       uto->accept_visitor(*this);
+                        _curr += "\n";
+                        uto->accept_visitor(*this);
                     }
                 }
             }
         }
         if (_curr != "")
-            fout << "ENVGOAL:"
-                 << _curr << std::endl << ";" << std::endl << std::endl;
+            fout << "[ENV_LIVENESS]"
+                 << _curr << std::endl << std::endl;
     }
 
     // Guarantees
@@ -330,10 +299,7 @@ void GR1CPrinter::_printLiveness() {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
                             uto->getFormula());
                     if( inner->getOp() == op_future ) {
-                        if(_curr != "")
-                            _curr += "\n\t& ";
-                        else
-                            _curr += "\n\t";
+                        _curr += "\n\t";
                         uto->accept_visitor(*this);
                     }
                 }
@@ -341,7 +307,7 @@ void GR1CPrinter::_printLiveness() {
             }
         }
         if (_curr != "")
-            fout << "SYSGOAL:"
-                  << _curr << std::endl << ";" << std::endl << std::endl;
+            fout << "[SYS_LIVENESS]"
+                  << _curr << std::endl << std::endl;
     }
 }

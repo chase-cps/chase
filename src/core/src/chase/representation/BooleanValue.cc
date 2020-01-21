@@ -58,3 +58,7 @@ std::string BooleanValue::getString()
     if( _value ) return std::string("true");
     else return std::string("false");
 }
+
+BooleanValue *BooleanValue::clone() {
+    return new BooleanValue(_value);
+}

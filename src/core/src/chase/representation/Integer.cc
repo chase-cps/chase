@@ -15,10 +15,11 @@ using namespace chase;
 
 Integer::Integer() :
     SimpleType(),
-    _signed(false),
+    _signed(true),
     _range(nullptr)
 {
     _node_type = integer_node;
+    _range = new Range(-2147483647, 2147483647);
 }
 
 Integer::Integer(int l, int r) :
@@ -29,12 +30,15 @@ Integer::Integer(int l, int r) :
     _node_type = integer_node;
 }
 
-Integer::Integer(double l, double r) :
-        SimpleType(),
-        _signed(l < 0),
-        _range(new Range(l,r))
-{
 
+
+Integer::Integer(Range *r) :
+    SimpleType(),
+    _range(r)
+{
+    _node_type = integer_node;
+    if( r->getParent() == nullptr ) r->setParent(this);
+    if(r->getLeftValue() < 0) _signed = true;
 }
 
 
@@ -62,4 +66,11 @@ std::string Integer::getString()
 {
     return "integer";
 }
+
+Integer *Integer::clone()
+{
+    return new Integer(_range->clone());
+}
+
+
 

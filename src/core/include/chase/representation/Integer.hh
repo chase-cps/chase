@@ -26,10 +26,8 @@ namespace chase {
             /// @param l The leff bound of the range.
             /// @param r The right bound of the range.
             Integer( int l, int r );
-            /// @param l The leff bound of the range.
-            /// @param r The right bound of the range.
-            /// @brief Constructor with integer range.
-            Integer( double l, double r );
+
+            explicit Integer( Range * r );
 
             /// @brief Destructor.
             ~Integer() override;
@@ -50,6 +48,10 @@ namespace chase {
             /// @brief Function printing the type.
             /// @return the type as a string.
             std::string getString() override;
+
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Integer * clone() override;
 
 
         protected:

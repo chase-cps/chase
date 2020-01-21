@@ -7,6 +7,8 @@
 
 set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
 
+
+
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
@@ -53,14 +55,22 @@ set(chase_library_representation
 
 set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/IOUtils.cc
-        ${SRC_CHASELIB_PATH}/utilities/Copy.cc
         ${SRC_CHASELIB_PATH}/utilities/UtilityFunctions.cc
         ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
+        ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
+)
+
+set(chase_library_backends
+        ${SRC_CHASELIB_PATH}/backends/GR1CPrinter.cc
+        ${SRC_CHASELIB_PATH}/backends/GR1CPrinter_visit.cc
+        ${SRC_CHASELIB_PATH}/backends/SlugsPrinter.cc
+        ${SRC_CHASELIB_PATH}/backends/SlugsPrinter_visit.cc
 )
 
 set(chase_library
         ${chase_library_representation}
         ${chase_library_utilities}
+        ${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
         )

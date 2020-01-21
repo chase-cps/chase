@@ -29,10 +29,6 @@ set(pon_tool_srcs
         ${PON_SRC}/DSLParser/ProblemDefinitions.cc
         ${PON_SRC}/DSLParser/DesignProblem_patterns.cc
         ${PON_SRC}/DSLParser/DesignProblem_support.cc
-        ${PON_SRC}/Backends/GR1CPrinter.cc
-        ${PON_SRC}/Backends/GR1CPrinter_visit.cc
-        ${PON_SRC}/Backends/SlugsPrinter.cc
-        ${PON_SRC}/Backends/SlugsPrinter_visit.cc
         )
 
 if(COMMAND cmake_policy)

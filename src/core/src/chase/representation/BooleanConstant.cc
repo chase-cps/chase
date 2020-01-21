@@ -29,3 +29,8 @@ std::string BooleanConstant::getString() {
 bool BooleanConstant::getValue() {
     return _value;
 }
+
+BooleanConstant *BooleanConstant::clone()
+{
+    return new BooleanConstant(_value);
+}

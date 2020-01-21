@@ -10,3 +10,4 @@ ref.spc
 .idea/chase.ims
 obj_linux_64
 .idea/chase.iml
+tests/

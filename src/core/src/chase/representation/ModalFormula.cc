@@ -12,7 +12,7 @@ ModalFormula::ModalFormula(ModalOperator op, LogicFormula * formula) :
     _operator(op),
     _formula(formula)
 {
-    _node_type = modalOperation_node;
+    _node_type = modalFormula_node;
     if( formula->getParent() != nullptr )
         messageWarning("Formula with parent already set:", formula);
     formula->setParent(this);
@@ -41,7 +41,7 @@ void ModalFormula::setFormula(LogicFormula * formula)
 }
 
 int ModalFormula::accept_visitor(chase::BaseVisitor &v) {
-    return v.visitModalOperation(*this);
+    return v.visitModalFormula(*this);
 }
 
 std::string ModalFormula::getString() {
@@ -50,6 +50,11 @@ std::string ModalFormula::getString() {
     ret += _formula->getString();
     ret += ")";
     return ret;
+}
+
+ModalFormula *ModalFormula::clone()
+{
+    return new ModalFormula(_operator, _formula->clone());
 }
 
 

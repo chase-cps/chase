@@ -8,6 +8,7 @@
 
 
 #include "GuideVisitor.hh"
+#include "representation.hh"
 
 chase::GuideVisitor::~GuideVisitor() = default;
 
@@ -16,103 +17,301 @@ chase::GuideVisitor::GuideVisitor(int rv) :
 {
 }
 
-int chase::GuideVisitor::visitRange(chase::Range &o) {
-    return BaseVisitor::visitRange(o);
+int chase::GuideVisitor::visitRange(chase::Range &)
+{
+    return _rv;
 }
 
-int chase::GuideVisitor::visitIntegerValue(chase::IntegerValue &o) {
-    return BaseVisitor::visitIntegerValue(o);
+int chase::GuideVisitor::visitIntegerValue(chase::IntegerValue &o )
+{
+    return continueVisit(o.getType());
 }
 
-int chase::GuideVisitor::visitRealValue(chase::RealValue &o) {
-    return BaseVisitor::visitRealValue(o);
+int chase::GuideVisitor::visitRealValue(chase::RealValue &o )
+{
+    return continueVisit(o.getType());
 }
 
-int chase::GuideVisitor::visitBooleanValue(chase::BooleanValue &o) {
-    return BaseVisitor::visitBooleanValue(o);
+int chase::GuideVisitor::visitBooleanValue(chase::BooleanValue &o )
+{
+    return continueVisit(o.getType());
 }
 
-int chase::GuideVisitor::visitExpression(chase::Expression &o) {
-    return BaseVisitor::visitExpression(o);
+int chase::GuideVisitor::visitExpression(chase::Expression &o)
+{
+    int rv = continueVisit(o.getOp1());
+    rv |= continueVisit(o.getOp2());
+    return rv;
 }
 
-int chase::GuideVisitor::visitIdentifier(chase::Identifier &o) {
-    return BaseVisitor::visitIdentifier(o);
+int chase::GuideVisitor::visitIdentifier(chase::Identifier &o)
+{
+    return continueVisit(o.getType());
 }
 
-int chase::GuideVisitor::visitInteger(chase::Integer &o) {
-    return BaseVisitor::visitInteger(o);
+int chase::GuideVisitor::visitInteger(chase::Integer &o)
+{
+    if( o.getRange() == nullptr ) return _rv;
+    return visitRange(*o.getRange());
 }
 
-int chase::GuideVisitor::visitReal(chase::Real &o) {
-    return BaseVisitor::visitReal(o);
+int chase::GuideVisitor::visitReal(chase::Real &o)
+{
+    if( o.getRange() == nullptr ) return _rv;
+    return visitRange(*o.getRange());
 }
 
-int chase::GuideVisitor::visitBoolean(chase::Boolean &o) {
-    return BaseVisitor::visitBoolean(o);
+int chase::GuideVisitor::visitBoolean(chase::Boolean & )
+{
+    return _rv;
 }
 
-int chase::GuideVisitor::visitName(chase::Name &o) {
-    return BaseVisitor::visitName(o);
+int chase::GuideVisitor::visitName(chase::Name & ) {
+    return _rv;
 }
 
 int chase::GuideVisitor::visitVariable(chase::Variable &o) {
-    return BaseVisitor::visitVariable(o);
+    int rv = visitName(* o.getName());
+    rv |= continueVisit(o.getType());
+    return rv;
 }
 
 int chase::GuideVisitor::visitConstant(chase::Constant &o) {
-    return BaseVisitor::visitConstant(o);
+    int rv = visitName(* o.getName());
+    rv |= continueVisit(o.getType());
+    rv |= continueVisit(o.getValue());
+    return rv;
 }
 
 int chase::GuideVisitor::visitProposition(chase::Proposition &o) {
-    return BaseVisitor::visitProposition(o);
+    int rv = visitName(* o.getName());
+    rv |= continueVisit(o.getType());
+    rv |= continueVisit(o.getValue());
+    return rv;
 }
 
-int chase::GuideVisitor::visitBooleanConstant(chase::BooleanConstant &o) {
-    return BaseVisitor::visitBooleanConstant(o);
+int chase::GuideVisitor::visitBooleanConstant(chase::BooleanConstant &) {
+    return _rv;
 }
 
 int chase::GuideVisitor::visitBinaryBooleanOperation(
-        chase::BinaryBooleanFormula &o) {
-    return BaseVisitor::visitBinaryBooleanOperation(o);
+        chase::BinaryBooleanFormula &o)
+{
+    int rv = continueVisit(o.getOp1());
+    rv |= continueVisit(o.getOp2());
+    return rv;
 }
 
 int
-chase::GuideVisitor::visitUnaryBooleanOperation(chase::UnaryBooleanFormula &o) {
-    return BaseVisitor::visitUnaryBooleanOperation(o);
+chase::GuideVisitor::visitUnaryBooleanOperation(chase::UnaryBooleanFormula &o)
+{
+    return continueVisit(o.getOp1());
 }
 
 int
-chase::GuideVisitor::visitLargeBooleanFormula(chase::LargeBooleanFormula &o) {
-    return BaseVisitor::visitLargeBooleanFormula(o);
+chase::GuideVisitor::visitLargeBooleanFormula(chase::LargeBooleanFormula &o)
+{
+    return visitVector(o.operands);
 }
 
-int chase::GuideVisitor::visitModalOperation(chase::ModalFormula &o) {
-    return BaseVisitor::visitModalOperation(o);
+int chase::GuideVisitor::visitModalFormula(chase::ModalFormula &o)
+{
+    return continueVisit(o.getFormula());
 }
 
 int chase::GuideVisitor::visitUnaryTemporalOperation(
-        chase::UnaryTemporalFormula &o) {
-    return BaseVisitor::visitUnaryTemporalOperation(o);
+        chase::UnaryTemporalFormula &o)
+{
+    return continueVisit(o.getFormula());
 }
 
 int chase::GuideVisitor::visitBinaryTemporalOperation(
-        chase::BinaryTemporalFormula &o) {
-    return BaseVisitor::visitBinaryTemporalOperation(o);
+        chase::BinaryTemporalFormula &o)
+{
+    int rv = continueVisit(o.getFormula1());
+    rv |= continueVisit(o.getFormula2());
+    return rv;
 }
 
-int chase::GuideVisitor::visitContract(chase::Contract &o) {
-    return BaseVisitor::visitContract(o);
+int chase::GuideVisitor::visitContract(chase::Contract &o)
+{
+    int rv = visitName(*o.getName());
+
+    rv |= visitList(o.declarations);
+
+    for (auto it = o.assumptions.begin(); it != o.assumptions.end(); ++it)
+    {
+        rv |= continueVisit((*it).second);
+    }
+
+    for (auto it = o.guarantees.begin(); it != o.guarantees.end(); ++it)
+    {
+        rv |= continueVisit((*it).second);
+    }
+
+    return rv;
 }
 
-int chase::GuideVisitor::visitEdge(chase::Edge &o) {
-    return BaseVisitor::visitEdge(o);
+int chase::GuideVisitor::visitEdge(chase::Edge &o)
+{
+    WeightedEdge * w = dynamic_cast< WeightedEdge * >(&o);
+    if( w != nullptr )
+        return continueVisit( w->getWeight() );
+    else
+        return _rv;
 }
 
 int chase::GuideVisitor::visitVertex(chase::Vertex &o) {
-    return BaseVisitor::visitVertex(o);
+    return visitName(*o.getName());
 }
 
 int chase::GuideVisitor::visitGraph(chase::Graph &o) {
-    return BaseVisitor::visitGraph(o);
+    int rv = _rv;
+    for(size_t i = 0; i < o.getSize(); ++i)
+    {
+        rv |= visitVertex(* o.getVertex(i));
+    }
+
+    for( size_t i = 0; i < o.getSize(); ++i )
+        for( size_t j = 0; j < o.getSize(); ++j )
+        {
+            Edge * e = o.getEdge(i, j);
+            if(e != nullptr)
+                rv |= visitEdge(*e);
+        }
+    return rv;
 }
+
+
+
+
+
+
+int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
+{
+    // If o is Null, then it means that something is missing. In general,
+    // it may be ok. Consider the case of a proposition with no value assigned
+    // yet: in general it is like that.
+    if( o == nullptr ) return _rv;
+
+    switch(o->IsA())
+    {
+        // Values.
+        case range_node:{
+            auto v = reinterpret_cast< Range * >(o);
+            return v->accept_visitor(*this);
+        }
+        case integerValue_node:{
+            auto v = reinterpret_cast< IntegerValue * >(o);
+            return v->accept_visitor(*this);
+        }
+        case realValue_node:{
+            auto v = reinterpret_cast< RealValue * >(o);
+            return v->accept_visitor(*this);
+        }
+        case booleanValue_node:{
+            auto v = reinterpret_cast< BooleanValue * >(o);
+            return v->accept_visitor(*this);
+        }
+        case expression_node: {
+            auto v = reinterpret_cast< Expression *>(o);
+            return v->accept_visitor(*this);
+        }
+        case identifier_node: {
+            auto v = reinterpret_cast< Identifier * > (o);
+            return v->accept_visitor(*this);
+        }
+
+        // Types
+        case integer_node: {
+            auto v = reinterpret_cast< Integer * > (o);
+            return v->accept_visitor(*this);
+        }
+        case real_node: {
+            auto v = reinterpret_cast< Real * > (o);
+            return v->accept_visitor(*this);
+        }
+        case boolean_node: {
+            auto v = reinterpret_cast< Boolean * > (o);
+            return v->accept_visitor(*this);
+        }
+
+        // Declaration
+        case name_node : {
+            auto v = reinterpret_cast< Name * > (o);
+            return v->accept_visitor(*this);
+        }
+        case variable_node : {
+            auto v = reinterpret_cast< Variable * > (o);
+            return v->accept_visitor(*this);
+        }
+        case constant_node : {
+            auto v = reinterpret_cast< Constant * > (o);
+            return v->accept_visitor(*this);
+        }
+
+        // Boolean Formulas
+        case proposition_node : {
+            auto v = reinterpret_cast< Proposition * > (o);
+            return v->accept_visitor(*this);
+        }
+        case booleanConstant_node: {
+            auto v = reinterpret_cast< BooleanConstant * > (o);
+            return v->accept_visitor(*this);
+        }
+        case binaryBooleanOperation_node: {
+            auto v = reinterpret_cast< BinaryBooleanFormula * > (o);
+            return v->accept_visitor(*this);
+        }
+        case unaryBooleanOperation_node: {
+            auto v = reinterpret_cast< UnaryBooleanFormula *>(o);
+            return v->accept_visitor(*this);
+        }
+
+        case large_boolean_formula_node: {
+            auto v = reinterpret_cast< LargeBooleanFormula *>(o);
+            return v->accept_visitor(*this);
+        }
+
+        case modalFormula_node: {
+            auto v = reinterpret_cast< ModalFormula * >(o);
+            return v->accept_visitor(*this);
+        }
+
+        case unaryTemporalOperation_node: {
+            auto v = reinterpret_cast< UnaryTemporalFormula *>(o);
+            return v->accept_visitor(*this);
+        }
+        case binaryTemporalOperation_node: {
+            auto v = reinterpret_cast< BinaryTemporalFormula *>(o);
+            return v->accept_visitor(*this);
+        }
+
+        // Graphs
+
+        case graph_node : {
+            auto v = reinterpret_cast< Graph *>(o);
+            return v->accept_visitor(*this);
+        }
+        case graph_edge_node : {
+            auto v = reinterpret_cast< Edge *>(o);
+            return v->accept_visitor(*this);
+        }
+        case graph_vertex_node : {
+            auto v = reinterpret_cast< Vertex *>(o);
+            return v->accept_visitor(*this);
+        }
+
+        default:
+            messageError("Unsupported formula.");
+            break;
+    }
+    return _rv;
+}
+
+
+
+
+
+
+

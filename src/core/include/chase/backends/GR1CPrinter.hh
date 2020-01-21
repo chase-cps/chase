@@ -1,6 +1,6 @@
 /**
- * @author      <a href="mailto:stefano.spellini@univr.it">Stefano Spellini</a>
- * @date        12/06/2019
+ * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
+ * @date        12/3/2019
  *              This project is released under the 3-Clause BSD License.
  *
  */
@@ -12,19 +12,21 @@
 
 namespace chase {
 
-    class SlugsPrinter : public GuideVisitor {
+    /// @brief Main class for the GR1C backend.
+    class GR1CPrinter : public GuideVisitor {
     public:
         /// @brief Constructor.
-        SlugsPrinter();
+        GR1CPrinter();
 
         /// @brief Destructor.
-        ~SlugsPrinter();
+        ~GR1CPrinter();
 
         /// @brief Function printing on the file.
         /// @param contract The contract to be printed.
         /// @param path The path of the output file.
         void print(Contract * contract, std::string path);
 
+        /// @cond
 
         // Visit functions.
         int visitIntegerValue(IntegerValue &o) override;
@@ -37,6 +39,7 @@ namespace chase {
         int visitUnaryTemporalOperation(UnaryTemporalFormula &o) override;
         int visitBinaryTemporalOperation(BinaryTemporalFormula &o) override;
 
+        /// @endcond
 
 
     protected:

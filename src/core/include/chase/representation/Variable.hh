@@ -56,6 +56,10 @@ namespace chase {
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Variable * clone() override;
+
         protected:
 
             /// @brief The causality of the variable.

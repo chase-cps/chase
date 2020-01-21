@@ -9,11 +9,15 @@
 #pragma  once
 
 #include "BaseVisitor.hh"
+
+#include "utilities/IOUtils.hh"
+
 #include <set>
 #include <list>
 #include <vector>
 
 namespace chase {
+
 
     class GuideVisitor : public BaseVisitor {
 
@@ -25,49 +29,111 @@ namespace chase {
         /// @brief Destructor.
         ~GuideVisitor() override;
 
+        /// Visit functions
+        //
         /// @cond
 
         /// Visit functions
         //
         //  Values
-        virtual int visitRange( Range &o );
-        virtual int visitIntegerValue( IntegerValue &o );
-        virtual int visitRealValue( RealValue &o );
-        virtual int visitBooleanValue(BooleanValue &o );
-        virtual int visitExpression(Expression &o );
+        int visitRange( Range & ) override;
+        int visitIntegerValue( IntegerValue & ) override;
+        int visitRealValue( RealValue & ) override;
+        int visitBooleanValue(BooleanValue & ) override;
+        int visitExpression(Expression & ) override;
+        int visitIdentifier(Identifier & ) override;
 
-        virtual int visitIdentifier(Identifier &o);
-
-        /// Types
-        virtual int visitInteger( Integer &o );
-        virtual int visitReal( Real &o );
-        virtual int visitBoolean( Boolean &o );
+        // Types
+        int visitInteger( Integer & ) override;
+        int visitReal( Real & ) override;
+        int visitBoolean( Boolean & ) override;
 
 
-        /// Declarations
-        virtual int visitName( Name &o );
-        virtual int visitVariable( Variable &o );
-        virtual int visitConstant( Constant &o );
+        // Declarations
+        int visitName( Name & ) override;
+        int visitVariable( Variable & ) override;
+        int visitConstant( Constant & ) override;
 
-        /// Boolean Formulas
-        virtual int visitProposition( Proposition &o );
-        virtual int visitBooleanConstant( BooleanConstant &o );
-        virtual int visitBinaryBooleanOperation(BinaryBooleanFormula &o );
-        virtual int visitUnaryBooleanOperation(UnaryBooleanFormula &o );
-        virtual int visitLargeBooleanFormula(LargeBooleanFormula &o );
+        // Boolean Formulas
+        int visitProposition( Proposition & ) override;
+        int visitBooleanConstant( BooleanConstant & ) override;
+        int visitBinaryBooleanOperation(BinaryBooleanFormula & ) override;
+        int visitUnaryBooleanOperation(UnaryBooleanFormula & ) override;
+        int visitLargeBooleanFormula(LargeBooleanFormula & ) override;
 
-        virtual int visitModalOperation(ModalFormula &o );
-        virtual int visitUnaryTemporalOperation(UnaryTemporalFormula &o );
-        virtual int visitBinaryTemporalOperation(
-                BinaryTemporalFormula &o );
+        // Modal Formulas
+        int visitModalFormula(ModalFormula & ) override;
+        int visitUnaryTemporalOperation(UnaryTemporalFormula & ) override;
+        int visitBinaryTemporalOperation(BinaryTemporalFormula & ) override;
 
-        virtual int visitContract(Contract &o );
+        // Interfaces
+        int visitContract(Contract & ) override;
 
-        virtual int visitEdge( Edge &o );
-        virtual int visitVertex(Vertex &o);
-        virtual int visitGraph(Graph &o);
-
+        // Graphs
+        int visitGraph(Graph & ) override;
+        int visitEdge( Edge & ) override;
+        int visitVertex(Vertex & ) override;
         /// @endcond
+
+        // Generic methods for continue the visit in special cases.
+
+        /// @brief Method guiding the visit when the object type in the AST is
+        /// not known.
+        /// @param o A pointer to the object to visit.
+        /// @return T the standard return value of the visitor.
+        virtual int continueVisit( ChaseObject *o );
+
+        /// @brief Method to visit a list.
+        /// @param l the list to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitList(std::list<T *> &l)
+        {
+            int rv = _rv;
+            for(auto it = l.begin(); it != l.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit List: wrong object in list");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
+
+        /// @brief Method to visit a vector.
+        /// @param v the vector to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitVector(std::vector<T *> &v) {
+            int rv = _rv;
+            for(auto it = v.begin(); it != v.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit Vector: wrong object in vector");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
+
+        /// @brief Method to visit a set.
+        /// @param s the set to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitSet(std::set<T *> &s) {
+            int rv = _rv;
+            for(auto it = s.begin(); it != s.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit Set: wrong object in set");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
 
     protected:
 

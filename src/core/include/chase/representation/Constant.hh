@@ -20,8 +20,12 @@ namespace chase {
         public:
             /// @brief Constructor.
             /// @param type The name of the declared constant.
-            /// @param name The name of the declared constant.          
-            explicit Constant( Type * type = nullptr, Name * name = nullptr );
+            /// @param name The name of the declared constant.
+            /// @param value The value of the declared constant.
+            explicit Constant(
+                    Type * type = nullptr,
+                    Name * name = nullptr,
+                    Value * value = nullptr );
             
             /// @brief Destructor.
             ~Constant() override;
@@ -35,6 +39,14 @@ namespace chase {
             /// @return
             Constant & operator=( const Constant &o );
 
+            /// @brief Getter for the value.
+            /// @return A pointer to the value.
+            Value * getValue();
+
+            /// @brief Setter for the value.
+            /// @param value A pointer to the value.
+            void setValue(Value * value);
+
             /// @brief Function to print the constant.
             /// @return The textual representation of the constant.
             std::string getString() override;
@@ -44,6 +56,12 @@ namespace chase {
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Constant * clone() override;
+
         protected:
+            /// @brief Value of the constant.
+            Value * _value;
     };
 }

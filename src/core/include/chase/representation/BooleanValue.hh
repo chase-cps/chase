@@ -48,6 +48,10 @@ namespace chase {
             /// @brief Print function.
             std::string getString() override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            BooleanValue * clone() override;
+
         protected:
             /// @brief Stored boolean value.
             bool _value;

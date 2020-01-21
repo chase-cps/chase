@@ -29,7 +29,7 @@ namespace chase {
             /// @brief Constructor.
             Type();
             /// @brief Destructor.
-            ~Type() override;
+            virtual ~Type();
 
             /// @brief Returns the type variant attribute.
             /// @return The type variant.
@@ -48,6 +48,10 @@ namespace chase {
             /// A negative value otherwise.
             /// @param v a Visitor class visiting the type.
             int accept_visitor(chase::BaseVisitor & v ) override = 0;
+
+            /// @brief Clone method.
+            /// @return clone of the object.
+            Type * clone() override = 0;
 
         protected:
 

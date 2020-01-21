@@ -39,7 +39,7 @@ int BaseVisitor::visitProposition(Proposition &) {return 0;}
 int BaseVisitor::visitUnaryBooleanOperation(UnaryBooleanFormula &){return 0;}
 int BaseVisitor::visitBinaryBooleanOperation(BinaryBooleanFormula &){return 0;}
 int BaseVisitor::visitBooleanConstant(BooleanConstant &) {return 0;}
-int BaseVisitor::visitModalOperation(ModalFormula &) {return 0;}
+int BaseVisitor::visitModalFormula(ModalFormula &) {return 0;}
 
 int BaseVisitor::visitBinaryTemporalOperation(BinaryTemporalFormula &) {
     return 0;

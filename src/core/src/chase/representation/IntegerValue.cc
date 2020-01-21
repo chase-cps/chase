@@ -60,3 +60,10 @@ std::string IntegerValue::getString()
 {
     return std::to_string(_value);
 }
+
+IntegerValue * IntegerValue::clone() {
+    auto ret = new IntegerValue(_value);
+    ret->setType(_type->clone());
+    return ret;
+}
+

@@ -12,6 +12,7 @@ using namespace chase;
 int main( int argc, char * argv[] )
 {
     Params * parameters = parseCmdLine(argc, argv);
+
     if(parameters == nullptr) return -1;
 
     // Start parsing the input file.
@@ -29,9 +30,8 @@ int main( int argc, char * argv[] )
         SlugsPrinter printer;
         printer.print(c, parameters->fileOut);
     }
-
+    
     delete(c);
-
     return 0;
 }
 
@@ -97,7 +97,7 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
         size_t firstindex = parameters->fileIn.find_last_of('/');
         if( firstindex > 0 ) ++firstindex;
         std::string rawname = parameters->fileIn.substr(firstindex, lastindex-firstindex);
-        if( parameters->backend.empty() || parameters->backend == "gr1c" )
+        if( parameters->backend == "gr1c" )
             rawname += ".spc";
         else if ( parameters->backend == "slugs" )  
             rawname += ".structuredslugs";
@@ -113,6 +113,7 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
     {
         printHelp();
         f.close();
+        std::cout << "fileIn: " << parameters->fileIn.c_str() << std::endl;
         exit(-1);
     }
     f.close();

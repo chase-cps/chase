@@ -46,3 +46,7 @@ int Name::accept_visitor( BaseVisitor & v )
 {
     return v.visitName(*this);
 }
+
+Name * Name::clone() {
+    return new Name(_name);
+}

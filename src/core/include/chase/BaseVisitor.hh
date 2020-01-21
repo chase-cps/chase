@@ -44,37 +44,39 @@ namespace chase{
             virtual int visitRealValue( RealValue & );
             virtual int visitBooleanValue(BooleanValue & );
             virtual int visitExpression(Expression & );
-
             virtual int visitIdentifier(Identifier &);
 
-            /// Types
+            // Types
             virtual int visitInteger( Integer & );
             virtual int visitReal( Real & );
             virtual int visitBoolean( Boolean & );
 
 
-            /// Declarations
+            // Declarations
             virtual int visitName( Name & );
             virtual int visitVariable( Variable & );
             virtual int visitConstant( Constant & );
 
-            /// Boolean Formulas
+            // Boolean Formulas
             virtual int visitProposition( Proposition & );
             virtual int visitBooleanConstant( BooleanConstant & );
             virtual int visitBinaryBooleanOperation(BinaryBooleanFormula & );
             virtual int visitUnaryBooleanOperation(UnaryBooleanFormula & );
             virtual int visitLargeBooleanFormula(LargeBooleanFormula & );
 
-            virtual int visitModalOperation(ModalFormula & );
+            // Modal Formulas
+            virtual int visitModalFormula(ModalFormula & );
             virtual int visitUnaryTemporalOperation(UnaryTemporalFormula & );
             virtual int visitBinaryTemporalOperation(
                     BinaryTemporalFormula & );
 
+            // Interfaces
             virtual int visitContract(Contract & );
 
+            // Graphs
+            virtual int visitGraph(Graph &);
             virtual int visitEdge( Edge & );
             virtual int visitVertex(Vertex &);
-            virtual int visitGraph(Graph &);
             /// @endcond
 
     };
