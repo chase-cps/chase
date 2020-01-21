@@ -87,11 +87,11 @@ std::string WeightedEdge::getString() {
 
 /// \todo Implement the clone for the edges.
 Edge *Edge::clone() {
-    return nullptr;
+    return new Edge(_source, _target);
 }
 
 /// \todo Implement the clone for the WeightedEdges.
 WeightedEdge *WeightedEdge::clone() {
-    return nullptr;
+    return new WeightedEdge(_source, _target, _weight->clone());
 }
 
