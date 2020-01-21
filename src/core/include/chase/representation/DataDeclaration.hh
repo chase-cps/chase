@@ -34,6 +34,10 @@ namespace chase {
             /// @param t The type of the declared object.
             void setType( Type * t );
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            DataDeclaration * clone() override = 0;
+
         protected:
 
             /// @brief The type of the object represented by the declaration.

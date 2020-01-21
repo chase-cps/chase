@@ -54,6 +54,12 @@ causality_t Variable::getCausality() const {
     return _causality;
 }
 
-void Variable::setCausality(causality_t causality) {
+void Variable::setCausality(causality_t causality)
+{
     _causality = causality;
+}
+
+Variable *Variable::clone()
+{
+    return new Variable(_type->clone(), _name->clone(), _causality);
 }

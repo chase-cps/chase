@@ -45,6 +45,10 @@ namespace chase {
         /// @return The operation as a string.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return The cloned object.
+        UnaryBooleanFormula * clone() override;
+
     protected:
 
         /// @brief The temporal operator.

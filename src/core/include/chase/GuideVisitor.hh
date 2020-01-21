@@ -10,11 +10,14 @@
 
 #include "BaseVisitor.hh"
 
+#include "utilities/IOUtils.hh"
+
 #include <set>
 #include <list>
 #include <vector>
 
 namespace chase {
+
 
     class GuideVisitor : public BaseVisitor {
 
@@ -74,10 +77,63 @@ namespace chase {
 
         // Generic methods for continue the visit in special cases.
 
+        /// @brief Method guiding the visit when the object type in the AST is
+        /// not known.
+        /// @param o A pointer to the object to visit.
+        /// @return T the standard return value of the visitor.
         virtual int continueVisit( ChaseObject *o );
-        virtual int visitList( std::list< ChaseObject * > &l );
-        virtual int visitVector( std::vector< ChaseObject * > &v );
-        virtual int visitSet( std::set< ChaseObject * >  &s );
+
+        /// @brief Method to visit a list.
+        /// @param l the list to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitList(std::list<T *> &l)
+        {
+            int rv = _rv;
+            for(auto it = l.begin(); it != l.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit List: wrong object in list");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
+
+        /// @brief Method to visit a vector.
+        /// @param v the vector to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitVector(std::vector<T *> &v) {
+            int rv = _rv;
+            for(auto it = v.begin(); it != v.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit Vector: wrong object in vector");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
+
+        /// @brief Method to visit a set.
+        /// @param s the set to visit.
+        /// @return the standard return value of the visitor.
+        template<typename T>
+        int visitSet(std::set<T *> &s) {
+            int rv = _rv;
+            for(auto it = s.begin(); it != s.end(); ++it)
+            {
+                auto * o = dynamic_cast< ChaseObject * >(*it);
+                if( o == nullptr )
+                    messageError("Visit Set: wrong object in set");
+
+                rv |= continueVisit(o);
+            }
+            return rv;
+        }
 
     protected:
 

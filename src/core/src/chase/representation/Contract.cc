@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "chase/representation/Contract.hh"
+#include "chase/utilities/ClonedDeclarationVisitor.hh"
 
 using namespace chase;
 
@@ -79,6 +80,50 @@ void Contract::addAssumptions(semantic_domain domain, Specification *spec) {
 
 void Contract::addGuarantees(semantic_domain domain, Specification *spec) {
     std::pair< semantic_domain, Specification * > g(domain, spec);
-    assumptions.insert(g);
+    guarantees.insert(g);
     spec->setParent(this);
+}
+
+//Contract * Contract::composition(
+//        Contract * C1, Contract * C2,
+//        std::map<std::string, std::string>& correspondences)
+//{
+//    return nullptr;
+//}
+
+/// \todo Implement the clone method.
+Contract *Contract::clone() {
+    auto ret = new Contract(_name->getString());
+
+    // Corresponences maps.
+    std::map< Declaration *, Declaration * > declaration_map;
+
+    // Declarations.
+    for(auto it = declarations.begin(); it != declarations.end(); ++it)
+    {
+        Declaration * current = *it;
+        auto dec = current->clone();
+        std::pair< Declaration *, Declaration * > p(current, dec);
+        ret->addDeclaration(dec);
+        declaration_map.insert(p);
+    }
+
+    // Assumptions.
+    for(auto it = assumptions.begin(); it != assumptions.end(); ++it)
+    {
+        auto spec = (*it).second->clone();
+        ret->addAssumptions((*it).first, spec);
+    }
+
+    // Guarantees.
+    for(auto it = guarantees.begin(); it != guarantees.end(); ++it)
+    {
+        auto spec = (*it).second->clone();
+        ret->addGuarantees((*it).first, spec);
+    }
+
+    ClonedDeclarationVisitor c(declaration_map);
+    ret->accept_visitor(c);
+
+    return ret;
 }

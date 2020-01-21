@@ -29,40 +29,29 @@ namespace chase {
             /// @brief Destructor.
             ~Range() override;
 
-            /// @brief Specilized constructor.
-            /// @param lbound left bound for the range.
-            /// @param rbound right bound for the range.
-            Range( NumericValue * lbound,  NumericValue * rbound );
-
-            /// @brief Setter for the left value.
-            /// @param lbound Left bound to be set for the range.
-            void setLeftValue( NumericValue * lbound );
-
-            /// @brief Setter for the left value.
-            /// @param rbound Right bound to be set for the range. 
-            void setRightValue( NumericValue * rbound );
-
-            /// @brief Getter of the left value.
-            /// @return the left value of the range.
-            NumericValue * getLeftValue();
-
-            /// @brief Getter of the right value.
-            /// @return the right value of the range.
-            NumericValue * getRightValue();
-           
             /// @brief Constructor from Integers.
             /// @param lbound Left bound of the range.
             /// @param rbound Right bound of the range.
             Range(int lbound, int rbound );
 
-            /// @brief Constructor from Doubles.
-            /// @param lbound Left bound of the range.
-            /// @param rbound Right bound of the range.
-            Range( double lbound, double rbound );
+            Type *getType() override;
 
-        Type *getType() override;
 
-        /// @brief Printing function.
+            /// @brief Setter for the left bound.
+            /// @param lbound The left bound.
+            void setLeftValue(int lbound);
+            /// @brief Setter for the right bound.
+            /// @param rbound The right bound.
+            void setRightValue(int rbound);
+            /// @brief Getter of the left Value.
+            /// @return The range left bound.
+            int getLeftValue();
+            /// @brief Getter of the right value.
+            /// @brief The range right bound.
+            int getRightValue();
+
+
+            /// @brief Printing function.
             /// @return a string representing the range.
             std::string getString() override;
 
@@ -71,14 +60,21 @@ namespace chase {
             /// @return  the return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Range * clone() override;
+
 
         protected:
             /// @brief Left bound of the range.
-            NumericValue * _lbound;
+            int _lbound;
             /// @brief Right bound of the range.
-            NumericValue * _rbound;
+            int _rbound;
 
             /// @brief Procedure checking for the consistency of the range.
             void _checkConsistency();
+
+
+
     };
 }

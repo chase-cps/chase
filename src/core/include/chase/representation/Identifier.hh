@@ -51,6 +51,8 @@ namespace chase {
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
+            Identifier * clone() override;
+
         protected:
 
             /// @brief Declaration.

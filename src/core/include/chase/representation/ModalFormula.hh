@@ -45,6 +45,10 @@ namespace chase {
         int accept_visitor(chase::BaseVisitor &v) override;
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return The cloned object.
+        ModalFormula * clone() override;
+
     protected:
 
         /// @brief The operator.

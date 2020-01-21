@@ -59,6 +59,10 @@ namespace chase {
         /// @return The name of the proposition as a string.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return A clone of the object.
+        Proposition * clone() override;
+
     protected:
 
         /// @brief the Type of the Proposition. I.e., Boolean.

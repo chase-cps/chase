@@ -56,15 +56,7 @@ void SlugsPrinter::_printDeclarations()
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
-                if(lv->IsA() != integerValue_node ||
-                    rv->IsA() != integerValue_node)
-                    messageError("Non integer range.");
-
-                auto ilv = reinterpret_cast<IntegerValue *>(lv);
-                auto irv = reinterpret_cast<IntegerValue *>(rv);
-
-                fout << ": " << ilv->getValue()
-                    << "..." << irv->getValue();
+                fout << ": " << lv << "..." << rv;
             }
             fout << std::endl;
         }
@@ -90,15 +82,7 @@ void SlugsPrinter::_printDeclarations()
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
-                if(lv->IsA() != integerValue_node ||
-                   rv->IsA() != integerValue_node)
-                    messageError("Non integer range.");
-
-                auto ilv = reinterpret_cast<IntegerValue *>(lv);
-                auto irv = reinterpret_cast<IntegerValue *>(rv);
-
-                fout << ": " << ilv->getValue()
-                     << "..." << irv->getValue();
+                fout << ": " << lv << "..." << rv;
             }
             fout << std::endl;
         }

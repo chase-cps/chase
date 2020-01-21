@@ -63,4 +63,10 @@ std::string BinaryTemporalFormula::getString() {
     return ret;
 }
 
+BinaryTemporalFormula *BinaryTemporalFormula::clone()
+{
+    return new BinaryTemporalFormula(
+            _op, _formula1->clone(), _formula2->clone());
+}
+
 BinaryTemporalFormula::~BinaryTemporalFormula() = default;

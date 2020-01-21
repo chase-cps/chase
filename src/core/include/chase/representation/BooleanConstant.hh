@@ -33,6 +33,10 @@ namespace chase {
         /// @return the string TRUE if true, FALSE otherwise.
         std::string getString() override;
 
+        /// @brief Clone method.
+        /// @return The cloned object.
+        BooleanConstant * clone() override;
+
     protected:
 
         /// @brief The value of the constant.

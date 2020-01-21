@@ -84,3 +84,20 @@ std::string LargeBooleanFormula::getString()
     ret += ")\n";
     return ret;
 }
+
+LargeBooleanFormula *LargeBooleanFormula::clone()
+{
+    auto ret = new LargeBooleanFormula( _op );
+    for( size_t i = 0; i < operands.size(); ++i )
+    {
+        ret->addOperand(operands[i]->clone());
+    }
+
+    return ret;
+}
+
+void LargeBooleanFormula::addOperand(LogicFormula *f)
+{
+    operands.push_back(f);
+    f->setParent(this);
+}

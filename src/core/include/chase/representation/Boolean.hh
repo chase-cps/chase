@@ -34,6 +34,11 @@ namespace chase {
             std::string getString();
 
 
+            /// @brief Clone method.
+            /// @return A clone of the object.
+            Boolean * clone() override;
+
+
         protected:
 
     };

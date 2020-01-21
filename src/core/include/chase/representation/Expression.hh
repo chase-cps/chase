@@ -69,8 +69,13 @@ namespace chase {
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
+            /// @brief Function returning the type of the expression.
+            /// @return The type of the function.
             Type * getType() override;
 
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Expression * clone() override;
 
         protected:
 

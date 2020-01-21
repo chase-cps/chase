@@ -9,6 +9,7 @@
 */
 
 #include "representation/Constant.hh"
+#include "representation/Value.hh"
 
 using namespace chase;
 
@@ -72,4 +73,9 @@ void Constant::setValue(Value *value) {
 
 Value *Constant::getValue() {
     return _value;
+}
+
+Constant *Constant::clone() {
+    return new Constant(
+            _type->clone(), _name->clone(), _value->clone());
 }

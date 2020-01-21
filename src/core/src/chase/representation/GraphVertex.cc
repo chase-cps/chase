@@ -40,3 +40,8 @@ int Vertex::accept_visitor(chase::BaseVisitor &v) {
 std::string Vertex::getString() {
     return _name->getString();
 }
+
+
+Vertex *Vertex::clone() {
+    return new Vertex(_name->clone());
+}

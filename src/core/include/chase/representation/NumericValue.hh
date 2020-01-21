@@ -34,6 +34,8 @@ namespace chase {
             /// @param t the type of the NumericValue.
             void setType( Type * t );
 
+            NumericValue * clone() override = 0;
+
         protected:
 
             /// @brief Type of the value.

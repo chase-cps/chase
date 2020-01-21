@@ -55,4 +55,9 @@ std::string BinaryBooleanFormula::getString() {
     return ret;
 }
 
+BinaryBooleanFormula *BinaryBooleanFormula::clone()
+{
+    return new BinaryBooleanFormula(_op, _op1->clone(), _op2->clone());
+}
+
 BinaryBooleanFormula::~BinaryBooleanFormula() = default;

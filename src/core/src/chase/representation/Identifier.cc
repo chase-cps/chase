@@ -61,3 +61,9 @@ Type *Identifier::getType() {
     return getDeclaration()->getType();
 }
 
+Identifier *Identifier::clone() {
+    /// \todo Fix later in the clone method of Contract the potential
+    /// inconsistencies due to cloned declarations.
+    return new Identifier(_declaration);
+}
+

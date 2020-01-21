@@ -60,8 +60,12 @@ std::string Graph::getString() {
 }
 
 void Graph::associateVertex(unsigned int index, Vertex *vertex) {
-    if(index < _size)  _vertexes[index] =  vertex;
+    if(index < _size) {
+        _vertexes[index] = vertex;
+        vertex->setParent(this);
+    }
     else messageError("Error creating the graph. Index out of size.");
+
 }
 
 void Graph::addEdge(Edge *edge) {
@@ -167,3 +171,24 @@ unsigned int Graph::getSize() const {
 }
 
 Graph::~Graph() = default;
+
+
+Graph *Graph::clone() {
+    /// \todo Manage the graph copy with correspondences.
+    auto ret = new Graph(_size, _name->clone());
+
+    // Clone all the vertexes.
+    for( size_t n = 0; n < _vertexes.size(); ++n )
+    {
+        auto v = _vertexes[n]->clone();
+        ret->associateVertex(n, v);
+    }
+
+    for(auto v = _edges.begin(); v != _edges.end(); ++v )
+    {
+        auto edge = *v;
+        ret->addEdge(edge->clone());
+    }
+
+    return ret;
+}
