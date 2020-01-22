@@ -1,32 +1,6 @@
-﻿/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Terence Parr
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+﻿/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
 #pragma once
@@ -61,7 +35,7 @@ namespace antlr4 {
   /// </summary>
   class ANTLR4CPP_PUBLIC ParserRuleContext : public RuleContext {
   public:
-    static const Ref<ParserRuleContext> EMPTY;
+    static ParserRuleContext EMPTY;
 
     /// <summary>
     /// For debugging/tracing purposes, we want to track all of the nodes in
@@ -92,47 +66,45 @@ namespace antlr4 {
     std::exception_ptr exception;
 
     ParserRuleContext();
+    ParserRuleContext(ParserRuleContext *parent, size_t invokingStateNumber);
     virtual ~ParserRuleContext() {}
 
     /** COPY a ctx (I'm deliberately not using copy constructor) to avoid
-     *  confusion with creating node with parent. Does not copy children.
+     *  confusion with creating node with parent. Does not copy children
+     *  (except error leaves).
      */
-    virtual void copyFrom(Ref<ParserRuleContext> const& ctx);
+    virtual void copyFrom(ParserRuleContext *ctx);
 
-    ParserRuleContext(std::weak_ptr<ParserRuleContext> parent, int invokingStateNumber);
 
     // Double dispatch methods for listeners
 
     virtual void enterRule(tree::ParseTreeListener *listener);
     virtual void exitRule(tree::ParseTreeListener *listener);
 
-    /// Does not set parent link; other add methods do that.
-    virtual Ref<tree::TerminalNode> addChild(Ref<tree::TerminalNode> const& t);
-    virtual Ref<RuleContext> addChild(Ref<RuleContext> const& ruleInvocation);
+    /** Add a token leaf node child and force its parent to be this node. */
+    tree::TerminalNode* addChild(tree::TerminalNode *t);
+    RuleContext* addChild(RuleContext *ruleInvocation);
 
     /// Used by enterOuterAlt to toss out a RuleContext previously added as
     /// we entered a rule. If we have # label, we will need to remove
     /// generic ruleContext object.
     virtual void removeLastChild();
 
-    virtual Ref<tree::TerminalNode> addChild(Token *matchedToken);
-    virtual Ref<tree::ErrorNode> addErrorNode(Token *badToken);
+    virtual tree::TerminalNode* getToken(size_t ttype, std::size_t i);
 
-    virtual Ref<tree::TerminalNode> getToken(int ttype, std::size_t i);
-
-    virtual std::vector<Ref<tree::TerminalNode>> getTokens(int ttype);
+    virtual std::vector<tree::TerminalNode *> getTokens(size_t ttype);
 
     template<typename T>
-    Ref<T> getRuleContext(size_t i) {
+    T* getRuleContext(size_t i) {
       if (children.empty()) {
         return nullptr;
       }
 
       size_t j = 0; // what element have we found with ctxType?
       for (auto &child : children) {
-        if (antlrcpp::is<T>(child)) {
+        if (antlrcpp::is<T *>(child)) {
           if (j++ == i) {
-            return std::dynamic_pointer_cast<T>(child);
+            return dynamic_cast<T *>(child);
           }
         }
       }
@@ -140,11 +112,11 @@ namespace antlr4 {
     }
 
     template<typename T>
-    std::vector<Ref<T>> getRuleContexts() {
-      std::vector<Ref<T>> contexts;
-      for (auto &child : children) {
-        if (antlrcpp::is<T>(child)) {
-          contexts.push_back(std::dynamic_pointer_cast<T>(child));
+    std::vector<T *> getRuleContexts() {
+      std::vector<T *> contexts;
+      for (auto child : children) {
+        if (antlrcpp::is<T *>(child)) {
+          contexts.push_back(dynamic_cast<T *>(child));
         }
       }
 
@@ -158,14 +130,14 @@ namespace antlr4 {
      * Note that the range from start to stop is inclusive, so for rules that do not consume anything
      * (for example, zero length or error productions) this token may exceed stop.
      */
-    virtual Token*getStart();
+    virtual Token *getStart();
 
     /**
      * Get the final token in this context.
      * Note that the range from start to stop is inclusive, so for rules that do not consume anything
      * (for example, zero length or error productions) this token may precede start.
      */
-    virtual Token* getStop();
+    virtual Token *getStop();
 
     /// <summary>
     /// Used for rule context info debugging during parse-time, not so much for ATN debugging </summary>

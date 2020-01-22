@@ -8,10 +8,16 @@
 #include "DSLParser/SpecBuilder.hh"
 
 using namespace patternsOnNetworks;
+using namespace antlr4;
 
 std::string
 SpecBuilder::_getNameFromContext(ChaseParser::NameContext *context) {
     std::string ret;
+
+
+    /// \todo Find a way to fix the following stupid line.
+    // This correction is due to a RIDICOLOUS choice by the ANTLR4 team.
+    if(context->num != nullptr) context->comp.push_back(context->num);
 
     std::vector< Token * >::iterator it;
     for(it = context->comp.begin(); it != context->comp.end(); ++it)

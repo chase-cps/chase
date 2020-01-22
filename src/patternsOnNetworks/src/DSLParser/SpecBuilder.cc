@@ -6,8 +6,10 @@
  */
 #include "DSLParser/SpecBuilder.hh"
 
+
 using namespace patternsOnNetworks;
 using namespace chase;
+using namespace antlr4;
 
 SpecBuilder::SpecBuilder() :
     _inConnections(false),
@@ -33,15 +35,16 @@ DesignProblem *SpecBuilder::parseSpecificationFile(std::string infile) {
     ChaseLexer lexer( &input );
     CommonTokenStream tokens( &lexer );
     ChaseParser parser( &tokens );
-    Ref< tree::ParseTree > tree;
-    tree = parser.chaseSpec();
 
-    auto * walker = new tree::ParseTreeWalker();
+    tree::ParseTree * tree = parser.chaseSpec();
 
-    walker->walk( this, tree.get() );
+    auto walker = new tree::ParseTreeWalker();
+    walker->walk(this, tree);
+
 
     return _problem;
 }
+
 
 void SpecBuilder::enterType(ChaseParser::TypeContext *context) {
     std::string name = _getNameFromContext(context->nam);

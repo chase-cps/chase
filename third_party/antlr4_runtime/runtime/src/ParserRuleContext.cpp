@@ -1,61 +1,56 @@
-﻿/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Terence Parr
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+﻿/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
-#include "tree/ErrorNodeImpl.h"
+#include "tree/TerminalNode.h"
+#include "tree/ErrorNode.h"
 #include "misc/Interval.h"
 #include "Parser.h"
 #include "Token.h"
+
 #include "support/CPPUtils.h"
 
 #include "ParserRuleContext.h"
 
 using namespace antlr4;
+using namespace antlr4::tree;
+
 using namespace antlrcpp;
 
-const Ref<ParserRuleContext> ParserRuleContext::EMPTY = std::make_shared<ParserRuleContext>();
+ParserRuleContext ParserRuleContext::EMPTY;
 
-ParserRuleContext::ParserRuleContext() : start(nullptr), stop(nullptr) {
+ParserRuleContext::ParserRuleContext()
+  : start(nullptr), stop(nullptr) {
 }
 
-void ParserRuleContext::copyFrom(Ref<ParserRuleContext> const& ctx) {
+ParserRuleContext::ParserRuleContext(ParserRuleContext *parent, size_t invokingStateNumber)
+: RuleContext(parent, invokingStateNumber), start(nullptr), stop(nullptr) {
+}
+
+void ParserRuleContext::copyFrom(ParserRuleContext *ctx) {
   // from RuleContext
   this->parent = ctx->parent;
   this->invokingState = ctx->invokingState;
 
   this->start = ctx->start;
   this->stop = ctx->stop;
-}
 
-ParserRuleContext::ParserRuleContext(std::weak_ptr<ParserRuleContext> parent, int invokingStateNumber)
-  : RuleContext(parent, invokingStateNumber) {
+  // copy any error nodes to alt label node
+  if (!ctx->children.empty()) {
+    for (auto child : ctx->children) {
+      auto errorNode = dynamic_cast<ErrorNode *>(child);
+      if (errorNode != nullptr) {
+        errorNode->setParent(this);
+        children.push_back(errorNode);
+      }
+    }
+
+    // Remove the just reparented error nodes from the source context.
+    ctx->children.erase(std::remove_if(ctx->children.begin(), ctx->children.end(), [this](tree::ParseTree *e) -> bool {
+      return std::find(children.begin(), children.end(), e) != children.end();
+    }), ctx->children.end());
+  }
 }
 
 void ParserRuleContext::enterRule(tree::ParseTreeListener * /*listener*/) {
@@ -64,12 +59,13 @@ void ParserRuleContext::enterRule(tree::ParseTreeListener * /*listener*/) {
 void ParserRuleContext::exitRule(tree::ParseTreeListener * /*listener*/) {
 }
 
-Ref<tree::TerminalNode> ParserRuleContext::addChild(Ref<tree::TerminalNode> const& t) {
+tree::TerminalNode* ParserRuleContext::addChild(tree::TerminalNode *t) {
+  t->setParent(this);
   children.push_back(t);
   return t;
 }
 
-Ref<RuleContext> ParserRuleContext::addChild(Ref<RuleContext> const& ruleInvocation) {
+RuleContext* ParserRuleContext::addChild(RuleContext *ruleInvocation) {
   children.push_back(ruleInvocation);
   return ruleInvocation;
 }
@@ -80,29 +76,15 @@ void ParserRuleContext::removeLastChild() {
   }
 }
 
-Ref<tree::TerminalNode> ParserRuleContext::addChild(Token *matchedToken) {
-  Ref<tree::TerminalNodeImpl> t = std::make_shared<tree::TerminalNodeImpl>(matchedToken);
-  addChild(t);
-  t->parent = shared_from_this();
-  return t;
-}
-
-Ref<tree::ErrorNode> ParserRuleContext::addErrorNode(Token *badToken) {
-  Ref<tree::ErrorNodeImpl> t = std::make_shared<tree::ErrorNodeImpl>(badToken);
-  addChild(t);
-  t->parent = shared_from_this();
-  return t;
-}
-
-Ref<tree::TerminalNode> ParserRuleContext::getToken(int ttype, std::size_t i) {
+tree::TerminalNode* ParserRuleContext::getToken(size_t ttype, size_t i) {
   if (i >= children.size()) {
     return nullptr;
   }
 
   size_t j = 0; // what token with ttype have we found?
   for (auto o : children) {
-    if (is<tree::TerminalNode>(o)) {
-      Ref<tree::TerminalNode> tnode = std::dynamic_pointer_cast<tree::TerminalNode>(o);
+    if (is<tree::TerminalNode *>(o)) {
+      tree::TerminalNode *tnode = dynamic_cast<tree::TerminalNode *>(o);
       Token *symbol = tnode->getSymbol();
       if (symbol->getType() == ttype) {
         if (j++ == i) {
@@ -115,11 +97,11 @@ Ref<tree::TerminalNode> ParserRuleContext::getToken(int ttype, std::size_t i) {
   return nullptr;
 }
 
-std::vector<Ref<tree::TerminalNode>> ParserRuleContext::getTokens(int ttype) {
-  std::vector<Ref<tree::TerminalNode>> tokens;
+std::vector<tree::TerminalNode *> ParserRuleContext::getTokens(size_t ttype) {
+  std::vector<tree::TerminalNode *> tokens;
   for (auto &o : children) {
-    if (is<tree::TerminalNode>(o)) {
-      Ref<tree::TerminalNode> tnode = std::dynamic_pointer_cast<tree::TerminalNode>(o);
+    if (is<tree::TerminalNode *>(o)) {
+      tree::TerminalNode *tnode = dynamic_cast<tree::TerminalNode *>(o);
       Token *symbol = tnode->getSymbol();
       if (symbol->getType() == ttype) {
         tokens.push_back(tnode);
@@ -150,7 +132,7 @@ Token* ParserRuleContext::getStop() {
 }
 
 std::string ParserRuleContext::toInfoString(Parser *recognizer) {
-  std::vector<std::string> rules = recognizer->getRuleInvocationStack(shared_from_this());
+  std::vector<std::string> rules = recognizer->getRuleInvocationStack(this);
   std::reverse(rules.begin(), rules.end());
   std::string rulesStr = antlrcpp::arrayToString(rules);
   return "ParserRuleContext" + rulesStr + "{start=" + std::to_string(start->getTokenIndex()) + ", stop=" +

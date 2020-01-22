@@ -1,32 +1,6 @@
-﻿/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Terence Parr
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
 #include "atn/EmptyPredictionContext.h"
@@ -46,8 +20,10 @@ using namespace antlr4::atn;
 
 using namespace antlrcpp;
 
-int PredictionContext::globalNodeCount = 0;
+size_t PredictionContext::globalNodeCount = 0;
 const Ref<PredictionContext> PredictionContext::EMPTY = std::make_shared<EmptyPredictionContext>();
+
+//----------------- PredictionContext ----------------------------------------------------------------------------------
 
 PredictionContext::PredictionContext(size_t cachedHashCode) : id(globalNodeCount++), cachedHashCode(cachedHashCode)  {
 }
@@ -55,27 +31,23 @@ PredictionContext::PredictionContext(size_t cachedHashCode) : id(globalNodeCount
 PredictionContext::~PredictionContext() {
 }
 
-Ref<PredictionContext> PredictionContext::fromRuleContext(const ATN &atn, const Ref<RuleContext> &outerContext) {
+Ref<PredictionContext> PredictionContext::fromRuleContext(const ATN &atn, RuleContext *outerContext) {
   if (outerContext == nullptr) {
     return PredictionContext::EMPTY;
   }
 
   // if we are in RuleContext of start rule, s, then PredictionContext
   // is EMPTY. Nobody called us. (if we are empty, return empty)
-  if (outerContext->parent.expired() || outerContext == ParserRuleContext::EMPTY) {
+  if (outerContext->parent == nullptr || outerContext == &ParserRuleContext::EMPTY) {
     return PredictionContext::EMPTY;
   }
 
   // If we have a parent, convert it to a PredictionContext graph
-  Ref<PredictionContext> parent = PredictionContext::fromRuleContext(atn, std::dynamic_pointer_cast<RuleContext>(outerContext->parent.lock()));
+  Ref<PredictionContext> parent = PredictionContext::fromRuleContext(atn, dynamic_cast<RuleContext *>(outerContext->parent));
 
-  ATNState *state = atn.states.at((size_t)outerContext->invokingState);
-  RuleTransition *transition = (RuleTransition *)state->transition(0);
+  ATNState *state = atn.states.at(outerContext->invokingState);
+  RuleTransition *transition = (RuleTransition *)state->transitions[0];
   return SingletonPredictionContext::create(parent, transition->followState->stateNumber);
-}
-
-bool PredictionContext::operator != (const PredictionContext &o) const {
-  return !(*this == o);
 }
 
 bool PredictionContext::isEmpty() const {
@@ -83,6 +55,7 @@ bool PredictionContext::isEmpty() const {
 }
 
 bool PredictionContext::hasEmptyPath() const {
+  // since EMPTY_RETURN_STATE can only appear in the last position, we check last one
   return getReturnState(size() - 1) == EMPTY_RETURN_STATE;
 }
 
@@ -96,27 +69,24 @@ size_t PredictionContext::calculateEmptyHashCode() {
   return hash;
 }
 
-size_t PredictionContext::calculateHashCode(std::weak_ptr<PredictionContext> parent, int returnState) {
+size_t PredictionContext::calculateHashCode(Ref<PredictionContext> parent, size_t returnState) {
   size_t hash = MurmurHash::initialize(INITIAL_HASH);
-  hash = MurmurHash::update(hash, parent.lock());
-  hash = MurmurHash::update(hash, (size_t)returnState);
+  hash = MurmurHash::update(hash, parent);
+  hash = MurmurHash::update(hash, returnState);
   hash = MurmurHash::finish(hash, 2);
   return hash;
 }
 
-size_t PredictionContext::calculateHashCode(const std::vector<std::weak_ptr<PredictionContext>> &parents,
-                                            const std::vector<int> &returnStates) {
+size_t PredictionContext::calculateHashCode(const std::vector<Ref<PredictionContext>> &parents,
+                                            const std::vector<size_t> &returnStates) {
   size_t hash = MurmurHash::initialize(INITIAL_HASH);
 
   for (auto parent : parents) {
-    if (parent.expired())
-      hash = MurmurHash::update(hash, 0);
-    else
-      hash = MurmurHash::update(hash, parent.lock());
+    hash = MurmurHash::update(hash, parent);
   }
 
   for (auto returnState : returnStates) {
-    hash = MurmurHash::update(hash, (size_t)returnState);
+    hash = MurmurHash::update(hash, returnState);
   }
 
   return MurmurHash::finish(hash, parents.size() + returnStates.size());
@@ -124,11 +94,10 @@ size_t PredictionContext::calculateHashCode(const std::vector<std::weak_ptr<Pred
 
 Ref<PredictionContext> PredictionContext::merge(const Ref<PredictionContext> &a,
   const Ref<PredictionContext> &b, bool rootIsWildcard, PredictionContextMergeCache *mergeCache) {
-  
   assert(a && b);
 
   // share same graph if both same
-  if (a == b) {
+  if (a == b || *a == *b) {
     return a;
   }
 
@@ -137,8 +106,8 @@ Ref<PredictionContext> PredictionContext::merge(const Ref<PredictionContext> &a,
                            std::dynamic_pointer_cast<SingletonPredictionContext>(b), rootIsWildcard, mergeCache);
   }
 
-  // At least one of a or b is array
-  // If one is $ and rootIsWildcard, return $ as * wildcard
+  // At least one of a or b is array.
+  // If one is $ and rootIsWildcard, return $ as * wildcard.
   if (rootIsWildcard) {
     if (is<EmptyPredictionContext>(a)) {
       return a;
@@ -168,20 +137,20 @@ Ref<PredictionContext> PredictionContext::mergeSingletons(const Ref<SingletonPre
   const Ref<SingletonPredictionContext> &b, bool rootIsWildcard, PredictionContextMergeCache *mergeCache) {
 
   if (mergeCache != nullptr) { // Can be null if not given to the ATNState from which this call originates.
-    auto iterator = mergeCache->find({ a, b });
-    if (iterator != mergeCache->end()) {
-      return iterator->second;
+    auto existing = mergeCache->get(a, b);
+    if (existing) {
+      return existing;
     }
-    iterator = mergeCache->find({ b, a });
-    if (iterator != mergeCache->end()) {
-      return iterator->second;
+    existing = mergeCache->get(b, a);
+    if (existing) {
+      return existing;
     }
   }
 
   Ref<PredictionContext> rootMerge = mergeRoot(a, b, rootIsWildcard);
   if (rootMerge) {
     if (mergeCache != nullptr) {
-      (*mergeCache)[{ a, b }] = rootMerge;
+      mergeCache->put(a, b, rootMerge);
     }
     return rootMerge;
   }
@@ -205,26 +174,26 @@ Ref<PredictionContext> PredictionContext::mergeSingletons(const Ref<SingletonPre
     // new joined parent so create new singleton pointing to it, a'
     Ref<PredictionContext> a_ = SingletonPredictionContext::create(parent, a->returnState);
     if (mergeCache != nullptr) {
-      (*mergeCache)[{ a, b }] = a_;
+      mergeCache->put(a, b, a_);
     }
     return a_;
   } else {
     // a != b payloads differ
     // see if we can collapse parents due to $+x parents if local ctx
-    std::weak_ptr<PredictionContext> singleParent;
-    if (a == b || (parentA && parentA == parentB)) { // ax + bx = [a,b]x
-      singleParent = a->parent;
+    Ref<PredictionContext> singleParent;
+    if (a == b || (*parentA == *parentB)) { // ax + bx = [a,b]x
+      singleParent = parentA;
     }
-    if (!singleParent.expired()) { // parents are same, sort payloads and use same parent
-      std::vector<int> payloads = { a->returnState, b->returnState };
+    if (singleParent) { // parents are same, sort payloads and use same parent
+      std::vector<size_t> payloads = { a->returnState, b->returnState };
       if (a->returnState > b->returnState) {
         payloads[0] = b->returnState;
         payloads[1] = a->returnState;
       }
-      std::vector<std::weak_ptr<PredictionContext>> parents = { singleParent, singleParent };
+      std::vector<Ref<PredictionContext>> parents = { singleParent, singleParent };
       Ref<PredictionContext> a_ = std::make_shared<ArrayPredictionContext>(parents, payloads);
       if (mergeCache != nullptr) {
-        (*mergeCache)[{ a, b }] = a_;
+        mergeCache->put(a, b, a_);
       }
       return a_;
     }
@@ -234,17 +203,17 @@ Ref<PredictionContext> PredictionContext::mergeSingletons(const Ref<SingletonPre
     // ax + by = [ax,by]
     Ref<PredictionContext> a_;
     if (a->returnState > b->returnState) { // sort by payload
-      std::vector<int> payloads = { b->returnState, a->returnState };
-      std::vector<std::weak_ptr<PredictionContext>> parents = { b->parent, a->parent };
+      std::vector<size_t> payloads = { b->returnState, a->returnState };
+      std::vector<Ref<PredictionContext>> parents = { b->parent, a->parent };
       a_ = std::make_shared<ArrayPredictionContext>(parents, payloads);
     } else {
-      std::vector<int> payloads = {a->returnState, b->returnState};
-      std::vector<std::weak_ptr<PredictionContext>> parents = { a->parent, b->parent };
+      std::vector<size_t> payloads = {a->returnState, b->returnState};
+      std::vector<Ref<PredictionContext>> parents = { a->parent, b->parent };
       a_ = std::make_shared<ArrayPredictionContext>(parents, payloads);
     }
 
     if (mergeCache != nullptr) {
-      (*mergeCache)[{ a, b }] = a_;
+      mergeCache->put(a, b, a_);
     }
     return a_;
   }
@@ -264,14 +233,14 @@ Ref<PredictionContext> PredictionContext::mergeRoot(const Ref<SingletonPredictio
       return EMPTY;
     }
     if (a == EMPTY) { // $ + x = [$,x]
-      std::vector<int> payloads = { b->returnState, EMPTY_RETURN_STATE };
-      std::vector<std::weak_ptr<PredictionContext>> parents = { b->parent, EMPTY };
+      std::vector<size_t> payloads = { b->returnState, EMPTY_RETURN_STATE };
+      std::vector<Ref<PredictionContext>> parents = { b->parent, nullptr };
       Ref<PredictionContext> joined = std::make_shared<ArrayPredictionContext>(parents, payloads);
       return joined;
     }
     if (b == EMPTY) { // x + $ = [$,x] ($ is always first if present)
-      std::vector<int> payloads = { a->returnState, EMPTY_RETURN_STATE };
-      std::vector<std::weak_ptr<PredictionContext>> parents = { a->parent, EMPTY };
+      std::vector<size_t> payloads = { a->returnState, EMPTY_RETURN_STATE };
+      std::vector<Ref<PredictionContext>> parents = { a->parent, nullptr };
       Ref<PredictionContext> joined = std::make_shared<ArrayPredictionContext>(parents, payloads);
       return joined;
     }
@@ -283,13 +252,13 @@ Ref<PredictionContext> PredictionContext::mergeArrays(const Ref<ArrayPredictionC
   const Ref<ArrayPredictionContext> &b, bool rootIsWildcard, PredictionContextMergeCache *mergeCache) {
 
   if (mergeCache != nullptr) {
-    auto iterator = mergeCache->find({ a, b });
-    if (iterator != mergeCache->end()) {
-      return iterator->second;
+    auto existing = mergeCache->get(a, b);
+    if (existing) {
+      return existing;
     }
-    iterator = mergeCache->find({ b, a });
-    if (iterator != mergeCache->end()) {
-      return iterator->second;
+    existing = mergeCache->get(b, a);
+    if (existing) {
+      return existing;
     }
   }
 
@@ -298,8 +267,8 @@ Ref<PredictionContext> PredictionContext::mergeArrays(const Ref<ArrayPredictionC
   size_t j = 0; // walks b
   size_t k = 0; // walks target M array
 
-  std::vector<int> mergedReturnStates(a->returnStates.size() + b->returnStates.size());
-  std::vector<std::weak_ptr<PredictionContext>> mergedParents(a->returnStates.size() + b->returnStates.size());
+  std::vector<size_t> mergedReturnStates(a->returnStates.size() + b->returnStates.size());
+  std::vector<Ref<PredictionContext>> mergedParents(a->returnStates.size() + b->returnStates.size());
 
   // walk and merge to yield mergedParents, mergedReturnStates
   while (i < a->returnStates.size() && j < b->returnStates.size()) {
@@ -307,10 +276,10 @@ Ref<PredictionContext> PredictionContext::mergeArrays(const Ref<ArrayPredictionC
     Ref<PredictionContext> b_parent = b->parents[j];
     if (a->returnStates[i] == b->returnStates[j]) {
       // same payload (stack tops are equal), must yield merged singleton
-      int payload = a->returnStates[i];
+      size_t payload = a->returnStates[i];
       // $+$ = $
-      bool both$ = payload == EMPTY_RETURN_STATE && a_parent && b_parent;
-      bool ax_ax = (a_parent && b_parent) && a_parent == b_parent; // ax+ax -> ax
+      bool both$ = payload == EMPTY_RETURN_STATE && !a_parent && !b_parent;
+      bool ax_ax = (a_parent && b_parent) && *a_parent == *b_parent; // ax+ax -> ax
       if (both$ || ax_ax) {
         mergedParents[k] = a_parent; // choose left
         mergedReturnStates[k] = payload;
@@ -353,66 +322,59 @@ Ref<PredictionContext> PredictionContext::mergeArrays(const Ref<ArrayPredictionC
   // trim merged if we combined a few that had same stack tops
   if (k < mergedParents.size()) { // write index < last position; trim
     if (k == 1) { // for just one merged element, return singleton top
-      Ref<PredictionContext> a_ = SingletonPredictionContext::create(mergedParents[0].lock(), mergedReturnStates[0]);
+      Ref<PredictionContext> a_ = SingletonPredictionContext::create(mergedParents[0], mergedReturnStates[0]);
       if (mergeCache != nullptr) {
-        (*mergeCache)[{ a, b }] = a_;
+        mergeCache->put(a, b, a_);
       }
       return a_;
     }
-    //mergedParents = Arrays::copyOf(mergedParents, k);
     mergedParents.resize(k);
-    //mergedReturnStates = Arrays::copyOf(mergedReturnStates, k);
     mergedReturnStates.resize(k);
   }
 
   Ref<ArrayPredictionContext> M = std::make_shared<ArrayPredictionContext>(mergedParents, mergedReturnStates);
 
   // if we created same array as a or b, return that instead
-  // TO_DO: track whether this is possible above during merge sort for speed
-  if (M == a) {
+  // TODO: track whether this is possible above during merge sort for speed
+  if (*M == *a) {
     if (mergeCache != nullptr) {
-      (*mergeCache)[{ a, b }] = a;
+      mergeCache->put(a, b, a);
     }
     return a;
   }
-  if (M == b) {
+  if (*M == *b) {
     if (mergeCache != nullptr) {
-      (*mergeCache)[{ a, b }] = b;
+      mergeCache->put(a, b, b);
     }
     return b;
   }
 
-  // This part differs from Java code. We have to recreate the context as the parents array is copied on creation.
-  if (combineCommonParents(mergedParents))
+  // ml: this part differs from Java code. We have to recreate the context as the parents array is copied on creation.
+  if (combineCommonParents(mergedParents)) {
+    mergedReturnStates.resize(mergedParents.size());
     M = std::make_shared<ArrayPredictionContext>(mergedParents, mergedReturnStates);
+  }
 
   if (mergeCache != nullptr) {
-    (*mergeCache)[{ a, b }] = M;
+    mergeCache->put(a, b, M);
   }
   return M;
 }
 
-bool PredictionContext::combineCommonParents(std::vector<std::weak_ptr<PredictionContext>> &parents) {
-  std::unordered_set<Ref<PredictionContext>, PredictionContextHasher, PredictionContextComparer> uniqueParents;
+bool PredictionContext::combineCommonParents(std::vector<Ref<PredictionContext>> &parents) {
 
+  std::set<Ref<PredictionContext>> uniqueParents;
   for (size_t p = 0; p < parents.size(); ++p) {
-    if (parents[p].expired())
-      continue;
-    Ref<PredictionContext> parent = parents[p].lock();
+    Ref<PredictionContext> parent = parents[p];
     if (uniqueParents.find(parent) == uniqueParents.end()) { // don't replace
       uniqueParents.insert(parent);
     }
   }
 
-  if (uniqueParents.size() == parents.size())
-    return false;
-
-  // Don't resize the parents array, just update the content.
   for (size_t p = 0; p < parents.size(); ++p) {
-    if (parents[p].expired())
-      continue;
-    parents[p] = *uniqueParents.find(parents[p].lock());
+    parents[p] = *uniqueParents.find(parents[p]);
   }
+
   return true;
 }
 
@@ -463,10 +425,10 @@ std::string PredictionContext::toDOTString(const Ref<PredictionContext> &context
       continue;
     }
     for (size_t i = 0; i < current->size(); i++) {
-      if (current->getParent(i).expired()) {
+      if (!current->getParent(i)) {
         continue;
       }
-      ss << "  s" << current->id << "->" << "s" << current->getParent(i).lock()->id;
+      ss << "  s" << current->id << "->" << "s" << current->getParent(i)->id;
       if (current->size() > 1) {
         ss << " [label=\"parent[" << i << "]\"];\n";
       } else {
@@ -501,10 +463,10 @@ Ref<PredictionContext> PredictionContext::getCachedContext(const Ref<PredictionC
 
   bool changed = false;
 
-  std::vector<std::weak_ptr<PredictionContext>> parents(context->size());
+  std::vector<Ref<PredictionContext>> parents(context->size());
   for (size_t i = 0; i < parents.size(); i++) {
-    std::weak_ptr<PredictionContext> parent = getCachedContext(context->getParent(i).lock(), contextCache, visited);
-    if (changed || parent.lock() != context->getParent(i).lock()) {
+    Ref<PredictionContext> parent = getCachedContext(context->getParent(i), contextCache, visited);
+    if (changed || parent != context->getParent(i)) {
       if (!changed) {
         parents.clear();
         for (size_t j = 0; j < context->size(); j++) {
@@ -530,11 +492,12 @@ Ref<PredictionContext> PredictionContext::getCachedContext(const Ref<PredictionC
     updated = EMPTY;
   } else if (parents.size() == 1) {
     updated = SingletonPredictionContext::create(parents[0], context->getReturnState(0));
+    contextCache.insert(updated);
   } else {
     updated = std::make_shared<ArrayPredictionContext>(parents, std::dynamic_pointer_cast<ArrayPredictionContext>(context)->returnStates);
+    contextCache.insert(updated);
   }
 
-  contextCache.insert(updated);
   visited[updated] = updated;
   visited[context] = updated;
 
@@ -560,12 +523,12 @@ void PredictionContext::getAllContextNodes_(const Ref<PredictionContext> &contex
   nodes.push_back(context);
 
   for (size_t i = 0; i < context->size(); i++) {
-    getAllContextNodes_(context->getParent(i).lock(), nodes, visited);
+    getAllContextNodes_(context->getParent(i), nodes, visited);
   }
 }
 
 std::string PredictionContext::toString() const {
-  
+
   return antlrcpp::toString(this);
 }
 
@@ -585,7 +548,7 @@ std::vector<std::string> PredictionContext::toStrings(Recognizer *recognizer, co
     size_t offset = 0;
     bool last = true;
     PredictionContext *p = this;
-    int stateNumber = currentState;
+    size_t stateNumber = currentState;
 
     std::stringstream ss;
     ss << "[";
@@ -615,8 +578,8 @@ std::vector<std::string> PredictionContext::toStrings(Recognizer *recognizer, co
         }
 
         const ATN &atn = recognizer->getATN();
-        ATNState *s = atn.states[(size_t)stateNumber];
-        std::string ruleName = recognizer->getRuleNames()[(size_t)s->ruleIndex];
+        ATNState *s = atn.states[stateNumber];
+        std::string ruleName = recognizer->getRuleNames()[s->ruleIndex];
         ss << ruleName;
       } else if (p->getReturnState(index) != EMPTY_RETURN_STATE) {
         if (!p->isEmpty()) {
@@ -629,7 +592,7 @@ std::vector<std::string> PredictionContext::toStrings(Recognizer *recognizer, co
         }
       }
       stateNumber = p->getReturnState(index);
-      p = p->getParent(index).lock().get();
+      p = p->getParent(index).get();
     }
 
     if (outerContinue)
@@ -645,3 +608,55 @@ std::vector<std::string> PredictionContext::toStrings(Recognizer *recognizer, co
 
   return result;
 }
+
+//----------------- PredictionContextMergeCache ------------------------------------------------------------------------
+
+Ref<PredictionContext> PredictionContextMergeCache::put(Ref<PredictionContext> const& key1, Ref<PredictionContext> const& key2,
+                                                        Ref<PredictionContext> const& value) {
+  Ref<PredictionContext> previous;
+
+  auto iterator = _data.find(key1);
+  if (iterator == _data.end())
+    _data[key1][key2] = value;
+  else {
+    auto iterator2 = iterator->second.find(key2);
+    if (iterator2 != iterator->second.end())
+      previous = iterator2->second;
+    iterator->second[key2] = value;
+  }
+
+  return previous;
+}
+
+Ref<PredictionContext> PredictionContextMergeCache::get(Ref<PredictionContext> const& key1, Ref<PredictionContext> const& key2) {
+  auto iterator = _data.find(key1);
+  if (iterator == _data.end())
+    return nullptr;
+
+  auto iterator2 = iterator->second.find(key2);
+  if (iterator2 == iterator->second.end())
+    return nullptr;
+
+  return iterator2->second;
+}
+
+void PredictionContextMergeCache::clear() {
+  _data.clear();
+}
+
+std::string PredictionContextMergeCache::toString() const {
+  std::string result;
+  for (auto pair : _data)
+    for (auto pair2 : pair.second)
+      result += pair2.second->toString() + "\n";
+
+  return result;
+}
+
+size_t PredictionContextMergeCache::count() const {
+  size_t result = 0;
+  for (auto entry : _data)
+    result += entry.second.size();
+  return result;
+}
+

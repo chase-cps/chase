@@ -1,31 +1,6 @@
-/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
 #pragma once
@@ -46,32 +21,51 @@ namespace antlr4 {
 
   class ANTLR4CPP_PUBLIC IllegalStateException : public RuntimeException {
   public:
-    IllegalStateException(const std::string &msg = "") : RuntimeException(msg) {};
+    IllegalStateException(const std::string &msg = "") : RuntimeException(msg) {}
+    IllegalStateException(IllegalStateException const&) = default;
+    ~IllegalStateException();
+    IllegalStateException& operator=(IllegalStateException const&) = default;
   };
 
   class ANTLR4CPP_PUBLIC IllegalArgumentException : public RuntimeException {
   public:
-    IllegalArgumentException(const std::string &msg = "") : RuntimeException(msg) {};
+    IllegalArgumentException(IllegalArgumentException const&) = default;
+    IllegalArgumentException(const std::string &msg = "") : RuntimeException(msg) {}
+    ~IllegalArgumentException();
+    IllegalArgumentException& operator=(IllegalArgumentException const&) = default;
   };
 
   class ANTLR4CPP_PUBLIC NullPointerException : public RuntimeException {
   public:
-    NullPointerException(const std::string &msg = "") : RuntimeException(msg) {};
+    NullPointerException(const std::string &msg = "") : RuntimeException(msg) {}
+    NullPointerException(NullPointerException const&) = default;
+    ~NullPointerException();
+    NullPointerException& operator=(NullPointerException const&) = default;
   };
 
   class ANTLR4CPP_PUBLIC IndexOutOfBoundsException : public RuntimeException {
   public:
-    IndexOutOfBoundsException(const std::string &msg = "") : RuntimeException(msg) {};
+    IndexOutOfBoundsException(const std::string &msg = "") : RuntimeException(msg) {}
+    IndexOutOfBoundsException(IndexOutOfBoundsException const&) = default;
+    ~IndexOutOfBoundsException();
+    IndexOutOfBoundsException& operator=(IndexOutOfBoundsException const&) = default;
   };
 
   class ANTLR4CPP_PUBLIC UnsupportedOperationException : public RuntimeException {
   public:
-    UnsupportedOperationException(const std::string &msg = "") : RuntimeException(msg) {};
+    UnsupportedOperationException(const std::string &msg = "") : RuntimeException(msg) {}
+    UnsupportedOperationException(UnsupportedOperationException const&) = default;
+    ~UnsupportedOperationException();
+    UnsupportedOperationException& operator=(UnsupportedOperationException const&) = default;
+
   };
 
   class ANTLR4CPP_PUBLIC EmptyStackException : public RuntimeException {
   public:
-    EmptyStackException(const std::string &msg = "") : RuntimeException(msg) {};
+    EmptyStackException(const std::string &msg = "") : RuntimeException(msg) {}
+    EmptyStackException(EmptyStackException const&) = default;
+    ~EmptyStackException();
+    EmptyStackException& operator=(EmptyStackException const&) = default;
   };
 
   // IOException is not a runtime exception (in the java hierarchy).
@@ -88,12 +82,18 @@ namespace antlr4 {
 
   class ANTLR4CPP_PUBLIC CancellationException : public IllegalStateException {
   public:
-    CancellationException(const std::string &msg = "") : IllegalStateException(msg) {};
+    CancellationException(const std::string &msg = "") : IllegalStateException(msg) {}
+    CancellationException(CancellationException const&) = default;
+    ~CancellationException();
+    CancellationException& operator=(CancellationException const&) = default;
   };
 
   class ANTLR4CPP_PUBLIC ParseCancellationException : public CancellationException {
   public:
-    ParseCancellationException(const std::string &msg = "") : CancellationException(msg) {};
+    ParseCancellationException(const std::string &msg = "") : CancellationException(msg) {}
+    ParseCancellationException(ParseCancellationException const&) = default;
+    ~ParseCancellationException();
+    ParseCancellationException& operator=(ParseCancellationException const&) = default;
   };
 
 } // namespace antlr4
