@@ -14,21 +14,21 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, WS = 14, 
-    LINE_COMMENT = 15, ID = 16, NUMBER = 17, ENDST = 18, AND = 19, OR = 20, 
-    NOT = 21, IMPLIES = 22, IFF = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
-    UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
-    MINUS = 35, TIMES = 36, DIVIDE = 37
+    LINE_COMMENT = 15, NUMBER = 16, AND = 17, OR = 18, NOT = 19, IMPLIES = 20, 
+    IFF = 21, ALWAYS = 22, EVENTUALLY = 23, NEXT = 24, UNTIL = 25, EQ = 26, 
+    NEQ = 27, LT = 28, LE = 29, GT = 30, GE = 31, PLUS = 32, MINUS = 33, 
+    TIMES = 34, DIVIDE = 35, ID = 36, ENDST = 37
   };
 
   enum {
-    RuleIntegerKW = 0, RuleBooleanKW = 1, RuleVariableKW = 2, RuleConstantKW = 3, 
-    RuleTrueKW = 4, RuleFalseKW = 5, RuleContractKW = 6, RuleAssumptionsKW = 7, 
-    RuleGuaranteesKW = 8, RuleNameKw = 9, RuleLogic_constant = 10, RuleTypeKW = 11, 
-    RuleBin_logic_op = 12, RuleUnary_logic_op = 13, RuleUnary_temp_op = 14, 
-    RuleBin_temp_op = 15, RuleRelation_op = 16, RuleBin_math_op = 17, RuleValue = 18, 
-    RuleRelation = 19, RuleAtom = 20, RuleProp_formula = 21, RuleFormula = 22, 
-    RuleSingle_formula = 23, RuleAssumptions = 24, RuleGuarantees = 25, 
-    RuleDeclaration = 26, RuleContract = 27, RuleName = 28, RuleSystemSpec = 29
+    RuleBin_logic_op = 0, RuleUnary_logic_op = 1, RuleUnary_temp_op = 2, 
+    RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RuleIntegerKW = 6, 
+    RuleBooleanKW = 7, RuleVariableKW = 8, RuleConstantKW = 9, RuleTrueKW = 10, 
+    RuleFalseKW = 11, RuleContractKW = 12, RuleAssumptionsKW = 13, RuleGuaranteesKW = 14, 
+    RuleNameKw = 15, RuleLogic_constant = 16, RuleTypeKW = 17, RuleRelation = 18, 
+    RuleFormula = 19, RuleValue = 20, RuleAtom = 21, RuleSingle_formula = 22, 
+    RuleAssumptions = 23, RuleGuarantees = 24, RuleDeclaration = 25, RuleContract = 26, 
+    RuleName = 27, RuleSystemSpec = 28
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -41,6 +41,12 @@ public:
   virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
 
+  class Bin_logic_opContext;
+  class Unary_logic_opContext;
+  class Unary_temp_opContext;
+  class Bin_temp_opContext;
+  class Relation_opContext;
+  class Bin_math_opContext;
   class IntegerKWContext;
   class BooleanKWContext;
   class VariableKWContext;
@@ -53,17 +59,10 @@ public:
   class NameKwContext;
   class Logic_constantContext;
   class TypeKWContext;
-  class Bin_logic_opContext;
-  class Unary_logic_opContext;
-  class Unary_temp_opContext;
-  class Bin_temp_opContext;
-  class Relation_opContext;
-  class Bin_math_opContext;
-  class ValueContext;
   class RelationContext;
-  class AtomContext;
-  class Prop_formulaContext;
   class FormulaContext;
+  class ValueContext;
+  class AtomContext;
   class Single_formulaContext;
   class AssumptionsContext;
   class GuaranteesContext;
@@ -71,6 +70,97 @@ public:
   class ContractContext;
   class NameContext;
   class SystemSpecContext; 
+
+  class  Bin_logic_opContext : public antlr4::ParserRuleContext {
+  public:
+    Bin_logic_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *AND();
+    antlr4::tree::TerminalNode *OR();
+    antlr4::tree::TerminalNode *IFF();
+    antlr4::tree::TerminalNode *IMPLIES();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Bin_logic_opContext* bin_logic_op();
+
+  class  Unary_logic_opContext : public antlr4::ParserRuleContext {
+  public:
+    Unary_logic_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *NOT();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Unary_logic_opContext* unary_logic_op();
+
+  class  Unary_temp_opContext : public antlr4::ParserRuleContext {
+  public:
+    Unary_temp_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ALWAYS();
+    antlr4::tree::TerminalNode *EVENTUALLY();
+    antlr4::tree::TerminalNode *NEXT();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Unary_temp_opContext* unary_temp_op();
+
+  class  Bin_temp_opContext : public antlr4::ParserRuleContext {
+  public:
+    Bin_temp_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *UNTIL();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Bin_temp_opContext* bin_temp_op();
+
+  class  Relation_opContext : public antlr4::ParserRuleContext {
+  public:
+    Relation_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *EQ();
+    antlr4::tree::TerminalNode *NEQ();
+    antlr4::tree::TerminalNode *LT();
+    antlr4::tree::TerminalNode *LE();
+    antlr4::tree::TerminalNode *GT();
+    antlr4::tree::TerminalNode *GE();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Relation_opContext* relation_op();
+
+  class  Bin_math_opContext : public antlr4::ParserRuleContext {
+  public:
+    Bin_math_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TIMES();
+    antlr4::tree::TerminalNode *DIVIDE();
+    antlr4::tree::TerminalNode *PLUS();
+    antlr4::tree::TerminalNode *MINUS();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  Bin_math_opContext* bin_math_op();
 
   class  IntegerKWContext : public antlr4::ParserRuleContext {
   public:
@@ -220,114 +310,6 @@ public:
 
   TypeKWContext* typeKW();
 
-  class  Bin_logic_opContext : public antlr4::ParserRuleContext {
-  public:
-    Bin_logic_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *AND();
-    antlr4::tree::TerminalNode *OR();
-    antlr4::tree::TerminalNode *IFF();
-    antlr4::tree::TerminalNode *IMPLIES();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Bin_logic_opContext* bin_logic_op();
-
-  class  Unary_logic_opContext : public antlr4::ParserRuleContext {
-  public:
-    Unary_logic_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *NOT();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Unary_logic_opContext* unary_logic_op();
-
-  class  Unary_temp_opContext : public antlr4::ParserRuleContext {
-  public:
-    Unary_temp_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *ALWAYS();
-    antlr4::tree::TerminalNode *EVENTUALLY();
-    antlr4::tree::TerminalNode *NEXT();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Unary_temp_opContext* unary_temp_op();
-
-  class  Bin_temp_opContext : public antlr4::ParserRuleContext {
-  public:
-    Bin_temp_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *UNTIL();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Bin_temp_opContext* bin_temp_op();
-
-  class  Relation_opContext : public antlr4::ParserRuleContext {
-  public:
-    Relation_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *EQ();
-    antlr4::tree::TerminalNode *NEQ();
-    antlr4::tree::TerminalNode *LT();
-    antlr4::tree::TerminalNode *LE();
-    antlr4::tree::TerminalNode *GT();
-    antlr4::tree::TerminalNode *GE();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Relation_opContext* relation_op();
-
-  class  Bin_math_opContext : public antlr4::ParserRuleContext {
-  public:
-    Bin_math_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *TIMES();
-    antlr4::tree::TerminalNode *DIVIDE();
-    antlr4::tree::TerminalNode *PLUS();
-    antlr4::tree::TerminalNode *MINUS();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Bin_math_opContext* bin_math_op();
-
-  class  ValueContext : public antlr4::ParserRuleContext {
-  public:
-    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *ID();
-    antlr4::tree::TerminalNode *NUMBER();
-    std::vector<ValueContext *> value();
-    ValueContext* value(size_t i);
-    Bin_math_opContext *bin_math_op();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  ValueContext* value();
-  ValueContext* value(int precedence);
   class  RelationContext : public antlr4::ParserRuleContext {
   public:
     RelationContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -344,6 +326,42 @@ public:
 
   RelationContext* relation();
 
+  class  FormulaContext : public antlr4::ParserRuleContext {
+  public:
+    FormulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Unary_logic_opContext *unary_logic_op();
+    std::vector<FormulaContext *> formula();
+    FormulaContext* formula(size_t i);
+    Unary_temp_opContext *unary_temp_op();
+    AtomContext *atom();
+    Bin_logic_opContext *bin_logic_op();
+    Bin_temp_opContext *bin_temp_op();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  FormulaContext* formula();
+  FormulaContext* formula(int precedence);
+  class  ValueContext : public antlr4::ParserRuleContext {
+  public:
+    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
+    antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *NUMBER();
+    Bin_math_opContext *bin_math_op();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ValueContext* value();
+  ValueContext* value(int precedence);
   class  AtomContext : public antlr4::ParserRuleContext {
   public:
     AtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -359,40 +377,6 @@ public:
 
   AtomContext* atom();
 
-  class  Prop_formulaContext : public antlr4::ParserRuleContext {
-  public:
-    Prop_formulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Unary_logic_opContext *unary_logic_op();
-    std::vector<Prop_formulaContext *> prop_formula();
-    Prop_formulaContext* prop_formula(size_t i);
-    AtomContext *atom();
-    Bin_logic_opContext *bin_logic_op();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Prop_formulaContext* prop_formula();
-  Prop_formulaContext* prop_formula(int precedence);
-  class  FormulaContext : public antlr4::ParserRuleContext {
-  public:
-    FormulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Unary_temp_opContext *unary_temp_op();
-    std::vector<FormulaContext *> formula();
-    FormulaContext* formula(size_t i);
-    Prop_formulaContext *prop_formula();
-    Bin_temp_opContext *bin_temp_op();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  FormulaContext* formula();
-  FormulaContext* formula(int precedence);
   class  Single_formulaContext : public antlr4::ParserRuleContext {
   public:
     Single_formulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -510,9 +494,8 @@ public:
 
 
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
-  bool valueSempred(ValueContext *_localctx, size_t predicateIndex);
-  bool prop_formulaSempred(Prop_formulaContext *_localctx, size_t predicateIndex);
   bool formulaSempred(FormulaContext *_localctx, size_t predicateIndex);
+  bool valueSempred(ValueContext *_localctx, size_t predicateIndex);
 
 private:
   static std::vector<antlr4::dfa::DFA> _decisionToDFA;

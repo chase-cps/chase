@@ -13,7 +13,7 @@ CONTRACT C_1:
         [](A=2);
 
     Guarantees:
-        [](A=2 -> X(B));
+        [](A=2 -> X(B) );
 
 CONTRACT C_2:
     variable C boolean;

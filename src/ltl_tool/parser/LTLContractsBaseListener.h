@@ -16,6 +16,24 @@
 class  LTLContractsBaseListener : public LTLContractsListener {
 public:
 
+  virtual void enterBin_logic_op(LTLContractsParser::Bin_logic_opContext * /*ctx*/) override { }
+  virtual void exitBin_logic_op(LTLContractsParser::Bin_logic_opContext * /*ctx*/) override { }
+
+  virtual void enterUnary_logic_op(LTLContractsParser::Unary_logic_opContext * /*ctx*/) override { }
+  virtual void exitUnary_logic_op(LTLContractsParser::Unary_logic_opContext * /*ctx*/) override { }
+
+  virtual void enterUnary_temp_op(LTLContractsParser::Unary_temp_opContext * /*ctx*/) override { }
+  virtual void exitUnary_temp_op(LTLContractsParser::Unary_temp_opContext * /*ctx*/) override { }
+
+  virtual void enterBin_temp_op(LTLContractsParser::Bin_temp_opContext * /*ctx*/) override { }
+  virtual void exitBin_temp_op(LTLContractsParser::Bin_temp_opContext * /*ctx*/) override { }
+
+  virtual void enterRelation_op(LTLContractsParser::Relation_opContext * /*ctx*/) override { }
+  virtual void exitRelation_op(LTLContractsParser::Relation_opContext * /*ctx*/) override { }
+
+  virtual void enterBin_math_op(LTLContractsParser::Bin_math_opContext * /*ctx*/) override { }
+  virtual void exitBin_math_op(LTLContractsParser::Bin_math_opContext * /*ctx*/) override { }
+
   virtual void enterIntegerKW(LTLContractsParser::IntegerKWContext * /*ctx*/) override { }
   virtual void exitIntegerKW(LTLContractsParser::IntegerKWContext * /*ctx*/) override { }
 
@@ -52,38 +70,17 @@ public:
   virtual void enterTypeKW(LTLContractsParser::TypeKWContext * /*ctx*/) override { }
   virtual void exitTypeKW(LTLContractsParser::TypeKWContext * /*ctx*/) override { }
 
-  virtual void enterBin_logic_op(LTLContractsParser::Bin_logic_opContext * /*ctx*/) override { }
-  virtual void exitBin_logic_op(LTLContractsParser::Bin_logic_opContext * /*ctx*/) override { }
+  virtual void enterRelation(LTLContractsParser::RelationContext * /*ctx*/) override { }
+  virtual void exitRelation(LTLContractsParser::RelationContext * /*ctx*/) override { }
 
-  virtual void enterUnary_logic_op(LTLContractsParser::Unary_logic_opContext * /*ctx*/) override { }
-  virtual void exitUnary_logic_op(LTLContractsParser::Unary_logic_opContext * /*ctx*/) override { }
-
-  virtual void enterUnary_temp_op(LTLContractsParser::Unary_temp_opContext * /*ctx*/) override { }
-  virtual void exitUnary_temp_op(LTLContractsParser::Unary_temp_opContext * /*ctx*/) override { }
-
-  virtual void enterBin_temp_op(LTLContractsParser::Bin_temp_opContext * /*ctx*/) override { }
-  virtual void exitBin_temp_op(LTLContractsParser::Bin_temp_opContext * /*ctx*/) override { }
-
-  virtual void enterRelation_op(LTLContractsParser::Relation_opContext * /*ctx*/) override { }
-  virtual void exitRelation_op(LTLContractsParser::Relation_opContext * /*ctx*/) override { }
-
-  virtual void enterBin_math_op(LTLContractsParser::Bin_math_opContext * /*ctx*/) override { }
-  virtual void exitBin_math_op(LTLContractsParser::Bin_math_opContext * /*ctx*/) override { }
+  virtual void enterFormula(LTLContractsParser::FormulaContext * /*ctx*/) override { }
+  virtual void exitFormula(LTLContractsParser::FormulaContext * /*ctx*/) override { }
 
   virtual void enterValue(LTLContractsParser::ValueContext * /*ctx*/) override { }
   virtual void exitValue(LTLContractsParser::ValueContext * /*ctx*/) override { }
 
-  virtual void enterRelation(LTLContractsParser::RelationContext * /*ctx*/) override { }
-  virtual void exitRelation(LTLContractsParser::RelationContext * /*ctx*/) override { }
-
   virtual void enterAtom(LTLContractsParser::AtomContext * /*ctx*/) override { }
   virtual void exitAtom(LTLContractsParser::AtomContext * /*ctx*/) override { }
-
-  virtual void enterProp_formula(LTLContractsParser::Prop_formulaContext * /*ctx*/) override { }
-  virtual void exitProp_formula(LTLContractsParser::Prop_formulaContext * /*ctx*/) override { }
-
-  virtual void enterFormula(LTLContractsParser::FormulaContext * /*ctx*/) override { }
-  virtual void exitFormula(LTLContractsParser::FormulaContext * /*ctx*/) override { }
 
   virtual void enterSingle_formula(LTLContractsParser::Single_formulaContext * /*ctx*/) override { }
   virtual void exitSingle_formula(LTLContractsParser::Single_formulaContext * /*ctx*/) override { }

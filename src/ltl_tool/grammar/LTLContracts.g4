@@ -13,32 +13,7 @@ fragment LETTER: [a-zA-Z];
 
 fragment ALPHANUM: DIGIT | LETTER | '_';
 
-ID: LETTER ALPHANUM*;
-
 NUMBER: DIGIT+;
-
-
-ENDST: ';';
-
-/*
-* Keywords
-*/
-
-integerKW:      'integer';
-booleanKW:      'boolean';
-variableKW:     'variable';
-constantKW:     'constant';
-trueKW:         'true';
-falseKW:        'false';
-contractKW:     'CONTRACT';
-assumptionsKW:  'Assumptions';
-guaranteesKW:   'Guarantees';
-
-nameKw: 'NAME';
-
-logic_constant: trueKW | falseKW;
-typeKW: integerKW | booleanKW;
-
 
 /**
 * Logic Operators
@@ -61,6 +36,8 @@ ALWAYS:     '[]';
 EVENTUALLY: '<>';
 NEXT:       'X';
 UNTIL:      'U';
+
+
 
 unary_temp_op: ALWAYS | EVENTUALLY | NEXT;
 bin_temp_op: UNTIL;
@@ -89,33 +66,53 @@ DIVIDE: '/';
 
 bin_math_op: TIMES | DIVIDE | PLUS | MINUS;
 
+ID: LETTER ALPHANUM*;
+
+ENDST: ';';
+
+/*
+* Keywords
+*/
+
+integerKW:      'integer';
+booleanKW:      'boolean';
+variableKW:     'variable';
+constantKW:     'constant';
+trueKW:         'true';
+falseKW:        'false';
+contractKW:     'CONTRACT';
+assumptionsKW:  'Assumptions';
+guaranteesKW:   'Guarantees';
+
+nameKw: 'NAME';
+
+logic_constant: trueKW | falseKW;
+typeKW: integerKW | booleanKW;
+
+
 /**
   GRAMMAR RULES
 **/
 
-value:  ID | 
-        NUMBER |
-        value bin_math_op value |
-        '(' value ')';
+
 
 relation:
     value relation_op value |
     '(' relation ')';
 
-atom:
-    logic_constant | relation | ID;
-
-prop_formula:
-    unary_logic_op prop_formula |
-    prop_formula bin_logic_op prop_formula |
-    '(' prop_formula ')' |
-    atom;
 
 formula:
-    unary_temp_op '(' formula ')' |
+    unary_logic_op formula |
+    formula bin_logic_op formula |
+    unary_temp_op formula |
     formula bin_temp_op formula |
-    prop_formula |
-    '(' formula ')';
+    '(' formula ')' | atom;
+
+value: value bin_math_op value |
+            '(' value ')' | ID | NUMBER;
+
+atom:
+    logic_constant | relation | ID;
 
 single_formula:
     formula ENDST;
