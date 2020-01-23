@@ -9,6 +9,8 @@
 
 #include "Chase.hh"
 
+#include "LTLSpecsBuilder.hh"
+
 #include <unistd.h>
 #include <fstream>
 

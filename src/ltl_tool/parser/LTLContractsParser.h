@@ -1,5 +1,5 @@
 
-// Generated from ltl_tool.g4 by ANTLR 4.8
+// Generated from LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -13,22 +13,22 @@ class  LTLContractsParser : public antlr4::Parser {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, WS = 13, LINE_COMMENT = 14, 
-    ID = 15, NUMBER = 16, ENDST = 17, AND = 18, OR = 19, NOT = 20, IMPLIES = 21, 
-    IFF = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, EQ = 27, 
-    NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
-    TIMES = 35, DIVIDE = 36
+    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, WS = 14, 
+    LINE_COMMENT = 15, ID = 16, NUMBER = 17, ENDST = 18, AND = 19, OR = 20, 
+    NOT = 21, IMPLIES = 22, IFF = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
+    UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
+    MINUS = 35, TIMES = 36, DIVIDE = 37
   };
 
   enum {
     RuleIntegerKW = 0, RuleBooleanKW = 1, RuleVariableKW = 2, RuleConstantKW = 3, 
     RuleTrueKW = 4, RuleFalseKW = 5, RuleContractKW = 6, RuleAssumptionsKW = 7, 
-    RuleGuaranteesKW = 8, RuleLogic_constant = 9, RuleTypeKW = 10, RuleBin_logic_op = 11, 
-    RuleUnary_logic_op = 12, RuleUnary_temp_op = 13, RuleBin_temp_op = 14, 
-    RuleRelation_op = 15, RuleBin_math_op = 16, RuleValue = 17, RuleRelation = 18, 
-    RuleAtom = 19, RuleProp_formula = 20, RuleFormula = 21, RuleSingle_formula = 22, 
-    RuleAssumptions = 23, RuleGuarantees = 24, RuleDeclaration = 25, RuleContract = 26, 
-    RuleProblem = 27
+    RuleGuaranteesKW = 8, RuleNameKw = 9, RuleLogic_constant = 10, RuleTypeKW = 11, 
+    RuleBin_logic_op = 12, RuleUnary_logic_op = 13, RuleUnary_temp_op = 14, 
+    RuleBin_temp_op = 15, RuleRelation_op = 16, RuleBin_math_op = 17, RuleValue = 18, 
+    RuleRelation = 19, RuleAtom = 20, RuleProp_formula = 21, RuleFormula = 22, 
+    RuleSingle_formula = 23, RuleAssumptions = 24, RuleGuarantees = 25, 
+    RuleDeclaration = 26, RuleContract = 27, RuleName = 28, RuleSystemSpec = 29
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -50,6 +50,7 @@ public:
   class ContractKWContext;
   class AssumptionsKWContext;
   class GuaranteesKWContext;
+  class NameKwContext;
   class Logic_constantContext;
   class TypeKWContext;
   class Bin_logic_opContext;
@@ -68,7 +69,8 @@ public:
   class GuaranteesContext;
   class DeclarationContext;
   class ContractContext;
-  class ProblemContext; 
+  class NameContext;
+  class SystemSpecContext; 
 
   class  IntegerKWContext : public antlr4::ParserRuleContext {
   public:
@@ -177,6 +179,18 @@ public:
   };
 
   GuaranteesKWContext* guaranteesKW();
+
+  class  NameKwContext : public antlr4::ParserRuleContext {
+  public:
+    NameKwContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  NameKwContext* nameKw();
 
   class  Logic_constantContext : public antlr4::ParserRuleContext {
   public:
@@ -334,9 +348,9 @@ public:
   public:
     AtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *ID();
-    RelationContext *relation();
     Logic_constantContext *logic_constant();
+    RelationContext *relation();
+    antlr4::tree::TerminalNode *ID();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -449,6 +463,7 @@ public:
     ContractContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ContractKWContext *contractKW();
+    antlr4::tree::TerminalNode *ID();
     AssumptionsContext *assumptions();
     GuaranteesContext *guarantees();
     std::vector<DeclarationContext *> declaration();
@@ -461,10 +476,26 @@ public:
 
   ContractContext* contract();
 
-  class  ProblemContext : public antlr4::ParserRuleContext {
+  class  NameContext : public antlr4::ParserRuleContext {
   public:
-    ProblemContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    NameContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    NameKwContext *nameKw();
+    antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *ENDST();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  NameContext* name();
+
+  class  SystemSpecContext : public antlr4::ParserRuleContext {
+  public:
+    SystemSpecContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    NameContext *name();
     std::vector<DeclarationContext *> declaration();
     DeclarationContext* declaration(size_t i);
     std::vector<ContractContext *> contract();
@@ -475,7 +506,7 @@ public:
    
   };
 
-  ProblemContext* problem();
+  SystemSpecContext* systemSpec();
 
 
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;

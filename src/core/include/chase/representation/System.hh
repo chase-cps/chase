@@ -15,7 +15,7 @@ namespace chase {
     public:
 
         /// @brief Constructor.
-        System( std::string name = std::string("System"));
+        System( std::string name = std::string("System") );
 
         /// @brief Destructor.
         ~System();
@@ -55,6 +55,14 @@ namespace chase {
         /// @return A clone of the object.
         System * clone() override;
 
+        /// @brief Getter of the name of the system.
+        /// @return A pointer to the name object.
+        Name * getName();
+
+        /// @brief Setter of the name of the system.
+        /// @return name The pointer to the name object.
+        void setName(Name * name);
+
     protected:
 
         /// Set of global declarations of the system.
@@ -64,7 +72,7 @@ namespace chase {
         std::set< Contract * > _contracts;
 
         /// @brief Name of the system.
-        std::string _name;
+        Name * _name;
 
     };
 

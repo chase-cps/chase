@@ -1,5 +1,5 @@
 
-// Generated from ltl_tool.g4 by ANTLR 4.8
+// Generated from LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -42,6 +42,9 @@ public:
 
   virtual void enterGuaranteesKW(LTLContractsParser::GuaranteesKWContext * /*ctx*/) override { }
   virtual void exitGuaranteesKW(LTLContractsParser::GuaranteesKWContext * /*ctx*/) override { }
+
+  virtual void enterNameKw(LTLContractsParser::NameKwContext * /*ctx*/) override { }
+  virtual void exitNameKw(LTLContractsParser::NameKwContext * /*ctx*/) override { }
 
   virtual void enterLogic_constant(LTLContractsParser::Logic_constantContext * /*ctx*/) override { }
   virtual void exitLogic_constant(LTLContractsParser::Logic_constantContext * /*ctx*/) override { }
@@ -97,8 +100,11 @@ public:
   virtual void enterContract(LTLContractsParser::ContractContext * /*ctx*/) override { }
   virtual void exitContract(LTLContractsParser::ContractContext * /*ctx*/) override { }
 
-  virtual void enterProblem(LTLContractsParser::ProblemContext * /*ctx*/) override { }
-  virtual void exitProblem(LTLContractsParser::ProblemContext * /*ctx*/) override { }
+  virtual void enterName(LTLContractsParser::NameContext * /*ctx*/) override { }
+  virtual void exitName(LTLContractsParser::NameContext * /*ctx*/) override { }
+
+  virtual void enterSystemSpec(LTLContractsParser::SystemSpecContext * /*ctx*/) override { }
+  virtual void exitSystemSpec(LTLContractsParser::SystemSpecContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

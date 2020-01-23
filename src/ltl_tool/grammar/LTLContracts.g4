@@ -2,7 +2,7 @@
  * Grammar to specify A/G Contracts using LTL.
  */
 
-grammar ltl_tool;
+grammar LTLContracts;
 
 WS: [ \t\r\n]+ -> skip;
 
@@ -33,6 +33,8 @@ falseKW:        'false';
 contractKW:     'CONTRACT';
 assumptionsKW:  'Assumptions';
 guaranteesKW:   'Guarantees';
+
+nameKw: 'NAME';
 
 logic_constant: trueKW | falseKW;
 typeKW: integerKW | booleanKW;
@@ -101,10 +103,10 @@ relation:
     '(' relation ')';
 
 atom:
-    ID | relation | logic_constant;
+    logic_constant | relation | ID;
 
 prop_formula:
-    unary_logic_op '(' prop_formula ')' |
+    unary_logic_op prop_formula |
     prop_formula bin_logic_op prop_formula |
     '(' prop_formula ')' |
     atom;
@@ -112,8 +114,8 @@ prop_formula:
 formula:
     unary_temp_op '(' formula ')' |
     formula bin_temp_op formula |
-    '(' formula ')' |
-    prop_formula;
+    prop_formula |
+    '(' formula ')';
 
 single_formula:
     formula ENDST;
@@ -133,13 +135,16 @@ declaration:
     constantKW ID booleanKW logic_constant ENDST ;
 
 contract:
-    contractKW ':' 
-    declaration+
+    contractKW ID ':'
+    declaration*
     assumptions
     guarantees;
+
+name: nameKw ':' ID ENDST;
     
-problem:
-    declaration+ contract+;
+systemSpec:
+    name?
+    declaration* contract+;
     
     
 

@@ -12,7 +12,10 @@ using namespace chase;
 int main( int argc, char * argv[] )
 {
     auto params = parseCmdLine(argc, argv);
-    printHelp();
+
+    LTLSpecsBuilder builder;
+    builder.parseSpecificationFile(params->fileIn);
+
 }
 
 Params * ltl_tool::parseCmdLine(int argc, char **argv) {

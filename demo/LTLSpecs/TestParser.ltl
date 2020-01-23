@@ -1,8 +1,12 @@
+NAME : TEST_SYSTEM;
+
+# This is a comment.
+
 variable A integer;
 constant Z integer 2;
 constant W boolean true;
 
-Contract C_1:
+CONTRACT C_1:
     variable B boolean;
 
     Assumptions:
@@ -11,7 +15,7 @@ Contract C_1:
     Guarantees:
         [](A=2 -> X(B));
 
-Contract C_2:
+CONTRACT C_2:
     variable C boolean;
 
     Assumptions:
@@ -20,7 +24,7 @@ Contract C_2:
     Guarantees:
         [](A=1 -> X(~C));
 
-Contract C_3:
+CONTRACT C_3:
     Assumptions:
         Z=1;
     Guarantees:

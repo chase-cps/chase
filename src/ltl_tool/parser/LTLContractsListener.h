@@ -1,5 +1,5 @@
 
-// Generated from ltl_tool.g4 by ANTLR 4.8
+// Generated from LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -40,6 +40,9 @@ public:
 
   virtual void enterGuaranteesKW(LTLContractsParser::GuaranteesKWContext *ctx) = 0;
   virtual void exitGuaranteesKW(LTLContractsParser::GuaranteesKWContext *ctx) = 0;
+
+  virtual void enterNameKw(LTLContractsParser::NameKwContext *ctx) = 0;
+  virtual void exitNameKw(LTLContractsParser::NameKwContext *ctx) = 0;
 
   virtual void enterLogic_constant(LTLContractsParser::Logic_constantContext *ctx) = 0;
   virtual void exitLogic_constant(LTLContractsParser::Logic_constantContext *ctx) = 0;
@@ -95,8 +98,11 @@ public:
   virtual void enterContract(LTLContractsParser::ContractContext *ctx) = 0;
   virtual void exitContract(LTLContractsParser::ContractContext *ctx) = 0;
 
-  virtual void enterProblem(LTLContractsParser::ProblemContext *ctx) = 0;
-  virtual void exitProblem(LTLContractsParser::ProblemContext *ctx) = 0;
+  virtual void enterName(LTLContractsParser::NameContext *ctx) = 0;
+  virtual void exitName(LTLContractsParser::NameContext *ctx) = 0;
+
+  virtual void enterSystemSpec(LTLContractsParser::SystemSpecContext *ctx) = 0;
+  virtual void exitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) = 0;
 
 
 };

@@ -13,8 +13,9 @@
 using namespace chase;
 
 System::System( std::string name ) :
-    _name(name)
+    _name(new Name(name))
 {
+    _name->setParent(this);
 }
 
 System::~System() = default;
@@ -47,7 +48,7 @@ int System::accept_visitor(chase::BaseVisitor &v) {
 }
 
 std::string System::getString() {
-    std::string ret("SYSTEM:\t" + _name + "\n");
+    std::string ret("SYSTEM:\t" + _name->getString() + "\n");
 
     ret += "DECLARATIONS:\n";
     for(auto it = _declarations.begin(); it != _declarations.end(); ++it)
@@ -68,7 +69,7 @@ std::string System::getString() {
 }
 
 System *System::clone() {
-    auto ret = new System(_name);
+    auto ret = new System(_name->getString());
 
     for(auto it = _declarations.begin(); it != _declarations.end(); ++it)
         ret->addDeclaration((*it)->clone());
@@ -77,4 +78,15 @@ System *System::clone() {
         ret->addContract((*it)->clone());
 
     return ret;
+}
+
+Name * System::getName()
+{
+    return _name;
+}
+
+void System::setName(Name * name)
+{
+    _name = name;
+    _name->setParent(this);
 }
