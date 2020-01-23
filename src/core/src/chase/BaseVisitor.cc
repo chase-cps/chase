@@ -24,6 +24,7 @@ BaseVisitor::~BaseVisitor()
 /// @cond
 
 int BaseVisitor::visitRange( Range & ){ return 0;}
+int BaseVisitor::visitSystem( System & ){ return 0;}
 int BaseVisitor::visitIntegerValue( IntegerValue & ){ return 0;}
 int BaseVisitor::visitRealValue( RealValue & ){ return 0;}
 int BaseVisitor::visitBooleanValue( BooleanValue & ){return 0;}

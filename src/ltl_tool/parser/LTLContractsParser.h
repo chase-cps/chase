@@ -1,5 +1,5 @@
 
-// Generated from LTLContracts.g4 by ANTLR 4.8
+// Generated from ltl_tool.g4 by ANTLR 4.8
 
 #pragma once
 

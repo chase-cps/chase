@@ -1,5 +1,5 @@
 
-// Generated from LTLContracts.g4 by ANTLR 4.8
+// Generated from ltl_tool.g4 by ANTLR 4.8
 
 
 #include "LTLContractsLexer.h"
@@ -17,7 +17,7 @@ LTLContractsLexer::~LTLContractsLexer() {
 }
 
 std::string LTLContractsLexer::getGrammarFileName() const {
-  return "LTLContracts.g4";
+  return "ltl_tool.g4";
 }
 
 const std::vector<std::string>& LTLContractsLexer::getRuleNames() const {

@@ -1,13 +1,9 @@
+#if ($HEADER_COMMENTS)
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
- * @date        2019
+ * @date        ${DATE}
  *              This project is released under the 3-Clause BSD License.
- * */
+ *
+ */
+#end
 
-#include "Chase.hh"
-
-
-int main( int argc, char * argv[] )
-{
-    chase::messageError("Compiled.");
-}

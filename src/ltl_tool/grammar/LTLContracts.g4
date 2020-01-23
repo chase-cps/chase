@@ -2,7 +2,7 @@
  * Grammar to specify A/G Contracts using LTL.
  */
 
-grammar LTLContracts;
+grammar ltl_tool;
 
 WS: [ \t\r\n]+ -> skip;
 
@@ -36,6 +36,7 @@ guaranteesKW:   'Guarantees';
 
 logic_constant: trueKW | falseKW;
 typeKW: integerKW | booleanKW;
+
 
 /**
 * Logic Operators
