@@ -13,11 +13,11 @@ class  LTLContractsLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, WS = 14, 
-    LINE_COMMENT = 15, NUMBER = 16, AND = 17, OR = 18, NOT = 19, IMPLIES = 20, 
-    IFF = 21, ALWAYS = 22, EVENTUALLY = 23, NEXT = 24, UNTIL = 25, EQ = 26, 
-    NEQ = 27, LT = 28, LE = 29, GT = 30, GE = 31, PLUS = 32, MINUS = 33, 
-    TIMES = 34, DIVIDE = 35, ID = 36, ENDST = 37
+    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
+    T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
+    IMPLIES = 21, IFF = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, 
+    EQ = 27, NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
+    TIMES = 35, DIVIDE = 36, ID = 37, NUMBER = 38, ENDST = 39
   };
 
   LTLContractsLexer(antlr4::CharStream *input);

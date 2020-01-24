@@ -103,7 +103,7 @@ namespace antlr4 {
     /// <seealso cref="ParserRuleContext#children"/> list. Contexts are then not candidates
     /// for garbage collection.
     /// </summary>
-    virtual void setBuildParseTree(bool buildParseTrees);
+    virtual tree::ParseTree * setBuildParseTree(bool buildParseTrees);
 
     /// <summary>
     /// Gets whether or not a complete parse tree will be constructed while

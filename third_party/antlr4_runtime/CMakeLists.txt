@@ -26,7 +26,9 @@ endif()
 
 file(STRINGS "VERSION" ANTLR_VERSION)
 
-set(MY_CXX_WARNING_FLAGS "  -Wall -pedantic -W")
+
+## Suppress Warnings in ANTLR4 Runtime.
+#set(MY_CXX_WARNING_FLAGS "  -Wall -pedantic -W")
 
 # Initialize CXXFLAGS.
 set(CMAKE_CXX_STANDARD 11)

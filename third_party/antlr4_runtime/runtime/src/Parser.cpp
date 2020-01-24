@@ -141,7 +141,7 @@ Token* Parser::matchWildcard() {
   return t;
 }
 
-void Parser::setBuildParseTree(bool buildParseTrees) {
+tree::ParseTree * Parser::setBuildParseTree(bool buildParseTrees) {
   this->_buildParseTrees = buildParseTrees;
 }
 

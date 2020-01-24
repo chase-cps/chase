@@ -13,7 +13,7 @@ fragment LETTER: [a-zA-Z];
 
 fragment ALPHANUM: DIGIT | LETTER | '_';
 
-NUMBER: DIGIT+;
+
 
 /**
 * Logic Operators
@@ -66,7 +66,9 @@ DIVIDE: '/';
 
 bin_math_op: TIMES | DIVIDE | PLUS | MINUS;
 
+
 ID: LETTER ALPHANUM*;
+NUMBER: DIGIT+;
 
 ENDST: ';';
 
@@ -78,11 +80,14 @@ integerKW:      'integer';
 booleanKW:      'boolean';
 variableKW:     'variable';
 constantKW:     'constant';
+propositionKw:  'proposition';
+isKw:           'is';
 trueKW:         'true';
 falseKW:        'false';
 contractKW:     'CONTRACT';
 assumptionsKW:  'Assumptions';
 guaranteesKW:   'Guarantees';
+
 
 nameKw: 'NAME';
 
@@ -94,11 +99,11 @@ typeKW: integerKW | booleanKW;
   GRAMMAR RULES
 **/
 
-
+lvalue: value | ID;
+rvalue: value | ID;
 
 relation:
-    value relation_op value |
-    '(' relation ')';
+    lvalue relation_op rvalue;
 
 
 formula:
@@ -108,11 +113,18 @@ formula:
     formula bin_temp_op formula |
     '(' formula ')' | atom;
 
+minus_number: MINUS NUMBER;
+
 value: value bin_math_op value |
-            '(' value ')' | ID | NUMBER;
+        ID bin_math_op value |
+        ID bin_math_op ID |
+        value bin_math_op ID |
+            '(' value ')' | minus_number | NUMBER;
+
+propositionValue: value | relation;
 
 atom:
-    logic_constant | relation | ID;
+    logic_constant | ID;
 
 single_formula:
     formula ENDST;
@@ -129,7 +141,7 @@ guarantees:
 declaration:
     variableKW ID typeKW ENDST |
     constantKW ID integerKW NUMBER ENDST |
-    constantKW ID booleanKW logic_constant ENDST ;
+    propositionKw ID (isKw propositionValue)? ENDST ;
 
 contract:
     contractKW ID ':'
@@ -142,6 +154,9 @@ name: nameKw ':' ID ENDST;
 systemSpec:
     name?
     declaration* contract+;
+
+
+
     
     
 

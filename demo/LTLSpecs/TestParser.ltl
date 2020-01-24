@@ -2,30 +2,37 @@ NAME : TEST_SYSTEM;
 
 # This is a comment.
 
+proposition Z_eq_A_minus_1 is Z=A-1;
+
 variable A integer;
 constant Z integer 2;
-constant W boolean true;
+
+proposition A_eq_2 is A=2;
+proposition A_eq_1 is A=1;
+proposition W;
+
+proposition Z_eq_2 is Z=2;
 
 CONTRACT C_1:
     variable B boolean;
 
     Assumptions:
-        [](A=2);
+        [](A_eq_2);
 
     Guarantees:
-        [](A=2 -> X(B) );
+        [](A_eq_2 -> X(B));
 
 CONTRACT C_2:
     variable C boolean;
 
     Assumptions:
-        [](A=1);
+        [](A_eq_1);
 
     Guarantees:
-        [](A=1 -> X(~C));
+        [](A_eq_1 -> X(~C));
 
 CONTRACT C_3:
     Assumptions:
-        Z=1;
+        Z_eq_A_minus_1;
     Guarantees:
-        ~W /\ Z=2;
+        ~W /\ Z_eq_2;

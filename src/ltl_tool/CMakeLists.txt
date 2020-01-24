@@ -17,9 +17,9 @@ set(LTL_PARSER_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ltl_tool/parser)
 set(LTL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ltl_tool)
 
 set(LTL_PARSER_SRCS
-        ${LTL_PARSER_SRC_DIR}/LTLContractsBaseListener.cpp
+        ${LTL_PARSER_SRC_DIR}/LTLContractsBaseVisitor.cpp
         ${LTL_PARSER_SRC_DIR}/LTLContractsLexer.cpp
-        ${LTL_PARSER_SRC_DIR}/LTLContractsListener.cpp
+        ${LTL_PARSER_SRC_DIR}/LTLContractsVisitor.cpp
         ${LTL_PARSER_SRC_DIR}/LTLContractsParser.cpp
         )
 

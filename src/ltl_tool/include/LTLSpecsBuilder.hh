@@ -10,8 +10,8 @@
 
 #include "Chase.hh"
 #include "parser/LTLContractsLexer.h"
-#include "parser/LTLContractsBaseListener.h"
-#include "parser/LTLContractsListener.h"
+#include "parser/LTLContractsBaseVisitor.h"
+#include "parser/LTLContractsVisitor.h"
 #include "parser/LTLContractsParser.h"
 
 using namespace chase;
@@ -19,7 +19,7 @@ using namespace chase;
 namespace ltl_tool {
 
     /// @brief Main class of the specification builder for the LTL contracts.
-    class LTLSpecsBuilder : public LTLContractsBaseListener {
+    class LTLSpecsBuilder : public LTLContractsBaseVisitor {
     public:
         /// @brief Constructor.
         LTLSpecsBuilder();
@@ -37,9 +37,13 @@ namespace ltl_tool {
         System * parseSpecificationFile( std::string infile );
 
         /// @cond
+        antlrcpp::Any
+        visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) override;
+        antlrcpp::Any
+        visitDeclaration(LTLContractsParser::DeclarationContext *ctx) override;
 
-        void
-        enterSystemSpec(LTLContractsParser::SystemSpecContext *ctx) override;
+        Expression *
+        buildRelation(LTLContractsParser::RelationContext *ctx) ;
 
         /// @endcond
 
@@ -48,6 +52,14 @@ namespace ltl_tool {
 
         /// @brief The system being built.
         System * _system;
+        /// @brief The current contract being parsed. If null, the visit is
+        /// traversing the global area of the specification.
+        Contract * _currContract;
+
+        /// @brief Map of propositions and values.
+        std::map< Variable *, Expression * > _map_props_values;
+
+
 
 
 
