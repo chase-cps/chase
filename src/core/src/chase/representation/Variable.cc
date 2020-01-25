@@ -29,7 +29,7 @@ Variable::~Variable()
 
 std::string Variable::getString()
 {
-    std::string ret("var");
+    std::string ret("variable: ");
     if(_causality == input) ret += " (input):\t";
     if(_causality == output) ret += " (output):\t";
     if( _name != nullptr && _type != nullptr )

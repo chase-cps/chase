@@ -45,6 +45,9 @@ namespace ltl_tool {
         Expression *
         buildRelation(LTLContractsParser::RelationContext *ctx) ;
 
+        Value * buildValue(LTLContractsParser::ValueContext * ctx);
+        Identifier * createIdentifier(std::string name);
+
         /// @endcond
 
 

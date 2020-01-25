@@ -27,9 +27,9 @@ public:
     RuleIsKw = 11, RuleTrueKW = 12, RuleFalseKW = 13, RuleContractKW = 14, 
     RuleAssumptionsKW = 15, RuleGuaranteesKW = 16, RuleNameKw = 17, RuleLogic_constant = 18, 
     RuleTypeKW = 19, RuleLvalue = 20, RuleRvalue = 21, RuleRelation = 22, 
-    RuleFormula = 23, RuleMinus_number = 24, RuleValue = 25, RulePropositionValue = 26, 
-    RuleAtom = 27, RuleSingle_formula = 28, RuleAssumptions = 29, RuleGuarantees = 30, 
-    RuleDeclaration = 31, RuleContract = 32, RuleName = 33, RuleSystemSpec = 34
+    RuleFormula = 23, RuleMinus_number = 24, RuleValue = 25, RuleAtom = 26, 
+    RuleSingle_formula = 27, RuleAssumptions = 28, RuleGuarantees = 29, 
+    RuleDeclaration = 30, RuleContract = 31, RuleName = 32, RuleSystemSpec = 33
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -68,7 +68,6 @@ public:
   class FormulaContext;
   class Minus_numberContext;
   class ValueContext;
-  class PropositionValueContext;
   class AtomContext;
   class Single_formulaContext;
   class AssumptionsContext;
@@ -346,7 +345,6 @@ public:
     LvalueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ValueContext *value();
-    antlr4::tree::TerminalNode *ID();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -360,7 +358,6 @@ public:
     RvalueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ValueContext *value();
-    antlr4::tree::TerminalNode *ID();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -436,20 +433,6 @@ public:
 
   ValueContext* value();
   ValueContext* value(int precedence);
-  class  PropositionValueContext : public antlr4::ParserRuleContext {
-  public:
-    PropositionValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    ValueContext *value();
-    RelationContext *relation();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  PropositionValueContext* propositionValue();
-
   class  AtomContext : public antlr4::ParserRuleContext {
   public:
     AtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -521,7 +504,7 @@ public:
     antlr4::tree::TerminalNode *NUMBER();
     PropositionKwContext *propositionKw();
     IsKwContext *isKw();
-    PropositionValueContext *propositionValue();
+    RelationContext *relation();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

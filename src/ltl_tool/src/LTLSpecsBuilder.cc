@@ -79,11 +79,13 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
         dec = new Variable(
                 new Boolean(), new Name(name));
 
-        Expression * exp = buildRelation(ctx->propositionValue()->relation());
+        if( ctx->relation() != nullptr ) {
+            Expression *exp = buildRelation(ctx->relation());
 
-        _map_props_values.insert(
-                std::pair< Variable *, Expression *>(
-                        reinterpret_cast<Variable *>(dec), exp));
+            _map_props_values.insert(
+                    std::pair<Variable *, Expression *>(
+                            reinterpret_cast<Variable *>(dec), exp));
+        }
     }
     else
         messageError("Unknown entry:\t" + ctx->getText());
@@ -99,7 +101,115 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
 Expression *
 LTLSpecsBuilder::buildRelation(LTLContractsParser::RelationContext *ctx)
 {
+    std::string rel_op = ctx->relation_op()->getText();
+    Operator op = op_neq;
+    if( rel_op == "!=" ) op = op_neq;
+    else if( rel_op == "=" ) op = op_eq;
+    else if( rel_op == ">" ) op = op_gt;
+    else if( rel_op == "<" ) op = op_lt;
+    else if( rel_op == ">=" ) op = op_ge;
+    else if( rel_op == "<=" ) op = op_le;
+    else messageError("Unsupported relation operator: " + rel_op);
 
+    return new Expression(op,
+            buildValue(ctx->lvalue()->value()),
+            buildValue(ctx->rvalue()->value()));
+
+
+
+}
+
+Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
+{
+    // The value is terminal.
+    if(ctx->children.size() == 1)
+    {
+        if(ctx->ID(0) != nullptr)
+            return createIdentifier(ctx->ID(0)->getText());
+        if(ctx->value(0))
+            return buildValue(ctx->value(0));
+        if(ctx->NUMBER())
+            return new IntegerValue(std::stoi(ctx->getText()));
+        if(ctx->minus_number())
+            return new IntegerValue(std::stoi(ctx->getText()));
+    }
+
+    if(ctx->children.size() == 3)
+    {
+        if(ctx->children[0]->getText() == "(" &&
+        ctx->children[2]->getText() == ")" )
+        {
+            return buildValue(ctx->value(0));
+        }
+
+        std::string math_op = ctx->bin_math_op()->getText();
+        Operator op = op_plus;
+        if(math_op == "+") op = op_plus;
+        if(math_op == "-") op = op_minus;
+        if(math_op == "*") op = op_multiply;
+        if(math_op == "/") op = op_divide;
+
+        // Brute force with combinations.
+        if(ctx->children[0] == ctx->ID(0) &&
+            ctx->children[2] == ctx->ID(1))
+        {
+            return new Expression(op,
+                    createIdentifier(ctx->ID(0)->getText()),
+                    createIdentifier(ctx->ID(1)->getText()));
+        }
+        // Brute force with combinations.
+        if(ctx->children[0] == ctx->value(0) &&
+           ctx->children[2] == ctx->value(1))
+        {
+            return new Expression(op,
+                    buildValue(ctx->value(0)),
+                    buildValue(ctx->value(1)));
+
+        }
+        if(ctx->children[0] == ctx->ID(0) &&
+           ctx->children[2] == ctx->value(0))
+        {
+            return new Expression(op,
+                    createIdentifier(ctx->ID(0)->getText()),
+                    buildValue(ctx->value(0)));
+        }
+        if(ctx->children[0] == ctx->value(0) &&
+           ctx->children[2] == ctx->ID(0))
+        {
+            return new Expression(op,
+                    buildValue(ctx->value(0)),
+                    createIdentifier(ctx->ID(0)->getText()));
+        }
+    }
+    return nullptr;
+}
+
+Identifier *LTLSpecsBuilder::createIdentifier(std::string name)
+{
+    if( _currContract != nullptr )
+    {
+        // search declaration inside contract.
+        for(auto i = _currContract->declarations.begin();
+                i != _currContract->declarations.end(); ++i )
+        {
+            DataDeclaration * currDec = dynamic_cast<DataDeclaration *>(*i);
+            if( currDec == nullptr ) continue;
+            if(currDec->getName()->getString() == name )
+                return new Identifier(currDec);
+        }
+    }
+
+    // if it is not in the current contract, search in the global declarations.
+    for(auto i = _system->getDeclarationsSet().begin();
+        i != _system->getDeclarationsSet().end(); ++i )
+    {
+        DataDeclaration * currDec = dynamic_cast<DataDeclaration *>(*i);
+        if( currDec == nullptr ) continue;
+        if(currDec->getName()->getString() == name )
+            return new Identifier(currDec);
+    }
+
+    return nullptr;
 }
 
 

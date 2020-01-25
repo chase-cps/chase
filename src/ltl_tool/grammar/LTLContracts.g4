@@ -99,8 +99,8 @@ typeKW: integerKW | booleanKW;
   GRAMMAR RULES
 **/
 
-lvalue: value | ID;
-rvalue: value | ID;
+lvalue: value;
+rvalue: value;
 
 relation:
     lvalue relation_op rvalue;
@@ -119,9 +119,9 @@ value: value bin_math_op value |
         ID bin_math_op value |
         ID bin_math_op ID |
         value bin_math_op ID |
-            '(' value ')' | minus_number | NUMBER;
+        ID | minus_number | NUMBER | '(' value ')';
 
-propositionValue: value | relation;
+
 
 atom:
     logic_constant | ID;
@@ -141,7 +141,7 @@ guarantees:
 declaration:
     variableKW ID typeKW ENDST |
     constantKW ID integerKW NUMBER ENDST |
-    propositionKw ID (isKw propositionValue)? ENDST ;
+    propositionKw ID (isKw relation)? ENDST ;
 
 contract:
     contractKW ID ':'

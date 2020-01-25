@@ -119,10 +119,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPropositionValue(LTLContractsParser::PropositionValueContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual antlrcpp::Any visitAtom(LTLContractsParser::AtomContext *ctx) override {
     return visitChildren(ctx);
   }

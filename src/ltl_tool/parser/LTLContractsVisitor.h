@@ -71,8 +71,6 @@ public:
 
     virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *context) = 0;
 
-    virtual antlrcpp::Any visitPropositionValue(LTLContractsParser::PropositionValueContext *context) = 0;
-
     virtual antlrcpp::Any visitAtom(LTLContractsParser::AtomContext *context) = 0;
 
     virtual antlrcpp::Any visitSingle_formula(LTLContractsParser::Single_formulaContext *context) = 0;

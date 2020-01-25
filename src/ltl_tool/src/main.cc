@@ -16,6 +16,8 @@ int main( int argc, char * argv[] )
     LTLSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);
 
+    std::cout << builder.getSystem()->getString() << std::endl;
+
 }
 
 Params * ltl_tool::parseCmdLine(int argc, char **argv) {

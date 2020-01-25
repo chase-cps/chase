@@ -48,18 +48,20 @@ Constant & Constant::operator=(const Constant &o )
 
 std::string Constant::getString()
 {
-    std::string ret;
+    std::string ret("constant: ");
     if( _name != nullptr && _type != nullptr )
     {
-        ret += _type->getString();
-        ret += " ";
         ret += _name->getString();
+        ret += " (";
+        ret += _type->getString();
+        ret += ") = ";
+        ret += _value->getString();
+
     }
     else{
         ret = std::string("NULL CONSTANT");
     }
     return ret;
-
 }
 
 int Constant::accept_visitor( BaseVisitor &v )
