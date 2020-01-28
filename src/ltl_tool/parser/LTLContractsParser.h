@@ -519,10 +519,10 @@ public:
     virtual size_t getRuleIndex() const override;
     ContractKWContext *contractKW();
     antlr4::tree::TerminalNode *ID();
-    AssumptionsContext *assumptions();
-    GuaranteesContext *guarantees();
     std::vector<DeclarationContext *> declaration();
     DeclarationContext* declaration(size_t i);
+    AssumptionsContext *assumptions();
+    GuaranteesContext *guarantees();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

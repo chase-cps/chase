@@ -44,6 +44,12 @@ namespace chase
     /// @return A pointer to a new object representing the Implies operation.
     BinaryBooleanFormula * Implies( LogicFormula * op1, LogicFormula * op2);
 
+    /// @brief Factory for the double implication operation.
+    /// @param op1 The first operator of the operation.
+    /// @param op2 The second operator of the operation.
+    /// @return A pointer to a new object representing the Implies operation.
+    BinaryBooleanFormula * Iff( LogicFormula * op1, LogicFormula * op2);
+
     /// @brief Factory for the NAND operation.
     /// @param op1 The first operator of the operation.
     /// @param op2 The second operator of the operation.
@@ -93,6 +99,13 @@ namespace chase
     /// @return A pointer to a new object representing the next temporal
     /// formula.
     UnaryTemporalFormula * Next(LogicFormula * op);
+
+    /// @brief Factory for the Until formula.
+    /// @param op1 The 1st operator of the formula.
+    /// @param op2 The 2nd operator of the formula.
+    /// @return A pointer to a new object representing the until temporal
+    /// formula.
+    BinaryTemporalFormula * Until(LogicFormula * op1, LogicFormula * op2);
 
     /// @brief Factory for the representation of a sum.
     /// @param op1 The first operator of the operation.

@@ -8,13 +8,16 @@
 
 #include "LTLSpecsBuilder.hh"
 
+#include "utilities/Factory.hh"
+
 using namespace chase;
 using namespace ltl_tool;
 using namespace antlr4;
 
 LTLSpecsBuilder::LTLSpecsBuilder() :
     _system(nullptr),
-    _currContract(nullptr)
+    _currContract(nullptr),
+    _currFormula(nullptr)
 {
 }
 
@@ -80,7 +83,7 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
                 new Boolean(), new Name(name));
 
         if( ctx->relation() != nullptr ) {
-            Expression *exp = buildRelation(ctx->relation());
+            Expression *exp = createRelation(ctx->relation());
 
             _map_props_values.insert(
                     std::pair<Variable *, Expression *>(
@@ -99,7 +102,7 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
 }
 
 Expression *
-LTLSpecsBuilder::buildRelation(LTLContractsParser::RelationContext *ctx)
+LTLSpecsBuilder::createRelation(LTLContractsParser::RelationContext *ctx)
 {
     std::string rel_op = ctx->relation_op()->getText();
     Operator op = op_neq;
@@ -112,14 +115,14 @@ LTLSpecsBuilder::buildRelation(LTLContractsParser::RelationContext *ctx)
     else messageError("Unsupported relation operator: " + rel_op);
 
     return new Expression(op,
-            buildValue(ctx->lvalue()->value()),
-            buildValue(ctx->rvalue()->value()));
+                          createValue(ctx->lvalue()->value()),
+                          createValue(ctx->rvalue()->value()));
 
 
 
 }
 
-Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
+Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
 {
     // The value is terminal.
     if(ctx->children.size() == 1)
@@ -127,7 +130,7 @@ Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
         if(ctx->ID(0) != nullptr)
             return createIdentifier(ctx->ID(0)->getText());
         if(ctx->value(0))
-            return buildValue(ctx->value(0));
+            return createValue(ctx->value(0));
         if(ctx->NUMBER())
             return new IntegerValue(std::stoi(ctx->getText()));
         if(ctx->minus_number())
@@ -139,7 +142,7 @@ Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
         if(ctx->children[0]->getText() == "(" &&
         ctx->children[2]->getText() == ")" )
         {
-            return buildValue(ctx->value(0));
+            return createValue(ctx->value(0));
         }
 
         std::string math_op = ctx->bin_math_op()->getText();
@@ -162,23 +165,23 @@ Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
            ctx->children[2] == ctx->value(1))
         {
             return new Expression(op,
-                    buildValue(ctx->value(0)),
-                    buildValue(ctx->value(1)));
+                                  createValue(ctx->value(0)),
+                                  createValue(ctx->value(1)));
 
         }
         if(ctx->children[0] == ctx->ID(0) &&
            ctx->children[2] == ctx->value(0))
         {
             return new Expression(op,
-                    createIdentifier(ctx->ID(0)->getText()),
-                    buildValue(ctx->value(0)));
+                                  createIdentifier(ctx->ID(0)->getText()),
+                                  createValue(ctx->value(0)));
         }
         if(ctx->children[0] == ctx->value(0) &&
            ctx->children[2] == ctx->ID(0))
         {
             return new Expression(op,
-                    buildValue(ctx->value(0)),
-                    createIdentifier(ctx->ID(0)->getText()));
+                                  createValue(ctx->value(0)),
+                                  createIdentifier(ctx->ID(0)->getText()));
         }
     }
     return nullptr;
@@ -186,31 +189,184 @@ Value *LTLSpecsBuilder::buildValue(LTLContractsParser::ValueContext *ctx)
 
 Identifier *LTLSpecsBuilder::createIdentifier(std::string name)
 {
+    auto dd = findDeclaration(name);
+    if( dd != nullptr )
+        return new Identifier(dd);
+    else
+        messageError(name + "is not declared in the current scope.");
+    return nullptr;
+}
+
+antlrcpp::Any
+LTLSpecsBuilder::visitContract(LTLContractsParser::ContractContext *ctx)
+{
+    _currContract = new Contract(ctx->ID()->getText());
+    _system->addContract(_currContract);
+
+    // Visit the contract.
+    for(size_t it = 0; it != ctx->declaration().size(); ++it)
+    {
+        visitDeclaration(ctx->declaration()[it]);
+    }
+
+    visitAssumptions(ctx->assumptions());
+    visitGuarantees(ctx->guarantees());
+
+    _currContract = nullptr;
+    return antlrcpp::Any();
+}
+
+
+antlrcpp::Any
+LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
+{
+    size_t i = 0;
+    _currFormula = createFormula(ctx->single_formula(i)->formula());
+    ++i;
+    while(i < ctx->single_formula().size())
+    {
+        _currFormula =chase::And(
+                _currFormula,
+                createFormula(ctx->single_formula(i)->formula()));
+    }
+
+    _currContract->addAssumptions(temporal_logic, _currFormula);
+    _currFormula = nullptr;
+
+    return antlrcpp::Any();
+}
+
+
+antlrcpp::Any
+LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
+    size_t i = 0;
+    _currFormula = createFormula(ctx->single_formula(i)->formula());
+    ++i;
+    while(i < ctx->single_formula().size())
+    {
+        _currFormula =chase::And(
+                _currFormula,
+                createFormula(ctx->single_formula(i)->formula()));
+    }
+
+    _currContract->addGuarantees(temporal_logic, _currFormula);
+    _currFormula = nullptr;
+
+    return antlrcpp::Any();
+}
+
+
+
+
+LogicFormula *
+LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
+{
+    if(ctx->unary_logic_op())
+    {
+        if(ctx->unary_logic_op()->NOT())
+            return Not(createFormula(ctx->formula(0)));
+    }
+    if(ctx->unary_temp_op())
+    {
+        if(ctx->unary_temp_op()->ALWAYS())
+            return Always(createFormula(ctx->formula(0)));
+        if(ctx->unary_temp_op()->EVENTUALLY())
+            return Eventually(createFormula(ctx->formula(0)));
+        if(ctx->unary_temp_op()->NEXT())
+            return Next(createFormula(ctx->formula(0)));
+    }
+    if(ctx->bin_logic_op())
+    {
+        if(ctx->bin_logic_op()->AND())
+            return And(createFormula(ctx->formula(0)),
+                       createFormula(ctx->formula(1)));
+        if(ctx->bin_logic_op()->OR())
+            return Or(createFormula(ctx->formula(0)),
+                      createFormula(ctx->formula(1)));
+        if(ctx->bin_logic_op()->IMPLIES())
+            return Implies(createFormula(ctx->formula(0)),
+                           createFormula(ctx->formula(1)));
+        if(ctx->bin_logic_op()->IFF())
+            return Iff(createFormula(ctx->formula(0)),
+                       createFormula(ctx->formula(1)));
+    }
+    if(ctx->bin_temp_op())
+    {
+        if(ctx->bin_temp_op()->UNTIL())
+            return Until(
+                    createFormula(ctx->formula(0)),
+                    createFormula(ctx->formula(1)));
+    }
+    if(ctx->formula(0) != nullptr)
+    {
+        return createFormula(ctx->formula(0));
+    }
+    if(ctx->atom() != nullptr)
+    {
+        if(ctx->atom()->ID())
+            return createProposition(ctx->atom()->ID()->getText());
+        if(ctx->atom()->logic_constant())
+            return createLogicConstant(ctx->atom()->logic_constant());
+    }
+    return nullptr;
+}
+
+BooleanConstant *LTLSpecsBuilder::createLogicConstant(
+        LTLContractsParser::Logic_constantContext *ctx)
+{
+    return new BooleanConstant(ctx->trueKW() != nullptr);
+}
+
+Proposition *LTLSpecsBuilder::createProposition(std::string name)
+{
+    auto v = dynamic_cast<Variable *>(findDeclaration(name));
+    if( v == nullptr) {
+        messageError(name + " is not declared in the current scope.");
+        return nullptr;
+    }
+
+    auto prop = new Proposition();
+    prop->setName(v->getName()->clone());
+
+    auto p = _map_props_values.find(v);
+    if(p != _map_props_values.end())
+    {
+        prop->setValue(p->second);
+    } else {
+        prop->setValue(new Identifier(v));
+    }
+    return prop;
+}
+
+DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
     if( _currContract != nullptr )
     {
         // search declaration inside contract.
-        for(auto i = _currContract->declarations.begin();
-                i != _currContract->declarations.end(); ++i )
+        for(auto & declaration : _currContract->declarations)
         {
-            DataDeclaration * currDec = dynamic_cast<DataDeclaration *>(*i);
+            auto currDec = dynamic_cast<DataDeclaration *>(declaration);
             if( currDec == nullptr ) continue;
             if(currDec->getName()->getString() == name )
-                return new Identifier(currDec);
+                return currDec;
         }
     }
 
     // if it is not in the current contract, search in the global declarations.
-    for(auto i = _system->getDeclarationsSet().begin();
-        i != _system->getDeclarationsSet().end(); ++i )
+    for(auto i : _system->getDeclarationsSet())
     {
-        DataDeclaration * currDec = dynamic_cast<DataDeclaration *>(*i);
+        auto currDec = dynamic_cast<DataDeclaration *>(i);
         if( currDec == nullptr ) continue;
         if(currDec->getName()->getString() == name )
-            return new Identifier(currDec);
+            return currDec;
     }
 
     return nullptr;
 }
+
+
+
+
+
 
 
 

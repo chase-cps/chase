@@ -37,19 +37,48 @@ namespace ltl_tool {
         System * parseSpecificationFile( std::string infile );
 
         /// @cond
+
         antlrcpp::Any
         visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) override;
         antlrcpp::Any
         visitDeclaration(LTLContractsParser::DeclarationContext *ctx) override;
 
-        Expression *
-        buildRelation(LTLContractsParser::RelationContext *ctx) ;
+        antlrcpp::Any
+        visitContract(LTLContractsParser::ContractContext *ctx) override;
 
-        Value * buildValue(LTLContractsParser::ValueContext * ctx);
-        Identifier * createIdentifier(std::string name);
+        antlrcpp::Any
+        visitAssumptions(LTLContractsParser::AssumptionsContext *ctx) override;
+
+        antlrcpp::Any
+        visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) override;
+
 
         /// @endcond
 
+        Expression *
+        createRelation(LTLContractsParser::RelationContext *ctx) ;
+
+        /// @brief Function parsing and building a value.
+        /// @param ctx A pointer to a ANTLR4 ValueContext parsed.
+        /// @return Pointer to a new CHASE Value object representing the parsed
+        /// ValueContext.
+        Value * createValue(LTLContractsParser::ValueContext * ctx);
+
+        /// @brief Function parsing and building a Identified.
+        /// @param name A name (string) being parsed.
+        /// @return Pointer to a new CHASE Identifier object representing
+        /// the parsed name.
+        Identifier * createIdentifier(std::string name);
+
+        LogicFormula *
+        createFormula(LTLContractsParser::FormulaContext * ctx);
+
+        BooleanConstant *
+        createLogicConstant(LTLContractsParser::Logic_constantContext * ctx);
+
+        Proposition * createProposition(std::string name);
+
+        DataDeclaration * findDeclaration(std::string name);
 
     protected:
 
@@ -58,6 +87,8 @@ namespace ltl_tool {
         /// @brief The current contract being parsed. If null, the visit is
         /// traversing the global area of the specification.
         Contract * _currContract;
+
+        LogicFormula * _currFormula;
 
         /// @brief Map of propositions and values.
         std::map< Variable *, Expression * > _map_props_values;

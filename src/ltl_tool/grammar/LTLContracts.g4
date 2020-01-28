@@ -126,8 +126,10 @@ value: value bin_math_op value |
 atom:
     logic_constant | ID;
 
-single_formula:
-    formula ENDST;
+
+
+single_formula: formula ENDST;
+
 
 assumptions:
     assumptionsKW ':'
@@ -146,8 +148,8 @@ declaration:
 contract:
     contractKW ID ':'
     declaration*
-    assumptions
-    guarantees;
+    assumptions?
+    guarantees?;
 
 name: nameKw ':' ID ENDST;
     

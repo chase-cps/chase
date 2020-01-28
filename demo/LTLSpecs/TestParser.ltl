@@ -14,7 +14,7 @@ proposition W;
 proposition Z_eq_2 is Z=2;
 
 CONTRACT C_1:
-    variable B boolean;
+    proposition B;
 
     Assumptions:
         [](A_eq_2);
@@ -23,7 +23,7 @@ CONTRACT C_1:
         [](A_eq_2 -> X(B));
 
 CONTRACT C_2:
-    variable C boolean;
+    proposition C;
 
     Assumptions:
         [](A_eq_1);
