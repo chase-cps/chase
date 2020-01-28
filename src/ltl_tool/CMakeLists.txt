@@ -24,9 +24,7 @@ set(LTL_PARSER_SRCS
         )
 
 set(LTL_TOOL_SRCS
-        ${LTL_PARSER_SRCS}
         ${LTL_SRC_DIR}/src/main.cc
-        ${LTL_SRC_DIR}/src/LTLSpecsBuilder.cc
 )
 
 
@@ -35,9 +33,22 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 
 add_executable(ltl_tool ${LTL_TOOL_SRCS})
+add_dependencies(ltl_tool chase_ltl_parsing_library)
 add_dependencies(ltl_tool chasecore)
 add_dependencies(ltl_tool antlr4_static)
 
+
+add_library(chase_ltl_parsing_library
+        ${LTL_PARSER_SRCS}
+        ${LTL_SRC_DIR}/src/LTLSpecsBuilder.cc
+        )
+
+############## SUPPRESS THIRD PARTIES WARNINGS #################################
+target_compile_options(chase_ltl_parsing_library PRIVATE "-w")
+################################################################################
+
 target_link_libraries(ltl_tool
+        chase_ltl_parsing_library
         chasecore
-        antlr4_static)
+        antlr4_static
+        )

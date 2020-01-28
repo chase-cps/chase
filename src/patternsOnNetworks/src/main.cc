@@ -5,8 +5,6 @@
  * */
 
 #include "main.hh"
-#include "../../LTLContracts/include/main.hh"
-
 
 using namespace patternsOnNetworks;
 using namespace chase;
