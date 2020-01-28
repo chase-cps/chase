@@ -309,6 +309,10 @@ int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
     return _rv;
 }
 
+int chase::GuideVisitor::visitSystem(chase::System &o) {
+    return BaseVisitor::visitSystem(o);
+}
+
 
 
 

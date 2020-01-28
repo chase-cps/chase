@@ -1,32 +1,6 @@
-﻿/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Terence Parr
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
 #pragma once
@@ -53,19 +27,18 @@ namespace atn {
 
     struct Comparer {
       bool operator()(ATNConfig const& lhs, ATNConfig const& rhs) const {
-        return lhs == rhs;
+        return (&lhs == &rhs) || (lhs == rhs);
       }
     };
-    
+
 
     using Set = std::unordered_set<Ref<ATNConfig>, Hasher, Comparer>;
-    
+
     /// The ATN state associated with this configuration.
     ATNState * state;
 
-    /// <summary>
-    /// What alt (or lexer rule) is predicted by this configuration </summary>
-    const int alt;
+    /// What alt (or lexer rule) is predicted by this configuration.
+    const size_t alt;
 
     /// The stack of invoking states leading to the rule/states associated
     /// with this config.  We track only those contexts pushed during
@@ -84,7 +57,7 @@ namespace atn {
      * <p>
      * closure() tracks the depth of how far we dip into the outer context:
      * depth > 0.  Note that it may not be totally accurate depth since I
-     * don't ever decrement. TO_DO: make it a boolean then</p>
+     * don't ever decrement. TODO: make it a boolean then</p>
      *
      * <p>
      * For memory efficiency, the {@link #isPrecedenceFilterSuppressed} method
@@ -97,13 +70,13 @@ namespace atn {
      * {@link ATNConfigSet#add(ATNConfig, DoubleKeyMap)} method are
      * <em>completely</em> unaffected by the change.</p>
      */
-    int reachesIntoOuterContext;
+    size_t reachesIntoOuterContext;
 
     /// Can be shared between multiple ATNConfig instances.
     Ref<SemanticContext> semanticContext;
 
-    ATNConfig(ATNState *state, int alt, Ref<PredictionContext> const& context);
-    ATNConfig(ATNState *state, int alt, Ref<PredictionContext> const& context, Ref<SemanticContext> const& semanticContext);
+    ATNConfig(ATNState *state, size_t alt, Ref<PredictionContext> const& context);
+    ATNConfig(ATNState *state, size_t alt, Ref<PredictionContext> const& context, Ref<SemanticContext> const& semanticContext);
 
     ATNConfig(Ref<ATNConfig> const& c); // dup
     ATNConfig(Ref<ATNConfig> const& c, ATNState *state);
@@ -112,6 +85,7 @@ namespace atn {
     ATNConfig(Ref<ATNConfig> const& c, ATNState *state, Ref<PredictionContext> const& context);
     ATNConfig(Ref<ATNConfig> const& c, ATNState *state, Ref<PredictionContext> const& context, Ref<SemanticContext> const& semanticContext);
 
+    ATNConfig(ATNConfig const&) = default;
     virtual ~ATNConfig();
 
     virtual size_t hashCode() const;
@@ -121,7 +95,7 @@ namespace atn {
      * as it existed prior to the introduction of the
      * {@link #isPrecedenceFilterSuppressed} method.
      */
-    int getOuterContextDepth() const ;
+    size_t getOuterContextDepth() const ;
     bool isPrecedenceFilterSuppressed() const;
     void setPrecedenceFilterSuppressed(bool value);
 

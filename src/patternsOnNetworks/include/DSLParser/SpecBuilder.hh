@@ -35,6 +35,8 @@ namespace patternsOnNetworks {
         DesignProblem * parseSpecificationFile( std::string infile );
 
         // -- PARSER METHODS.
+
+        //
         void enterType(ChaseParser::TypeContext *context) override;
         void enterComponent(ChaseParser::ComponentContext *context) override;
         void enterAbbrev(ChaseParser::AbbrevContext *context) override;

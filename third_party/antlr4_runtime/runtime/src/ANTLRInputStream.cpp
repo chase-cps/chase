@@ -1,32 +1,6 @@
-﻿/*
- * [The "BSD license"]
- *  Copyright (c) 2016 Mike Lischke
- *  Copyright (c) 2013 Terence Parr
- *  Copyright (c) 2013 Dan McLaughlin
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+﻿/* Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
  */
 
 #include "Exceptions.h"
@@ -61,9 +35,9 @@ void ANTLRInputStream::load(const std::string &input) {
   // Remove the UTF-8 BOM if present.
   const char bom[4] = "\xef\xbb\xbf";
   if (input.compare(0, 3, bom, 3) == 0)
-    _data = antlrcpp::utfConverter.from_bytes(input.data() + 3, input.data() + input.size());
+    _data = antlrcpp::utf8_to_utf32(input.data() + 3, input.data() + input.size());
   else
-    _data = antlrcpp::utfConverter.from_bytes(input);
+    _data = antlrcpp::utf8_to_utf32(input.data(), input.data() + input.size());
   p = 0;
 }
 
@@ -92,12 +66,12 @@ void ANTLRInputStream::consume() {
   }
 }
 
-ssize_t ANTLRInputStream::LA(ssize_t i) {
+size_t ANTLRInputStream::LA(ssize_t i) {
   if (i == 0) {
     return 0; // undefined
   }
 
-  ssize_t position = (ssize_t)p;
+  ssize_t position = static_cast<ssize_t>(p);
   if (i < 0) {
     i++; // e.g., translate LA(-1) to use offset i=0; then _data[p+0-1]
     if ((position + i - 1) < 0) {
@@ -105,14 +79,14 @@ ssize_t ANTLRInputStream::LA(ssize_t i) {
     }
   }
 
-  if ((position + i - 1) >= (ssize_t)_data.size()) {
+  if ((position + i - 1) >= static_cast<ssize_t>(_data.size())) {
     return IntStream::EOF;
   }
 
-  return _data[(size_t)(position + i - 1)];
+  return _data[static_cast<size_t>((position + i - 1))];
 }
 
-ssize_t ANTLRInputStream::LT(ssize_t i) {
+size_t ANTLRInputStream::LT(ssize_t i) {
   return LA(i);
 }
 
@@ -149,8 +123,8 @@ std::string ANTLRInputStream::getText(const Interval &interval) {
     return "";
   }
 
-  size_t start = (size_t)interval.a;
-  size_t stop = (size_t)interval.b;
+  size_t start = static_cast<size_t>(interval.a);
+  size_t stop = static_cast<size_t>(interval.b);
 
 
   if (stop >= _data.size()) {
@@ -162,7 +136,7 @@ std::string ANTLRInputStream::getText(const Interval &interval) {
     return "";
   }
 
-  return antlrcpp::utfConverter.to_bytes(_data.substr(start, count));
+  return antlrcpp::utf32_to_utf8(_data.substr(start, count));
 }
 
 std::string ANTLRInputStream::getSourceName() const {
@@ -173,7 +147,7 @@ std::string ANTLRInputStream::getSourceName() const {
 }
 
 std::string ANTLRInputStream::toString() const {
-  return antlrcpp::utfConverter.to_bytes(_data);
+  return antlrcpp::utf32_to_utf8(_data);
 }
 
 void ANTLRInputStream::InitializeInstanceFields() {

@@ -1,10 +1,10 @@
 
-// Generated from Chase.g4 by ANTLR 4.5.3
+// Generated from Chase.g4 by ANTLR 4.8
 
 
-#include "DSLParser/ChaseListener.h"
+#include "ChaseListener.h"
 
-#include "DSLParser/ChaseParser.h"
+#include "ChaseParser.h"
 
 
 using namespace antlrcpp;
@@ -33,40 +33,40 @@ dfa::Vocabulary& ChaseParser::getVocabulary() const {
 
 //----------------- ChaseSpecContext ------------------------------------------------------------------
 
-ChaseParser::ChaseSpecContext::ChaseSpecContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ChaseSpecContext::ChaseSpecContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::TypesContext> ChaseParser::ChaseSpecContext::types() {
+ChaseParser::TypesContext* ChaseParser::ChaseSpecContext::types() {
   return getRuleContext<ChaseParser::TypesContext>(0);
 }
 
-Ref<ChaseParser::ComponentsContext> ChaseParser::ChaseSpecContext::components() {
+ChaseParser::ComponentsContext* ChaseParser::ChaseSpecContext::components() {
   return getRuleContext<ChaseParser::ComponentsContext>(0);
 }
 
-Ref<ChaseParser::ConnectionsContext> ChaseParser::ChaseSpecContext::connections() {
+ChaseParser::ConnectionsContext* ChaseParser::ChaseSpecContext::connections() {
   return getRuleContext<ChaseParser::ConnectionsContext>(0);
 }
 
-Ref<ChaseParser::RequirementsContext> ChaseParser::ChaseSpecContext::requirements() {
+ChaseParser::RequirementsContext* ChaseParser::ChaseSpecContext::requirements() {
   return getRuleContext<ChaseParser::RequirementsContext>(0);
 }
 
-Ref<tree::TerminalNode> ChaseParser::ChaseSpecContext::EOF() {
+tree::TerminalNode* ChaseParser::ChaseSpecContext::EOF() {
   return getToken(ChaseParser::EOF, 0);
 }
 
-Ref<ChaseParser::AbbreviationsContext> ChaseParser::ChaseSpecContext::abbreviations() {
+ChaseParser::AbbreviationsContext* ChaseParser::ChaseSpecContext::abbreviations() {
   return getRuleContext<ChaseParser::AbbreviationsContext>(0);
 }
 
-Ref<ChaseParser::AssumptionsContext> ChaseParser::ChaseSpecContext::assumptions() {
+ChaseParser::AssumptionsContext* ChaseParser::ChaseSpecContext::assumptions() {
   return getRuleContext<ChaseParser::AssumptionsContext>(0);
 }
 
 
-ssize_t ChaseParser::ChaseSpecContext::getRuleIndex() const {
+size_t ChaseParser::ChaseSpecContext::getRuleIndex() const {
   return ChaseParser::RuleChaseSpec;
 }
 
@@ -82,10 +82,10 @@ void ChaseParser::ChaseSpecContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitChaseSpec(this);
 }
 
-Ref<ChaseParser::ChaseSpecContext> ChaseParser::chaseSpec() {
-  Ref<ChaseSpecContext> _localctx = std::make_shared<ChaseSpecContext>(_ctx, getState());
+ChaseParser::ChaseSpecContext* ChaseParser::chaseSpec() {
+  ChaseSpecContext *_localctx = _tracker.createInstance<ChaseSpecContext>(_ctx, getState());
   enterRule(_localctx, 0, ChaseParser::RuleChaseSpec);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -97,6 +97,7 @@ Ref<ChaseParser::ChaseSpecContext> ChaseParser::chaseSpec() {
     setState(51);
     components();
     setState(53);
+    _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == ChaseParser::T__9) {
@@ -108,6 +109,7 @@ Ref<ChaseParser::ChaseSpecContext> ChaseParser::chaseSpec() {
     setState(56);
     requirements();
     setState(58);
+    _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == ChaseParser::T__12) {
@@ -129,24 +131,24 @@ Ref<ChaseParser::ChaseSpecContext> ChaseParser::chaseSpec() {
 
 //----------------- TypesContext ------------------------------------------------------------------
 
-ChaseParser::TypesContext::TypesContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::TypesContext::TypesContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::TypesKWContext> ChaseParser::TypesContext::typesKW() {
+ChaseParser::TypesKWContext* ChaseParser::TypesContext::typesKW() {
   return getRuleContext<ChaseParser::TypesKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::TypeContext>> ChaseParser::TypesContext::type() {
+std::vector<ChaseParser::TypeContext *> ChaseParser::TypesContext::type() {
   return getRuleContexts<ChaseParser::TypeContext>();
 }
 
-Ref<ChaseParser::TypeContext> ChaseParser::TypesContext::type(int i) {
-  return getRuleContext<ChaseParser::TypeContext>((size_t)i);
+ChaseParser::TypeContext* ChaseParser::TypesContext::type(size_t i) {
+  return getRuleContext<ChaseParser::TypeContext>(i);
 }
 
 
-ssize_t ChaseParser::TypesContext::getRuleIndex() const {
+size_t ChaseParser::TypesContext::getRuleIndex() const {
   return ChaseParser::RuleTypes;
 }
 
@@ -162,10 +164,10 @@ void ChaseParser::TypesContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitTypes(this);
 }
 
-Ref<ChaseParser::TypesContext> ChaseParser::types() {
-  Ref<TypesContext> _localctx = std::make_shared<TypesContext>(_ctx, getState());
+ChaseParser::TypesContext* ChaseParser::types() {
+  TypesContext *_localctx = _tracker.createInstance<TypesContext>(_ctx, getState());
   enterRule(_localctx, 2, ChaseParser::RuleTypes);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -199,28 +201,28 @@ Ref<ChaseParser::TypesContext> ChaseParser::types() {
 
 //----------------- TypeContext ------------------------------------------------------------------
 
-ChaseParser::TypeContext::TypeContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::TypeContext::TypeContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<tree::TerminalNode> ChaseParser::TypeContext::ENDST() {
+tree::TerminalNode* ChaseParser::TypeContext::ENDST() {
   return getToken(ChaseParser::ENDST, 0);
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::TypeContext::name() {
+ChaseParser::NameContext* ChaseParser::TypeContext::name() {
   return getRuleContext<ChaseParser::NameContext>(0);
 }
 
-std::vector<Ref<tree::TerminalNode>> ChaseParser::TypeContext::ID() {
+std::vector<tree::TerminalNode *> ChaseParser::TypeContext::ID() {
   return getTokens(ChaseParser::ID);
 }
 
-Ref<tree::TerminalNode> ChaseParser::TypeContext::ID(int i) {
-  return getToken(ChaseParser::ID, (size_t)i);
+tree::TerminalNode* ChaseParser::TypeContext::ID(size_t i) {
+  return getToken(ChaseParser::ID, i);
 }
 
 
-ssize_t ChaseParser::TypeContext::getRuleIndex() const {
+size_t ChaseParser::TypeContext::getRuleIndex() const {
   return ChaseParser::RuleType;
 }
 
@@ -236,10 +238,10 @@ void ChaseParser::TypeContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitType(this);
 }
 
-Ref<ChaseParser::TypeContext> ChaseParser::type() {
-  Ref<TypeContext> _localctx = std::make_shared<TypeContext>(_ctx, getState());
+ChaseParser::TypeContext* ChaseParser::type() {
+  TypeContext *_localctx = _tracker.createInstance<TypeContext>(_ctx, getState());
   enterRule(_localctx, 4, ChaseParser::RuleType);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -247,20 +249,21 @@ Ref<ChaseParser::TypeContext> ChaseParser::type() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(68);
-    std::dynamic_pointer_cast<TypeContext>(_localctx)->nam = name();
+    dynamic_cast<TypeContext *>(_localctx)->nam = name();
     setState(69);
     match(ChaseParser::T__0);
     setState(70);
-    std::dynamic_pointer_cast<TypeContext>(_localctx)->typ = match(ChaseParser::ID);
+    dynamic_cast<TypeContext *>(_localctx)->typ = match(ChaseParser::ID);
     setState(81);
+    _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == ChaseParser::T__1) {
       setState(71);
       match(ChaseParser::T__1);
       setState(72);
-      std::dynamic_pointer_cast<TypeContext>(_localctx)->idToken = match(ChaseParser::ID);
-      std::dynamic_pointer_cast<TypeContext>(_localctx)->par.push_back(std::dynamic_pointer_cast<TypeContext>(_localctx)->idToken);
+      dynamic_cast<TypeContext *>(_localctx)->idToken = match(ChaseParser::ID);
+      dynamic_cast<TypeContext *>(_localctx)->par.push_back(dynamic_cast<TypeContext *>(_localctx)->idToken);
       setState(77);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -268,8 +271,8 @@ Ref<ChaseParser::TypeContext> ChaseParser::type() {
         setState(73);
         match(ChaseParser::T__2);
         setState(74);
-        std::dynamic_pointer_cast<TypeContext>(_localctx)->idToken = match(ChaseParser::ID);
-        std::dynamic_pointer_cast<TypeContext>(_localctx)->par.push_back(std::dynamic_pointer_cast<TypeContext>(_localctx)->idToken);
+        dynamic_cast<TypeContext *>(_localctx)->idToken = match(ChaseParser::ID);
+        dynamic_cast<TypeContext *>(_localctx)->par.push_back(dynamic_cast<TypeContext *>(_localctx)->idToken);
         setState(79);
         _errHandler->sync(this);
         _la = _input->LA(1);
@@ -292,24 +295,24 @@ Ref<ChaseParser::TypeContext> ChaseParser::type() {
 
 //----------------- ComponentsContext ------------------------------------------------------------------
 
-ChaseParser::ComponentsContext::ComponentsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ComponentsContext::ComponentsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::ComponentsKWContext> ChaseParser::ComponentsContext::componentsKW() {
+ChaseParser::ComponentsKWContext* ChaseParser::ComponentsContext::componentsKW() {
   return getRuleContext<ChaseParser::ComponentsKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::ComponentContext>> ChaseParser::ComponentsContext::component() {
+std::vector<ChaseParser::ComponentContext *> ChaseParser::ComponentsContext::component() {
   return getRuleContexts<ChaseParser::ComponentContext>();
 }
 
-Ref<ChaseParser::ComponentContext> ChaseParser::ComponentsContext::component(int i) {
-  return getRuleContext<ChaseParser::ComponentContext>((size_t)i);
+ChaseParser::ComponentContext* ChaseParser::ComponentsContext::component(size_t i) {
+  return getRuleContext<ChaseParser::ComponentContext>(i);
 }
 
 
-ssize_t ChaseParser::ComponentsContext::getRuleIndex() const {
+size_t ChaseParser::ComponentsContext::getRuleIndex() const {
   return ChaseParser::RuleComponents;
 }
 
@@ -325,10 +328,10 @@ void ChaseParser::ComponentsContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitComponents(this);
 }
 
-Ref<ChaseParser::ComponentsContext> ChaseParser::components() {
-  Ref<ComponentsContext> _localctx = std::make_shared<ComponentsContext>(_ctx, getState());
+ChaseParser::ComponentsContext* ChaseParser::components() {
+  ComponentsContext *_localctx = _tracker.createInstance<ComponentsContext>(_ctx, getState());
   enterRule(_localctx, 6, ChaseParser::RuleComponents);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -362,24 +365,24 @@ Ref<ChaseParser::ComponentsContext> ChaseParser::components() {
 
 //----------------- ComponentContext ------------------------------------------------------------------
 
-ChaseParser::ComponentContext::ComponentContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ComponentContext::ComponentContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<tree::TerminalNode> ChaseParser::ComponentContext::ENDST() {
+tree::TerminalNode* ChaseParser::ComponentContext::ENDST() {
   return getToken(ChaseParser::ENDST, 0);
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::ComponentContext::name() {
+ChaseParser::NameContext* ChaseParser::ComponentContext::name() {
   return getRuleContext<ChaseParser::NameContext>(0);
 }
 
-Ref<tree::TerminalNode> ChaseParser::ComponentContext::NUMBER() {
+tree::TerminalNode* ChaseParser::ComponentContext::NUMBER() {
   return getToken(ChaseParser::NUMBER, 0);
 }
 
 
-ssize_t ChaseParser::ComponentContext::getRuleIndex() const {
+size_t ChaseParser::ComponentContext::getRuleIndex() const {
   return ChaseParser::RuleComponent;
 }
 
@@ -395,8 +398,8 @@ void ChaseParser::ComponentContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitComponent(this);
 }
 
-Ref<ChaseParser::ComponentContext> ChaseParser::component() {
-  Ref<ComponentContext> _localctx = std::make_shared<ComponentContext>(_ctx, getState());
+ChaseParser::ComponentContext* ChaseParser::component() {
+  ComponentContext *_localctx = _tracker.createInstance<ComponentContext>(_ctx, getState());
   enterRule(_localctx, 8, ChaseParser::RuleComponent);
 
   auto onExit = finally([=] {
@@ -405,7 +408,7 @@ Ref<ChaseParser::ComponentContext> ChaseParser::component() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(91);
-    std::dynamic_pointer_cast<ComponentContext>(_localctx)->nam = name();
+    dynamic_cast<ComponentContext *>(_localctx)->nam = name();
     setState(92);
     match(ChaseParser::T__0);
     setState(95);
@@ -413,7 +416,7 @@ Ref<ChaseParser::ComponentContext> ChaseParser::component() {
     switch (_input->LA(1)) {
       case ChaseParser::NUMBER: {
         setState(93);
-        std::dynamic_pointer_cast<ComponentContext>(_localctx)->num = match(ChaseParser::NUMBER);
+        dynamic_cast<ComponentContext *>(_localctx)->num = match(ChaseParser::NUMBER);
         break;
       }
 
@@ -441,24 +444,24 @@ Ref<ChaseParser::ComponentContext> ChaseParser::component() {
 
 //----------------- NameContext ------------------------------------------------------------------
 
-ChaseParser::NameContext::NameContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::NameContext::NameContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<Ref<tree::TerminalNode>> ChaseParser::NameContext::ID() {
+std::vector<tree::TerminalNode *> ChaseParser::NameContext::ID() {
   return getTokens(ChaseParser::ID);
 }
 
-Ref<tree::TerminalNode> ChaseParser::NameContext::ID(int i) {
-  return getToken(ChaseParser::ID, (size_t)i);
+tree::TerminalNode* ChaseParser::NameContext::ID(size_t i) {
+  return getToken(ChaseParser::ID, i);
 }
 
-Ref<tree::TerminalNode> ChaseParser::NameContext::NUMBER() {
+tree::TerminalNode* ChaseParser::NameContext::NUMBER() {
   return getToken(ChaseParser::NUMBER, 0);
 }
 
 
-ssize_t ChaseParser::NameContext::getRuleIndex() const {
+size_t ChaseParser::NameContext::getRuleIndex() const {
   return ChaseParser::RuleName;
 }
 
@@ -474,10 +477,10 @@ void ChaseParser::NameContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitName(this);
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::name() {
-  Ref<NameContext> _localctx = std::make_shared<NameContext>(_ctx, getState());
+ChaseParser::NameContext* ChaseParser::name() {
+  NameContext *_localctx = _tracker.createInstance<NameContext>(_ctx, getState());
   enterRule(_localctx, 10, ChaseParser::RuleName);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -493,18 +496,19 @@ Ref<ChaseParser::NameContext> ChaseParser::name() {
         _la = _input->LA(1);
         do {
           setState(99);
-          std::dynamic_pointer_cast<NameContext>(_localctx)->idToken = match(ChaseParser::ID);
-          std::dynamic_pointer_cast<NameContext>(_localctx)->comp.push_back(std::dynamic_pointer_cast<NameContext>(_localctx)->idToken);
+          dynamic_cast<NameContext *>(_localctx)->idToken = match(ChaseParser::ID);
+          dynamic_cast<NameContext *>(_localctx)->comp.push_back(dynamic_cast<NameContext *>(_localctx)->idToken);
           setState(102); 
           _errHandler->sync(this);
           _la = _input->LA(1);
         } while (_la == ChaseParser::ID);
         setState(105);
+        _errHandler->sync(this);
 
         _la = _input->LA(1);
         if (_la == ChaseParser::NUMBER) {
           setState(104);
-          std::dynamic_pointer_cast<NameContext>(_localctx)->num = match(ChaseParser::NUMBER);
+          dynamic_cast<NameContext *>(_localctx)->num = match(ChaseParser::NUMBER);
         }
         break;
       }
@@ -512,14 +516,14 @@ Ref<ChaseParser::NameContext> ChaseParser::name() {
       case ChaseParser::NUMBER: {
         enterOuterAlt(_localctx, 2);
         setState(107);
-        std::dynamic_pointer_cast<NameContext>(_localctx)->num = match(ChaseParser::NUMBER);
+        dynamic_cast<NameContext *>(_localctx)->num = match(ChaseParser::NUMBER);
         setState(109); 
         _errHandler->sync(this);
         _la = _input->LA(1);
         do {
           setState(108);
-          std::dynamic_pointer_cast<NameContext>(_localctx)->idToken = match(ChaseParser::ID);
-          std::dynamic_pointer_cast<NameContext>(_localctx)->comp.push_back(std::dynamic_pointer_cast<NameContext>(_localctx)->idToken);
+          dynamic_cast<NameContext *>(_localctx)->idToken = match(ChaseParser::ID);
+          dynamic_cast<NameContext *>(_localctx)->comp.push_back(dynamic_cast<NameContext *>(_localctx)->idToken);
           setState(111); 
           _errHandler->sync(this);
           _la = _input->LA(1);
@@ -543,24 +547,24 @@ Ref<ChaseParser::NameContext> ChaseParser::name() {
 
 //----------------- AbbreviationsContext ------------------------------------------------------------------
 
-ChaseParser::AbbreviationsContext::AbbreviationsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AbbreviationsContext::AbbreviationsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::AbbreviationsKWContext> ChaseParser::AbbreviationsContext::abbreviationsKW() {
+ChaseParser::AbbreviationsKWContext* ChaseParser::AbbreviationsContext::abbreviationsKW() {
   return getRuleContext<ChaseParser::AbbreviationsKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::AbbrevContext>> ChaseParser::AbbreviationsContext::abbrev() {
+std::vector<ChaseParser::AbbrevContext *> ChaseParser::AbbreviationsContext::abbrev() {
   return getRuleContexts<ChaseParser::AbbrevContext>();
 }
 
-Ref<ChaseParser::AbbrevContext> ChaseParser::AbbreviationsContext::abbrev(int i) {
-  return getRuleContext<ChaseParser::AbbrevContext>((size_t)i);
+ChaseParser::AbbrevContext* ChaseParser::AbbreviationsContext::abbrev(size_t i) {
+  return getRuleContext<ChaseParser::AbbrevContext>(i);
 }
 
 
-ssize_t ChaseParser::AbbreviationsContext::getRuleIndex() const {
+size_t ChaseParser::AbbreviationsContext::getRuleIndex() const {
   return ChaseParser::RuleAbbreviations;
 }
 
@@ -576,10 +580,10 @@ void ChaseParser::AbbreviationsContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitAbbreviations(this);
 }
 
-Ref<ChaseParser::AbbreviationsContext> ChaseParser::abbreviations() {
-  Ref<AbbreviationsContext> _localctx = std::make_shared<AbbreviationsContext>(_ctx, getState());
+ChaseParser::AbbreviationsContext* ChaseParser::abbreviations() {
+  AbbreviationsContext *_localctx = _tracker.createInstance<AbbreviationsContext>(_ctx, getState());
   enterRule(_localctx, 12, ChaseParser::RuleAbbreviations);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -613,24 +617,24 @@ Ref<ChaseParser::AbbreviationsContext> ChaseParser::abbreviations() {
 
 //----------------- AbbrevContext ------------------------------------------------------------------
 
-ChaseParser::AbbrevContext::AbbrevContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AbbrevContext::AbbrevContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<tree::TerminalNode> ChaseParser::AbbrevContext::ENDST() {
+tree::TerminalNode* ChaseParser::AbbrevContext::ENDST() {
   return getToken(ChaseParser::ENDST, 0);
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::AbbrevContext::name() {
+ChaseParser::NameContext* ChaseParser::AbbrevContext::name() {
   return getRuleContext<ChaseParser::NameContext>(0);
 }
 
-Ref<tree::TerminalNode> ChaseParser::AbbrevContext::ID() {
+tree::TerminalNode* ChaseParser::AbbrevContext::ID() {
   return getToken(ChaseParser::ID, 0);
 }
 
 
-ssize_t ChaseParser::AbbrevContext::getRuleIndex() const {
+size_t ChaseParser::AbbrevContext::getRuleIndex() const {
   return ChaseParser::RuleAbbrev;
 }
 
@@ -646,8 +650,8 @@ void ChaseParser::AbbrevContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitAbbrev(this);
 }
 
-Ref<ChaseParser::AbbrevContext> ChaseParser::abbrev() {
-  Ref<AbbrevContext> _localctx = std::make_shared<AbbrevContext>(_ctx, getState());
+ChaseParser::AbbrevContext* ChaseParser::abbrev() {
+  AbbrevContext *_localctx = _tracker.createInstance<AbbrevContext>(_ctx, getState());
   enterRule(_localctx, 14, ChaseParser::RuleAbbrev);
 
   auto onExit = finally([=] {
@@ -656,11 +660,11 @@ Ref<ChaseParser::AbbrevContext> ChaseParser::abbrev() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(121);
-    std::dynamic_pointer_cast<AbbrevContext>(_localctx)->nam = name();
+    dynamic_cast<AbbrevContext *>(_localctx)->nam = name();
     setState(122);
     match(ChaseParser::T__0);
     setState(123);
-    std::dynamic_pointer_cast<AbbrevContext>(_localctx)->abbr = match(ChaseParser::ID);
+    dynamic_cast<AbbrevContext *>(_localctx)->abbr = match(ChaseParser::ID);
     setState(124);
     match(ChaseParser::ENDST);
    
@@ -676,40 +680,40 @@ Ref<ChaseParser::AbbrevContext> ChaseParser::abbrev() {
 
 //----------------- ConnectionsContext ------------------------------------------------------------------
 
-ChaseParser::ConnectionsContext::ConnectionsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ConnectionsContext::ConnectionsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::ConnectionsKWContext> ChaseParser::ConnectionsContext::connectionsKW() {
+ChaseParser::ConnectionsKWContext* ChaseParser::ConnectionsContext::connectionsKW() {
   return getRuleContext<ChaseParser::ConnectionsKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::ConnContext>> ChaseParser::ConnectionsContext::conn() {
+std::vector<ChaseParser::ConnContext *> ChaseParser::ConnectionsContext::conn() {
   return getRuleContexts<ChaseParser::ConnContext>();
 }
 
-Ref<ChaseParser::ConnContext> ChaseParser::ConnectionsContext::conn(int i) {
-  return getRuleContext<ChaseParser::ConnContext>((size_t)i);
+ChaseParser::ConnContext* ChaseParser::ConnectionsContext::conn(size_t i) {
+  return getRuleContext<ChaseParser::ConnContext>(i);
 }
 
-std::vector<Ref<ChaseParser::SwitchedContext>> ChaseParser::ConnectionsContext::switched() {
+std::vector<ChaseParser::SwitchedContext *> ChaseParser::ConnectionsContext::switched() {
   return getRuleContexts<ChaseParser::SwitchedContext>();
 }
 
-Ref<ChaseParser::SwitchedContext> ChaseParser::ConnectionsContext::switched(int i) {
-  return getRuleContext<ChaseParser::SwitchedContext>((size_t)i);
+ChaseParser::SwitchedContext* ChaseParser::ConnectionsContext::switched(size_t i) {
+  return getRuleContext<ChaseParser::SwitchedContext>(i);
 }
 
-std::vector<Ref<ChaseParser::UnswitchedContext>> ChaseParser::ConnectionsContext::unswitched() {
+std::vector<ChaseParser::UnswitchedContext *> ChaseParser::ConnectionsContext::unswitched() {
   return getRuleContexts<ChaseParser::UnswitchedContext>();
 }
 
-Ref<ChaseParser::UnswitchedContext> ChaseParser::ConnectionsContext::unswitched(int i) {
-  return getRuleContext<ChaseParser::UnswitchedContext>((size_t)i);
+ChaseParser::UnswitchedContext* ChaseParser::ConnectionsContext::unswitched(size_t i) {
+  return getRuleContext<ChaseParser::UnswitchedContext>(i);
 }
 
 
-ssize_t ChaseParser::ConnectionsContext::getRuleIndex() const {
+size_t ChaseParser::ConnectionsContext::getRuleIndex() const {
   return ChaseParser::RuleConnections;
 }
 
@@ -725,10 +729,10 @@ void ChaseParser::ConnectionsContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitConnections(this);
 }
 
-Ref<ChaseParser::ConnectionsContext> ChaseParser::connections() {
-  Ref<ConnectionsContext> _localctx = std::make_shared<ConnectionsContext>(_ctx, getState());
+ChaseParser::ConnectionsContext* ChaseParser::connections() {
+  ConnectionsContext *_localctx = _tracker.createInstance<ConnectionsContext>(_ctx, getState());
   enterRule(_localctx, 16, ChaseParser::RuleConnections);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -802,20 +806,20 @@ Ref<ChaseParser::ConnectionsContext> ChaseParser::connections() {
 
 //----------------- SwitchedContext ------------------------------------------------------------------
 
-ChaseParser::SwitchedContext::SwitchedContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::SwitchedContext::SwitchedContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::SwitchedKWContext> ChaseParser::SwitchedContext::switchedKW() {
+ChaseParser::SwitchedKWContext* ChaseParser::SwitchedContext::switchedKW() {
   return getRuleContext<ChaseParser::SwitchedKWContext>(0);
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::SwitchedContext::name() {
+ChaseParser::NameContext* ChaseParser::SwitchedContext::name() {
   return getRuleContext<ChaseParser::NameContext>(0);
 }
 
 
-ssize_t ChaseParser::SwitchedContext::getRuleIndex() const {
+size_t ChaseParser::SwitchedContext::getRuleIndex() const {
   return ChaseParser::RuleSwitched;
 }
 
@@ -831,8 +835,8 @@ void ChaseParser::SwitchedContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitSwitched(this);
 }
 
-Ref<ChaseParser::SwitchedContext> ChaseParser::switched() {
-  Ref<SwitchedContext> _localctx = std::make_shared<SwitchedContext>(_ctx, getState());
+ChaseParser::SwitchedContext* ChaseParser::switched() {
+  SwitchedContext *_localctx = _tracker.createInstance<SwitchedContext>(_ctx, getState());
   enterRule(_localctx, 18, ChaseParser::RuleSwitched);
 
   auto onExit = finally([=] {
@@ -845,7 +849,7 @@ Ref<ChaseParser::SwitchedContext> ChaseParser::switched() {
     setState(148);
     match(ChaseParser::T__1);
     setState(149);
-    std::dynamic_pointer_cast<SwitchedContext>(_localctx)->sw = name();
+    dynamic_cast<SwitchedContext *>(_localctx)->sw = name();
     setState(150);
     match(ChaseParser::T__3);
    
@@ -861,16 +865,16 @@ Ref<ChaseParser::SwitchedContext> ChaseParser::switched() {
 
 //----------------- UnswitchedContext ------------------------------------------------------------------
 
-ChaseParser::UnswitchedContext::UnswitchedContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::UnswitchedContext::UnswitchedContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::UnswitchedKWContext> ChaseParser::UnswitchedContext::unswitchedKW() {
+ChaseParser::UnswitchedKWContext* ChaseParser::UnswitchedContext::unswitchedKW() {
   return getRuleContext<ChaseParser::UnswitchedKWContext>(0);
 }
 
 
-ssize_t ChaseParser::UnswitchedContext::getRuleIndex() const {
+size_t ChaseParser::UnswitchedContext::getRuleIndex() const {
   return ChaseParser::RuleUnswitched;
 }
 
@@ -886,8 +890,8 @@ void ChaseParser::UnswitchedContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitUnswitched(this);
 }
 
-Ref<ChaseParser::UnswitchedContext> ChaseParser::unswitched() {
-  Ref<UnswitchedContext> _localctx = std::make_shared<UnswitchedContext>(_ctx, getState());
+ChaseParser::UnswitchedContext* ChaseParser::unswitched() {
+  UnswitchedContext *_localctx = _tracker.createInstance<UnswitchedContext>(_ctx, getState());
   enterRule(_localctx, 20, ChaseParser::RuleUnswitched);
 
   auto onExit = finally([=] {
@@ -910,24 +914,24 @@ Ref<ChaseParser::UnswitchedContext> ChaseParser::unswitched() {
 
 //----------------- ConnContext ------------------------------------------------------------------
 
-ChaseParser::ConnContext::ConnContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ConnContext::ConnContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<tree::TerminalNode> ChaseParser::ConnContext::ENDST() {
+tree::TerminalNode* ChaseParser::ConnContext::ENDST() {
   return getToken(ChaseParser::ENDST, 0);
 }
 
-std::vector<Ref<ChaseParser::NameContext>> ChaseParser::ConnContext::name() {
+std::vector<ChaseParser::NameContext *> ChaseParser::ConnContext::name() {
   return getRuleContexts<ChaseParser::NameContext>();
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::ConnContext::name(int i) {
-  return getRuleContext<ChaseParser::NameContext>((size_t)i);
+ChaseParser::NameContext* ChaseParser::ConnContext::name(size_t i) {
+  return getRuleContext<ChaseParser::NameContext>(i);
 }
 
 
-ssize_t ChaseParser::ConnContext::getRuleIndex() const {
+size_t ChaseParser::ConnContext::getRuleIndex() const {
   return ChaseParser::RuleConn;
 }
 
@@ -943,8 +947,8 @@ void ChaseParser::ConnContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitConn(this);
 }
 
-Ref<ChaseParser::ConnContext> ChaseParser::conn() {
-  Ref<ConnContext> _localctx = std::make_shared<ConnContext>(_ctx, getState());
+ChaseParser::ConnContext* ChaseParser::conn() {
+  ConnContext *_localctx = _tracker.createInstance<ConnContext>(_ctx, getState());
   enterRule(_localctx, 22, ChaseParser::RuleConn);
 
   auto onExit = finally([=] {
@@ -953,7 +957,7 @@ Ref<ChaseParser::ConnContext> ChaseParser::conn() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(154);
-    std::dynamic_pointer_cast<ConnContext>(_localctx)->from = name();
+    dynamic_cast<ConnContext *>(_localctx)->from = name();
     setState(162);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
@@ -969,7 +973,7 @@ Ref<ChaseParser::ConnContext> ChaseParser::conn() {
         setState(157);
         match(ChaseParser::T__1);
         setState(158);
-        std::dynamic_pointer_cast<ConnContext>(_localctx)->sw = name();
+        dynamic_cast<ConnContext *>(_localctx)->sw = name();
         setState(159);
         match(ChaseParser::T__3);
         setState(160);
@@ -981,7 +985,7 @@ Ref<ChaseParser::ConnContext> ChaseParser::conn() {
       throw NoViableAltException(this);
     }
     setState(164);
-    std::dynamic_pointer_cast<ConnContext>(_localctx)->to = name();
+    dynamic_cast<ConnContext *>(_localctx)->to = name();
     setState(165);
     match(ChaseParser::ENDST);
    
@@ -997,24 +1001,24 @@ Ref<ChaseParser::ConnContext> ChaseParser::conn() {
 
 //----------------- RequirementsContext ------------------------------------------------------------------
 
-ChaseParser::RequirementsContext::RequirementsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::RequirementsContext::RequirementsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::RequirementsKWContext> ChaseParser::RequirementsContext::requirementsKW() {
+ChaseParser::RequirementsKWContext* ChaseParser::RequirementsContext::requirementsKW() {
   return getRuleContext<ChaseParser::RequirementsKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::ReqContext>> ChaseParser::RequirementsContext::req() {
+std::vector<ChaseParser::ReqContext *> ChaseParser::RequirementsContext::req() {
   return getRuleContexts<ChaseParser::ReqContext>();
 }
 
-Ref<ChaseParser::ReqContext> ChaseParser::RequirementsContext::req(int i) {
-  return getRuleContext<ChaseParser::ReqContext>((size_t)i);
+ChaseParser::ReqContext* ChaseParser::RequirementsContext::req(size_t i) {
+  return getRuleContext<ChaseParser::ReqContext>(i);
 }
 
 
-ssize_t ChaseParser::RequirementsContext::getRuleIndex() const {
+size_t ChaseParser::RequirementsContext::getRuleIndex() const {
   return ChaseParser::RuleRequirements;
 }
 
@@ -1030,10 +1034,10 @@ void ChaseParser::RequirementsContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitRequirements(this);
 }
 
-Ref<ChaseParser::RequirementsContext> ChaseParser::requirements() {
-  Ref<RequirementsContext> _localctx = std::make_shared<RequirementsContext>(_ctx, getState());
+ChaseParser::RequirementsContext* ChaseParser::requirements() {
+  RequirementsContext *_localctx = _tracker.createInstance<RequirementsContext>(_ctx, getState());
   enterRule(_localctx, 24, ChaseParser::RuleRequirements);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -1065,28 +1069,28 @@ Ref<ChaseParser::RequirementsContext> ChaseParser::requirements() {
 
 //----------------- ReqContext ------------------------------------------------------------------
 
-ChaseParser::ReqContext::ReqContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ReqContext::ReqContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<tree::TerminalNode> ChaseParser::ReqContext::ENDST() {
+tree::TerminalNode* ChaseParser::ReqContext::ENDST() {
   return getToken(ChaseParser::ENDST, 0);
 }
 
-Ref<tree::TerminalNode> ChaseParser::ReqContext::ID() {
+tree::TerminalNode* ChaseParser::ReqContext::ID() {
   return getToken(ChaseParser::ID, 0);
 }
 
-std::vector<Ref<ChaseParser::ParamContext>> ChaseParser::ReqContext::param() {
+std::vector<ChaseParser::ParamContext *> ChaseParser::ReqContext::param() {
   return getRuleContexts<ChaseParser::ParamContext>();
 }
 
-Ref<ChaseParser::ParamContext> ChaseParser::ReqContext::param(int i) {
-  return getRuleContext<ChaseParser::ParamContext>((size_t)i);
+ChaseParser::ParamContext* ChaseParser::ReqContext::param(size_t i) {
+  return getRuleContext<ChaseParser::ParamContext>(i);
 }
 
 
-ssize_t ChaseParser::ReqContext::getRuleIndex() const {
+size_t ChaseParser::ReqContext::getRuleIndex() const {
   return ChaseParser::RuleReq;
 }
 
@@ -1102,10 +1106,10 @@ void ChaseParser::ReqContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitReq(this);
 }
 
-Ref<ChaseParser::ReqContext> ChaseParser::req() {
-  Ref<ReqContext> _localctx = std::make_shared<ReqContext>(_ctx, getState());
+ChaseParser::ReqContext* ChaseParser::req() {
+  ReqContext *_localctx = _tracker.createInstance<ReqContext>(_ctx, getState());
   enterRule(_localctx, 26, ChaseParser::RuleReq);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -1113,12 +1117,12 @@ Ref<ChaseParser::ReqContext> ChaseParser::req() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(173);
-    std::dynamic_pointer_cast<ReqContext>(_localctx)->pred = match(ChaseParser::ID);
+    dynamic_cast<ReqContext *>(_localctx)->pred = match(ChaseParser::ID);
     setState(174);
     match(ChaseParser::T__1);
     setState(175);
-    std::dynamic_pointer_cast<ReqContext>(_localctx)->paramContext = param();
-    std::dynamic_pointer_cast<ReqContext>(_localctx)->par.push_back(std::dynamic_pointer_cast<ReqContext>(_localctx)->paramContext);
+    dynamic_cast<ReqContext *>(_localctx)->paramContext = param();
+    dynamic_cast<ReqContext *>(_localctx)->par.push_back(dynamic_cast<ReqContext *>(_localctx)->paramContext);
     setState(180);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -1126,8 +1130,8 @@ Ref<ChaseParser::ReqContext> ChaseParser::req() {
       setState(176);
       match(ChaseParser::T__2);
       setState(177);
-      std::dynamic_pointer_cast<ReqContext>(_localctx)->paramContext = param();
-      std::dynamic_pointer_cast<ReqContext>(_localctx)->par.push_back(std::dynamic_pointer_cast<ReqContext>(_localctx)->paramContext);
+      dynamic_cast<ReqContext *>(_localctx)->paramContext = param();
+      dynamic_cast<ReqContext *>(_localctx)->par.push_back(dynamic_cast<ReqContext *>(_localctx)->paramContext);
       setState(182);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -1149,20 +1153,20 @@ Ref<ChaseParser::ReqContext> ChaseParser::req() {
 
 //----------------- ParamContext ------------------------------------------------------------------
 
-ChaseParser::ParamContext::ParamContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ParamContext::ParamContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::NameContext> ChaseParser::ParamContext::name() {
+ChaseParser::NameContext* ChaseParser::ParamContext::name() {
   return getRuleContext<ChaseParser::NameContext>(0);
 }
 
-Ref<tree::TerminalNode> ChaseParser::ParamContext::NUMBER() {
+tree::TerminalNode* ChaseParser::ParamContext::NUMBER() {
   return getToken(ChaseParser::NUMBER, 0);
 }
 
 
-ssize_t ChaseParser::ParamContext::getRuleIndex() const {
+size_t ChaseParser::ParamContext::getRuleIndex() const {
   return ChaseParser::RuleParam;
 }
 
@@ -1178,8 +1182,8 @@ void ChaseParser::ParamContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitParam(this);
 }
 
-Ref<ChaseParser::ParamContext> ChaseParser::param() {
-  Ref<ParamContext> _localctx = std::make_shared<ParamContext>(_ctx, getState());
+ChaseParser::ParamContext* ChaseParser::param() {
+  ParamContext *_localctx = _tracker.createInstance<ParamContext>(_ctx, getState());
   enterRule(_localctx, 28, ChaseParser::RuleParam);
 
   auto onExit = finally([=] {
@@ -1192,14 +1196,14 @@ Ref<ChaseParser::ParamContext> ChaseParser::param() {
     case 1: {
       enterOuterAlt(_localctx, 1);
       setState(186);
-      std::dynamic_pointer_cast<ParamContext>(_localctx)->nam = name();
+      dynamic_cast<ParamContext *>(_localctx)->nam = name();
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
       setState(187);
-      std::dynamic_pointer_cast<ParamContext>(_localctx)->num = match(ChaseParser::NUMBER);
+      dynamic_cast<ParamContext *>(_localctx)->num = match(ChaseParser::NUMBER);
       break;
     }
 
@@ -1217,24 +1221,24 @@ Ref<ChaseParser::ParamContext> ChaseParser::param() {
 
 //----------------- AssumptionsContext ------------------------------------------------------------------
 
-ChaseParser::AssumptionsContext::AssumptionsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AssumptionsContext::AssumptionsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::AssumptionsKWContext> ChaseParser::AssumptionsContext::assumptionsKW() {
+ChaseParser::AssumptionsKWContext* ChaseParser::AssumptionsContext::assumptionsKW() {
   return getRuleContext<ChaseParser::AssumptionsKWContext>(0);
 }
 
-std::vector<Ref<ChaseParser::AssumContext>> ChaseParser::AssumptionsContext::assum() {
+std::vector<ChaseParser::AssumContext *> ChaseParser::AssumptionsContext::assum() {
   return getRuleContexts<ChaseParser::AssumContext>();
 }
 
-Ref<ChaseParser::AssumContext> ChaseParser::AssumptionsContext::assum(int i) {
-  return getRuleContext<ChaseParser::AssumContext>((size_t)i);
+ChaseParser::AssumContext* ChaseParser::AssumptionsContext::assum(size_t i) {
+  return getRuleContext<ChaseParser::AssumContext>(i);
 }
 
 
-ssize_t ChaseParser::AssumptionsContext::getRuleIndex() const {
+size_t ChaseParser::AssumptionsContext::getRuleIndex() const {
   return ChaseParser::RuleAssumptions;
 }
 
@@ -1250,10 +1254,10 @@ void ChaseParser::AssumptionsContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitAssumptions(this);
 }
 
-Ref<ChaseParser::AssumptionsContext> ChaseParser::assumptions() {
-  Ref<AssumptionsContext> _localctx = std::make_shared<AssumptionsContext>(_ctx, getState());
+ChaseParser::AssumptionsContext* ChaseParser::assumptions() {
+  AssumptionsContext *_localctx = _tracker.createInstance<AssumptionsContext>(_ctx, getState());
   enterRule(_localctx, 30, ChaseParser::RuleAssumptions);
-  ssize_t _la = 0;
+  size_t _la = 0;
 
   auto onExit = finally([=] {
     exitRule();
@@ -1285,16 +1289,16 @@ Ref<ChaseParser::AssumptionsContext> ChaseParser::assumptions() {
 
 //----------------- AssumContext ------------------------------------------------------------------
 
-ChaseParser::AssumContext::AssumContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AssumContext::AssumContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-Ref<ChaseParser::ReqContext> ChaseParser::AssumContext::req() {
+ChaseParser::ReqContext* ChaseParser::AssumContext::req() {
   return getRuleContext<ChaseParser::ReqContext>(0);
 }
 
 
-ssize_t ChaseParser::AssumContext::getRuleIndex() const {
+size_t ChaseParser::AssumContext::getRuleIndex() const {
   return ChaseParser::RuleAssum;
 }
 
@@ -1310,8 +1314,8 @@ void ChaseParser::AssumContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitAssum(this);
 }
 
-Ref<ChaseParser::AssumContext> ChaseParser::assum() {
-  Ref<AssumContext> _localctx = std::make_shared<AssumContext>(_ctx, getState());
+ChaseParser::AssumContext* ChaseParser::assum() {
+  AssumContext *_localctx = _tracker.createInstance<AssumContext>(_ctx, getState());
   enterRule(_localctx, 32, ChaseParser::RuleAssum);
 
   auto onExit = finally([=] {
@@ -1334,12 +1338,12 @@ Ref<ChaseParser::AssumContext> ChaseParser::assum() {
 
 //----------------- TypesKWContext ------------------------------------------------------------------
 
-ChaseParser::TypesKWContext::TypesKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::TypesKWContext::TypesKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::TypesKWContext::getRuleIndex() const {
+size_t ChaseParser::TypesKWContext::getRuleIndex() const {
   return ChaseParser::RuleTypesKW;
 }
 
@@ -1355,8 +1359,8 @@ void ChaseParser::TypesKWContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitTypesKW(this);
 }
 
-Ref<ChaseParser::TypesKWContext> ChaseParser::typesKW() {
-  Ref<TypesKWContext> _localctx = std::make_shared<TypesKWContext>(_ctx, getState());
+ChaseParser::TypesKWContext* ChaseParser::typesKW() {
+  TypesKWContext *_localctx = _tracker.createInstance<TypesKWContext>(_ctx, getState());
   enterRule(_localctx, 34, ChaseParser::RuleTypesKW);
 
   auto onExit = finally([=] {
@@ -1379,12 +1383,12 @@ Ref<ChaseParser::TypesKWContext> ChaseParser::typesKW() {
 
 //----------------- ComponentsKWContext ------------------------------------------------------------------
 
-ChaseParser::ComponentsKWContext::ComponentsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ComponentsKWContext::ComponentsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::ComponentsKWContext::getRuleIndex() const {
+size_t ChaseParser::ComponentsKWContext::getRuleIndex() const {
   return ChaseParser::RuleComponentsKW;
 }
 
@@ -1400,8 +1404,8 @@ void ChaseParser::ComponentsKWContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitComponentsKW(this);
 }
 
-Ref<ChaseParser::ComponentsKWContext> ChaseParser::componentsKW() {
-  Ref<ComponentsKWContext> _localctx = std::make_shared<ComponentsKWContext>(_ctx, getState());
+ChaseParser::ComponentsKWContext* ChaseParser::componentsKW() {
+  ComponentsKWContext *_localctx = _tracker.createInstance<ComponentsKWContext>(_ctx, getState());
   enterRule(_localctx, 36, ChaseParser::RuleComponentsKW);
 
   auto onExit = finally([=] {
@@ -1424,12 +1428,12 @@ Ref<ChaseParser::ComponentsKWContext> ChaseParser::componentsKW() {
 
 //----------------- AbbreviationsKWContext ------------------------------------------------------------------
 
-ChaseParser::AbbreviationsKWContext::AbbreviationsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AbbreviationsKWContext::AbbreviationsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::AbbreviationsKWContext::getRuleIndex() const {
+size_t ChaseParser::AbbreviationsKWContext::getRuleIndex() const {
   return ChaseParser::RuleAbbreviationsKW;
 }
 
@@ -1445,8 +1449,8 @@ void ChaseParser::AbbreviationsKWContext::exitRule(tree::ParseTreeListener *list
     parserListener->exitAbbreviationsKW(this);
 }
 
-Ref<ChaseParser::AbbreviationsKWContext> ChaseParser::abbreviationsKW() {
-  Ref<AbbreviationsKWContext> _localctx = std::make_shared<AbbreviationsKWContext>(_ctx, getState());
+ChaseParser::AbbreviationsKWContext* ChaseParser::abbreviationsKW() {
+  AbbreviationsKWContext *_localctx = _tracker.createInstance<AbbreviationsKWContext>(_ctx, getState());
   enterRule(_localctx, 38, ChaseParser::RuleAbbreviationsKW);
 
   auto onExit = finally([=] {
@@ -1469,12 +1473,12 @@ Ref<ChaseParser::AbbreviationsKWContext> ChaseParser::abbreviationsKW() {
 
 //----------------- RequirementsKWContext ------------------------------------------------------------------
 
-ChaseParser::RequirementsKWContext::RequirementsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::RequirementsKWContext::RequirementsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::RequirementsKWContext::getRuleIndex() const {
+size_t ChaseParser::RequirementsKWContext::getRuleIndex() const {
   return ChaseParser::RuleRequirementsKW;
 }
 
@@ -1490,8 +1494,8 @@ void ChaseParser::RequirementsKWContext::exitRule(tree::ParseTreeListener *liste
     parserListener->exitRequirementsKW(this);
 }
 
-Ref<ChaseParser::RequirementsKWContext> ChaseParser::requirementsKW() {
-  Ref<RequirementsKWContext> _localctx = std::make_shared<RequirementsKWContext>(_ctx, getState());
+ChaseParser::RequirementsKWContext* ChaseParser::requirementsKW() {
+  RequirementsKWContext *_localctx = _tracker.createInstance<RequirementsKWContext>(_ctx, getState());
   enterRule(_localctx, 40, ChaseParser::RuleRequirementsKW);
 
   auto onExit = finally([=] {
@@ -1514,12 +1518,12 @@ Ref<ChaseParser::RequirementsKWContext> ChaseParser::requirementsKW() {
 
 //----------------- ConnectionsKWContext ------------------------------------------------------------------
 
-ChaseParser::ConnectionsKWContext::ConnectionsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::ConnectionsKWContext::ConnectionsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::ConnectionsKWContext::getRuleIndex() const {
+size_t ChaseParser::ConnectionsKWContext::getRuleIndex() const {
   return ChaseParser::RuleConnectionsKW;
 }
 
@@ -1535,8 +1539,8 @@ void ChaseParser::ConnectionsKWContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitConnectionsKW(this);
 }
 
-Ref<ChaseParser::ConnectionsKWContext> ChaseParser::connectionsKW() {
-  Ref<ConnectionsKWContext> _localctx = std::make_shared<ConnectionsKWContext>(_ctx, getState());
+ChaseParser::ConnectionsKWContext* ChaseParser::connectionsKW() {
+  ConnectionsKWContext *_localctx = _tracker.createInstance<ConnectionsKWContext>(_ctx, getState());
   enterRule(_localctx, 42, ChaseParser::RuleConnectionsKW);
 
   auto onExit = finally([=] {
@@ -1559,12 +1563,12 @@ Ref<ChaseParser::ConnectionsKWContext> ChaseParser::connectionsKW() {
 
 //----------------- AssumptionsKWContext ------------------------------------------------------------------
 
-ChaseParser::AssumptionsKWContext::AssumptionsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::AssumptionsKWContext::AssumptionsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::AssumptionsKWContext::getRuleIndex() const {
+size_t ChaseParser::AssumptionsKWContext::getRuleIndex() const {
   return ChaseParser::RuleAssumptionsKW;
 }
 
@@ -1580,8 +1584,8 @@ void ChaseParser::AssumptionsKWContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitAssumptionsKW(this);
 }
 
-Ref<ChaseParser::AssumptionsKWContext> ChaseParser::assumptionsKW() {
-  Ref<AssumptionsKWContext> _localctx = std::make_shared<AssumptionsKWContext>(_ctx, getState());
+ChaseParser::AssumptionsKWContext* ChaseParser::assumptionsKW() {
+  AssumptionsKWContext *_localctx = _tracker.createInstance<AssumptionsKWContext>(_ctx, getState());
   enterRule(_localctx, 44, ChaseParser::RuleAssumptionsKW);
 
   auto onExit = finally([=] {
@@ -1604,12 +1608,12 @@ Ref<ChaseParser::AssumptionsKWContext> ChaseParser::assumptionsKW() {
 
 //----------------- SwitchedKWContext ------------------------------------------------------------------
 
-ChaseParser::SwitchedKWContext::SwitchedKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::SwitchedKWContext::SwitchedKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::SwitchedKWContext::getRuleIndex() const {
+size_t ChaseParser::SwitchedKWContext::getRuleIndex() const {
   return ChaseParser::RuleSwitchedKW;
 }
 
@@ -1625,8 +1629,8 @@ void ChaseParser::SwitchedKWContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitSwitchedKW(this);
 }
 
-Ref<ChaseParser::SwitchedKWContext> ChaseParser::switchedKW() {
-  Ref<SwitchedKWContext> _localctx = std::make_shared<SwitchedKWContext>(_ctx, getState());
+ChaseParser::SwitchedKWContext* ChaseParser::switchedKW() {
+  SwitchedKWContext *_localctx = _tracker.createInstance<SwitchedKWContext>(_ctx, getState());
   enterRule(_localctx, 46, ChaseParser::RuleSwitchedKW);
 
   auto onExit = finally([=] {
@@ -1649,12 +1653,12 @@ Ref<ChaseParser::SwitchedKWContext> ChaseParser::switchedKW() {
 
 //----------------- UnswitchedKWContext ------------------------------------------------------------------
 
-ChaseParser::UnswitchedKWContext::UnswitchedKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState)
+ChaseParser::UnswitchedKWContext::UnswitchedKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-ssize_t ChaseParser::UnswitchedKWContext::getRuleIndex() const {
+size_t ChaseParser::UnswitchedKWContext::getRuleIndex() const {
   return ChaseParser::RuleUnswitchedKW;
 }
 
@@ -1670,8 +1674,8 @@ void ChaseParser::UnswitchedKWContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitUnswitchedKW(this);
 }
 
-Ref<ChaseParser::UnswitchedKWContext> ChaseParser::unswitchedKW() {
-  Ref<UnswitchedKWContext> _localctx = std::make_shared<UnswitchedKWContext>(_ctx, getState());
+ChaseParser::UnswitchedKWContext* ChaseParser::unswitchedKW() {
+  UnswitchedKWContext *_localctx = _tracker.createInstance<UnswitchedKWContext>(_ctx, getState());
   enterRule(_localctx, 48, ChaseParser::RuleUnswitchedKW);
 
   auto onExit = finally([=] {
@@ -1737,7 +1741,7 @@ ChaseParser::Initializer::Initializer() {
 	}
 
   _serializedATN = {
-    0x3, 0x430, 0xd6d1, 0x8206, 0xad2d, 0x4417, 0xaef1, 0x8d80, 0xaadd, 
+    0x3, 0x608b, 0xa72a, 0x8133, 0xb9ed, 0x417c, 0x3be7, 0x7786, 0x5964, 
     0x3, 0x16, 0xd9, 0x4, 0x2, 0x9, 0x2, 0x4, 0x3, 0x9, 0x3, 0x4, 0x4, 0x9, 
     0x4, 0x4, 0x5, 0x9, 0x5, 0x4, 0x6, 0x9, 0x6, 0x4, 0x7, 0x9, 0x7, 0x4, 
     0x8, 0x9, 0x8, 0x4, 0x9, 0x9, 0x9, 0x4, 0xa, 0x9, 0xa, 0x4, 0xb, 0x9, 
@@ -1774,8 +1778,8 @@ ChaseParser::Initializer::Initializer() {
     0x18, 0x3, 0x18, 0x3, 0x19, 0x3, 0x19, 0x3, 0x1a, 0x3, 0x1a, 0x3, 0x1a, 
     0x2, 0x2, 0x1b, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe, 0x10, 0x12, 0x14, 
     0x16, 0x18, 0x1a, 0x1c, 0x1e, 0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 
-    0x2e, 0x30, 0x32, 0x2, 0x2, 0xd4, 0x2, 0x34, 0x3, 0x2, 0x2, 0x2, 0x4, 
-    0x40, 0x3, 0x2, 0x2, 0x2, 0x6, 0x46, 0x3, 0x2, 0x2, 0x2, 0x8, 0x57, 
+    0x2e, 0x30, 0x32, 0x2, 0x2, 0x2, 0xd4, 0x2, 0x34, 0x3, 0x2, 0x2, 0x2, 
+    0x4, 0x40, 0x3, 0x2, 0x2, 0x2, 0x6, 0x46, 0x3, 0x2, 0x2, 0x2, 0x8, 0x57, 
     0x3, 0x2, 0x2, 0x2, 0xa, 0x5d, 0x3, 0x2, 0x2, 0x2, 0xc, 0x73, 0x3, 0x2, 
     0x2, 0x2, 0xe, 0x75, 0x3, 0x2, 0x2, 0x2, 0x10, 0x7b, 0x3, 0x2, 0x2, 
     0x2, 0x12, 0x80, 0x3, 0x2, 0x2, 0x2, 0x14, 0x95, 0x3, 0x2, 0x2, 0x2, 
@@ -1879,8 +1883,10 @@ ChaseParser::Initializer::Initializer() {
   atn::ATNDeserializer deserializer;
   _atn = deserializer.deserialize(_serializedATN);
 
-  for (int i = 0; i < _atn.getNumberOfDecisions(); i++) { 
-    _decisionToDFA.push_back(dfa::DFA(_atn.getDecisionState(i), i));
+  size_t count = _atn.getNumberOfDecisions();
+  _decisionToDFA.reserve(count);
+  for (size_t i = 0; i < count; i++) { 
+    _decisionToDFA.emplace_back(_atn.getDecisionState(i), i);
   }
 }
 

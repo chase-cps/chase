@@ -35,6 +35,8 @@ namespace chase {
 
         /// Visit functions
         //
+        int visitSystem( System & ) override;
+
         //  Values
         int visitRange( Range & ) override;
         int visitIntegerValue( IntegerValue & ) override;

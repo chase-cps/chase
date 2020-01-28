@@ -1,5 +1,5 @@
 
-// Generated from Chase.g4 by ANTLR 4.5.3
+// Generated from Chase.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -13,7 +13,7 @@
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-class ChaseBaseListener : public ChaseListener {
+class  ChaseBaseListener : public ChaseListener {
 public:
 
   virtual void enterChaseSpec(ChaseParser::ChaseSpecContext * /*ctx*/) override { }
@@ -92,10 +92,10 @@ public:
   virtual void exitUnswitchedKW(ChaseParser::UnswitchedKWContext * /*ctx*/) override { }
 
 
-  virtual void enterEveryRule(ParserRuleContext * /*ctx*/) override { }
-  virtual void exitEveryRule(ParserRuleContext * /*ctx*/) override { }
-  virtual void visitTerminal(Ref<tree::TerminalNode> const& /*node*/) { }
-  virtual void visitErrorNode(Ref<tree::ErrorNode> const& /*node*/) { }
+  virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }
+  virtual void exitEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }
+  virtual void visitTerminal(antlr4::tree::TerminalNode * /*node*/) override { }
+  virtual void visitErrorNode(antlr4::tree::ErrorNode * /*node*/) override { }
 
 };
 

@@ -25,6 +25,10 @@ BinaryBooleanFormula * chase::Implies(LogicFormula *op1, LogicFormula *op2) {
     return new BinaryBooleanFormula(op_implies, op1, op2);
 }
 
+BinaryBooleanFormula * chase::Iff(LogicFormula *op1, LogicFormula *op2) {
+    return new BinaryBooleanFormula(op_iff, op1, op2);
+}
+
 BinaryBooleanFormula * chase::Nand(LogicFormula *op1, LogicFormula *op2) {
     return new BinaryBooleanFormula(op_nand, op1, op2);
 }
@@ -144,4 +148,8 @@ RealValue * chase::RealVal(double r) {
 BooleanValue * chase::BoolVal(bool b)
 {
     return new BooleanValue(b);
+}
+
+BinaryTemporalFormula *chase::Until(LogicFormula *op1, LogicFormula *op2) {
+    return new BinaryTemporalFormula(op_until, op1, op2);
 }

@@ -10,6 +10,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include/chase
         ${PROJECT_SOURCE_DIR}/third_party/antlr4_runtime/runtime/src
         ${PROJECT_SOURCE_DIR}/src/patternsOnNetworks/include
+        ${PROJECT_SOURCE_DIR}/src/patternsOnNetworks/include/DSLParser
 )
 
 # PON = Patterns On Network

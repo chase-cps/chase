@@ -1,0 +1,38 @@
+NAME : TEST_SYSTEM;
+
+# This is a comment.
+
+variable A integer;
+constant Z integer 2;
+
+proposition Z_eq_A_minus_1 is Z=A-1;
+
+proposition A_eq_2 is A=2;
+proposition A_eq_1 is A=1;
+proposition W;
+
+proposition Z_eq_2 is Z=2;
+
+CONTRACT C_1:
+    proposition B;
+
+    Assumptions:
+        [](A_eq_2);
+
+    Guarantees:
+        [](A_eq_2 -> X(B));
+
+CONTRACT C_2:
+    proposition C;
+
+    Assumptions:
+        [](A_eq_1);
+
+    Guarantees:
+        [](A_eq_1 -> X(~C));
+
+CONTRACT C_3:
+    Assumptions:
+        Z_eq_A_minus_1;
+    Guarantees:
+        ~W /\ Z_eq_2;

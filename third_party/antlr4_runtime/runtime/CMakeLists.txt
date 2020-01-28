@@ -24,6 +24,12 @@ file(GLOB libantlrcpp_SRC
 add_library(antlr4_shared SHARED ${libantlrcpp_SRC})
 add_library(antlr4_static STATIC ${libantlrcpp_SRC})
 
+############## SUPPRESS THIRD PARTIES WARNINGS #################################
+target_compile_options(antlr4_shared PRIVATE "-w")
+target_compile_options(antlr4_static PRIVATE "-w")
+################################################################################
+
+
 set(LIB_OUTPUT_DIR "dist") # put generated libraries here.
 message(STATUS "Output libraries to ${LIB_OUTPUT_DIR}")
 

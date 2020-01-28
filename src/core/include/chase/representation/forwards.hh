@@ -13,6 +13,7 @@
 namespace chase {
     
     class ChaseObject;
+    class System;
     /*class Type;
     class SimpleType;*/
     class Integer;

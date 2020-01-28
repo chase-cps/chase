@@ -1,5 +1,5 @@
 
-// Generated from Chase.g4 by ANTLR 4.5.3
+// Generated from Chase.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -7,11 +7,9 @@
 #include "antlr4-runtime.h"
 
 
-using namespace antlr4;
 
 
-
-class ChaseParser : public Parser {
+class  ChaseParser : public antlr4::Parser {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
@@ -29,14 +27,14 @@ public:
     RuleSwitchedKW = 23, RuleUnswitchedKW = 24
   };
 
-  ChaseParser(TokenStream *input);
+  ChaseParser(antlr4::TokenStream *input);
   ~ChaseParser();
 
   virtual std::string getGrammarFileName() const override;
-  virtual const atn::ATN& getATN() const override { return _atn; };
+  virtual const antlr4::atn::ATN& getATN() const override { return _atn; };
   virtual const std::vector<std::string>& getTokenNames() const override { return _tokenNames; }; // deprecated: use vocabulary instead.
   virtual const std::vector<std::string>& getRuleNames() const override;
-  virtual dfa::Vocabulary& getVocabulary() const override;
+  virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
 
   class ChaseSpecContext;
@@ -65,392 +63,392 @@ public:
   class SwitchedKWContext;
   class UnswitchedKWContext; 
 
-  class ChaseSpecContext : public ParserRuleContext {
+  class  ChaseSpecContext : public antlr4::ParserRuleContext {
   public:
-    ChaseSpecContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<TypesContext> types();
-    Ref<ComponentsContext> components();
-    Ref<ConnectionsContext> connections();
-    Ref<RequirementsContext> requirements();
-    Ref<tree::TerminalNode> EOF();
-    Ref<AbbreviationsContext> abbreviations();
-    Ref<AssumptionsContext> assumptions();
+    ChaseSpecContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    TypesContext *types();
+    ComponentsContext *components();
+    ConnectionsContext *connections();
+    RequirementsContext *requirements();
+    antlr4::tree::TerminalNode *EOF();
+    AbbreviationsContext *abbreviations();
+    AssumptionsContext *assumptions();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ChaseSpecContext> chaseSpec();
+  ChaseSpecContext* chaseSpec();
 
-  class TypesContext : public ParserRuleContext {
+  class  TypesContext : public antlr4::ParserRuleContext {
   public:
-    TypesContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<TypesKWContext> typesKW();
-    std::vector<Ref<TypeContext>> type();
-    Ref<TypeContext> type(int i);
+    TypesContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    TypesKWContext *typesKW();
+    std::vector<TypeContext *> type();
+    TypeContext* type(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<TypesContext> types();
+  TypesContext* types();
 
-  class TypeContext : public ParserRuleContext {
+  class  TypeContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> nam;
-    Token *typ = nullptr;
-    Token *idToken = nullptr;
-    std::vector<Token *> par;
-    TypeContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<tree::TerminalNode> ENDST();
-    Ref<NameContext> name();
-    std::vector<Ref<tree::TerminalNode>> ID();
-    Ref<tree::TerminalNode> ID(int i);
+    ChaseParser::NameContext *nam = nullptr;
+    antlr4::Token *typ = nullptr;
+    antlr4::Token *idToken = nullptr;
+    std::vector<antlr4::Token *> par;
+    TypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ENDST();
+    NameContext *name();
+    std::vector<antlr4::tree::TerminalNode *> ID();
+    antlr4::tree::TerminalNode* ID(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<TypeContext> type();
+  TypeContext* type();
 
-  class ComponentsContext : public ParserRuleContext {
+  class  ComponentsContext : public antlr4::ParserRuleContext {
   public:
-    ComponentsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<ComponentsKWContext> componentsKW();
-    std::vector<Ref<ComponentContext>> component();
-    Ref<ComponentContext> component(int i);
+    ComponentsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    ComponentsKWContext *componentsKW();
+    std::vector<ComponentContext *> component();
+    ComponentContext* component(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ComponentsContext> components();
+  ComponentsContext* components();
 
-  class ComponentContext : public ParserRuleContext {
+  class  ComponentContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> nam;
-    Token *num = nullptr;
-    ComponentContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<tree::TerminalNode> ENDST();
-    Ref<NameContext> name();
-    Ref<tree::TerminalNode> NUMBER();
+    ChaseParser::NameContext *nam = nullptr;
+    antlr4::Token *num = nullptr;
+    ComponentContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ENDST();
+    NameContext *name();
+    antlr4::tree::TerminalNode *NUMBER();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ComponentContext> component();
+  ComponentContext* component();
 
-  class NameContext : public ParserRuleContext {
+  class  NameContext : public antlr4::ParserRuleContext {
   public:
-    Token *idToken = nullptr;
-    std::vector<Token *> comp;
-    Token *num = nullptr;
-    NameContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    std::vector<Ref<tree::TerminalNode>> ID();
-    Ref<tree::TerminalNode> ID(int i);
-    Ref<tree::TerminalNode> NUMBER();
+    antlr4::Token *idToken = nullptr;
+    std::vector<antlr4::Token *> comp;
+    antlr4::Token *num = nullptr;
+    NameContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> ID();
+    antlr4::tree::TerminalNode* ID(size_t i);
+    antlr4::tree::TerminalNode *NUMBER();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<NameContext> name();
+  NameContext* name();
 
-  class AbbreviationsContext : public ParserRuleContext {
+  class  AbbreviationsContext : public antlr4::ParserRuleContext {
   public:
-    AbbreviationsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<AbbreviationsKWContext> abbreviationsKW();
-    std::vector<Ref<AbbrevContext>> abbrev();
-    Ref<AbbrevContext> abbrev(int i);
+    AbbreviationsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    AbbreviationsKWContext *abbreviationsKW();
+    std::vector<AbbrevContext *> abbrev();
+    AbbrevContext* abbrev(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AbbreviationsContext> abbreviations();
+  AbbreviationsContext* abbreviations();
 
-  class AbbrevContext : public ParserRuleContext {
+  class  AbbrevContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> nam;
-    Token *abbr = nullptr;
-    AbbrevContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<tree::TerminalNode> ENDST();
-    Ref<NameContext> name();
-    Ref<tree::TerminalNode> ID();
+    ChaseParser::NameContext *nam = nullptr;
+    antlr4::Token *abbr = nullptr;
+    AbbrevContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ENDST();
+    NameContext *name();
+    antlr4::tree::TerminalNode *ID();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AbbrevContext> abbrev();
+  AbbrevContext* abbrev();
 
-  class ConnectionsContext : public ParserRuleContext {
+  class  ConnectionsContext : public antlr4::ParserRuleContext {
   public:
-    ConnectionsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<ConnectionsKWContext> connectionsKW();
-    std::vector<Ref<ConnContext>> conn();
-    Ref<ConnContext> conn(int i);
-    std::vector<Ref<SwitchedContext>> switched();
-    Ref<SwitchedContext> switched(int i);
-    std::vector<Ref<UnswitchedContext>> unswitched();
-    Ref<UnswitchedContext> unswitched(int i);
+    ConnectionsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    ConnectionsKWContext *connectionsKW();
+    std::vector<ConnContext *> conn();
+    ConnContext* conn(size_t i);
+    std::vector<SwitchedContext *> switched();
+    SwitchedContext* switched(size_t i);
+    std::vector<UnswitchedContext *> unswitched();
+    UnswitchedContext* unswitched(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ConnectionsContext> connections();
+  ConnectionsContext* connections();
 
-  class SwitchedContext : public ParserRuleContext {
+  class  SwitchedContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> sw;
-    SwitchedContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<SwitchedKWContext> switchedKW();
-    Ref<NameContext> name();
+    ChaseParser::NameContext *sw = nullptr;
+    SwitchedContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    SwitchedKWContext *switchedKW();
+    NameContext *name();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<SwitchedContext> switched();
+  SwitchedContext* switched();
 
-  class UnswitchedContext : public ParserRuleContext {
+  class  UnswitchedContext : public antlr4::ParserRuleContext {
   public:
-    UnswitchedContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<UnswitchedKWContext> unswitchedKW();
+    UnswitchedContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    UnswitchedKWContext *unswitchedKW();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<UnswitchedContext> unswitched();
+  UnswitchedContext* unswitched();
 
-  class ConnContext : public ParserRuleContext {
+  class  ConnContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> from;
-    Ref<ChaseParser::NameContext> sw;
-    Ref<ChaseParser::NameContext> to;
-    ConnContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<tree::TerminalNode> ENDST();
-    std::vector<Ref<NameContext>> name();
-    Ref<NameContext> name(int i);
+    ChaseParser::NameContext *from = nullptr;
+    ChaseParser::NameContext *sw = nullptr;
+    ChaseParser::NameContext *to = nullptr;
+    ConnContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ENDST();
+    std::vector<NameContext *> name();
+    NameContext* name(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ConnContext> conn();
+  ConnContext* conn();
 
-  class RequirementsContext : public ParserRuleContext {
+  class  RequirementsContext : public antlr4::ParserRuleContext {
   public:
-    RequirementsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<RequirementsKWContext> requirementsKW();
-    std::vector<Ref<ReqContext>> req();
-    Ref<ReqContext> req(int i);
+    RequirementsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    RequirementsKWContext *requirementsKW();
+    std::vector<ReqContext *> req();
+    ReqContext* req(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<RequirementsContext> requirements();
+  RequirementsContext* requirements();
 
-  class ReqContext : public ParserRuleContext {
+  class  ReqContext : public antlr4::ParserRuleContext {
   public:
-    Token *pred = nullptr;
-    Ref<ChaseParser::ParamContext> paramContext;
-    std::vector<Ref<ParamContext>> par;
-    ReqContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<tree::TerminalNode> ENDST();
-    Ref<tree::TerminalNode> ID();
-    std::vector<Ref<ParamContext>> param();
-    Ref<ParamContext> param(int i);
+    antlr4::Token *pred = nullptr;
+    ChaseParser::ParamContext *paramContext = nullptr;
+    std::vector<ParamContext *> par;
+    ReqContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ENDST();
+    antlr4::tree::TerminalNode *ID();
+    std::vector<ParamContext *> param();
+    ParamContext* param(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ReqContext> req();
+  ReqContext* req();
 
-  class ParamContext : public ParserRuleContext {
+  class  ParamContext : public antlr4::ParserRuleContext {
   public:
-    Ref<ChaseParser::NameContext> nam;
-    Token *num = nullptr;
-    ParamContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<NameContext> name();
-    Ref<tree::TerminalNode> NUMBER();
+    ChaseParser::NameContext *nam = nullptr;
+    antlr4::Token *num = nullptr;
+    ParamContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    NameContext *name();
+    antlr4::tree::TerminalNode *NUMBER();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ParamContext> param();
+  ParamContext* param();
 
-  class AssumptionsContext : public ParserRuleContext {
+  class  AssumptionsContext : public antlr4::ParserRuleContext {
   public:
-    AssumptionsContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<AssumptionsKWContext> assumptionsKW();
-    std::vector<Ref<AssumContext>> assum();
-    Ref<AssumContext> assum(int i);
+    AssumptionsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    AssumptionsKWContext *assumptionsKW();
+    std::vector<AssumContext *> assum();
+    AssumContext* assum(size_t i);
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AssumptionsContext> assumptions();
+  AssumptionsContext* assumptions();
 
-  class AssumContext : public ParserRuleContext {
+  class  AssumContext : public antlr4::ParserRuleContext {
   public:
-    AssumContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
-    Ref<ReqContext> req();
+    AssumContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    ReqContext *req();
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AssumContext> assum();
+  AssumContext* assum();
 
-  class TypesKWContext : public ParserRuleContext {
+  class  TypesKWContext : public antlr4::ParserRuleContext {
   public:
-    TypesKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    TypesKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<TypesKWContext> typesKW();
+  TypesKWContext* typesKW();
 
-  class ComponentsKWContext : public ParserRuleContext {
+  class  ComponentsKWContext : public antlr4::ParserRuleContext {
   public:
-    ComponentsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    ComponentsKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ComponentsKWContext> componentsKW();
+  ComponentsKWContext* componentsKW();
 
-  class AbbreviationsKWContext : public ParserRuleContext {
+  class  AbbreviationsKWContext : public antlr4::ParserRuleContext {
   public:
-    AbbreviationsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    AbbreviationsKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AbbreviationsKWContext> abbreviationsKW();
+  AbbreviationsKWContext* abbreviationsKW();
 
-  class RequirementsKWContext : public ParserRuleContext {
+  class  RequirementsKWContext : public antlr4::ParserRuleContext {
   public:
-    RequirementsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    RequirementsKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<RequirementsKWContext> requirementsKW();
+  RequirementsKWContext* requirementsKW();
 
-  class ConnectionsKWContext : public ParserRuleContext {
+  class  ConnectionsKWContext : public antlr4::ParserRuleContext {
   public:
-    ConnectionsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    ConnectionsKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<ConnectionsKWContext> connectionsKW();
+  ConnectionsKWContext* connectionsKW();
 
-  class AssumptionsKWContext : public ParserRuleContext {
+  class  AssumptionsKWContext : public antlr4::ParserRuleContext {
   public:
-    AssumptionsKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    AssumptionsKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<AssumptionsKWContext> assumptionsKW();
+  AssumptionsKWContext* assumptionsKW();
 
-  class SwitchedKWContext : public ParserRuleContext {
+  class  SwitchedKWContext : public antlr4::ParserRuleContext {
   public:
-    SwitchedKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    SwitchedKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<SwitchedKWContext> switchedKW();
+  SwitchedKWContext* switchedKW();
 
-  class UnswitchedKWContext : public ParserRuleContext {
+  class  UnswitchedKWContext : public antlr4::ParserRuleContext {
   public:
-    UnswitchedKWContext(std::weak_ptr<ParserRuleContext> parent, int invokingState);
-    virtual ssize_t getRuleIndex() const override;
+    UnswitchedKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
 
-    virtual void enterRule(tree::ParseTreeListener *listener) override;
-    virtual void exitRule(tree::ParseTreeListener *listener) override;
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Ref<UnswitchedKWContext> unswitchedKW();
+  UnswitchedKWContext* unswitchedKW();
 
 
 private:
-  static std::vector<dfa::DFA> _decisionToDFA;
-  static atn::PredictionContextCache _sharedContextCache;
+  static std::vector<antlr4::dfa::DFA> _decisionToDFA;
+  static antlr4::atn::PredictionContextCache _sharedContextCache;
   static std::vector<std::string> _ruleNames;
   static std::vector<std::string> _tokenNames;
 
   static std::vector<std::string> _literalNames;
   static std::vector<std::string> _symbolicNames;
-  static dfa::Vocabulary _vocabulary;
-  static atn::ATN _atn;
+  static antlr4::dfa::Vocabulary _vocabulary;
+  static antlr4::atn::ATN _atn;
   static std::vector<uint16_t> _serializedATN;
 
 

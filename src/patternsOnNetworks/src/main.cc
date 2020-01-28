@@ -45,9 +45,9 @@ void patternsOnNetworks::printHelp()
               std::endl <<
               "\t-i : specifies the txt input file containing the specifications."
               << std::endl <<
-              "\t-o : specifies the txt output file. Default: input file with .py"
+              "\t-o : specifies the txt output file. Default: input file with .structuredslugs"
               "\n\t\trather than .txt extension." << std::endl <<
-              "\t-b : specifies the backend to be used. Default: gr1c." 
+              "\t-b : specifies the backend to be used. Default: gr1c." <<
               "\n\t\tLegal values: gr1c, slugs" << std::endl <<
               "\t-V : activate the verbose mode." << std::endl;
 }
@@ -119,3 +119,5 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
     f.close();
     return parameters;
 }
+
+

@@ -1,5 +1,5 @@
 
-// Generated from Chase.g4 by ANTLR 4.5.3
+// Generated from Chase.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -11,7 +11,7 @@
 /**
  * This interface defines an abstract listener for a parse tree produced by ChaseParser.
  */
-class ChaseListener : public antlr4::tree::ParseTreeListener {
+class  ChaseListener : public antlr4::tree::ParseTreeListener {
 public:
 
   virtual void enterChaseSpec(ChaseParser::ChaseSpecContext *ctx) = 0;

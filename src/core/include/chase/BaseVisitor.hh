@@ -73,6 +73,8 @@ namespace chase{
             // Interfaces
             virtual int visitContract(Contract & );
 
+            virtual int visitSystem( System & );
+
             // Graphs
             virtual int visitGraph(Graph &);
             virtual int visitEdge( Edge & );
