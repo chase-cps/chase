@@ -26,6 +26,7 @@ namespace chase {
         CHASE_FS
     };
 
+    /// @brief datatype to represent the time in chase.
     struct chase_time {
         unsigned int amount;
         chase_time_unit unit;

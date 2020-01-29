@@ -27,6 +27,8 @@ namespace chase {
             /// @param r The right bound of the range.
             Integer( int l, int r );
 
+            /// @brief Constructor with range.
+            /// @param r The range.
             explicit Integer( Range * r );
 
             /// @brief Destructor.

@@ -16,8 +16,7 @@ using namespace antlr4;
 
 LTLSpecsBuilder::LTLSpecsBuilder() :
     _system(nullptr),
-    _currContract(nullptr),
-    _currFormula(nullptr)
+    _currContract(nullptr)
 {
 }
 
@@ -221,17 +220,20 @@ antlrcpp::Any
 LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
 {
     size_t i = 0;
-    _currFormula = createFormula(ctx->single_formula(i)->formula());
+    auto vec = new std::vector< LogicFormula * >();
+    vec->push_back(createFormula(ctx->single_formula(i)->formula()));
     ++i;
+
     while(i < ctx->single_formula().size())
     {
-        _currFormula =chase::And(
-                _currFormula,
-                createFormula(ctx->single_formula(i)->formula()));
+        vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+        ++i;
     }
 
-    _currContract->addAssumptions(temporal_logic, _currFormula);
-    _currFormula = nullptr;
+    if( vec->size() == 1)
+        _currContract->addAssumptions(temporal_logic, (*vec)[0]);
+    else
+        _currContract->addAssumptions(temporal_logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }
@@ -240,17 +242,20 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
 antlrcpp::Any
 LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
     size_t i = 0;
-    _currFormula = createFormula(ctx->single_formula(i)->formula());
+    auto vec = new std::vector< LogicFormula * >();
+    vec->push_back(createFormula(ctx->single_formula(i)->formula()));
     ++i;
+
     while(i < ctx->single_formula().size())
     {
-        _currFormula =chase::And(
-                _currFormula,
-                createFormula(ctx->single_formula(i)->formula()));
+        vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+        ++i;
     }
 
-    _currContract->addGuarantees(temporal_logic, _currFormula);
-    _currFormula = nullptr;
+    if( vec->size() == 1)
+        _currContract->addGuarantees(temporal_logic, (*vec)[0]);
+    else
+        _currContract->addGuarantees(temporal_logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }

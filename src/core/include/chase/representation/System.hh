@@ -11,6 +11,7 @@
 
 namespace chase {
 
+    /// @brief Class representing a System composed by multiple contracts.
     class System : public ChaseObject {
     public:
 

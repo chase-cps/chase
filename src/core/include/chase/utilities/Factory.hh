@@ -178,10 +178,24 @@ namespace chase
     /// @return The proposition being created.
     Proposition * Prop(Expression * exp);
 
-
+    /// @brief Factory to create an Identifier from a declaration.
+    /// @param declaration The declaration of the Identifier.
+    /// @return Pointer to the created identifier.
     Identifier * Id(DataDeclaration * declaration);
+
+    /// @brief Factory to create an Integer Value.
+    /// @param n The integer to be represented.
+    /// @return Pointer to the created integer object.
     IntegerValue * IntVal( int n );
+
+    /// @brief Factory to create an Real Value.
+    /// @param r The double number to be represented.
+    /// @return Pointer to the created real value object.
     RealValue * RealVal( double r );
+
+    /// @brief Factory to create an Boolean Value.
+    /// @param b The boolean value to be represented.
+    /// @return Pointer to the created boolean value object.
     BooleanValue * BoolVal( bool b );
 
 

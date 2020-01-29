@@ -27,12 +27,9 @@ CONTRACT C_2:
 
     Assumptions:
         [](A_eq_1);
+        Z_eq_A_minus_1;
 
     Guarantees:
         [](A_eq_1 -> X(~C));
-
-CONTRACT C_3:
-    Assumptions:
-        Z_eq_A_minus_1;
-    Guarantees:
         ~W /\ Z_eq_2;
+

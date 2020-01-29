@@ -8,7 +8,6 @@
 
 using namespace chase;
 
-
 int GR1CPrinter::visitIntegerValue(IntegerValue &o) {
     _curr += std::to_string(o.getValue());
     return 1;

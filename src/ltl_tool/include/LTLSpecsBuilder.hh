@@ -88,7 +88,6 @@ namespace ltl_tool {
         /// traversing the global area of the specification.
         Contract * _currContract;
 
-        LogicFormula * _currFormula;
 
         /// @brief Map of propositions and values.
         std::map< Variable *, Expression * > _map_props_values;

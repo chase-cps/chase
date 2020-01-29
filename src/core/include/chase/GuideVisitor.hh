@@ -19,6 +19,7 @@
 namespace chase {
 
 
+    /// @brief Basic visitor guiding the visit of the standard CHASE tree.
     class GuideVisitor : public BaseVisitor {
 
     public:
