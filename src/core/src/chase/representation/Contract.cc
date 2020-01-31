@@ -8,6 +8,7 @@
 
 #include "chase/representation/Contract.hh"
 #include "chase/utilities/ClonedDeclarationVisitor.hh"
+#include "chase/utilities/Factory.hh"
 
 using namespace chase;
 
@@ -84,12 +85,7 @@ void Contract::addGuarantees(semantic_domain domain, Specification *spec) {
     spec->setParent(this);
 }
 
-//Contract * Contract::composition(
-//        Contract * C1, Contract * C2,
-//        std::map<std::string, std::string>& correspondences)
-//{
-//    return nullptr;
-//}
+
 
 /// \todo Implement the clone method.
 Contract *Contract::clone() {
@@ -126,4 +122,64 @@ Contract *Contract::clone() {
     ret->accept_visitor(c);
 
     return ret;
+}
+
+
+
+Contract * Contract::composition(
+        Contract * C1, Contract * C2,
+        std::map<std::string, std::string>& correspondences)
+{
+    return nullptr;
+}
+
+void Contract::saturate(Contract *c)
+{
+    _saturateTemporalLogic(c);
+}
+
+void Contract::_saturateTemporalLogic( Contract * c )
+{
+    auto a = c->assumptions.find(temporal_logic);
+    auto g = c->guarantees.find(temporal_logic);
+
+     LogicFormula * assumptions = nullptr;
+     LogicFormula * guarantees = nullptr;
+
+     if(a != c->assumptions.end())
+     {
+         assumptions = dynamic_cast< LogicFormula * >(a->second);
+         if(assumptions == nullptr)
+             messageError("Non logic formula in temporal logic domain");
+     }
+
+    if(g != c->guarantees.end())
+    {
+        guarantees = dynamic_cast< LogicFormula * >(g->second);
+        if(guarantees == nullptr)
+            messageError("Non logic formula in temporal logic domain");
+    }
+
+    LogicFormula * saturation = nullptr;
+    if(assumptions != nullptr ) {
+        saturation = Not(assumptions->clone());
+    }else{
+        return; // No saturation necessary.
+    }
+
+    if( guarantees == nullptr )
+        // Then, create new guarantees negating the
+        // assumptions.
+    {
+        std::pair< semantic_domain, Specification * > p(
+                temporal_logic,saturation);
+        c->guarantees.insert(p);
+    }
+    else
+    {
+        auto parent = guarantees->getParent();
+        guarantees = Or(guarantees, saturation);
+        g->second = guarantees;
+        guarantees->setParent(parent);
+    }
 }

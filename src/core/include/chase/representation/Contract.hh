@@ -73,9 +73,23 @@ namespace chase {
 
         // -- Methods for the Contract Algebra.
 
-//        static Contract * composition(
-//                Contract * C1, Contract * C2,
-//                std::map< std::string, std::string >& correspondences );
+        /// @brief Method to saturate a contract. Note: the contract is
+        /// saturated in loco. No copies are produced.
+        /// @param c Contract to saturate.
+        static void saturate( Contract * c );
+
+        /// @brief Method implementing the composition of two contracts.
+        /// @param C1 The first contract.
+        /// @param C2 The second contract.
+        /// @param correspondences Map of the correspondences between variables
+        /// in the two contracts being composed.
+        /// @return Pointer to a new contract that is the composition of the
+        /// two.
+        static Contract * composition(
+                Contract * C1, Contract * C2,
+                std::map< std::string, std::string >& correspondences );
+
+
 
     protected:
 
@@ -83,6 +97,8 @@ namespace chase {
         /// It will be useful to identify a contract within a system modeled
         /// by multiple contracts.
         Name * _name;
+
+        static void _saturateTemporalLogic( Contract * c );
 
     };
 

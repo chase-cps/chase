@@ -37,12 +37,8 @@ Constant::Constant( const Constant &o ) :
     _type->setParent(this);
 }
 
-Constant & Constant::operator=(const Constant &o )
+Constant & Constant::operator=(const Constant & )
 {
-    if( &o != this )
-    {
-        /// @todo Implement the copy properly.
-    }
     return *this;
 }
 
