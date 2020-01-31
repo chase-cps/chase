@@ -15,9 +15,7 @@ namespace chase {
     /// semantic domains.
     enum semantic_domain
     {
-        propositional_logic,
-        predicate_logic,
-        temporal_logic,
+        logic,
         graph
     };
 

@@ -37,3 +37,6 @@ nodeType ChaseObject::IsA()
 {
     return _node_type;
 }
+
+
+

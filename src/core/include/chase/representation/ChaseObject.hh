@@ -94,6 +94,7 @@ namespace chase {
             /// @brief Function providing the node type ID of the object.
             /// @return the node type of the AST node.
             nodeType IsA();
+
     };
 
 }

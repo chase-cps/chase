@@ -14,7 +14,13 @@
 #include <list>
 #include <map>
 
+
+
 namespace chase {
+
+    /// @brief Data structure used to store the projections of the names to be
+    /// used to during the operations in the algebra.
+    typedef std::map<std::string, std::string> names_projection_map;
 
     /// @brief Class to represent contracts.
     class Contract : public ChaseObject {
@@ -82,12 +88,16 @@ namespace chase {
         /// @param C1 The first contract.
         /// @param C2 The second contract.
         /// @param correspondences Map of the correspondences between variables
-        /// in the two contracts being composed.
+        /// in the two contracts being composed. Each entry in the map has key
+        /// the names in the second contract, and the value is the name of the
+        /// projected variable in the first contract.
+        /// This choice improve computational complexity, as the variables of
+        /// the first contract are used as base for the composed contract.
         /// @return Pointer to a new contract that is the composition of the
         /// two.
         static Contract * composition(
                 Contract * C1, Contract * C2,
-                std::map< std::string, std::string >& correspondences );
+                names_projection_map & correspondences );
 
 
 
@@ -98,6 +108,9 @@ namespace chase {
         /// by multiple contracts.
         Name * _name;
 
+        /// @brief Method implementing the saturation for the temporal logic
+        /// specifications in contracts.
+        /// @param c The contract to saturate. Saturation happens in loco.
         static void _saturateTemporalLogic( Contract * c );
 
     };

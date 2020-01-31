@@ -96,7 +96,7 @@ void GR1CPrinter::_printDeclarations()
 
 void GR1CPrinter::_printInit() {
     // Assumptions.
-    auto formulae = _contract->assumptions.find(temporal_logic);
+    auto formulae = _contract->assumptions.find(logic);
     if( formulae == _contract->assumptions.end() )
         messageError("No Logic in Assumptions");
 
@@ -130,7 +130,7 @@ void GR1CPrinter::_printInit() {
     }
 
     // Guarantees
-    formulae = _contract->guarantees.find(temporal_logic);
+    formulae = _contract->guarantees.find(logic);
     if( formulae == _contract->guarantees.end() )
         messageError("No Logic in Assumptions");
 
@@ -164,7 +164,7 @@ void GR1CPrinter::_printInit() {
 
 void GR1CPrinter::_printSafety() {
     // Assumptions.
-    auto formulae = _contract->assumptions.find(temporal_logic);
+    auto formulae = _contract->assumptions.find(logic);
     if( formulae == _contract->assumptions.end() )
         messageError("No Logic in Assumptions");
 
@@ -207,7 +207,7 @@ void GR1CPrinter::_printSafety() {
     }
 
     // Guarantees
-    formulae = _contract->guarantees.find(temporal_logic);
+    formulae = _contract->guarantees.find(logic);
     if( formulae == _contract->guarantees.end() )
         messageError("No Logic in Assumptions");
 
@@ -247,7 +247,7 @@ void GR1CPrinter::_printSafety() {
 
 void GR1CPrinter::_printLiveness() {
     // Assumptions.
-    auto formulae = _contract->assumptions.find(temporal_logic);
+    auto formulae = _contract->assumptions.find(logic);
     if( formulae == _contract->assumptions.end() )
         messageError("No Logic in Assumptions");
 
@@ -286,7 +286,7 @@ void GR1CPrinter::_printLiveness() {
     }
 
     // Guarantees
-    formulae = _contract->guarantees.find(temporal_logic);
+    formulae = _contract->guarantees.find(logic);
     if( formulae == _contract->guarantees.end() )
         messageError("No Logic in Assumptions");
 

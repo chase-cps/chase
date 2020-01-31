@@ -231,9 +231,9 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
     }
 
     if( vec->size() == 1)
-        _currContract->addAssumptions(temporal_logic, (*vec)[0]);
+        _currContract->addAssumptions(logic, (*vec)[0]);
     else
-        _currContract->addAssumptions(temporal_logic, LargeAnd(*vec));
+        _currContract->addAssumptions(logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }
@@ -253,9 +253,9 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
     }
 
     if( vec->size() == 1)
-        _currContract->addGuarantees(temporal_logic, (*vec)[0]);
+        _currContract->addGuarantees(logic, (*vec)[0]);
     else
-        _currContract->addGuarantees(temporal_logic, LargeAnd(*vec));
+        _currContract->addGuarantees(logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }

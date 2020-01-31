@@ -73,7 +73,7 @@ Contract * DesignProblem::_generateContract()
         for (auto f : assump) {
             large->addOperand(f);
         }
-        _contract->addAssumptions(temporal_logic, large);
+        _contract->addAssumptions(logic, large);
     }
 
     // Perform Union of all the sets (ENV, SYS, INIT) for Guarantees.
@@ -88,7 +88,7 @@ Contract * DesignProblem::_generateContract()
         for (auto f : guarant) {
             large->addOperand(f);
         }
-        _contract->addGuarantees(temporal_logic, large);
+        _contract->addGuarantees(logic, large);
     }
 
     return _contract;
