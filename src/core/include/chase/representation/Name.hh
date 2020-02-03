@@ -40,6 +40,10 @@ namespace chase {
             /// @return the string.
             std::string getString() override;
 
+            /// @brief Setter for the string for the name.
+            /// @param name The string to set.
+            void changeName( std::string name );
+
             /// @brief Main function for visiting a Name object.
             /// @param v The visitor visiting the object.
             /// @return The return value of the visitor.

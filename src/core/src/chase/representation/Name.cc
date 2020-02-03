@@ -42,6 +42,11 @@ std::string Name::getString()
     return _name;
 }
 
+void Name::changeName(std::string name)
+{
+    _name = name;
+}
+
 int Name::accept_visitor( BaseVisitor & v )
 {
     return v.visitName(*this);

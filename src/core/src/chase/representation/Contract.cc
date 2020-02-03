@@ -122,3 +122,4 @@ Contract *Contract::clone() {
 
     return ret;
 }
+

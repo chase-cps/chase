@@ -85,21 +85,49 @@ namespace chase {
         static void saturate( Contract * c );
 
         /// @brief Method implementing the composition of two contracts.
-        /// @param C1 The first contract.
-        /// @param C2 The second contract.
+        /// @param c1 The first contract.
+        /// @param c2 The second contract.
         /// @param correspondences Map of the correspondences between variables
         /// in the two contracts being composed. Each entry in the map has key
         /// the names in the second contract, and the value is the name of the
         /// projected variable in the first contract.
         /// This choice improve computational complexity, as the variables of
         /// the first contract are used as base for the composed contract.
+        /// @param name The name of the resulting contract.
         /// @return Pointer to a new contract that is the composition of the
         /// two.
         static Contract * composition(
-                Contract * C1, Contract * C2,
-                names_projection_map & correspondences );
+                Contract * c1, Contract * c2,
+                names_projection_map & correspondences,
+                std::string name = std::string("composition"));
 
+        /// @brief Function performing composition for Logic specifications.
+        /// @param c1 The first contract.
+        /// @param c2 The second contract.
+        /// @param r The resulting contract.
+        static void composeLogic(
+                Contract *c1, Contract *c2, Contract * r);
 
+        /// @brief Method merging the declarations of two contracts into one. It
+        /// is used by the operations to create the declarations of the
+        /// resulting contract when applying operations over two contracts.
+        /// @param c1 First contract which declarations has to be merged.
+        /// @param c2 Second contract which declarations has to be merged.
+        /// @param r The resulting contract (pointer to). The contract which
+        /// declarations will be the merging of.
+        /// @param correspondences Map of the correspondences of variable
+        /// names.
+        static void mergeDeclarations(
+                Contract * c1,
+                Contract * c2,
+                Contract * r,
+                names_projection_map & correspondences,
+                std::map< Declaration *, Declaration * >& declaration_map);
+
+        /// @brief Method implementing the saturation for the temporal logic
+        /// specifications in contracts.
+        /// @param c The contract to saturate. Saturation happens in loco.
+        static void saturateLogic(Contract * c );
 
     protected:
 
@@ -108,10 +136,9 @@ namespace chase {
         /// by multiple contracts.
         Name * _name;
 
-        /// @brief Method implementing the saturation for the temporal logic
-        /// specifications in contracts.
-        /// @param c The contract to saturate. Saturation happens in loco.
-        static void _saturateTemporalLogic( Contract * c );
+
+
+
 
     };
 
