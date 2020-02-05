@@ -20,7 +20,6 @@ void Contract::mergeDeclarations(
         std::map< Declaration *, Declaration * >& declaration_map
         )
 {
-
     /// \todo Implement the type checking.
 
     for(auto i = c1->declarations.begin(); i != c1->declarations.end(); ++i)

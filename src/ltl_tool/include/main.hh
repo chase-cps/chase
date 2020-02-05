@@ -10,6 +10,7 @@
 #include "Chase.hh"
 
 #include "LTLSpecsBuilder.hh"
+#include "Console.hh"
 
 #include <unistd.h>
 #include <fstream>

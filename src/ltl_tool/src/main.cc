@@ -16,14 +16,12 @@ int main( int argc, char * argv[] )
     LTLSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);
 
-    System * s = builder.getSystem();
-    for(auto i = s->getContractsSet().begin(); i != s->getContractsSet().end();
-            ++i)
-    {
-        Contract::saturate(*i);
-    }
+    System * system = builder.getSystem();
+    Console console(system);
 
-    std::cout << s->getString() << std::endl;
+    while( console.run() );
+
+    delete system;
 
 }
 

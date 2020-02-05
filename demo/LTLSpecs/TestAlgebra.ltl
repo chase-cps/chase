@@ -1,0 +1,28 @@
+NAME : TEST_SYSTEM;
+
+CONTRACT C1:
+    variable x integer;
+    variable y integer;
+
+    constant A integer 10;
+
+    proposition x_not_zero is x != 0;
+    proposition y_calculation is y = A/x;
+
+    Assumptions:
+        [](x_not_zero);
+    Guarantees:
+        [](y_calculation);
+
+
+CONTRACT C2:
+    variable z integer;
+    variable w integer;
+
+    proposition z_leq_zero is z >= 0;
+    proposition w_calculation is w = z + 1;
+
+    Assumptions:
+        [](z_leq_zero);
+    Guarantees:
+        [](w_calculation);
