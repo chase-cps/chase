@@ -179,8 +179,8 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
            ctx->children[2] == ctx->ID(0))
         {
             return new Expression(op,
-                                  createValue(ctx->value(0)),
-                                  createIdentifier(ctx->ID(0)->getText()));
+                    createValue(ctx->value(0)),
+                    createIdentifier(ctx->ID(0)->getText()));
         }
     }
     return nullptr;

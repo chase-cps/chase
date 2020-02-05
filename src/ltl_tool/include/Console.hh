@@ -29,5 +29,12 @@ namespace ltl_tool
 
     protected:
         System * _system;
+
+        /// @brief Method parsing the command different than "show" and "exit".
+        /// @param cmd The command to be parsed.
+        /// @return 1 if the command has been executed properly. 0 otherwise.
+        int _execCommand( std::string cmd );
+
+        void _parseProjectionMap( names_projection_map & m );
     };
 }
