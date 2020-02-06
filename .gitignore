@@ -11,3 +11,4 @@ ref.spc
 obj_linux_64
 .idea/chase.iml
 tests/
+test.in
