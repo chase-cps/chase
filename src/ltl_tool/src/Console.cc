@@ -87,6 +87,38 @@ int Console::_execCommand(std::string cmd)
         auto r = Contract::composition(c1, c2, m, tokens[3]);
         std::cout << r->getString() << std::endl;
     }
+    else if(tokens[0] == "conjunction")
+    {
+        if(tokens.size() != 4)
+            return 0;
+        std::string c1_name = tokens[1];
+        std::string c2_name = tokens[2];
+        Contract * c1 = nullptr;
+        Contract * c2 = nullptr;
+        for (auto i = _system->getContractsSet().begin();
+             i != _system->getContractsSet().end(); ++i)
+        {
+            Contract * c = *i;
+            if(c->getName()->getString() == c1_name )
+            {
+                c1 = c;
+                continue;
+            }
+            if(c->getName()->getString() == c2_name )
+            {
+                c2 = c;
+                continue;
+            }
+        }
+        if( c1 == nullptr || c2 == nullptr ) return 0;
+        names_projection_map m;
+        _parseProjectionMap(m);
+
+        auto r = Contract::conjunction(c1, c2, m, tokens[3]);
+        std::cout << r->getString() << std::endl;
+    }
+
+
     return 1;
 }
 

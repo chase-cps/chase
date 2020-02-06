@@ -156,6 +156,88 @@ void Contract::composeLogic(
     r->addGuarantees(logic, guarantees);
 }
 
+Contract * Contract::conjunction(
+        Contract *c1, Contract *c2,
+        names_projection_map &correspondences,
+        std::string name)
+{
+    auto res = new Contract(name);
+
+    std::map< Declaration *, Declaration * > declaration_map;
+    mergeDeclarations(c1, c2, res, correspondences, declaration_map);
+
+    conjoinLogic(c1, c2, res);
+
+    ClonedDeclarationVisitor v(declaration_map);
+    res->accept_visitor(v);
+
+    return res;
+}
+
+void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
+{
+    LogicFormula * a1 = nullptr;
+    LogicFormula * a2 = nullptr;
+    LogicFormula * g1 = nullptr;
+    LogicFormula * g2 = nullptr;
+
+    auto i = c1->assumptions.find(logic);
+    if(i != c1->assumptions.end())
+    {
+        a1 = dynamic_cast<LogicFormula *>(i->second);
+        if( a1 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->assumptions.find(logic);
+    if(i != c2->assumptions.end())
+    {
+        a2 = dynamic_cast<LogicFormula *>(i->second);
+        if( a2 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c1->guarantees.find(logic);
+    if(i != c1->guarantees.end())
+    {
+        g1 = dynamic_cast<LogicFormula *>(i->second);
+        if( g1 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->guarantees.find(logic);
+    if(i != c2->guarantees.end())
+    {
+        g2 = dynamic_cast<LogicFormula *>(i->second);
+        if( g2 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    LogicFormula * assumptions = nullptr;
+    LogicFormula * guarantees = nullptr;
+
+    if( g1 != nullptr && g2 != nullptr ) {
+        guarantees = And(g1->clone(), g2->clone());
+    } else if(g1 == nullptr && g2 == nullptr) {
+        guarantees = True();
+    } else if(g1 == nullptr && g2 != nullptr) {
+        guarantees = g2->clone();
+    } else {
+        guarantees = g1->clone();
+    }
+
+    if( a1 != nullptr && a2 != nullptr ) {
+        assumptions = Or(a1->clone(), a2->clone());
+    } else if(a1 == nullptr && a2 == nullptr) {
+        assumptions = True();
+    } else if(a1 == nullptr && a2 != nullptr) {
+        assumptions = a2->clone();
+    } else {
+        assumptions = a1->clone();
+    }
+
+
+    r->addAssumptions(logic, assumptions);
+    r->addGuarantees(logic, guarantees);
+
+
+}
 
 
 
