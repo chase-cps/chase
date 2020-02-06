@@ -12,7 +12,7 @@
 
 using namespace chase;
 
-void Contract::mergeDeclarations(
+void Contract:: mergeDeclarations(
         Contract * c1,
         Contract * c2,
         Contract * r,
@@ -35,11 +35,12 @@ void Contract::mergeDeclarations(
 
     for(auto i = c2->declarations.begin(); i != c2->declarations.end(); ++i)
     {
-        std::string name = (*i)->getName()->getString();
-        if( correspondences.find(name) == correspondences.end())
-        {
-            auto original = (*i);
+        auto original = (*i);
+        std::string name = original->getName()->getString();
+        auto found = correspondences.find(name);
 
+        if( found == correspondences.end())
+        {
             // Check for name clashing between C1 and C2.
             for(auto j = r->declarations.begin();
                     j != r->declarations.end();++j)
@@ -56,14 +57,13 @@ void Contract::mergeDeclarations(
         }
         else
         {
-            auto original = (*i);
+            std::string to_find = found->second;
             for(auto j = r->declarations.begin();
                 j != r->declarations.end();++j)
             {
-                if( original->getName()->getString() ==
-                (*j)->getName()->getString())
+                if((*j)->getName()->getString() == to_find )
                 {
-                    std::pair< Declaration*, Declaration *> p(*i,*j);
+                    std::pair< Declaration*, Declaration *> p(original,*j);
                     declaration_map.insert(p);
                 }
             }
