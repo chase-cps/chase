@@ -313,6 +313,18 @@ int chase::GuideVisitor::visitSystem(chase::System &o) {
     return BaseVisitor::visitSystem(o);
 }
 
+int chase::GuideVisitor::visitComponentDefinition(
+        chase::ComponentDefinition &o)
+{
+    int rv = visitName( * o.getName());
+    for( auto i = o.views.begin(); i != o.views.end(); ++i )
+    {
+        Contract * view = i->second;
+        rv |= view->accept_visitor(*this);
+    }
+    return rv;
+}
+
 
 
 

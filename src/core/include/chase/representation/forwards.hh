@@ -14,8 +14,6 @@ namespace chase {
     
     class ChaseObject;
     class System;
-    /*class Type;
-    class SimpleType;*/
     class Integer;
     class Real;
     class Boolean;
@@ -30,6 +28,7 @@ namespace chase {
     class Name;
     class Variable;
     class Constant;
+    class ComponentDefinition;
     class Proposition;
     class BooleanConstant;
     class UnaryBooleanFormula;

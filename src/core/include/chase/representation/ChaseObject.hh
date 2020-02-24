@@ -27,6 +27,7 @@ namespace chase {
         constant_node,
         dataDeclaration_node,
         declaration_node,
+        componentDefinition_node,
         expression_node,
         identifier_node,
         integer_node,

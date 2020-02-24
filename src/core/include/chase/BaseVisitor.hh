@@ -56,6 +56,7 @@ namespace chase{
             virtual int visitName( Name & );
             virtual int visitVariable( Variable & );
             virtual int visitConstant( Constant & );
+            virtual int visitComponentDefinition(ComponentDefinition &);
 
             // Boolean Formulas
             virtual int visitProposition( Proposition & );

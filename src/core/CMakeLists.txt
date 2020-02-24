@@ -36,6 +36,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/DataDeclaration.cc
         ${SRC_CHASELIB_PATH}/representation/Variable.cc
         ${SRC_CHASELIB_PATH}/representation/Constant.cc
+        ${SRC_CHASELIB_PATH}/representation/ComponentDefinition.cc
 
         ${SRC_CHASELIB_PATH}/representation/Operators.cc
 

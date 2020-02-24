@@ -68,7 +68,8 @@ std::string System::getString() {
     return ret;
 }
 
-System *System::clone() {
+System *System::clone()
+{
     auto ret = new System(_name->getString());
 
     for(auto it = _declarations.begin(); it != _declarations.end(); ++it)

@@ -11,6 +11,8 @@
 #include "representation/Boolean.hh"
 #include "representation/Integer.hh"
 
+#include "representation/ComponentDefinition.hh"
+#include "representation/Variable.hh"
 #include "representation/Constant.hh"
 #include "representation/DataDeclaration.hh"
 #include "representation/Declaration.hh"
@@ -31,7 +33,7 @@
 #include "representation/BooleanValue.hh"
 
 
-#include "representation/Variable.hh"
+
 
 #include "representation/LogicFormula.hh"
 #include "representation/Proposition.hh"
