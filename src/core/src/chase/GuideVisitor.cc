@@ -325,6 +325,13 @@ int chase::GuideVisitor::visitComponentDefinition(
     return rv;
 }
 
+int chase::GuideVisitor::visitParameter(chase::Parameter &o)
+{
+    int rv = o.getType()->accept_visitor(*this);
+    rv |= o.getName()->accept_visitor(*this);
+    return rv;
+}
+
 
 
 

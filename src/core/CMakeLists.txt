@@ -36,6 +36,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/DataDeclaration.cc
         ${SRC_CHASELIB_PATH}/representation/Variable.cc
         ${SRC_CHASELIB_PATH}/representation/Constant.cc
+        ${SRC_CHASELIB_PATH}/representation/Parameter.cc
         ${SRC_CHASELIB_PATH}/representation/ComponentDefinition.cc
 
         ${SRC_CHASELIB_PATH}/representation/Operators.cc
@@ -78,7 +79,7 @@ set(chase_library
         ${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
-        src/chase/representation/Contract_algebra.cc)
+        src/chase/representation/Contract_algebra.cc src/chase/representation/Component.cc include/chase/representation/Component.hh)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include

@@ -27,10 +27,11 @@ namespace chase {
     public:
 
         /// @brief List of declarations.
-        std::list< Declaration * > declarations;
+        std::list< DataDeclaration * > declarations;
 
         /// @brief List of assumptions.
         std::map< semantic_domain, Specification * > assumptions;
+
         /// @brief List of guarantees.
         std::map< semantic_domain, Specification * > guarantees;
 
@@ -51,7 +52,7 @@ namespace chase {
         /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
-        void addDeclaration( Declaration * declaration );
+        void addDeclaration(DataDeclaration *declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.

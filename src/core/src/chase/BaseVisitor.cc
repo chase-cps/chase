@@ -58,6 +58,8 @@ int BaseVisitor::visitGraph(Graph &){return 0;}
 int BaseVisitor::visitLargeBooleanFormula(LargeBooleanFormula &) {return 0;}
 int BaseVisitor::visitComponentDefinition(ComponentDefinition &) {return 0;}
 
+int BaseVisitor::visitParameter(Parameter &) {return 0;}
+
 
 
 

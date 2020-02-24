@@ -12,6 +12,7 @@
 #include "representation/Integer.hh"
 
 #include "representation/ComponentDefinition.hh"
+#include "representation/Parameter.hh"
 #include "representation/Variable.hh"
 #include "representation/Constant.hh"
 #include "representation/DataDeclaration.hh"

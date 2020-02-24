@@ -56,6 +56,7 @@ namespace chase {
         int visitName( Name & ) override;
         int visitVariable( Variable & ) override;
         int visitConstant( Constant & ) override;
+        int visitParameter( Parameter & ) override;
 
         int visitComponentDefinition(ComponentDefinition & ) override;
 

@@ -29,6 +29,7 @@ namespace chase {
     class Variable;
     class Constant;
     class ComponentDefinition;
+    class Parameter;
     class Proposition;
     class BooleanConstant;
     class UnaryBooleanFormula;

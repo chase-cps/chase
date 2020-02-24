@@ -35,8 +35,8 @@ namespace chase {
         /// only to access the declaration set for reading it. Use the
         /// safe method addDeclaration for add a new declaration.
         /// @return a reference to the set of declarations.
-
         std::set< Declaration * >& getDeclarationsSet();
+
         /// @brief Method to access the contracts set. It should be used
         /// only to access the contracts set for reading it. Use the
         /// safe method addContract. for add a new contract.
@@ -69,7 +69,7 @@ namespace chase {
         /// Set of global declarations of the system.
         std::set< Declaration * > _declarations;
 
-        /// Set of contracts describing the system.
+        /// Set of contracts describing the system's requirements.
         std::set< Contract * > _contracts;
 
         /// @brief Name of the system.

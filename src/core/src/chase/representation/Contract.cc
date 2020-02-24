@@ -28,8 +28,8 @@ std::string Contract::getString() {
     ret += _name->getString();
 
     ret += "\nDeclarations:\n";
-    std::list< Declaration * >::iterator dit;
-    for(dit = declarations.begin(); dit != declarations.end(); ++dit )
+
+    for(auto dit = declarations.begin(); dit != declarations.end(); ++dit )
     {
         Declaration * d = *dit;
         ret += d->getString();
@@ -67,7 +67,7 @@ void Contract::setName(Name * name) {
     _name = name;
 }
 
-void Contract::addDeclaration(Declaration *declaration) {
+void Contract::addDeclaration(DataDeclaration *declaration) {
     declarations.push_back(declaration);
     declaration->setParent(this);
 }
@@ -96,9 +96,9 @@ Contract *Contract::clone() {
     // Declarations.
     for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
-        Declaration * current = *it;
+        DataDeclaration * current = *it;
         auto dec = current->clone();
-        std::pair< Declaration *, Declaration * > p(current, dec);
+        std::pair< DataDeclaration *, DataDeclaration * > p(current, dec);
         ret->addDeclaration(dec);
         declaration_map.insert(p);
     }
