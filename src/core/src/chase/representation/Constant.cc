@@ -73,7 +73,7 @@ Value *Constant::getValue() {
     return _value;
 }
 
-Constant *Constant::clone() {
+Constant * Constant::clone() {
     return new Constant(
             _type->clone(), _name->clone(), _value->clone());
 }

@@ -42,4 +42,5 @@ namespace chase {
     class Vertex;
     class Graph;
     class LargeBooleanFormula;
+    class Component;
 }

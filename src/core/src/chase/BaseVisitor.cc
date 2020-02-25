@@ -60,6 +60,8 @@ int BaseVisitor::visitComponentDefinition(ComponentDefinition &) {return 0;}
 
 int BaseVisitor::visitParameter(Parameter &) {return 0;}
 
+int BaseVisitor::visitComponent(Component &) {return 0;}
+
 
 
 

@@ -77,6 +77,8 @@ namespace chase{
 
             virtual int visitSystem( System & );
 
+            virtual int visitComponent( Component & );
+
             // Graphs
             virtual int visitGraph(Graph &);
             virtual int visitEdge( Edge & );

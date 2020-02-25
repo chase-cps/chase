@@ -5,6 +5,8 @@
 #include "representation/TimingDefinitions.hh"
 #include "representation/ChaseObject.hh"
 
+#include "representation/Component.hh"
+
 #include "representation/Type.hh"
 #include "representation/SimpleType.hh"
 
@@ -48,5 +50,6 @@
 #include "representation/BinaryTemporalFormula.hh"
 
 #include "representation/Graph.hh"
+
 
 #include "representation/System.hh"

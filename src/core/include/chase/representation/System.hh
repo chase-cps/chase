@@ -7,7 +7,13 @@
 
 
 #pragma once
-#include "Chase.hh"
+
+#include "representation/ChaseObject.hh"
+#include "representation/Declaration.hh"
+#include "representation/Contract.hh"
+#include "representation/Component.hh"
+
+#include "chase/utilities.hh"
 
 namespace chase {
 
@@ -31,6 +37,11 @@ namespace chase {
         /// @param contract Pointer to the contract to add.
         void addContract( Contract * contract );
 
+        /// @brief Method to safely add a component to the system.
+        /// It manages the parent link of the component.
+        /// @param component Pointer to the component to add.
+        void addComponent( Component * component );
+
         /// @brief Method to access the declaration set. It should be used
         /// only to access the declaration set for reading it. Use the
         /// safe method addDeclaration for add a new declaration.
@@ -42,6 +53,12 @@ namespace chase {
         /// safe method addContract. for add a new contract.
         /// @return a reference to the set of contracts.
         std::set< Contract * >& getContractsSet();
+
+        /// @brief Method to access the set of component instances composing
+        /// the system. It should be used only to access the components set for
+        /// reading it. Use the safe addComponent method for add new components.
+        /// @return a reference to the set of components.
+        std::set< Component * >& getComponentsSet();
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be applied during the visit.
@@ -71,6 +88,9 @@ namespace chase {
 
         /// Set of contracts describing the system's requirements.
         std::set< Contract * > _contracts;
+
+
+        std::set< Component * > _components;
 
         /// @brief Name of the system.
         Name * _name;

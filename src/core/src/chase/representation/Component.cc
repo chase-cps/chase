@@ -6,7 +6,9 @@
  */
 
 
-#include "chase/representation/Component.hh"
+#include <string>
+#include "representation/Component.hh"
+
 
 using namespace chase;
 
@@ -73,4 +75,48 @@ std::map<std::string, Value *>&
         return v->second;
     else
         return _params.end()->second;
+}
+
+int Component::accept_visitor(chase::BaseVisitor &v) {
+    return v.visitComponent(*this);
+}
+
+std::string Component::getString() {
+    std::string ret = "Component: " + _name->getString() + " is " +
+                      _definition->getName()->getString() + "\n";
+
+    for (auto i = _params.begin(); i != _params.end(); ++i) {
+        ret += "view : " + i->first + "\n";
+        for (auto j = i->second.begin(); j != i->second.end(); ++j)
+        {
+            std::string param = j->first;
+            std::string val = j->second->getString();
+
+            ret += ("parameter " + param + " = " + val + "\n");
+        }
+    }
+    return ret;
+}
+
+Component *Component::clone() {
+    auto ret = new Component(_definition, _name->getString());
+
+    for(auto i = _params.begin(); i != _params.end(); ++i)
+    {
+        std::string view = i->first;
+        std::pair< std::string,std::map< std::string, chase::Value * > > p;
+
+        for( auto j = i->second.begin(); j != i->second.end(); ++j )
+        {
+            std::string param = j->first;
+            Value * val = j->second->clone();
+            std::pair< std::string, chase::Value * > par( param,val );
+
+            p.second.insert(par);
+        }
+        p.first = view;
+        ret->_params.insert(p);
+    }
+
+    return ret;
 }

@@ -9,7 +9,11 @@
 #pragma once
 
 #include <map>
-#include "representation.hh"
+
+#include "representation/ComponentDefinition.hh"
+#include "representation/Name.hh"
+#include "representation/Value.hh"
+#include "utilities.hh"
 
 namespace chase {
 
@@ -34,6 +38,12 @@ namespace chase {
         Value * getParameterValue(std::string view, std::string param);
         std::map< std::string, Value * >&
                         getParametersInView(std::string view);
+
+        int accept_visitor(chase::BaseVisitor &v) override;
+
+        std::string getString() override;
+
+        Component *clone() override;
 
     protected:
 

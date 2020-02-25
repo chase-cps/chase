@@ -332,6 +332,25 @@ int chase::GuideVisitor::visitParameter(chase::Parameter &o)
     return rv;
 }
 
+int chase::GuideVisitor::visitComponent(chase::Component &o)
+{
+    int rv = o.getName()->accept_visitor(*this);
+
+    for(
+            auto i =  o.getDefinition()->views.begin();
+            i != o.getDefinition()->views.end(); ++i )
+    {
+        std::string v = i->first;
+
+        auto m = o.getParametersInView(v);
+        for(auto j = m.begin(); j != m.end(); ++j )
+        {
+            rv |= j->second->accept_visitor(*this);
+        }
+    }
+    return rv;
+}
+
 
 
 

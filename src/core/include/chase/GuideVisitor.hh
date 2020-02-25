@@ -75,6 +75,9 @@ namespace chase {
         // Interfaces
         int visitContract(Contract & ) override;
 
+
+        int visitComponent(Component & ) override;
+
         // Graphs
         int visitGraph(Graph & ) override;
         int visitEdge( Edge & ) override;
