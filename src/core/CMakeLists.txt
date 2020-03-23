@@ -7,7 +7,7 @@
 
 set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
 
-
+find_package(PythonLibs REQUIRED)
 
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
@@ -84,6 +84,7 @@ set(chase_library
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include
         ${PROJECT_SOURCE_DIR}/src/core/include/chase
+        ${PYTHON_INCLUDE_DIRS}
         )
 
 
@@ -91,5 +92,5 @@ add_library(chasecore ${chase_library})
 
 install(TARGETS chasecore DESTINATION lib)
 
-
+pybind11_add_module(chasecorebnd ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc)
 
