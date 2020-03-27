@@ -14,3 +14,5 @@ tests/
 test.in
 build/
 .vscode/
+CMakeCache.txt
+CMakeFiles/*

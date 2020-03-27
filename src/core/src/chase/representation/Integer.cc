@@ -19,20 +19,20 @@ Integer::Integer() :
     _range(nullptr)
 {
     _node_type = integer_node;
-    _range = new Range(-2147483647, 2147483647);
+    _range = std::shared_ptr<Range>(new Range(-2147483647, 2147483647));
 }
 
 Integer::Integer(int l, int r) :
     SimpleType(),
     _signed(l < 0),
-    _range(new Range(l,r))
+    _range(std::shared_ptr<Range>(new Range(l,r)))
 {
     _node_type = integer_node;
 }
 
 
 
-Integer::Integer(Range *r) :
+Integer::Integer(std::shared_ptr<Range> r) :
     SimpleType(),
     _range(r)
 {
@@ -44,7 +44,6 @@ Integer::Integer(Range *r) :
 
 Integer::~Integer()
 {
-    delete _range;
 }
 
 bool Integer::isSigned()
@@ -52,7 +51,7 @@ bool Integer::isSigned()
     return _signed;
 }
 
-Range * Integer::getRange()
+std::shared_ptr<Range> Integer::getRange()
 {
     return _range;
 }
@@ -69,7 +68,7 @@ std::string Integer::getString()
 
 Integer *Integer::clone()
 {
-    return new Integer(_range->clone());
+    return new Integer(_range);
 }
 
 

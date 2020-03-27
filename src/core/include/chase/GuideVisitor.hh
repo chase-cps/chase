@@ -15,6 +15,7 @@
 #include <set>
 #include <list>
 #include <vector>
+#include <memory>
 
 namespace chase {
 

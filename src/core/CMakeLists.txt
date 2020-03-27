@@ -88,9 +88,11 @@ include_directories(
         )
 
 
-add_library(chasecore ${chase_library})
-
+add_library(chasecore STATIC ${chase_library})
+set_target_properties(chasecore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 install(TARGETS chasecore DESTINATION lib)
 
-pybind11_add_module(chasecorebnd ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc)
+
+pybind11_add_module(chasecorebnd MODULE ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc)
+target_link_libraries(chasecorebnd PRIVATE chasecore)
 

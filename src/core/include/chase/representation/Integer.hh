@@ -29,7 +29,7 @@ namespace chase {
 
             /// @brief Constructor with range.
             /// @param r The range.
-            explicit Integer( Range * r );
+            explicit Integer( std::shared_ptr<Range> r );
 
             /// @brief Destructor.
             ~Integer() override;
@@ -40,7 +40,7 @@ namespace chase {
 
             /// @brief Retrieve the range of the Integer.
             /// @return a pointer to the range.
-            Range * getRange();
+            std::shared_ptr<Range> getRange();
 
             /// @brief Main function for visit.
             /// @param v The visitor being used.
@@ -61,6 +61,6 @@ namespace chase {
             bool _signed;
 
             /// @brief The range of values valid for the Integer.
-            Range * _range;
+            std::shared_ptr<Range> _range;
     };
 }
