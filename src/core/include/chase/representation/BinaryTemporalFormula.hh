@@ -14,12 +14,16 @@ namespace chase {
 
     /// @brief Class representing a binary temporal formula.
     class BinaryTemporalFormula : public LogicFormula {
+
+    using sptr_bintempform = std::shared_ptr<BinaryTemporalFormula>;
+    using sptr_logicform = std::shared_ptr<LogicFormula>;
+    
     public:
         /// @brief Constructor.
         BinaryTemporalFormula(
                 TemporalOperator op = op_until,
-                LogicFormula * op1 = nullptr,
-                LogicFormula * op2 = nullptr
+                sptr_logicform op1 = nullptr,
+                sptr_logicform op2 = nullptr
                 );
 
         /// @brief Destructor.
@@ -35,19 +39,19 @@ namespace chase {
 
         /// @brief Getter for the first formula.
         /// @return The first formula.
-        LogicFormula *getFormula1() const;
+        sptr_logicform getFormula1() const;
 
         /// @brief Setter for the first formula.
         /// @param formula1 the first formula.
-        void setFormula1(LogicFormula *formula1);
+        void setFormula1( sptr_logicform formula1);
 
         /// @brief Getter for the second formula.
         /// @return The second formula.
-        LogicFormula *getFormula2() const;
+        sptr_logicform getFormula2() const;
 
         /// @brief Setter for the second formula.
         /// @param formula2 the second formula.
-        void setFormula2(LogicFormula *formula2);
+        void setFormula2( sptr_logicform formula2);
 
         /// @brief The base class for the visitor pattern.
         /// @param v The visitor to be used.
@@ -60,16 +64,16 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the object.
-        BinaryTemporalFormula * clone() override;
+        sptr_bintempform clone();
 
     protected:
 
         /// @brief The operator.
         TemporalOperator _op;
         /// @brief The first operand.
-        LogicFormula * _formula1;
+        sptr_logicform _formula1;
         /// @brief The second operand.
-        LogicFormula * _formula2;
+        sptr_logicform _formula2;
 
     };
 

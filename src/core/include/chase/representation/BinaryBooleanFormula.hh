@@ -14,11 +14,15 @@ namespace chase {
 
     /// @brief The class represent all the Boolean binary operations.
     class BinaryBooleanFormula : public LogicFormula {
+        
+    using sptr_binboolform = std::shared_ptr<BinaryBooleanFormula>;
+    using sptr_logicform = std::shared_ptr<LogicFormula>;
+
     public:
         /// @brief Constructor.
         explicit BinaryBooleanFormula(BooleanOperator op = op_and,
-                                      LogicFormula * op1 = nullptr,
-                                      LogicFormula * op2 = nullptr );
+                                     sptr_logicform op1 = nullptr,
+                                     sptr_logicform op2 = nullptr );
 
         /// @brief Destructor.
         ~BinaryBooleanFormula() override;
@@ -33,19 +37,19 @@ namespace chase {
 
         /// @brief Getter of the first operand.
         /// @return the first operand.
-        LogicFormula *getOp1() const;
+        sptr_logicform getOp1() const;
 
         /// @brief Setter of the first operand.
         /// @param op1 The first operand to be set.
-        void setOp1(LogicFormula *op1);
+        void setOp1(sptr_logicform op1);
 
         /// @brief Getter of the second operand.
         /// @return the second operand.
-        LogicFormula *getOp2() const;
+        sptr_logicform getOp2() const;
 
         /// @brief Setter of the second operand.
         /// @param op2 The second operand to be set.
-        void setOp2(LogicFormula *op2);
+        void setOp2(sptr_logicform op2);
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be applied during the visit.
@@ -58,16 +62,16 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the object.
-        BinaryBooleanFormula * clone() override;
+        sptr_binboolform clone();
 
     protected:
 
         /// @brief The operator.
         BooleanOperator _op;
         /// @brief The first operand.
-        LogicFormula * _op1;
+        sptr_logicform _op1;
         /// @brief The second operand.
-        LogicFormula * _op2;
+        sptr_logicform _op2;
 
     };
 

@@ -12,17 +12,20 @@
 #include "representation/Boolean.hh"
 
 using namespace chase;
+using namespace std; 
+
+using sptr_boolval = std::shared_ptr<BooleanValue>;
+using sptr_type = std::shared_ptr<Type>;
 
 BooleanValue::BooleanValue( bool value ) :
     _value(value)
 {
     _node_type = booleanValue_node;
-    setType(new Boolean());
+    setType(make_shared<Boolean>());
 }
 
 BooleanValue::~BooleanValue()
 {
-    delete _type;
 }
 
 BooleanValue::BooleanValue( const BooleanValue & o ) :
@@ -59,6 +62,6 @@ std::string BooleanValue::getString()
     else return std::string("false");
 }
 
-BooleanValue *BooleanValue::clone() {
-    return new BooleanValue(_value);
+sptr_boolval BooleanValue::clone() {
+    return make_shared<BooleanValue>(_value);
 }

@@ -18,6 +18,8 @@ namespace chase {
     /// @brief Class to represent Integer values.
     class IntegerValue : public NumericValue
     {
+        using sptr_intv = std::shared_ptr<IntegerValue>;
+
         public:
             /// @brief Constructor.
             /// @param value Value of the integer.
@@ -50,7 +52,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            IntegerValue * clone() override;
+            sptr_intv clone();
 
         protected:
             /// @brief Stored value.

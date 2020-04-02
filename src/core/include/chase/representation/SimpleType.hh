@@ -25,8 +25,5 @@ namespace chase {
             /// @brief Destructor.
             virtual ~SimpleType();
 
-            /// @brief Clone method.
-            /// @return Clone of the object.
-            SimpleType * clone() override = 0;
     };
 }

@@ -18,6 +18,8 @@ namespace chase {
     /// @brief Class storing a Boolean value.
     class BooleanValue : public NumericValue
     {
+        using sptr_boolval = std::shared_ptr<BooleanValue>;
+        using sptr_type = std::shared_ptr<Type>;
         public:
             /// @brief Constructor.
             /// @param value Value of the integer.
@@ -50,7 +52,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            BooleanValue * clone() override;
+            sptr_boolval clone();
 
         protected:
             /// @brief Stored boolean value.

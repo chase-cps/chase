@@ -24,16 +24,22 @@ namespace chase {
 
     /// @brief Class to represent contracts.
     class Contract : public ChaseObject {
+
+    using sptr_datadecl = std::shared_ptr<DataDeclaration>;
+    using sptr_spec = std::shared_ptr<Specification>;
+    using sptr_name = std::shared_ptr<Name>;
+    using sptr_contract = std::shared_ptr<Contract>;
+
     public:
 
         /// @brief List of declarations.
-        std::list< DataDeclaration * > declarations;
+        std::list< sptr_datadecl > declarations;
 
         /// @brief List of assumptions.
-        std::map< semantic_domain, Specification * > assumptions;
+        std::map< semantic_domain, sptr_spec > assumptions;
 
         /// @brief List of guarantees.
-        std::map< semantic_domain, Specification * > guarantees;
+        std::map< semantic_domain, sptr_spec > guarantees;
 
         /// @brief Constructor.
         explicit Contract(std::string name = std::string("contract"));
@@ -43,26 +49,26 @@ namespace chase {
 
         /// @brief Getter of the contract's name.
         /// @return The contract name.
-        Name * getName() const;
+        sptr_name getName() const;
 
         /// @brief Setter of the contract's name.
         /// @param name The contract name.
-        void setName(Name *name);
+        void setName(sptr_name name);
 
         /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
-        void addDeclaration(DataDeclaration *declaration );
+        void addDeclaration(sptr_datadecl declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.
         /// @param spec Pointer to the the specification to add.
-        void addAssumptions( semantic_domain domain, Specification * spec );
+        void addAssumptions( semantic_domain domain, sptr_spec spec );
         /// @brief Function to safely add the guarantees for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.
         /// @param spec Pointer to the the specification to add.
-        void addGuarantees( semantic_domain domain, Specification * spec );
+        void addGuarantees( semantic_domain domain, sptr_spec spec );
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be used.
@@ -75,7 +81,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the contract.
-        Contract * clone() override;
+        sptr_contract clone();
 
 
         // -- Methods for the Contract Algebra.
@@ -160,7 +166,7 @@ namespace chase {
         /// @brief Name of the contract. The default value will be "contract".
         /// It will be useful to identify a contract within a system modeled
         /// by multiple contracts.
-        Name * _name;
+        sptr_name  _name;
 
 
 

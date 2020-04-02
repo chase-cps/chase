@@ -11,10 +11,12 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "BaseVisitor.hh"
 
-namespace chase {
+
+namespace chase {    
 
     /// @brief Enumeration of the nodes types.
     enum nodeType
@@ -59,6 +61,9 @@ namespace chase {
     /// @brief Base abstract class for all the objects in the abstract syntax tree.
     class ChaseObject
     {
+        
+        using sptr_chase = std::shared_ptr<ChaseObject>;
+
         protected:
 
             /// @brief Pointer to the parent node. If Null: root object.
@@ -77,11 +82,11 @@ namespace chase {
 
             /// @brief Getter function to the parent pointer.
             /// @return a pointer to the parent pointer.
-            ChaseObject * getParent();
+            ChaseObject *getParent();
 
             /// @brief Setter function for the parent pointer.
             /// @param parent Pointer to the parent pointer.
-            void setParent(chase::ChaseObject * parent );
+            void setParent(ChaseObject * parent);
 
             /// @brief Main function for the visitor pattern.
             /// @param v The visitor visiting the object.
@@ -92,7 +97,7 @@ namespace chase {
             /// @return a String representation of the object.
             virtual std::string getString() = 0;
 
-            virtual ChaseObject * clone() = 0;
+            sptr_chase clone();
 
             /// @brief Function providing the node type ID of the object.
             /// @return the node type of the AST node.

@@ -20,6 +20,7 @@ namespace chase {
     class Name : public ChaseObject
     {
         public:
+            using sptr_name = std::shared_ptr<Name>;
 
             /// @brief Constructor.
             /// @param s The string of the name.
@@ -51,7 +52,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the name.
-            Name * clone() override;
+            sptr_name clone();
 
         protected:
 

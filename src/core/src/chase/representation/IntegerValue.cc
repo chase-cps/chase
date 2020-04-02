@@ -14,18 +14,21 @@
 
 
 using namespace chase;
+using namespace std;
+
+using sptr_intv = std::shared_ptr<IntegerValue>;
+using sptr_type = std::shared_ptr<Type>;
 
 IntegerValue::IntegerValue( int64_t value ) :
     NumericValue(),
     _value(value)
 {
     _node_type = integerValue_node;
-    setType(new Integer());
+    setType(make_shared<Integer>());
 }
 
 IntegerValue::~IntegerValue()
 {
-    delete _type;
 }
 
 IntegerValue::IntegerValue( const IntegerValue & o ) :
@@ -61,9 +64,9 @@ std::string IntegerValue::getString()
     return std::to_string(_value);
 }
 
-IntegerValue * IntegerValue::clone() {
-    auto ret = new IntegerValue(_value);
-    ret->setType(_type->clone());
+sptr_intv IntegerValue::clone() {
+    auto ret = make_shared<IntegerValue>(_value);
+    ret->setType(_type);
     return ret;
 }
 

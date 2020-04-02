@@ -22,6 +22,10 @@ namespace chase {
     /// @brief Unary or binary mathematical expression.
     class Expression : public Value
     {
+        using sptr_type = std::shared_ptr<Type>;
+        using sptr_value = std::shared_ptr<Value>;
+        using sptr_exp = std::shared_ptr<Expression>;
+        
         public:
 
             /// @brief Constructor.
@@ -31,7 +35,8 @@ namespace chase {
             /// @param op The operator of the expression.
             /// @param op1 The first operand of the expression.
             /// @param op2 The second operand of the expression.
-            Expression(Operator op, Value *op1, Value *op2 = nullptr );
+            Expression(Operator op, sptr_value op1, 
+                sptr_value op2 = nullptr );
 
             /// @brief Destructor.
             virtual ~Expression();
@@ -42,11 +47,11 @@ namespace chase {
 
             /// @brief Getter of the first Operand.
             /// @return The first operand.
-            Value * getOp1();
+            sptr_value getOp1();
 
             /// @brief Getter of the second Operand.
             /// @return The second operand.
-            Value * getOp2();
+            sptr_value getOp2();
 
             /// @brief Setter of the Operator.
             /// param op Operator to be setted.
@@ -54,11 +59,11 @@ namespace chase {
 
             /// @brief Setter for the first operator.
             /// @param op First operand to be set.
-            void setOp1( Value * op );
+            void setOp1( sptr_value op );
 
             /// @brief Setter for the second operator.
             /// @param op Second operand to be set.
-            void setOp2( Value * op );
+            void setOp2( sptr_value op );
 
             /// @brief Print function.
             /// @return The string representing the Expression.
@@ -71,11 +76,11 @@ namespace chase {
 
             /// @brief Function returning the type of the expression.
             /// @return The type of the function.
-            Type * getType() override;
+            std::shared_ptr<Type> getType() override;
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            Expression * clone() override;
+            sptr_exp clone();
 
         protected:
 
@@ -83,9 +88,9 @@ namespace chase {
             Operator _op;
 
             /// @brief First operand.
-            Value * _op1;
+            sptr_value _op1;
             /// @brief First operand.
-            Value * _op2;
+            sptr_value _op2;
 
     };
 }

@@ -19,6 +19,7 @@ namespace chase {
     /// @brief Abstract class for all values.
     class Value : public ChaseObject
     {
+        using sptr_type = std::shared_ptr<Type>;
         public:
 
             /// @brief Constructor.
@@ -28,11 +29,7 @@ namespace chase {
 
             /// @brief Type getter.
             /// @return The type of the value;
-            virtual Type * getType() = 0;
-
-            /// @brief Clone method.
-            /// @return A clone of the value.
-            Value * clone() override = 0;
+            virtual sptr_type getType() = 0;
 
         protected:
 

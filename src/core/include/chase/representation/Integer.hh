@@ -18,6 +18,9 @@ namespace chase {
     /// @brief Class describing the Integer type.
     class Integer : public SimpleType
     {
+        using sptr_range = std::shared_ptr<Range>;
+        using sptr_int = std::shared_ptr<Integer>;
+
         public:
 
             /// @brief Constructor.
@@ -29,7 +32,7 @@ namespace chase {
 
             /// @brief Constructor with range.
             /// @param r The range.
-            explicit Integer( std::shared_ptr<Range> r );
+            explicit Integer( sptr_range r );
 
             /// @brief Destructor.
             ~Integer() override;
@@ -40,7 +43,7 @@ namespace chase {
 
             /// @brief Retrieve the range of the Integer.
             /// @return a pointer to the range.
-            std::shared_ptr<Range> getRange();
+            sptr_range getRange();
 
             /// @brief Main function for visit.
             /// @param v The visitor being used.
@@ -53,7 +56,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            Integer * clone() override;
+            sptr_int clone();
 
 
         protected:
@@ -61,6 +64,6 @@ namespace chase {
             bool _signed;
 
             /// @brief The range of values valid for the Integer.
-            std::shared_ptr<Range> _range;
+            sptr_range _range;
     };
 }

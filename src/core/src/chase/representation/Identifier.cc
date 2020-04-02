@@ -11,8 +11,13 @@
 #include "representation/Identifier.hh"
 
 using namespace chase;
+using namespace std;
 
-Identifier::Identifier( DataDeclaration * d ) :
+using sptr_datadecl = std::shared_ptr<DataDeclaration>;
+using sptr_type = std::shared_ptr<Type>;
+using sptr_id = std::shared_ptr<Identifier>;
+
+Identifier::Identifier( sptr_datadecl d ) :
     Value(),
     _declaration(d)
 {
@@ -37,12 +42,12 @@ Identifier & Identifier::operator=( const Identifier &i )
     return *this;
 }
 
-DataDeclaration * Identifier::getDeclaration()
+sptr_datadecl Identifier::getDeclaration()
 {
     return _declaration;
 }
 
-void Identifier::setDeclaration( DataDeclaration * d)
+void Identifier::setDeclaration( sptr_datadecl d)
 {
     _declaration = d;
 }
@@ -57,13 +62,13 @@ int Identifier::accept_visitor( BaseVisitor &v )
     return v.visitIdentifier(*this);
 }
 
-Type *Identifier::getType() {
+sptr_type Identifier::getType() {
     return getDeclaration()->getType();
 }
 
-Identifier *Identifier::clone() {
+sptr_id Identifier::clone() {
     /// \todo Fix later in the clone method of Contract the potential
     /// inconsistencies due to cloned declarations.
-    return new Identifier(_declaration);
+    return make_shared<Identifier>(_declaration);
 }
 

@@ -53,9 +53,6 @@ namespace chase {
         /// @return Return the textual representation of the edge.
         std::string getString() override;
 
-        /// @brief Clone method.
-        /// @return Clone of the object.
-        Edge * clone() override;
 
     protected:
         /// @brief The index of the source node.
@@ -72,15 +69,19 @@ namespace chase {
     class Vertex : public ChaseObject
     {
     public:
+    
+        using sptr_name = std::shared_ptr<Name>;
+        using sptr_vert = std::shared_ptr<Vertex>;
+
         /// @brief Constructor.
-        Vertex(Name *name = nullptr);
+        Vertex(sptr_name name = nullptr);
 
         /// @brief Destructor.
         ~Vertex() override;
 
         /// @brief Function returning the name of the vertex.
         /// @return The name of the vertex.
-        Name *getName() const;
+        sptr_name getName() const;
 
         /// @brief Function to set the name of the vertex.
         /// @param name the standard string of the vertex name to be assigned.
@@ -97,32 +98,36 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        Vertex * clone() override;
+        sptr_vert clone();
 
     protected:
         /// @brief Pointer to the name object of the vertex.
-        Name * _name;
+        sptr_name _name;
     };
 
     /// @brief Base class for the weighted edges.
     class WeightedEdge : public Edge
     {
     public:
+        using sptr_value = std::shared_ptr<Value>;
+        using sptr_wedge = std::shared_ptr<WeightedEdge>;
+
         /// @brief Constructor.
         /// @param source the source node of the edge.
         /// @param target the target node of the edge.
         /// @param weight The weight to apply to the edge.
-        WeightedEdge(unsigned int source, unsigned int target, Value *weight);
+        WeightedEdge(unsigned int source, unsigned int target, 
+            sptr_value weight);
 
         /// @brief Destructor.
         ~WeightedEdge() override;
 
         /// @brief Function retrieving the weight of the edge.
         /// @return The weight Value of the edge.
-        Value *getWeight() const;
+        sptr_value getWeight() const;
         /// @brief Setter of the weight of the edge.
         /// @param weight The Value to be set as weight.
-        void setWeight(Value *weight);
+        void setWeight(sptr_value weight);
 
         /// @brief Function to print the edge.
         /// @return Return the textual representation of the edge.
@@ -130,11 +135,11 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        WeightedEdge * clone() override;
+        sptr_wedge clone();
 
     protected:
         /// @brief The weight of the edge, expressed as a Value object.
-        Value * _weight;
+        sptr_value _weight;
     };
 
     /// @brief Adjacency Map defined as a map of map of edges. Nullptr edges
@@ -151,6 +156,8 @@ namespace chase {
     /// @todo GraphViz support for the graphical representation of the Graph.
     class Graph : public Specification {
     public:
+    
+        using sptr_name = std::shared_ptr<Name>;
 
         /// @brief Constructor.
         Graph( unsigned int size, bool directed = false,
@@ -229,7 +236,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        Graph * clone() override;
+        Graph * clone();
 
     protected:
 

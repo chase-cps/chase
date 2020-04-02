@@ -7,11 +7,15 @@
 #include "chase/representation/BinaryTemporalFormula.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_bintempform = std::shared_ptr<BinaryTemporalFormula>;
+using sptr_logicform = std::shared_ptr<LogicFormula>;
 
 BinaryTemporalFormula::BinaryTemporalFormula(
         TemporalOperator op,
-        LogicFormula * op1,
-        LogicFormula * op2
+        sptr_logicform op1,
+        sptr_logicform op2
 ) :
     _op(op),
     _formula1(op1),
@@ -20,11 +24,11 @@ BinaryTemporalFormula::BinaryTemporalFormula(
     _node_type = binaryTemporalOperation_node;
 
     if(_formula1->getParent() != nullptr )
-        messageWarning("Formula with already set parent", _formula1);
+        messageWarning("Formula with already set parent", _formula1.get());
     else _formula1->setParent(this);
 
     if(_formula2->getParent() != nullptr )
-        messageWarning("Formula with already set parent", _formula2);
+        messageWarning("Formula with already set parent", _formula2.get());
     else _formula2->setParent(this);
 }
 
@@ -36,19 +40,19 @@ void BinaryTemporalFormula::setOp(TemporalOperator op) {
     _op = op;
 }
 
-LogicFormula *BinaryTemporalFormula::getFormula1() const {
+sptr_logicform BinaryTemporalFormula::getFormula1() const {
     return _formula1;
 }
 
-void BinaryTemporalFormula::setFormula1(LogicFormula *formula1) {
+void BinaryTemporalFormula::setFormula1(sptr_logicform formula1) {
     _formula1 = formula1;
 }
 
-LogicFormula *BinaryTemporalFormula::getFormula2() const {
+sptr_logicform BinaryTemporalFormula::getFormula2() const {
     return _formula2;
 }
 
-void BinaryTemporalFormula::setFormula2(LogicFormula *formula2) {
+void BinaryTemporalFormula::setFormula2(sptr_logicform formula2) {
     _formula2 = formula2;
 }
 
@@ -63,10 +67,10 @@ std::string BinaryTemporalFormula::getString() {
     return ret;
 }
 
-BinaryTemporalFormula *BinaryTemporalFormula::clone()
+sptr_bintempform BinaryTemporalFormula::clone()
 {
-    return new BinaryTemporalFormula(
-            _op, _formula1->clone(), _formula2->clone());
+    return make_shared<BinaryTemporalFormula>(
+            _op, _formula1, _formula2);
 }
 
 BinaryTemporalFormula::~BinaryTemporalFormula() = default;

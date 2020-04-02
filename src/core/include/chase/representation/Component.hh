@@ -18,24 +18,30 @@
 namespace chase {
 
     class Component : public ChaseObject {
+        
+    using sptr_compdef = std::shared_ptr<ComponentDefinition>;
+    using sptr_name = std::shared_ptr<Name>;
+    using sptr_value = std::shared_ptr<Value>;
+    using sptr_comp = std::shared_ptr<Component>;
+
     public:
 
         /// @brief Constructor.
         /// @param definition
         /// @param name
-        Component( ComponentDefinition * definition, std::string name );
+        Component( sptr_compdef definition, std::string name );
 
         /// @brief Destructor.
         ~Component();
 
-        ComponentDefinition *getDefinition() const;
-        void setDefinition(ComponentDefinition *definition);
+        sptr_compdef getDefinition() const;
+        void setDefinition(sptr_compdef definition);
 
-        Name *getName() const;
-        void setName(Name *name);
+        sptr_name getName() const;
+        void setName(sptr_name name);
 
-        void setParameter(std::string view, std::string param, Value * value);
-        Value * getParameterValue(std::string view, std::string param);
+        void setParameter(std::string view, std::string param, sptr_value value);
+        sptr_value getParameterValue(std::string view, std::string param);
         std::map< std::string, Value * >&
                         getParametersInView(std::string view);
 
@@ -43,7 +49,7 @@ namespace chase {
 
         std::string getString() override;
 
-        Component *clone() override;
+        sptr_comp clone();
 
     protected:
 
@@ -54,10 +60,10 @@ namespace chase {
         /// assign at the parameter.
         std::map<
                 std::string,
-                std::map< std::string, chase::Value * > > _params;
+                std::map< std::string, Value * > > _params;
 
-        ComponentDefinition * _definition;
-        Name * _name;
+        sptr_compdef _definition;
+        sptr_name _name;
 
     };
 

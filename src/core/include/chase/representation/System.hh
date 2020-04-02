@@ -71,7 +71,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the object.
-        System * clone() override;
+        System * clone();
 
         /// @brief Getter of the name of the system.
         /// @return A pointer to the name object.

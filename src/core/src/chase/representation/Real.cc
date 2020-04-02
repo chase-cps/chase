@@ -12,6 +12,10 @@
 #include "representation/Range.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_range = std::shared_ptr<Range>;
+using sptr_real = std::shared_ptr<Real>;
 
 Real::Real() :
     SimpleType(),
@@ -22,15 +26,14 @@ Real::Real() :
 
 Real::~Real()
 {
-    if( _range != nullptr ) delete _range;
 }
 
-Range * Real::getRange()
+sptr_range Real::getRange()
 {
     return _range;
 }
 
-void Real::setRange( Range * r )
+void Real::setRange( sptr_range r )
 {
     _range = r;
 }
@@ -45,8 +48,8 @@ std::string Real::getString()
     return "real";
 }
 
-Real * Real::clone() {
-    auto ret = new Real();
-    if( _range != nullptr ) ret->setRange(_range->clone());
+sptr_real Real::clone() {
+    auto ret = make_shared<Real>();
+    if( _range != nullptr ) ret->setRange(_range);
     return ret;
 }

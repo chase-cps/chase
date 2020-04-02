@@ -17,6 +17,7 @@ namespace chase {
     /// @brief Class describing the Boolean type.
     class Boolean : public SimpleType
     {
+        using sptr_bool = std::shared_ptr<Boolean>;
         public:
 
             /// @brief Constructor.
@@ -36,7 +37,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return A clone of the object.
-            Boolean * clone() override;
+            sptr_bool clone();
 
 
         protected:

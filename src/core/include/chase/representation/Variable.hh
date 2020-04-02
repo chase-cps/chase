@@ -27,14 +27,19 @@ namespace chase {
     /// @brief Class representing a Variable declaration.
     class Variable : public DataDeclaration
     {
+
+        using sptr_type = std::shared_ptr<Type>;
+        using sptr_name = std::shared_ptr<Name>;        
+        using sptr_var = std::shared_ptr<Variable>;
+
         public:
             /// @brief Constructor.
             /// @param type The name of the declared variable.
             /// @param name The name of the declared variable.
             /// @param causality The causality of the variable.
             explicit Variable(
-                    Type * type = nullptr,
-                    Name * name = nullptr,
+                    sptr_type type = nullptr,
+                    sptr_name name = nullptr,
                     causality_t causality = generic );
             
             /// @brief Destructor.
@@ -55,10 +60,10 @@ namespace chase {
             /// @param v The visitor visiting the variable.
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
-
+            
             /// @brief Clone method.
             /// @return Clone of the object.
-            Variable * clone() override;
+            sptr_var clone();
 
         protected:
 

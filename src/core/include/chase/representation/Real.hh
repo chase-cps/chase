@@ -18,6 +18,9 @@ namespace chase {
     /// @brief Class describing the Real type.
     class Real : public SimpleType
     {
+        using sptr_range = std::shared_ptr<Range>;
+        using sptr_real = std::shared_ptr<Real>;
+
         public:
 
             /// @brief Constructor.
@@ -27,11 +30,11 @@ namespace chase {
 
             /// @brief Retrieve the range of the Real.
             /// @return a pointer to the range.
-            Range * getRange();
+            sptr_range getRange();
 
             /// @brief Set the range of the Real.
             /// @param r range for the real.
-            void setRange( Range * r );
+            void setRange( sptr_range r );
 
             /// @brief Main function for visit.
             /// @param v The visitor being used.
@@ -45,10 +48,10 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            Real * clone() override ;
+            sptr_real clone() ;
 
         protected:
             /// @brief Range of value for the type.
-            Range * _range;
+            sptr_range _range;
     };
 }

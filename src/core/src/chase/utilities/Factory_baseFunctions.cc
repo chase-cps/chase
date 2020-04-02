@@ -9,147 +9,148 @@
 
 using namespace chase;
 
-UnaryBooleanFormula * chase::Not(LogicFormula *op) {
-    return new UnaryBooleanFormula(op_not, op);
+std::shared_ptr<UnaryBooleanFormula> chase::Not(std::shared_ptr<LogicFormula>op) {
+    return std::shared_ptr<UnaryBooleanFormula>(new UnaryBooleanFormula(op_not, op));
 }
 
-BinaryBooleanFormula * chase::And(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_and, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::And(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_and, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Or(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_or, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Or(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_or, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Implies(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_implies, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Implies(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_implies, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Iff(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_iff, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Iff(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_iff, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Nand(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_nand, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Nand(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_nand, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Xor(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_xor, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Xor(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_xor, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Nor(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_nor, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Nor(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_nor, op1, op2));
 }
 
-BinaryBooleanFormula * chase::Xnor(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryBooleanFormula(op_xnor, op1, op2);
+std::shared_ptr<BinaryBooleanFormula> chase::Xnor(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryBooleanFormula>(new BinaryBooleanFormula(op_xnor, op1, op2));
 }
 
-UnaryTemporalFormula * chase::Always(LogicFormula *op) {
-    return new UnaryTemporalFormula(op_globally, op);
+std::shared_ptr<UnaryTemporalFormula> chase::Always(std::shared_ptr<LogicFormula>op) {
+    return std::shared_ptr<UnaryTemporalFormula>(new UnaryTemporalFormula(op_globally, op));
 }
 
-UnaryTemporalFormula * chase::Eventually(LogicFormula *op) {
-    return new UnaryTemporalFormula(op_future, op);
+std::shared_ptr<UnaryTemporalFormula> chase::Eventually(std::shared_ptr<LogicFormula>op) {
+    return std::shared_ptr<UnaryTemporalFormula>(new UnaryTemporalFormula(op_future, op));
 }
 
-UnaryTemporalFormula * chase::Next(LogicFormula *op) {
-    return new UnaryTemporalFormula(op_next, op);
+std::shared_ptr<UnaryTemporalFormula> chase::Next(std::shared_ptr<LogicFormula>op) {
+    return std::shared_ptr<UnaryTemporalFormula>(new UnaryTemporalFormula(op_next, op));
 }
 
-Expression * chase::Sum(Value *op1, Value *op2) {
-    return new Expression(op_plus, op1, op2);
+std::shared_ptr<Expression> chase::Sum(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_plus, op1, op2));
 }
 
-Expression * chase::Sub(Value *op1, Value *op2) {
-    return new Expression(op_minus, op1, op2);
+std::shared_ptr<Expression> chase::Sub(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_minus, op1, op2));
 }
 
-Expression * chase::Mult(Value *op1, Value *op2) {
-    return new Expression(op_multiply, op1, op2);
+std::shared_ptr<Expression> chase::Mult(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_multiply, op1, op2));
 }
 
-Expression * chase::Div(Value *op1, Value *op2) {
-    return new Expression(op_divide, op1, op2);
+std::shared_ptr<Expression> chase::Div(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_divide, op1, op2));
 }
 
-Expression * chase::Eq(Value *op1, Value *op2) {
-    return new Expression(op_eq, op1, op2);
+std::shared_ptr<Expression> chase::Eq(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_eq, op1, op2));
 }
 
-Expression * chase::NEq(Value *op1, Value *op2) {
-    return new Expression(op_neq, op1, op2);
+std::shared_ptr<Expression> chase::NEq(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_neq, op1, op2));
 }
 
-Expression * chase::LE(Value *op1, Value *op2) {
-    return new Expression(op_le, op1, op2);
+std::shared_ptr<Expression> chase::LE(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_le, op1, op2));
 }
 
-Expression * chase::LT(Value *op1, Value *op2) {
-    return new Expression(op_lt, op1, op2);
+std::shared_ptr<Expression> chase::LT(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_lt, op1, op2));
 }
 
-Expression * chase::GE(Value *op1, Value *op2) {
-    return new Expression(op_ge, op1, op2);
+std::shared_ptr<Expression> chase::GE(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_ge, op1, op2));
 }
 
-Expression * chase::GT(Value *op1, Value *op2) {
-    return new Expression(op_gt, op1, op2);
+std::shared_ptr<Expression> chase::GT(std::shared_ptr<Value> op1, std::shared_ptr<Value> op2) {
+    return std::shared_ptr<Expression>(new Expression(op_gt, op1, op2));
 }
 
-Proposition * chase::Prop( Variable * var )
+std::shared_ptr<Proposition> chase::Prop( std::shared_ptr<Variable> var )
 {
-    auto prop = new Proposition(new Identifier(var));
-    prop->setName(new Name(var->getName()->getString()));
+    auto prop = std::shared_ptr<Proposition>(
+        new Proposition(std::shared_ptr<Identifier>(new Identifier(var))));
+    prop->setName(std::shared_ptr<Name>(new Name(var->getName()->getString())));
     return prop;
 }
 
-Proposition * chase::Prop(Expression * exp)
+std::shared_ptr<Proposition> chase::Prop(std::shared_ptr<Expression> exp)
 {
-    auto prop = new Proposition(exp);
-    prop->setName(new Name(exp->getString()));
+    auto prop = std::shared_ptr<Proposition>(new Proposition(exp));
+    prop->setName(std::shared_ptr<Name>(new Name(exp->getString())));
     return prop;
 }
 
-BooleanConstant * chase::True() {
-    return new BooleanConstant(true);
+std::shared_ptr<BooleanConstant> chase::True() {
+    return std::shared_ptr<BooleanConstant>(new BooleanConstant(true));
 }
 
-BooleanConstant * chase::False() {
-    return new BooleanConstant(false);
+std::shared_ptr<BooleanConstant> chase::False() {
+    return std::shared_ptr<BooleanConstant>(new BooleanConstant(false));
 }
 
-LargeBooleanFormula * chase::LargeAnd(std::vector<LogicFormula *> &formulas) {
-    auto ret = new LargeBooleanFormula(op_and);
+std::shared_ptr<LargeBooleanFormula> chase::LargeAnd(std::vector<std::shared_ptr<LogicFormula>> &formulas) {
+    auto ret = std::shared_ptr<LargeBooleanFormula>(new LargeBooleanFormula(op_and));
     for(auto f = formulas.begin(); f != formulas.end(); ++f)
         ret->operands.push_back(*f);
     return ret;
 }
 
-LargeBooleanFormula * chase::LargeOr(std::vector<LogicFormula *> &formulas) {
-    auto ret = new LargeBooleanFormula(op_or);
+std::shared_ptr<LargeBooleanFormula> chase::LargeOr(std::vector<std::shared_ptr<LogicFormula>> &formulas) {
+    auto ret = std::shared_ptr<LargeBooleanFormula>(new LargeBooleanFormula(op_or));
     for(auto f = formulas.begin(); f != formulas.end(); ++f)
         ret->operands.push_back(*f);
     return ret;
 }
 
-Identifier * chase::Id( DataDeclaration *declaration ) {
-    return new Identifier(declaration);
+std::shared_ptr<Identifier> chase::Id( std::shared_ptr<DataDeclaration> declaration ) {
+    return std::shared_ptr<Identifier>(new Identifier(declaration));
 }
 
-IntegerValue * chase::IntVal(int n) {
-    return new IntegerValue(n);
+std::shared_ptr<IntegerValue> chase::IntVal(int n) {
+    return std::shared_ptr<IntegerValue>(new IntegerValue(n));
 }
 
-RealValue * chase::RealVal(double r) {
-    return new RealValue(r);
+std::shared_ptr<RealValue> chase::RealVal(double r) {
+    return std::shared_ptr<RealValue>(new RealValue(r));
 }
 
-BooleanValue * chase::BoolVal(bool b)
+std::shared_ptr<BooleanValue> chase::BoolVal(bool b)
 {
-    return new BooleanValue(b);
+    return std::shared_ptr<BooleanValue>(new BooleanValue(b));
 }
 
-BinaryTemporalFormula *chase::Until(LogicFormula *op1, LogicFormula *op2) {
-    return new BinaryTemporalFormula(op_until, op1, op2);
+std::shared_ptr<BinaryTemporalFormula> chase::Until(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
+    return std::shared_ptr<BinaryTemporalFormula>(new BinaryTemporalFormula(op_until, op1, op2));
 }

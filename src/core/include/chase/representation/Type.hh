@@ -49,10 +49,6 @@ namespace chase {
             /// @param v a Visitor class visiting the type.
             int accept_visitor(chase::BaseVisitor & v ) override = 0;
 
-            /// @brief Clone method.
-            /// @return clone of the object.
-            Type * clone() override = 0;
-
         protected:
 
             /// @brief Type variant of the Type.

@@ -8,9 +8,14 @@
 
 
 using namespace chase;
+using namespace std;
+
+using sptr_binboolform = std::shared_ptr<BinaryBooleanFormula>;
+using sptr_logicform = std::shared_ptr<LogicFormula>;
 
 chase::BinaryBooleanFormula::BinaryBooleanFormula(
-        BooleanOperator op, LogicFormula *op1, LogicFormula *op2) :
+        BooleanOperator op, sptr_logicform op1, 
+            sptr_logicform op2) :
         _op(op),
         _op1(op1),
         _op2(op2)
@@ -26,19 +31,19 @@ void BinaryBooleanFormula::setOp(BooleanOperator op) {
     _op = op;
 }
 
-LogicFormula *BinaryBooleanFormula::getOp1() const {
+sptr_logicform BinaryBooleanFormula::getOp1() const {
     return _op1;
 }
 
-void BinaryBooleanFormula::setOp1(LogicFormula *op1) {
+void BinaryBooleanFormula::setOp1(sptr_logicform op1) {
     _op1 = op1;
 }
 
-LogicFormula *BinaryBooleanFormula::getOp2() const {
+sptr_logicform BinaryBooleanFormula::getOp2() const {
     return _op2;
 }
 
-void BinaryBooleanFormula::setOp2(LogicFormula *op2) {
+void BinaryBooleanFormula::setOp2(sptr_logicform op2) {
     _op2 = op2;
 }
 
@@ -55,9 +60,9 @@ std::string BinaryBooleanFormula::getString() {
     return ret;
 }
 
-BinaryBooleanFormula *BinaryBooleanFormula::clone()
+sptr_binboolform BinaryBooleanFormula::clone()
 {
-    return new BinaryBooleanFormula(_op, _op1->clone(), _op2->clone());
+    return make_shared<BinaryBooleanFormula>(_op, _op1, _op2);
 }
 
 BinaryBooleanFormula::~BinaryBooleanFormula() = default;

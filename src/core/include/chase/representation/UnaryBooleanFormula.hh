@@ -12,10 +12,14 @@ namespace chase {
 
     /// @brief The class represent all the Boolean unary operations.
     class UnaryBooleanFormula : public LogicFormula {
+
+    using sptr_logicform = std::shared_ptr<LogicFormula>;
+    using sptr_ubinform = std::shared_ptr<UnaryBooleanFormula>;
+
     public:
         /// @brief Constructor.
         explicit UnaryBooleanFormula(BooleanOperator op = op_not,
-                                     LogicFormula * op1 = nullptr );
+                                     sptr_logicform op1 = nullptr );
 
         /// @brief Destructor.
         ~UnaryBooleanFormula() override;
@@ -30,11 +34,11 @@ namespace chase {
 
         /// @brief Getter of the Operand.
         /// @return the Operand.
-        LogicFormula *getOp1() const;
+        sptr_logicform getOp1() const;
 
         /// @brief Setter of the Operand.
         /// @param op1 The operand to be set.
-        void setOp1(LogicFormula *op1);
+        void setOp1(sptr_logicform op1);
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be applied during the visit.
@@ -47,7 +51,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return The cloned object.
-        UnaryBooleanFormula * clone() override;
+        sptr_ubinform clone();
 
     protected:
 
@@ -55,7 +59,7 @@ namespace chase {
         BooleanOperator _op;
 
         /// @brief The formula to which apply the operator.
-        LogicFormula * _op1;
+        sptr_logicform _op1;
 
     };
 

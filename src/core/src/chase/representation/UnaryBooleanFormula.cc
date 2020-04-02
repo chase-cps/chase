@@ -8,9 +8,13 @@
 
 
 using namespace chase;
+using namespace std;
+
+using sptr_logicform = std::shared_ptr<LogicFormula>;
+using sptr_ubinform = std::shared_ptr<UnaryBooleanFormula>;
 
 chase::UnaryBooleanFormula::UnaryBooleanFormula(
-        BooleanOperator op, LogicFormula *op1) :
+        BooleanOperator op, sptr_logicform op1) :
         _op(op),
         _op1(op1)
 {
@@ -25,11 +29,11 @@ void UnaryBooleanFormula::setOp(BooleanOperator op) {
     _op = op;
 }
 
-LogicFormula *UnaryBooleanFormula::getOp1() const {
+sptr_logicform UnaryBooleanFormula::getOp1() const {
     return _op1;
 }
 
-void UnaryBooleanFormula::setOp1(LogicFormula *op1) {
+void UnaryBooleanFormula::setOp1(sptr_logicform op1) {
     _op1 = op1;
 }
 
@@ -45,9 +49,9 @@ std::string UnaryBooleanFormula::getString() {
     return ret;
 }
 
-UnaryBooleanFormula * UnaryBooleanFormula::clone()
+sptr_ubinform UnaryBooleanFormula::clone()
 {
-    return new UnaryBooleanFormula(_op, _op1->clone());
+    return make_shared<UnaryBooleanFormula>(_op, _op1);
 }
 
 UnaryBooleanFormula::~UnaryBooleanFormula() = default;

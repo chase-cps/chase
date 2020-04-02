@@ -11,6 +11,9 @@
 #include "representation/NumericValue.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_type = std::shared_ptr<Type>;
 
 NumericValue::NumericValue() :
     Value(),
@@ -23,13 +26,13 @@ NumericValue::~NumericValue()
 {
 }
 
-Type * NumericValue::getType()
+sptr_type NumericValue::getType()
 {
     return _type;
 }
 
-void NumericValue::setType( Type * t )
+void NumericValue::setType( sptr_type t )
 {
     _type = t;
-    _type->setParent( this );
+    _type->setParent(this);
 }

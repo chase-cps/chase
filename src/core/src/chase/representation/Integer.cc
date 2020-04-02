@@ -12,6 +12,10 @@
 #include "representation/Range.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_range = std::shared_ptr<Range>;
+using sptr_int = std::shared_ptr<Integer>;
 
 Integer::Integer() :
     SimpleType(),
@@ -19,25 +23,26 @@ Integer::Integer() :
     _range(nullptr)
 {
     _node_type = integer_node;
-    _range = std::shared_ptr<Range>(new Range(-2147483647, 2147483647));
+    _range = make_shared<Range>(-2147483647, 2147483647);
 }
 
 Integer::Integer(int l, int r) :
     SimpleType(),
     _signed(l < 0),
-    _range(std::shared_ptr<Range>(new Range(l,r)))
+    _range(make_shared<Range>(l,r))
 {
     _node_type = integer_node;
 }
 
 
 
-Integer::Integer(std::shared_ptr<Range> r) :
+Integer::Integer(sptr_range r) :
     SimpleType(),
     _range(r)
 {
     _node_type = integer_node;
-    if( r->getParent() == nullptr ) r->setParent(this);
+    if( r->getParent() == nullptr ) 
+        r->setParent(this);
     if(r->getLeftValue() < 0) _signed = true;
 }
 
@@ -66,9 +71,9 @@ std::string Integer::getString()
     return "integer";
 }
 
-Integer *Integer::clone()
+sptr_int Integer::clone()
 {
-    return new Integer(_range);
+    return make_shared<Integer>(_range);
 }
 
 

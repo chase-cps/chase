@@ -19,6 +19,8 @@ namespace chase {
     /// @brief Abstract class for all the numeric values (e.g., Integers, Doubles, etc.).
     class NumericValue : public Value
     {
+        using sptr_type = std::shared_ptr<Type>;
+
         public:
 
             /// @brief Numericructor.
@@ -28,18 +30,16 @@ namespace chase {
 
             /// @brief Getter for the type.
             /// @return the type of the value.
-            Type * getType();
+            sptr_type getType();
 
             /// @brief Setter for the type.
             /// @param t the type of the NumericValue.
-            void setType( Type * t );
-
-            NumericValue * clone() override = 0;
+            void setType( sptr_type t );
 
         protected:
 
             /// @brief Type of the value.
-            Type * _type;
+            sptr_type _type;
 
     };
 }

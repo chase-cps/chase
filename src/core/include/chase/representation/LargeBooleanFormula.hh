@@ -19,10 +19,14 @@ namespace chase {
     /// That is, the operators used to express a sequence of operations. For
     /// instance, the large And/Or operators.
     class LargeBooleanFormula : public LogicFormula {
+
+    using sptr_logicform = std::shared_ptr<LogicFormula> ;
+    using sptr_largeboolform = std::shared_ptr<LargeBooleanFormula>;
+
     public:
 
         /// @brief The sequence of operands of the big operation.
-        std::vector< LogicFormula * > operands;
+        std::vector< sptr_logicform  > operands;
 
         /// @brief Constructor.
         LargeBooleanFormula(BooleanOperator op = op_and );
@@ -41,7 +45,7 @@ namespace chase {
         /// @brief Function to add a operand in the formula. It manages also the
         /// parent link.
         /// @param f The operand to add.
-        void addOperand( LogicFormula *f );
+        void addOperand( sptr_logicform  f );
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be used.
@@ -54,7 +58,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return The cloned object.
-        LargeBooleanFormula * clone() override;
+        sptr_largeboolform clone();
 
     protected:
 

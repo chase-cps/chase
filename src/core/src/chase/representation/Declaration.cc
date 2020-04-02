@@ -11,6 +11,10 @@
 #include "representation/Declaration.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_name = std::shared_ptr<Name>;
+using sptr_decl = std::shared_ptr<Declaration>;
 
 Declaration::Declaration() :
     _name(nullptr)
@@ -22,7 +26,7 @@ Declaration::~Declaration()
 {
 }
 
-Declaration::Declaration( Name * n ) :
+Declaration::Declaration( sptr_name n ) :
     _name(n)
 {
     _node_type = declaration_node;
@@ -35,12 +39,12 @@ Declaration::Declaration( std::string n ) :
     _name->setParent(this);
 }
 
-Name * Declaration::getName()
+sptr_name Declaration::getName()
 {
     return _name;
 }
 
-void Declaration::setName( Name * n )
+void Declaration::setName( sptr_name n )
 {
     _name = n;
     _name->setParent(this);

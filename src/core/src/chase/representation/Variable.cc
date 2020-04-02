@@ -11,8 +11,14 @@
 #include "representation/Variable.hh"
 
 using namespace chase;
+using namespace std;
 
-Variable::Variable( Type * type, Name * name, causality_t causality ) :
+using sptr_type = std::shared_ptr<Type>;
+using sptr_name = std::shared_ptr<Name>;
+using sptr_var = std::shared_ptr<Variable>;
+
+Variable::Variable(sptr_type type, sptr_name name, 
+    causality_t causality ) :
     DataDeclaration(type, name),
     _causality(causality)
 {
@@ -23,8 +29,6 @@ Variable::Variable( Type * type, Name * name, causality_t causality ) :
 
 Variable::~Variable()
 {
-    delete _name;
-    delete _type;
 }
 
 std::string Variable::getString()
@@ -59,7 +63,7 @@ void Variable::setCausality(causality_t causality)
     _causality = causality;
 }
 
-Variable *Variable::clone()
+sptr_var Variable::clone()
 {
-    return new Variable(_type->clone(), _name->clone(), _causality);
+    return make_shared<Variable>(_type, _name, _causality);
 }
