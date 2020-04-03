@@ -11,9 +11,9 @@ find_package(PythonLibs REQUIRED)
 
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
-        #${SRC_CHASELIB_PATH}/representation/System.cc
+        ${SRC_CHASELIB_PATH}/representation/System.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
-        #${SRC_CHASELIB_PATH}/representation/Contract.cc
+        ${SRC_CHASELIB_PATH}/representation/Contract.cc
         #${SRC_CHASELIB_PATH}/representation/Contract_algebra.cc
 
         ${SRC_CHASELIB_PATH}/representation/Type.cc
@@ -54,7 +54,7 @@ set(chase_library_representation
         #${SRC_CHASELIB_PATH}/representation/GraphVertex.cc
         #${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
 
-        #${SRC_CHASELIB_PATH}/utilities/Factory_baseFunctions.cc
+        ${SRC_CHASELIB_PATH}/utilities/Factory_baseFunctions.cc
         )
 
 set(chase_library_utilities
@@ -67,10 +67,10 @@ set(chase_library_utilities
 )
 
 set(chase_library_backends
-        #${SRC_CHASELIB_PATH}/backends/GR1CPrinter.cc
-        #${SRC_CHASELIB_PATH}/backends/GR1CPrinter_visit.cc
-        #${SRC_CHASELIB_PATH}/backends/SlugsPrinter.cc
-        #${SRC_CHASELIB_PATH}/backends/SlugsPrinter_visit.cc
+        ${SRC_CHASELIB_PATH}/backends/GR1CPrinter.cc
+        ${SRC_CHASELIB_PATH}/backends/GR1CPrinter_visit.cc
+        ${SRC_CHASELIB_PATH}/backends/SlugsPrinter.cc
+        ${SRC_CHASELIB_PATH}/backends/SlugsPrinter_visit.cc
 )
 
 set(chase_library

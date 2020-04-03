@@ -25,7 +25,7 @@ namespace chase {
     /// @brief Class to represent contracts.
     class Contract : public ChaseObject {
 
-    using sptr_datadecl = std::shared_ptr<DataDeclaration>;
+    using sptr_decl = std::shared_ptr<Declaration>;
     using sptr_spec = std::shared_ptr<Specification>;
     using sptr_name = std::shared_ptr<Name>;
     using sptr_contract = std::shared_ptr<Contract>;
@@ -33,7 +33,7 @@ namespace chase {
     public:
 
         /// @brief List of declarations.
-        std::list< sptr_datadecl > declarations;
+        std::list< sptr_decl > declarations;
 
         /// @brief List of assumptions.
         std::map< semantic_domain, sptr_spec > assumptions;
@@ -58,7 +58,7 @@ namespace chase {
         /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
-        void addDeclaration(sptr_datadecl declaration );
+        void addDeclaration(sptr_decl declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.

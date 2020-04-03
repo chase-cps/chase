@@ -76,7 +76,7 @@ namespace chase {
 
             /// @brief Function returning the type of the expression.
             /// @return The type of the function.
-            std::shared_ptr<Type> getType() override;
+            sptr_type getType() override;
 
             /// @brief Clone method.
             /// @return Clone of the object.

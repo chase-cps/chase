@@ -31,9 +31,25 @@ print(rv.getString())
 rv.setValue(4)
 print(rv.getString())
 
-
 r = chasecorebnd.Range(1, 3)
 i = chasecorebnd.Integer(r)
 
 print(r.getString())
 print(i.getRange().getString())
+
+
+n = chasecorebnd.Name('test')
+n1 = chasecorebnd.Name(n)
+b = chasecorebnd.Boolean()
+
+state = chasecorebnd.Constant(b, n1, bv)
+print(state.getString())
+iden = chasecorebnd.Identifier(state)
+print(iden.getString())
+
+state1 = chasecorebnd.Variable(i, chasecorebnd.Name('i'), chasecorebnd.generic)
+print(state1.getString())
+
+exp = chasecorebnd.Expression(chasecorebnd.op_eq, iden, iv)
+print(exp.getString())
+

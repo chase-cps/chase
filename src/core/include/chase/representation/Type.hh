@@ -54,7 +54,5 @@ namespace chase {
             /// @brief Type variant of the Type.
             TypeVariant _typeVariant;
 
-        
-
     };
 }

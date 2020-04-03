@@ -12,7 +12,7 @@
 using namespace chase;
 using namespace std;
 
-using sptr_datadecl = std::shared_ptr<DataDeclaration>;
+using sptr_decl = std::shared_ptr<Declaration>;
 using sptr_spec = std::shared_ptr<Specification>;
 using sptr_name = std::shared_ptr<Name>;
 using sptr_contract = std::shared_ptr<Contract>;
@@ -73,40 +73,39 @@ void Contract::setName(sptr_name  name) {
     _name = name;
 }
 
-void Contract::addDeclaration(sptr_datadecl declaration) {
+void Contract::addDeclaration(sptr_decl declaration) {
     declarations.push_back(declaration);
-    declaration->setParent(make_shared<Contract>(this));
+    declaration->setParent(this);
 }
 
 void Contract::addAssumptions(semantic_domain domain, sptr_spec spec) {
     std::pair< semantic_domain, sptr_spec > a(domain, spec);
     assumptions.insert(a);
-    spec->setParent(make_shared<Contract>(this));
+    spec->setParent(this);
 }
 
 void Contract::addGuarantees(semantic_domain domain, sptr_spec spec) {
     std::pair< semantic_domain, sptr_spec > g(domain, spec);
     guarantees.insert(g);
-    spec->setParent(make_shared<Contract>(this));
+    spec->setParent(this);
 }
 
 
 
 /// \todo Implement the clone method.
 sptr_contract Contract::clone() {
-    auto ret = make_shared<Contract>(
-        new Contract(_name->getString()));
+    auto ret = make_shared<Contract>(_name->getString());
 
     // Corresponences maps.
-    std::map< sptr_datadecl, sptr_datadecl > declaration_map;
+    std::map< sptr_decl, sptr_decl > declaration_map;
 
     // Declarations.
     for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
-        sptr_datadecl current = *it;
+        sptr_decl current = *it;
         auto dec = std::dynamic_pointer_cast<DataDeclaration>(
             current->clone());
-        std::pair< sptr_datadecl , sptr_datadecl > p(current, dec);
+        std::pair< sptr_decl , sptr_decl > p(current, dec);
         ret->addDeclaration(dec);
         declaration_map.insert(p);
     }

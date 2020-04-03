@@ -8,9 +8,13 @@
 #include "utilities/ClonedDeclarationVisitor.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_datadecl = std::shared_ptr<DataDeclaration>;
+using sptr_decl = std::shared_ptr<Declaration>;
 
 ClonedDeclarationVisitor::ClonedDeclarationVisitor(
-        std::map< Declaration *, Declaration * > &m ) :
+        std::map< sptr_decl, sptr_decl > &m ) :
         GuideVisitor(1)
 {
     _map = &m;
@@ -18,7 +22,7 @@ ClonedDeclarationVisitor::ClonedDeclarationVisitor(
 
 int ClonedDeclarationVisitor::visitIdentifier(Identifier &o) {
     auto it = _map->find(o.getDeclaration());
-    auto dec = dynamic_cast< DataDeclaration* >(it->second);
+    auto dec = dynamic_pointer_cast< DataDeclaration >(it->second);
     if( dec != nullptr )
         o.setDeclaration(dec);
     return 1;
