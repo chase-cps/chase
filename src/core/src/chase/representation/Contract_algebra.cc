@@ -11,13 +11,18 @@
 #include "chase/utilities/Factory.hh"
 
 using namespace chase;
+using namespace std;
+
+using sptr_contract = std::shared_ptr<Contract>;
+using sptr_lform = std::shared_ptr<LogicFormula>;
+using sptr_decl = std::shared_ptr<Declaration>;
 
 void Contract:: mergeDeclarations(
-        Contract * c1,
-        Contract * c2,
-        Contract * r,
+        sptr_contract c1,
+        sptr_contract c2,
+        sptr_contract r,
         names_projection_map &correspondences,
-        std::map< Declaration *, Declaration * >& declaration_map
+        std::map< sptr_decl, sptr_decl >& declaration_map
         )
 {
     /// \todo Implement the type checking.
@@ -25,8 +30,8 @@ void Contract:: mergeDeclarations(
     for(auto i = c1->declarations.begin(); i != c1->declarations.end(); ++i)
     {
         auto original = (*i);
-        auto cloned = original->clone();
-        std::pair< Declaration*, Declaration *> p(original, cloned);
+        auto cloned = dynamic_pointer_cast<Declaration>(original->clone());
+        std::pair< sptr_decl, sptr_decl> p(original, cloned);
         declaration_map.insert(p);
 
         r->declarations.push_back(cloned);
@@ -49,8 +54,8 @@ void Contract:: mergeDeclarations(
                     messageError("Name clashing in composition.");
             }
 
-            auto cloned = original->clone();
-            std::pair< Declaration*, Declaration *> p(original, cloned);
+            auto cloned = dynamic_pointer_cast<Declaration>(original->clone());
+            std::pair< sptr_decl, sptr_decl> p(original, cloned);
             declaration_map.insert(p);
 
             r->declarations.push_back(cloned);
@@ -63,7 +68,7 @@ void Contract:: mergeDeclarations(
             {
                 if((*j)->getName()->getString() == to_find )
                 {
-                    std::pair< Declaration*, Declaration *> p(original,*j);
+                    std::pair< sptr_decl, sptr_decl> p(original,*j);
                     declaration_map.insert(p);
                 }
             }
@@ -72,14 +77,14 @@ void Contract:: mergeDeclarations(
 }
 
 
-Contract * Contract::composition(
-        Contract * c1, Contract * c2,
+sptr_contract Contract::composition(
+        sptr_contract c1, sptr_contract c2,
         names_projection_map & correspondences,
         std::string name)
 {
-    auto composed = new Contract(name);
+    auto composed = make_shared<Contract>(name);
 
-    std::map< Declaration *, Declaration * > declaration_map;
+    std::map< sptr_decl, sptr_decl > declaration_map;
     mergeDeclarations(c1, c2, composed, correspondences, declaration_map);
 
     composeLogic(c1, c2, composed);
@@ -91,9 +96,9 @@ Contract * Contract::composition(
 }
 
 void Contract::composeLogic(
-        Contract * c1,
-        Contract * c2,
-        Contract * r)
+        sptr_contract c1,
+        sptr_contract c2,
+        sptr_contract r)
 {
     LogicFormula * a1 = nullptr;
     LogicFormula * a2 = nullptr;
@@ -103,67 +108,70 @@ void Contract::composeLogic(
     auto i = c1->assumptions.find(logic);
     if(i != c1->assumptions.end())
     {
-        a1 = dynamic_cast<LogicFormula *>(i->second);
+        a1 = dynamic_cast<LogicFormula *>(i->second.get());
         if( a1 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c2->assumptions.find(logic);
     if(i != c2->assumptions.end())
     {
-        a2 = dynamic_cast<LogicFormula *>(i->second);
+        a2 = dynamic_cast<LogicFormula *>(i->second.get());
         if( a2 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c1->guarantees.find(logic);
     if(i != c1->guarantees.end())
     {
-        g1 = dynamic_cast<LogicFormula *>(i->second);
+        g1 = dynamic_cast<LogicFormula *>(i->second.get());
         if( g1 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c2->guarantees.find(logic);
     if(i != c2->guarantees.end())
     {
-        g2 = dynamic_cast<LogicFormula *>(i->second);
+        g2 = dynamic_cast<LogicFormula *>(i->second.get());
         if( g2 == nullptr ) messageError("Wrong format in Logic.");
     }
 
-    LogicFormula * assumptions = nullptr;
-    LogicFormula * guarantees = nullptr;
+    sptr_lform assumptions = nullptr;
+    sptr_lform guarantees = nullptr;
 
     if( g1 != nullptr && g2 != nullptr ) {
-        guarantees = And(g1->clone(), g2->clone());
+        guarantees = And(dynamic_pointer_cast<LogicFormula>(g1->clone()),
+            dynamic_pointer_cast<LogicFormula>(g2->clone()));
     } else if(g1 == nullptr && g2 == nullptr) {
         guarantees = True();
     } else if(g1 == nullptr && g2 != nullptr) {
-        guarantees = g2->clone();
+        guarantees = dynamic_pointer_cast<LogicFormula>(g2->clone());
     } else {
-        guarantees = g1->clone();
+        guarantees = dynamic_pointer_cast<LogicFormula>(g1->clone());
     }
 
     if( a1 != nullptr && a2 != nullptr ) {
-        assumptions = And(a1->clone(), a2->clone());
+        assumptions = And(dynamic_pointer_cast<LogicFormula>(a1->clone()),
+        dynamic_pointer_cast<LogicFormula>(a2->clone()));
     } else if(a1 == nullptr && a2 == nullptr) {
         assumptions = True();
     } else if(a1 == nullptr && a2 != nullptr) {
-        assumptions = a2->clone();
+        assumptions = dynamic_pointer_cast<LogicFormula>(a2->clone());
     } else {
-        assumptions = a1->clone();
+        assumptions = dynamic_pointer_cast<LogicFormula>(a1->clone());
     }
-    assumptions = Or(assumptions, Not(guarantees->clone()));
+    assumptions = Or(assumptions, Not(dynamic_pointer_cast<LogicFormula>
+        (guarantees->clone())));
 
     r->addAssumptions(logic, assumptions);
     r->addGuarantees(logic, guarantees);
 }
 
-Contract * Contract::conjunction(
-        Contract *c1, Contract *c2,
+sptr_contract Contract::conjunction(
+        sptr_contract c1, sptr_contract c2,
         names_projection_map &correspondences,
         std::string name)
 {
-    auto res = new Contract(name);
+    auto res = make_shared<Contract>(name);
 
-    std::map< Declaration *, Declaration * > declaration_map;
+    std::map< sptr_decl, sptr_decl > declaration_map;
     mergeDeclarations(c1, c2, res, correspondences, declaration_map);
 
     conjoinLogic(c1, c2, res);
@@ -174,7 +182,8 @@ Contract * Contract::conjunction(
     return res;
 }
 
-void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
+void Contract::conjoinLogic(sptr_contract c1, sptr_contract c2, 
+    sptr_contract r)
 {
     LogicFormula * a1 = nullptr;
     LogicFormula * a2 = nullptr;
@@ -184,52 +193,54 @@ void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
     auto i = c1->assumptions.find(logic);
     if(i != c1->assumptions.end())
     {
-        a1 = dynamic_cast<LogicFormula *>(i->second);
+        a1 = dynamic_cast<LogicFormula *>(i->second.get());
         if( a1 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c2->assumptions.find(logic);
     if(i != c2->assumptions.end())
     {
-        a2 = dynamic_cast<LogicFormula *>(i->second);
+        a2 = dynamic_cast<LogicFormula *>(i->second.get());
         if( a2 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c1->guarantees.find(logic);
     if(i != c1->guarantees.end())
     {
-        g1 = dynamic_cast<LogicFormula *>(i->second);
+        g1 = dynamic_cast<LogicFormula *>(i->second.get());
         if( g1 == nullptr ) messageError("Wrong format in Logic.");
     }
 
     i = c2->guarantees.find(logic);
     if(i != c2->guarantees.end())
     {
-        g2 = dynamic_cast<LogicFormula *>(i->second);
+        g2 = dynamic_cast<LogicFormula *>(i->second.get());
         if( g2 == nullptr ) messageError("Wrong format in Logic.");
     }
 
-    LogicFormula * assumptions = nullptr;
-    LogicFormula * guarantees = nullptr;
+    sptr_lform assumptions = nullptr;
+    sptr_lform guarantees = nullptr;
 
     if( g1 != nullptr && g2 != nullptr ) {
-        guarantees = And(g1->clone(), g2->clone());
+        guarantees = And(dynamic_pointer_cast<LogicFormula>(g1->clone()), 
+        dynamic_pointer_cast<LogicFormula>(g2->clone()));
     } else if(g1 == nullptr && g2 == nullptr) {
         guarantees = True();
     } else if(g1 == nullptr && g2 != nullptr) {
-        guarantees = g2->clone();
+        guarantees = dynamic_pointer_cast<LogicFormula>(g2->clone());
     } else {
-        guarantees = g1->clone();
+        guarantees = dynamic_pointer_cast<LogicFormula>(g1->clone());
     }
 
     if( a1 != nullptr && a2 != nullptr ) {
-        assumptions = Or(a1->clone(), a2->clone());
+        assumptions = Or(dynamic_pointer_cast<LogicFormula>(a1->clone()),
+            dynamic_pointer_cast<LogicFormula>(a2->clone()));
     } else if(a1 == nullptr && a2 == nullptr) {
         assumptions = True();
     } else if(a1 == nullptr && a2 != nullptr) {
-        assumptions = a2->clone();
+        assumptions = dynamic_pointer_cast<LogicFormula>(a2->clone());
     } else {
-        assumptions = a1->clone();
+        assumptions = dynamic_pointer_cast<LogicFormula>(a1->clone());
     }
 
 
@@ -241,36 +252,37 @@ void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
 
 
 
-void Contract::saturate(Contract *c)
+void Contract::saturate(sptr_contract c)
 {
     saturateLogic(c);
 }
 
-void Contract::saturateLogic(Contract * c )
+void Contract::saturateLogic(sptr_contract c )
 {
     auto a = c->assumptions.find(logic);
     auto g = c->guarantees.find(logic);
 
-    LogicFormula * assumptions = nullptr;
-    LogicFormula * guarantees = nullptr;
+    sptr_lform assumptions = nullptr;
+    sptr_lform guarantees = nullptr;
 
     if(a != c->assumptions.end())
     {
-        assumptions = dynamic_cast< LogicFormula * >(a->second);
+        assumptions = dynamic_pointer_cast<LogicFormula>(a->second);
         if(assumptions == nullptr)
             messageError("Non logic formula in temporal logic domain");
     }
 
     if(g != c->guarantees.end())
     {
-        guarantees = dynamic_cast< LogicFormula * >(g->second);
+        guarantees = dynamic_pointer_cast<LogicFormula>(g->second);
         if(guarantees == nullptr)
             messageError("Non logic formula in temporal logic domain");
     }
 
-    LogicFormula * saturation = nullptr;
+    sptr_lform saturation = nullptr;
     if(assumptions != nullptr ) {
-        saturation = Not(assumptions->clone());
+        saturation = Not(dynamic_pointer_cast<LogicFormula>(
+            assumptions->clone()));
     }else{
         return; // No saturation necessary.
     }
@@ -280,7 +292,7 @@ void Contract::saturateLogic(Contract * c )
         // assumptions.
     {
         std::pair< semantic_domain, Specification * > p(
-                logic, saturation);
+                logic, saturation.get());
         c->guarantees.insert(p);
     }
     else

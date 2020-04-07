@@ -14,7 +14,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/System.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
         ${SRC_CHASELIB_PATH}/representation/Contract.cc
-        #${SRC_CHASELIB_PATH}/representation/Contract_algebra.cc
+        ${SRC_CHASELIB_PATH}/representation/Contract_algebra.cc
 
         ${SRC_CHASELIB_PATH}/representation/Type.cc
         ${SRC_CHASELIB_PATH}/representation/SimpleType.cc
@@ -50,9 +50,9 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/BinaryTemporalFormula.cc
         ${SRC_CHASELIB_PATH}/representation/LargeBooleanFormula.cc
 
-        #${SRC_CHASELIB_PATH}/representation/Graph.cc
-        #${SRC_CHASELIB_PATH}/representation/GraphVertex.cc
-        #${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
+        ${SRC_CHASELIB_PATH}/representation/Graph.cc
+        ${SRC_CHASELIB_PATH}/representation/GraphVertex.cc
+        ${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
 
         ${SRC_CHASELIB_PATH}/utilities/Factory_baseFunctions.cc
         )
@@ -60,9 +60,9 @@ set(chase_library_representation
 set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/IOUtils.cc
         ${SRC_CHASELIB_PATH}/utilities/UtilityFunctions.cc
-#        ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
-#        ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
-#        ${SRC_CHASELIB_PATH}/utilities/LogicSimplifyingVisitor.cc
+        ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
+        ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
+        ${SRC_CHASELIB_PATH}/utilities/LogicSimplifyingVisitor.cc
 
 )
 
@@ -79,7 +79,7 @@ set(chase_library
         #${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
-        #src/chase/representation/Contract_algebra.cc
+        src/chase/representation/Contract_algebra.cc
         src/chase/representation/Component.cc
         include/chase/representation/Component.hh
 )

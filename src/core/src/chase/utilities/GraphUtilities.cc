@@ -9,9 +9,13 @@
 #include <algorithm>
 
 using namespace chase;
+using namespace std;
+
+using sptr_graph = std::shared_ptr<Graph>;
+using sptr_vert = std::shared_ptr<Vertex>;
 
 void chase::findAllPathsBetweenNodes(
-        Graph * graph,
+        sptr_graph graph,
         std::vector< unsigned int >& visited,
         unsigned int end,
         std::list< std::vector< unsigned int > >& result )
@@ -60,15 +64,15 @@ void chase::findAllPathsBetweenNodes(
     }
 }
 
-Graph * chase::getSubGraph(Graph * graph, std::set< Vertex * > vertexes)
+sptr_graph chase::getSubGraph(sptr_graph graph, std::set< Vertex * > vertexes)
 {
-    Graph * ret = new Graph(vertexes.size(), graph->isDirected());
+    sptr_graph ret = make_shared<Graph>(vertexes.size(), graph->isDirected());
 
     unsigned index = 0;
     for( auto v = vertexes.begin(); v != vertexes.end(); ++v)
     {
         std::string name = (*v)->getName()->getString();
-        ret->associateVertex(index, new Vertex(new Name(name)));
+        ret->associateVertex(index, make_shared<Vertex>(make_shared<Name>(name)));
         ++index;
     }
 
@@ -82,33 +86,33 @@ Graph * chase::getSubGraph(Graph * graph, std::set< Vertex * > vertexes)
 
             if( index_first < 0 || index_second < 0) continue;
 
-            Edge * edge = graph->getEdge(index_first, index_second);
+            Edge * edge = graph->getEdge(index_first, index_second).get();
             WeightedEdge * wedge = dynamic_cast<WeightedEdge*>(edge);
             bool weighted = (wedge != nullptr);
 
             if(edge != nullptr) {
                 if (weighted) {
-                    auto id = dynamic_cast< Identifier * >(wedge->getWeight());
+                    auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
                     if(id)
-                        ret->addEdge(new WeightedEdge(i,j,
-                            new Identifier(id->getDeclaration())));
+                        ret->addEdge(make_shared<WeightedEdge>(i,j,
+                            make_shared<Identifier>(id->getDeclaration())));
                 }
                 else {
-                    ret->addEdge(new Edge(i, j));
+                    ret->addEdge(make_shared<Edge>(i, j));
                 }
             }
 
-            edge = graph->getEdge(index_second, index_first);
+            edge = graph->getEdge(index_second, index_first).get();
 
             if(edge != nullptr) {
                 if (weighted) {
-                    auto id = dynamic_cast< Identifier * >(wedge->getWeight());
+                    auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
                     if(id)
-                        ret->addEdge(new WeightedEdge(j,i,
-                            new Identifier(id->getDeclaration())));
+                        ret->addEdge(make_shared<WeightedEdge>(j,i,
+                            make_shared<Identifier>(id->getDeclaration())));
                 }
                 else {
-                    ret->addEdge(new Edge(j,i));
+                    ret->addEdge(make_shared<Edge>(j,i));
                 }
             }
 

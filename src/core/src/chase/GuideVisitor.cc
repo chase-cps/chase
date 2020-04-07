@@ -175,7 +175,7 @@ int chase::GuideVisitor::visitGraph(chase::Graph &o) {
     for( size_t i = 0; i < o.getSize(); ++i )
         for( size_t j = 0; j < o.getSize(); ++j )
         {
-            Edge * e = o.getEdge(i, j);
+            Edge * e = o.getEdge(i, j).get();
             if(e != nullptr)
                 rv |= visitEdge(*e);
         }

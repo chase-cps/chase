@@ -8,8 +8,14 @@
 #include "chase/representation/Graph.hh"
 
 using namespace chase;
+using namespace std;
 
-Graph::Graph( unsigned int size, bool directed, Name * name ) :
+using sptr_name = std::shared_ptr<Name>;
+using sptr_vert = std::shared_ptr<Vertex>;
+using sptr_edge = std::shared_ptr<Edge>;
+using sptr_graph = std::shared_ptr<Graph>;
+
+Graph::Graph( unsigned int size, bool directed, sptr_name name ) :
     _vertexes(size, nullptr), // Initialize the vertexes vector.
     _size(size),
     _directed(directed),
@@ -59,17 +65,17 @@ std::string Graph::getString() {
     return ret;
 }
 
-void Graph::associateVertex(unsigned int index, Vertex *vertex) {
+void Graph::associateVertex(unsigned int index, sptr_vert vertex) {
     if(index < _size) {
-        _vertexes[index] = vertex;
+        _vertexes[index] = vertex.get();
         vertex->setParent(this);
     }
     else messageError("Error creating the graph. Index out of size.");
 
 }
 
-void Graph::addEdge(Edge *edge) {
-    _edges.insert(edge);
+void Graph::addEdge(sptr_edge edge) {
+    _edges.insert(edge.get());
     edge->setParent(this);
 
     // Update the adjacency matrix.
@@ -80,11 +86,11 @@ void Graph::addEdge(Edge *edge) {
     // Find the entry in the matrix.
     it = _matrix.find(std::pair<unsigned int, unsigned int>(s,t));
     // Set the edge as the edge in the matrix.
-    if(it != _matrix.end()) it->second = edge;
+    if(it != _matrix.end()) it->second = edge.get();
 
     if( ! _directed ) {
         it = _matrix.find(std::pair<unsigned int, unsigned int>(t, s));
-        if(it != _matrix.end()) it->second = edge;
+        if(it != _matrix.end()) it->second = edge.get();
     }
 }
 
@@ -92,27 +98,27 @@ bool Graph::isDirected() const {
     return _directed;
 }
 
-Edge * Graph::getEdge(unsigned int source, unsigned int target) {
+sptr_edge Graph::getEdge(unsigned int source, unsigned int target) {
 
     for(auto it = _edges.begin(); it != _edges.end(); ++it )
     {
         Edge * edge = *it;
         if(edge->getSource() == source && edge->getTarget() == target)
-            return edge;
+            return shared_ptr<Edge>(edge);
     }
     return nullptr;
 }
 
-Vertex *Graph::getVertex(unsigned int vertex_id) {
+sptr_vert Graph::getVertex(unsigned int vertex_id) {
     if( vertex_id >= _size ) return nullptr;
-    return _vertexes[vertex_id];
+    return shared_ptr<Vertex>(_vertexes[vertex_id]);
 }
 
-Name *Graph::getName() const {
+sptr_name Graph::getName() const {
     return _name;
 }
 
-void Graph::setName(Name *name) {
+void Graph::setName(sptr_name name) {
     _name = name;
 }
 
@@ -173,9 +179,9 @@ unsigned int Graph::getSize() const {
 Graph::~Graph() = default;
 
 
-Graph *Graph::clone() {
+sptr_graph Graph::clone() {
     /// \todo Manage the graph copy with correspondences.
-    auto ret = new Graph(_size, _name->clone());
+    auto ret = make_shared<Graph>(_size, false, _name->clone());
 
     // Clone all the vertexes.
     for( size_t n = 0; n < _vertexes.size(); ++n )
