@@ -6,6 +6,7 @@
  */
 
 #include "utilities/GraphUtilities.hh"
+#include "utilities/Factory.hh"
 #include <algorithm>
 
 using namespace chase;
@@ -18,7 +19,7 @@ void chase::findAllPathsBetweenNodes(
         sptr_graph graph,
         std::vector< unsigned int >& visited,
         unsigned int end,
-        std::list< std::vector< unsigned int > >& result )
+        std::list< std::vector< unsigned int > > &result )
 {
     unsigned int back = visited.back();
 
@@ -42,6 +43,7 @@ void chase::findAllPathsBetweenNodes(
             {
                 found_path.push_back(visited[hop]);
             }
+
             result.push_back(found_path);
             size_t n = visited.size() - 1;
             visited.erase(visited.begin() + n);
@@ -72,7 +74,7 @@ sptr_graph chase::getSubGraph(sptr_graph graph, std::set< Vertex * > vertexes)
     for( auto v = vertexes.begin(); v != vertexes.end(); ++v)
     {
         std::string name = (*v)->getName()->getString();
-        ret->associateVertex(index, make_shared<Vertex>(make_shared<Name>(name)));
+        ret->associateVertex(index, make_shared<Vertex>(Nam(name)));
         ++index;
     }
 
@@ -95,7 +97,7 @@ sptr_graph chase::getSubGraph(sptr_graph graph, std::set< Vertex * > vertexes)
                     auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
                     if(id)
                         ret->addEdge(make_shared<WeightedEdge>(i,j,
-                            make_shared<Identifier>(id->getDeclaration())));
+                                                               make_shared<Identifier>(id->getDeclaration())));
                 }
                 else {
                     ret->addEdge(make_shared<Edge>(i, j));
@@ -109,7 +111,7 @@ sptr_graph chase::getSubGraph(sptr_graph graph, std::set< Vertex * > vertexes)
                     auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
                     if(id)
                         ret->addEdge(make_shared<WeightedEdge>(j,i,
-                            make_shared<Identifier>(id->getDeclaration())));
+                                                               make_shared<Identifier>(id->getDeclaration())));
                 }
                 else {
                     ret->addEdge(make_shared<Edge>(j,i));

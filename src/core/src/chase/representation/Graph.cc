@@ -53,10 +53,10 @@ std::string Graph::getString() {
 
     // Print edges.
     ret += "Edges:\n";
-    std::set< Edge * >::iterator it;
-    for( it = _edges.begin(); it != _edges.end(); ++it )
+
+    for( auto it = _edges.begin(); it != _edges.end(); ++it )
     {
-        Edge * e = (*it);
+        Edge * e = it->get();
         ret += "\t";
         ret += e->getString();
         ret += "\n";
@@ -67,7 +67,7 @@ std::string Graph::getString() {
 
 void Graph::associateVertex(unsigned int index, sptr_vert vertex) {
     if(index < _size) {
-        _vertexes[index] = vertex.get();
+        _vertexes[index] = vertex;
         vertex->setParent(this);
     }
     else messageError("Error creating the graph. Index out of size.");
@@ -75,7 +75,7 @@ void Graph::associateVertex(unsigned int index, sptr_vert vertex) {
 }
 
 void Graph::addEdge(sptr_edge edge) {
-    _edges.insert(edge.get());
+    _edges.insert(edge);
     edge->setParent(this);
 
     // Update the adjacency matrix.
@@ -102,7 +102,8 @@ sptr_edge Graph::getEdge(unsigned int source, unsigned int target) {
 
     for(auto it = _edges.begin(); it != _edges.end(); ++it )
     {
-        Edge * edge = *it;
+        Edge * edge = it->get();
+
         if(edge->getSource() == source && edge->getTarget() == target)
             return shared_ptr<Edge>(edge);
     }
@@ -130,10 +131,9 @@ std::string Graph::getGraphViz() {
         ret = "graph ";
     ret += _name->getString() + "{\n";
 
-    std::set< Edge * >::iterator it;
-    for(it = _edges.begin(); it != _edges.end(); ++it)
+    for(auto it = _edges.begin(); it != _edges.end(); ++it)
     {
-        Edge * e = *it;
+        Edge * e = it->get();
         unsigned int s = e->getSource();
         unsigned int t = e->getTarget();
         ret += "\t" + std::to_string(s);
@@ -146,12 +146,13 @@ std::string Graph::getGraphViz() {
     return ret;
 }
 
-std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id) {
+std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id)
+{
     std::set< unsigned int> adjList;
 
     for(auto it = _edges.begin(); it != _edges.end(); ++it)
     {
-        Edge * edge = *it;
+        Edge * edge = it->get();
         if(edge->getSource() == id)
             adjList.insert(edge->getTarget());
         if(! _directed && edge->getTarget() == id )
@@ -163,7 +164,6 @@ std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id) {
 
 int Graph::getVertexIndex(std::string name)
 {
-
     for (size_t i = 0; i < _vertexes.size(); ++i)
     {
         if( name == _vertexes[i]->getName()->getString() )

@@ -49,5 +49,13 @@ nodeType ChaseObject::IsA()
     return _node_type;
 }
 
+sptr_chase ChaseObject::clone() {
+    return chase::ChaseObject::sptr_chase();
+}
+
+std::string ChaseObject::getString() {
+    return std::__cxx11::string();
+}
+
 
 

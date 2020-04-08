@@ -283,8 +283,11 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
         vertexes.insert(v.get());
     }
 
+    std::cout << _architecture->getString() << std::endl;
     std::shared_ptr<Graph> subgraph =
             chase::getSubGraph(_architecture, vertexes);
+
+    std::cout << _architecture->getString() << std::endl;
 
     for(auto sit = sources.begin(); sit != sources.end(); ++sit)
     {
@@ -302,7 +305,7 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
             visited.push_back(source_id);
 
             findAllPathsBetweenNodes(
-                    subgraph, visited, target_id, result);
+                    subgraph, visited, target_id,  result);
 
             for(auto lit = result.begin(); lit != result.end(); ++lit)
             {
@@ -340,6 +343,7 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
                 /// include the formula in the sys init.
                 // _gr1_sys_init.insert(formula);
                 formula = Always(formula);
+
                 _gr1_sys_safety.insert(formula);
             }
         }
@@ -384,22 +388,26 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
     {
         int target_id = _architecture->getVertexIndex(*tit);
 
-
-
         for( auto sit = sources.begin(); sit != sources.end(); ++sit )
         {
             int source_id = _architecture->getVertexIndex(*sit);
             std::list< std::vector< unsigned > > result;
             std::vector< unsigned > visited;
             visited.push_back(source_id);
-            findAllPathsBetweenNodes(_architecture, visited, target_id, result);
+            findAllPathsBetweenNodes(
+                    _architecture, visited, target_id, result);
+
+            std::cout << result.size() << std::endl;
 
             for( auto rit = result.begin(); rit != result.end(); ++rit )
             {
-                if(consequence == nullptr)
+                if(consequence.get() == nullptr) {
                     consequence = _pathDoesExist(*rit);
-                else
+                    std::cout << consequence->getString() << std::endl;
+                } else {
                     consequence = Or(consequence, _pathDoesExist(*rit));
+                    std::cout << consequence->getString() << std::endl;
+                }
             }
         }
     }
@@ -720,7 +728,8 @@ void DesignProblem::_keepConnectionStable(SpecFunction *spec)
 
             std::list< std::vector< unsigned > > result;
 
-            findAllPathsBetweenNodes(_architecture, visited, target_id, result);
+            findAllPathsBetweenNodes(
+                    _architecture, visited, target_id, result);
 
             for( auto vit = result.begin(); vit != result.end(); ++vit)
             {

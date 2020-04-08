@@ -168,7 +168,7 @@ chase::Var(std::shared_ptr<Type> type, std::shared_ptr<Name> name,
 }
 
 std::shared_ptr<Boolean> chase::Bool() {
-    return std::shared_ptr<Boolean>();
+    return std::make_shared<Boolean>();
 }
 
 std::shared_ptr<Name> chase::Nam(std::string n) {

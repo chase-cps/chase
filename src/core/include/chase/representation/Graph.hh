@@ -251,9 +251,9 @@ namespace chase {
         /// @brief Adjacency matrix of the graph.
         AdjMatrix _matrix;
         /// @brief Set of edges of the graph.
-        std::set< Edge * > _edges;
+        std::set< std::shared_ptr<Edge> > _edges;
         /// @brief Set of nodes in the graph.
-        std::vector< Vertex * > _vertexes;
+        std::vector< std::shared_ptr<Vertex> > _vertexes;
 
         /// @brief The number of vertexes in the graph.
         unsigned int _size;

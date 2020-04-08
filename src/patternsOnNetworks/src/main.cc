@@ -5,12 +5,14 @@
  * */
 
 #include "main.hh"
+#include <unistd.h>
 
 using namespace patternsOnNetworks;
 using namespace chase;
 
 int main( int argc, char * argv[] )
 {
+
     Params * parameters = parseCmdLine(argc, argv);
 
     if(parameters == nullptr) return -1;
@@ -113,7 +115,8 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
     {
         printHelp();
         f.close();
-        std::cout << "fileIn: " << parameters->fileIn.c_str() << std::endl;
+        std::cout << "fileIn: " << parameters->fileIn.c_str() <<
+        " does not exist" << std::endl;
         exit(-1);
     }
     f.close();

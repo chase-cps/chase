@@ -60,6 +60,7 @@ WeightedEdge::WeightedEdge(unsigned int source, unsigned int target,
         Edge(source, target),
         _weight(weight)
 {
+    _node_type = graph_weighted_edge_node;
     weight->setParent(this);
 }
 

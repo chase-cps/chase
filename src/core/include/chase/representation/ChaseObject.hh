@@ -54,6 +54,7 @@ namespace chase {
         unaryTemporalOperation_node,
         binaryTemporalOperation_node,
         graph_edge_node,
+        graph_weighted_edge_node,
         graph_vertex_node,
         graph_node
     };
@@ -95,7 +96,7 @@ namespace chase {
 
             /// @brief Print the object into a string.
             /// @return a String representation of the object.
-            virtual std::string getString() = 0;
+            virtual std::string getString();
 
             sptr_chase clone();
 

@@ -447,15 +447,18 @@ void DesignProblem::_completeCommandState()
     for( auto cit = components.begin(); cit != components.end(); ++cit)
     {
         std::string comp_name = (*cit).first;
-
-        auto state = _stateVariables.find(comp_name)->second;
-        auto command = _commandVariables.find(comp_name)->second;
+        std::cout << comp_name << std::endl;
 
         auto found = _offTimer.find(comp_name);
         auto controllable = _commandVariables.find(comp_name);
 
         if(found == _offTimer.end() && controllable != _commandVariables.end())
         {
+            auto state =
+                    _stateVariables.find(comp_name)->second;
+            auto command =
+                    _commandVariables.find(comp_name)->second;
+
             auto state_prop = Prop(state);
             auto command_prop = Prop(command);
 
@@ -470,6 +473,11 @@ void DesignProblem::_completeCommandState()
         found = _onTimer.find(comp_name);
         if( found == _onTimer.end() && controllable != _commandVariables.end())
         {
+            auto state =
+                    _stateVariables.find(comp_name)->second;
+            auto command =
+                    _commandVariables.find(comp_name)->second;
+
             auto state_prop = Prop(state);
             auto command_prop = Prop(command);
 
