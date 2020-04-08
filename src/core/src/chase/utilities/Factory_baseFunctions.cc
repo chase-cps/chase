@@ -128,29 +128,53 @@ std::shared_ptr<LargeBooleanFormula> chase::LargeAnd(std::vector<std::shared_ptr
 }
 
 std::shared_ptr<LargeBooleanFormula> chase::LargeOr(std::vector<std::shared_ptr<LogicFormula>> &formulas) {
-    auto ret = std::shared_ptr<LargeBooleanFormula>(new LargeBooleanFormula(op_or));
+    auto ret = std::make_shared<LargeBooleanFormula>(op_or);
     for(auto f = formulas.begin(); f != formulas.end(); ++f)
         ret->operands.push_back(*f);
     return ret;
 }
 
 std::shared_ptr<Identifier> chase::Id( std::shared_ptr<DataDeclaration> declaration ) {
-    return std::shared_ptr<Identifier>(new Identifier(declaration));
+    return std::make_shared<Identifier>(declaration);
 }
 
 std::shared_ptr<IntegerValue> chase::IntVal(int n) {
-    return std::shared_ptr<IntegerValue>(new IntegerValue(n));
+    return std::make_shared<IntegerValue>(n);
 }
 
 std::shared_ptr<RealValue> chase::RealVal(double r) {
-    return std::shared_ptr<RealValue>(new RealValue(r));
+    return std::make_shared<RealValue>(r);
 }
 
 std::shared_ptr<BooleanValue> chase::BoolVal(bool b)
 {
-    return std::shared_ptr<BooleanValue>(new BooleanValue(b));
+    return std::make_shared<BooleanValue>(b);
 }
 
 std::shared_ptr<BinaryTemporalFormula> chase::Until(std::shared_ptr<LogicFormula>op1, std::shared_ptr<LogicFormula>op2) {
-    return std::shared_ptr<BinaryTemporalFormula>(new BinaryTemporalFormula(op_until, op1, op2));
+    return std::make_shared<BinaryTemporalFormula>(op_until, op1, op2);
+}
+
+
+
+std::shared_ptr<Integer> chase::Int( int l, int r ) {
+    return std::make_shared<Integer>(l, r);
+}
+
+std::shared_ptr<Variable>
+chase::Var(std::shared_ptr<Type> type, std::shared_ptr<Name> name,
+    causality_t causality) {
+    return std::make_shared<Variable>(type, name, causality);
+}
+
+std::shared_ptr<Boolean> chase::Bool() {
+    return std::shared_ptr<Boolean>();
+}
+
+std::shared_ptr<Name> chase::Nam(std::string n) {
+    return std::make_shared<Name>(n);
+}
+
+std::shared_ptr<Name> chase::Nam(const char *n) {
+    return Nam(std::string(n));
 }

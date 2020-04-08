@@ -76,7 +76,7 @@ set(chase_library_backends
 set(chase_library
         ${chase_library_representation}
         ${chase_library_utilities}
-        #${chase_library_backends}
+        ${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
         src/chase/representation/Contract_algebra.cc

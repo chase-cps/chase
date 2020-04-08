@@ -20,6 +20,7 @@ ChaseObject::ChaseObject() :
     _parent(nullptr),
     _node_type(object_node)
 {
+
 }
 
 ChaseObject::~ChaseObject()

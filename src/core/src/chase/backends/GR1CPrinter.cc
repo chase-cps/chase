@@ -44,15 +44,15 @@ void GR1CPrinter::_printDeclarations()
         vit != _contract->declarations.end(); ++vit)
     {
         if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable *>(*vit);
+        auto var = reinterpret_cast<Variable *>(vit->get());
         if( var->getCausality() == input )
         {
             std::string name = var->getName()->getString();
-            Type * type = var->getType();
+            std::shared_ptr<Type> type = var->getType();
             fout << "\t" << name;
             if(type->IsA() == integer_node)
             {
-                auto integ = reinterpret_cast<Integer *>(type);
+                auto integ = reinterpret_cast<Integer *>(type.get());
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
@@ -70,15 +70,15 @@ void GR1CPrinter::_printDeclarations()
          vit != _contract->declarations.end(); ++vit)
     {
         if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable *>(*vit);
+        auto var = reinterpret_cast<Variable *>(vit->get());
         if( var->getCausality() == output )
         {
             std::string name = var->getName()->getString();
-            Type * type = var->getType();
+            std::shared_ptr< Type > type = var->getType();
             fout << "\t" << name;
             if(type->IsA() == integer_node)
             {
-                auto integ = reinterpret_cast<Integer *>(type);
+                auto integ = reinterpret_cast<Integer *>(type.get());
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
@@ -103,7 +103,7 @@ void GR1CPrinter::_printInit() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -137,7 +137,7 @@ void GR1CPrinter::_printInit() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -171,7 +171,7 @@ void GR1CPrinter::_printSafety() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -182,14 +182,15 @@ void GR1CPrinter::_printSafety() {
             if( lbf->operands[f]->IsA() == unaryTemporalOperation_node )
             {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula*>(lbf->operands[f]);
+                        reinterpret_cast<UnaryTemporalFormula*>(
+                                lbf->operands[f].get());
                 if(uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if(uto->getFormula()->IsA() == unaryTemporalOperation_node)
                 {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
-                            uto->getFormula());
+                            uto->getFormula().get());
                     if( inner->getOp() == op_future )
                         continue; // Is a Liveness Property.
                 }
@@ -214,7 +215,7 @@ void GR1CPrinter::_printSafety() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
         if (lbf->getOp() != op_and)
             messageError("Not a GR1 Specification.");
 
@@ -222,13 +223,14 @@ void GR1CPrinter::_printSafety() {
         for (size_t f = 0; f < lbf->operands.size(); ++f) {
             if (lbf->operands[f]->IsA() == unaryTemporalOperation_node) {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula *>(lbf->operands[f]);
+                        reinterpret_cast<UnaryTemporalFormula *>(
+                                lbf->operands[f].get());
                 if (uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if (uto->getFormula()->IsA() == unaryTemporalOperation_node) {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
-                            uto->getFormula());
+                            uto->getFormula().get());
                     if (inner->getOp() == op_future)
                         continue; // Is a Liveness Property.
                 }
@@ -254,7 +256,7 @@ void GR1CPrinter::_printLiveness() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
         if (lbf->getOp() != op_and)
             messageError("Not a GR1 Specification.");
 
@@ -263,13 +265,14 @@ void GR1CPrinter::_printLiveness() {
         for (size_t f = 0; f < lbf->operands.size(); ++f) {
             if (lbf->operands[f]->IsA() == unaryTemporalOperation_node) {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula *>(lbf->operands[f]);
+                        reinterpret_cast<UnaryTemporalFormula *>(
+                                lbf->operands[f].get());
                 if (uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if (uto->getFormula()->IsA() == unaryTemporalOperation_node) {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
-                            uto->getFormula());
+                            uto->getFormula().get());
                     if (inner->getOp() == op_future) {
                         if(_curr != "")
                             _curr += "\n\t& ";
@@ -293,7 +296,7 @@ void GR1CPrinter::_printLiveness() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -305,14 +308,15 @@ void GR1CPrinter::_printLiveness() {
             if( lbf->operands[f]->IsA() == unaryTemporalOperation_node )
             {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula*>(lbf->operands[f]);
+                        reinterpret_cast<UnaryTemporalFormula*>(
+                                lbf->operands[f].get());
                 if(uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if(uto->getFormula()->IsA() == unaryTemporalOperation_node)
                 {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
-                            uto->getFormula());
+                            uto->getFormula().get());
                     if( inner->getOp() == op_future ) {
                         if(_curr != "")
                             _curr += "\n\t& ";

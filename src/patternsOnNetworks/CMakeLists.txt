@@ -37,6 +37,7 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 
 add_executable(patternsOnNetwork ${pon_tool_srcs})
+
 add_dependencies(patternsOnNetwork chasecore)
 add_dependencies(patternsOnNetwork antlr4_static)
 

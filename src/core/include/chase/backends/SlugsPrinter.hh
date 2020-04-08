@@ -67,7 +67,7 @@ namespace chase {
         /// @brief Function managing the visit when an object is generic.
         /// @param o A pointer to the object to be visited.
         /// @return The return value of the visitor.
-        int _continueVisit( ChaseObject *o );
+        int _continueVisit( ChaseObject &o );
 
     };
 

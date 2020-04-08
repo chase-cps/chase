@@ -198,5 +198,34 @@ namespace chase
     /// @return Pointer to the created boolean value object.
     std::shared_ptr<BooleanValue> BoolVal( bool b );
 
+    /// @brief Factory to create a Boolean type.
+    /// @return Pointer to the boolean type object.
+    std::shared_ptr< Boolean > Bool();
+
+    /// @brief Factory to create a Integer type.
+    /// @param l
+    /// @param r
+    /// @return Pointer to the integer type object.
+    std::shared_ptr< Integer > Int( int l, int r );
+
+    /// @brief Factory to create a Variable declaration.
+    /// @param type Type of the variable.
+    /// @param name Name of the variable.
+    /// @param causality Causality of the variable.
+    /// @return Pointer to the variable declaration object.
+    std::shared_ptr< Variable > Var(std::shared_ptr< Type > type,
+                                    std::shared_ptr< Name > name,
+                                    causality_t causality = generic );
+
+    /// @brief Factory to create a Name.
+    /// @param n The string of the name to create.
+    /// @return Pointer to the created name object.
+    std::shared_ptr<Name> Nam(std::string n);
+
+    /// @brief Factory to create a Name.
+    /// @param n The string of the name to create.
+    /// @return Pointer to the created name object.
+    std::shared_ptr<Name> Nam( const char * n);
+
 
 }

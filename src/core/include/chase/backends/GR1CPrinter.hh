@@ -60,7 +60,7 @@ namespace chase {
         void _printSafety();
         void _printLiveness();
 
-        int _continueVisit( ChaseObject *o );
+        int _continueVisit( ChaseObject &o );
 
     };
 

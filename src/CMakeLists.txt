@@ -6,5 +6,5 @@
 ###############################################################################
 
 add_subdirectory(core)
-#add_subdirectory(patternsOnNetworks)
+add_subdirectory(patternsOnNetworks)
 #add_subdirectory(ltl_tool)

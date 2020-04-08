@@ -62,31 +62,33 @@ Contract * DesignProblem::_generateContract()
 
 
     // Perform Union of all the sets (ENV, SYS, INIT) for assumptions
-    std::set< chase::LogicFormula * > assump;
+    std::set< std::shared_ptr< chase::LogicFormula > > assump;
 
     assump.insert(_gr1_env_init.begin(), _gr1_env_init.end());
     assump.insert(_gr1_env_safety.begin(), _gr1_env_safety.end());
     assump.insert(_gr1_env_liveness.begin(), _gr1_env_liveness.end());
 
     if(! assump.empty() ) {
-        auto large = new LargeBooleanFormula();
+        std::shared_ptr< LargeBooleanFormula > large(new
+                LargeBooleanFormula());
         for (auto f : assump) {
-            large->addOperand(f);
+            large->addOperand(std::shared_ptr<LogicFormula>(f));
         }
         _contract->addAssumptions(logic, large);
     }
 
     // Perform Union of all the sets (ENV, SYS, INIT) for Guarantees.
-    std::set< chase::LogicFormula * > guarant;
+    std::set< std::shared_ptr< chase::LogicFormula > > guarant;
 
     guarant.insert(_gr1_sys_init.begin(), _gr1_sys_init.end());
     guarant.insert(_gr1_sys_safety.begin(), _gr1_sys_safety.end());
     guarant.insert(_gr1_sys_liveness.begin(), _gr1_sys_liveness.end());
 
     if(! guarant.empty() ) {
-        auto large = new LargeBooleanFormula();
+        std::shared_ptr< LargeBooleanFormula > large(
+                new LargeBooleanFormula());
         for (auto f : guarant) {
-            large->addOperand(f);
+            large->addOperand(std::shared_ptr<LogicFormula>(f));
         }
         _contract->addGuarantees(logic, large);
     }
@@ -96,7 +98,8 @@ Contract * DesignProblem::_generateContract()
 
 void DesignProblem::_createArchitecture() {
     unsigned int nodes = components.size();
-    _architecture = new Graph(nodes, false, new Name("architecture"));
+    _architecture =
+            std::make_shared<Graph>(nodes, false, Nam("architecture"));
 
 
 
@@ -104,8 +107,8 @@ void DesignProblem::_createArchitecture() {
     std::map<std::string, Component *>::iterator cit;
     unsigned int node_index = 0;
     for (cit = components.begin(); cit != components.end(); ++cit) {
-        std::string node_name = (*cit).first;
-        auto v = new Vertex(new Name(node_name));
+        std::string node_name((*cit).first);
+        std::shared_ptr<Vertex> v(new Vertex(Nam(node_name)));
         _architecture->associateVertex(node_index, v);
         ++node_index;
     }
@@ -124,7 +127,7 @@ void DesignProblem::_createArchitecture() {
         int target_id = _architecture->getVertexIndex(target);
         if (target_id < 0) messageError("Vertex not found: " + target);
 
-        Edge *edge = new Edge(source_id, target_id);
+        std::shared_ptr< Edge > edge(new Edge(source_id, target_id));
 
         _architecture->addEdge(edge);
     }
@@ -148,15 +151,16 @@ void DesignProblem::_createArchitecture() {
         if (sw_id < 0) messageError("Vertex not found: " + sw);
 
 
-        auto * edge_1 = new Edge(source_id, sw_id );
-        auto * edge_2 = new Edge(sw_id, target_id );
+        std::shared_ptr< Edge > edge_1(new Edge(source_id, sw_id ));
+        std::shared_ptr< Edge > edge_2(new Edge(sw_id, target_id ));
 
         _architecture->addEdge(edge_1);
         _architecture->addEdge(edge_2);
     }
 
     // add the graph to the contract.
-    std::pair< semantic_domain , Specification * > p(graph, _architecture);
+    std::pair< semantic_domain , std::shared_ptr<Graph> >
+            p(graph, _architecture);
     _architecture->setParent(_contract);
     _contract->assumptions.insert(p);
 
@@ -276,12 +280,12 @@ void DesignProblem::_generateComponentsVariables()
             std::replace(var_name.begin(), var_name.end(), ' ', '_');
             var_name += "_state";
 
-            auto * state_var = new Variable(
-                    new Boolean(),
-                    new Name(var_name),
-                    input);
+            std::shared_ptr< Variable > state_var(new Variable(
+                    Bool(),
+                    Nam(var_name),
+                    input));
 
-            std::pair< std::string, chase::Variable * >
+            std::pair< std::string, std::shared_ptr<Variable> >
                     p(component_name,state_var);
 
             _stateVariables.insert(p);
@@ -296,12 +300,12 @@ void DesignProblem::_generateComponentsVariables()
             std::replace(var_name.begin(), var_name.end(), ' ', '_');
             var_name += "_command";
 
-            auto * comm_var = new Variable(
-                    new Boolean(),
-                    new Name(var_name),
-                    output);
+            std::shared_ptr< Variable > comm_var (new Variable(
+                    Bool(),
+                    Nam(var_name),
+                    output));
 
-            std::pair< std::string, chase::Variable * >
+            std::pair< std::string, std::shared_ptr<Variable> >
                     p(component_name, comm_var);
 
             _commandVariables.insert(p);
@@ -444,17 +448,16 @@ void DesignProblem::_completeCommandState()
     {
         std::string comp_name = (*cit).first;
 
-        Variable * state = _stateVariables.find(comp_name)->second;
-        Variable * command = _commandVariables.find(comp_name)->second;
+        auto state = _stateVariables.find(comp_name)->second;
+        auto command = _commandVariables.find(comp_name)->second;
 
-        std::map< std::string, chase::Variable *>::iterator found;
-        found = _offTimer.find(comp_name);
-        std::map< std::string, chase::Variable *>::iterator controllable;
-        controllable = _commandVariables.find(comp_name);
+        auto found = _offTimer.find(comp_name);
+        auto controllable = _commandVariables.find(comp_name);
+
         if(found == _offTimer.end() && controllable != _commandVariables.end())
         {
-            auto state_prop = new Proposition(new Identifier(state));
-            auto command_prop = new Proposition(new Identifier(command));
+            auto state_prop = Prop(state);
+            auto command_prop = Prop(command);
 
             auto formula = Always(
                     Implies(
@@ -467,8 +470,8 @@ void DesignProblem::_completeCommandState()
         found = _onTimer.find(comp_name);
         if( found == _onTimer.end() && controllable != _commandVariables.end())
         {
-            auto state_prop = new Proposition(new Identifier(state));
-            auto command_prop = new Proposition(new Identifier(command));
+            auto state_prop = Prop(state);
+            auto command_prop = Prop(command);
 
             auto formula = Always(Implies(command_prop, Next(state_prop)));
 
