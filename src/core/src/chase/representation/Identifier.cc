@@ -54,7 +54,9 @@ void Identifier::setDeclaration( sptr_datadecl d)
 
 std::string Identifier::getString()
 {
-    return _declaration->getName()->getString();
+    return _declaration != nullptr ? 
+        _declaration->getName()->getString() : 
+        "Identifier declaration is null";
 }
 
 int Identifier::accept_visitor( BaseVisitor &v )

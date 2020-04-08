@@ -15,41 +15,45 @@ import chasecorebnd
 #                         np_now,
 #                         new UnaryTemporalFormula(op_next, np_next)));
 
+b= chasecorebnd.Boolean()
 
-bv = chasecorebnd.BooleanValue()
-print(bv.getString())
-bv.setValue(True)
-print(bv.getString())
+state = chasecorebnd.Variable(b, chasecorebnd.Name('test'), chasecorebnd.generic)
+id_now = chasecorebnd.Identifier(state)
+id_next = chasecorebnd.Identifier(state)
+p_now = chasecorebnd.Proposition(id_now)
+p_next = chasecorebnd.Proposition(id_next)
+np_now = chasecorebnd.UnaryBooleanFormula(chasecorebnd.op_not, p_now)
+np_next = chasecorebnd.UnaryBooleanFormula(chasecorebnd.op_not, p_next)
 
-iv= chasecorebnd.IntegerValue()
-print(iv.getString())
-iv.setValue(4)
-print(iv.getString())
+formula = chasecorebnd.UnaryTemporalFormula(
+    chasecorebnd.op_globally,
+    chasecorebnd.BinaryBooleanFormula(
+        chasecorebnd.op_implies,
+        np_now,
+        chasecorebnd.UnaryTemporalFormula(chasecorebnd.op_next, np_next)
+    )
+)
 
-rv= chasecorebnd.RealValue()
-print(rv.getString())
-rv.setValue(4)
-print(rv.getString())
+print(formula.getString())
 
-r = chasecorebnd.Range(1, 3)
-i = chasecorebnd.Integer(r)
+graph = chasecorebnd.Graph(4)
+graph.addEdge(chasecorebnd.Edge(0,1))
+graph.addEdge(chasecorebnd.Edge(0,2))
+graph.addEdge(chasecorebnd.Edge(2,3))
+print(graph.getString())
 
-print(r.getString())
-print(i.getRange().getString())
+v0 = chasecorebnd.Vertex(chasecorebnd.Name('0'))
+v1 = chasecorebnd.Vertex(chasecorebnd.Name('1'))
+v2 = chasecorebnd.Vertex(chasecorebnd.Name('2'))
+v3 = chasecorebnd.Vertex(chasecorebnd.Name('3'))
 
+graph.associateVertex(0, v0)
+graph.associateVertex(1, v1)
+graph.associateVertex(2, v2)
+graph.associateVertex(3, v3)
 
-n = chasecorebnd.Name('test')
-n1 = chasecorebnd.Name(n)
-b = chasecorebnd.Boolean()
+vertexes = {v1, v2}
 
-state = chasecorebnd.Constant(b, n1, bv)
-print(state.getString())
-iden = chasecorebnd.Identifier(state)
-print(iden.getString())
+print(chasecorebnd.getSubGraph(graph, vertexes).getString())
 
-state1 = chasecorebnd.Variable(i, chasecorebnd.Name('i'), chasecorebnd.generic)
-print(state1.getString())
-
-exp = chasecorebnd.Expression(chasecorebnd.op_eq, iden, iv)
-print(exp.getString())
 

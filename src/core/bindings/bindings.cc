@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "Chase.hh"
+#include "utilities/GraphUtilities.hh"
+
 
 namespace py = pybind11;
 using namespace chase;
@@ -16,11 +18,14 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def(py::init<std::string &>(), py::arg("s"))
         .def(py::init<const Name &>(), py::arg("o"))
         .def("accept_visitor", &Name::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &Name::getString)
         .def("changeName", &Name::changeName, 
             py::arg("name"))
         .def("clone", &Name::clone);
+
+    py::class_<Contract, std::shared_ptr<Contract>,
+        ChaseObject>(m, "Contract");
 
     /**
     *  OPERATORS 
@@ -80,7 +85,7 @@ PYBIND11_MODULE(chasecorebnd, m) {
         (m, "Boolean")
         .def(py::init<>())
         .def("accept_visitor", &Boolean::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &Boolean::getString)
         .def("clone", &Boolean::clone);
 
@@ -89,14 +94,14 @@ PYBIND11_MODULE(chasecorebnd, m) {
         SimpleType>(m, "Integer")
         .def(py::init<>())
         .def(py::init<const int &, const int &>(),
-            py::arg("l"), py::arg("r"))
+            py::arg("l").none(false), py::arg("r").none(false))
         .def(py::init<std::shared_ptr<Range> >(), 
             py::arg("r").none(false))
         .def("isSigned", &Integer::isSigned)
         .def("getRange", &Integer::getRange, 
             py::return_value_policy::reference)
         .def("accept_visitor", &Integer::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &Integer::getString)
         .def("clone", &Integer::clone);
 
@@ -106,9 +111,9 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("getRange", &Real::getRange, 
             py::return_value_policy::reference)
         .def("setRange", &Real::setRange,
-            py::arg("r"))
+            py::arg("r").none(false))
         .def("accept_visitor", &Real::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &Real::getString)
         .def("clone", &Real::clone);
 
@@ -128,25 +133,26 @@ PYBIND11_MODULE(chasecorebnd, m) {
     py::class_<Range, std::shared_ptr<Range>, Value>(m, "Range")
         .def(py::init<>())
         .def(py::init<const int &, const int &>(),
-            py::arg("lbound"), py::arg("rbound"))
+            py::arg("lbound").none(false), 
+            py::arg("rbound").none(false))
         .def("getType", &Range::getType, 
             py::return_value_policy::reference)
         .def("setRightValue", &Range::setRightValue,
-            py::arg("rbound"))
+            py::arg("rbound").none(false))
         .def("setLeftValue", &Range::setLeftValue,
-            py::arg("lbound"))
+            py::arg("lbound").none(false))
         .def("getLeftValue", &Range::getLeftValue)
         .def("getRightValue", &Range::getRightValue)
         .def("getString", &Range::getString)
         .def("accept_visitor", &Range::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("clone", &Range::clone);
 
     //  Identifier Binding
     py::class_<Identifier, std::shared_ptr<Identifier>, 
         Value>(m, "Identifier")
         .def(py::init<std::shared_ptr<DataDeclaration>>(),
-            py::arg("d"))
+            py::arg("d")=nullptr)
         .def(py::init<const Identifier &>(), py::arg("i"))
         .def("getDeclaration", &Identifier::getDeclaration)
         .def("setDeclaration", &Identifier::setDeclaration, 
@@ -160,21 +166,21 @@ PYBIND11_MODULE(chasecorebnd, m) {
     Value>(m, "Expression")
         .def(py::init<>())
         .def(py::init<Operator, std::shared_ptr<Value>,
-            std::shared_ptr<Value>>(), py::arg("op"),
-            py::arg("op1"), py::arg("op2"))
+            std::shared_ptr<Value>>(), py::arg("op").none(false),
+            py::arg("op1").none(false), py::arg("op2")=nullptr)
         .def("getOperator", &Expression::getOperator)
         .def("getOp1", &Expression::getOp1)
         .def("getOp2", &Expression::getOp2)
         .def("setOperator", &Expression::setOperator, 
-            py::arg("op"))
+            py::arg("op").none(false))
         .def("setOp1", &Expression::setOp1,
-            py::arg("op"))
+            py::arg("op").none(false))
         .def("setOp2", &Expression::setOp2,
-            py::arg("op"))
+            py::arg("op").none(false))
         .def("getString", &Expression::getString)
         .def("getType", &Expression::getType)
         .def("accept_visitor", &Expression::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("clone", &Expression::clone);
 
 
@@ -184,12 +190,12 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def(py::init<const bool &>(),
             py::arg("value") = false)
         .def(py::init<const BooleanValue &>(),
-            py::arg("o"))
+            py::arg("o").none(false))
         .def("getValue", &BooleanValue::getValue)
         .def("setValue", &BooleanValue::setValue,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("accept_visitor", &BooleanValue::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &BooleanValue::getString)
         .def("clone", &BooleanValue::clone);
 
@@ -199,12 +205,12 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def(py::init<const int64_t &>(),
             py::arg("value") = 0)
         .def(py::init<const IntegerValue &>(),
-            py::arg("o"))
+            py::arg("o").none(false))
         .def("getValue", &IntegerValue::getValue)
         .def("setValue", &IntegerValue::setValue,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("accept_visitor", &IntegerValue::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &IntegerValue::getString)
         .def("clone", &IntegerValue::clone);
 
@@ -214,12 +220,12 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def(py::init<const double &>(),
             py::arg("value") = 0)
         .def(py::init<const RealValue &>(),
-            py::arg("o"))
+            py::arg("o").none(false))
         .def("getValue", &RealValue::getValue)
         .def("setValue", &RealValue::setValue,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("accept_visitor", &RealValue::accept_visitor,
-            py::arg("v"))
+            py::arg("v").none(false))
         .def("getString", &RealValue::getString)
         .def("clone", &RealValue::clone);
 
@@ -242,9 +248,12 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("getString", &Constant::getString)
         .def("getValue", &Constant::getValue)
         .def("setValue", &Constant::setValue,
-            py::arg("value"))
+            py::arg("value").none(false))
+        .def("accept_visitor", &Constant::accept_visitor,
+            py::arg("v").none(false))
         .def("clone", &Constant::clone);
 
+    // Causality Enum
     py::enum_<chase::causality_t>(m, "causality_t")
         .value("generic", chase::causality_t::generic)
         .value("input", chase::causality_t::input)
@@ -259,12 +268,262 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def(py::init<std::shared_ptr<Type> &, 
             std::shared_ptr<Name> &,
             causality_t &>(), py::arg("type"), 
-            py::arg("name"), py::arg("causality_t"))
+            py::arg("name"), py::arg("causality_t")=generic)
         .def("getString", &Variable::getString)
         .def("getCausality", &Variable::getCausality)
         .def("setCausality", &Variable::setCausality, 
-            py::arg("causality"))
+            py::arg("causality").none(false))
+        .def("accept_visitor", &Variable::accept_visitor,
+            py::arg("v").none(false))
         .def("clone", &Variable::clone);
 
+
+    /**
+    *  LOGIC FORMULA BINDINGS
+    */
+
+    py::class_<Specification, std::shared_ptr<Specification>, 
+        ChaseObject>(m, "Specification");
+    py::class_<LogicFormula, std::shared_ptr<LogicFormula>, 
+        Specification>(m, "LogicFormula");
+
+    // BinaryBooleanFormula
+    py::class_<BinaryBooleanFormula, 
+        std::shared_ptr<BinaryBooleanFormula>, 
+        LogicFormula>(m, "BinaryBooleanFormula")
+        .def(py::init<chase::BooleanOperator, 
+            std::shared_ptr<LogicFormula>, 
+            std::shared_ptr<LogicFormula>>(),
+            py::arg("op")=op_and, 
+            py::arg("op1")=nullptr,
+            py::arg("op2")=nullptr)
+        .def("getOp", &BinaryBooleanFormula::getOp)
+        .def("getOp1", &BinaryBooleanFormula::getOp1)
+        .def("getOp2", &BinaryBooleanFormula::getOp2)
+        .def("setOp", &BinaryBooleanFormula::setOp,
+            py::arg("op").none(false))
+        .def("setOp1", &BinaryBooleanFormula::setOp1,
+            py::arg("op1").none(false))
+        .def("setOp2", &BinaryBooleanFormula::setOp2,
+            py::arg("op2").none(false))
+        .def("accept_visitor", &BinaryBooleanFormula::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &BinaryBooleanFormula::getString)
+        .def("clone", &BinaryBooleanFormula::clone);
+    
+    // BinaryTemporalFormula
+    py::class_<BinaryTemporalFormula, 
+        std::shared_ptr<BinaryTemporalFormula>, 
+        LogicFormula>(m, "BinaryTemporalFormula")
+        .def(py::init<chase::TemporalOperator, 
+            std::shared_ptr<LogicFormula>, 
+            std::shared_ptr<LogicFormula>>(),
+            py::arg("op")=op_until, 
+            py::arg("op1")=nullptr,
+            py::arg("op2")=nullptr)
+        .def("getOp", &BinaryTemporalFormula::getOp)
+        .def("getFormula1", &BinaryTemporalFormula::getFormula1)
+        .def("getFormula2", &BinaryTemporalFormula::getFormula2)
+        .def("setOp", &BinaryTemporalFormula::setOp,
+            py::arg("op").none(false))
+        .def("setFormula1", &BinaryTemporalFormula::setFormula1,
+            py::arg("formula1").none(false))
+        .def("setFormula2", &BinaryTemporalFormula::setFormula2,
+            py::arg("formula2").none(false))
+        .def("getString", &BinaryTemporalFormula::getString)
+        .def("accept_visitor", &BinaryTemporalFormula::accept_visitor,
+            py::arg("v").none(false))
+        .def("clone", &BinaryTemporalFormula::clone);
+    
+    // Boolean Constant
+    py::class_<BooleanConstant,
+        std::shared_ptr<BooleanConstant>, 
+        LogicFormula>(m, "BooleanConstant")
+        .def(py::init<bool &>(), py::arg("value")=true)
+        .def("getValue", &BooleanConstant::getValue)
+        .def("accept_visitor", &BooleanConstant::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &BooleanConstant::getString)
+        .def("clone", &BooleanConstant::clone);
+    
+    // LargeBooleanFormula
+    py::class_<LargeBooleanFormula,
+        std::shared_ptr<LargeBooleanFormula>,
+        LogicFormula>(m, "LargeBooleanFormula")
+        .def(py::init<BooleanOperator &>(),
+            py::arg("op")=op_and)
+        .def("getOp", &LargeBooleanFormula::getOp)
+        .def("setOp", &LargeBooleanFormula::setOp,
+            py::arg("op").none(false))
+        .def("addOperand", &LargeBooleanFormula::addOperand,
+            py::arg("f").none(false))
+        .def("getString", &LargeBooleanFormula::getString)
+        .def("accept_visitor", &LargeBooleanFormula::accept_visitor,
+            py::arg("v").none(false))
+        .def("clone", &LargeBooleanFormula::clone);
+
+    // ModalFormula
+    py::class_<ModalFormula,
+        std::shared_ptr<ModalFormula>,
+        LogicFormula>(m, "ModalFormula")
+        .def(py::init<ModalOperator &,
+            std::shared_ptr<LogicFormula>>(),
+            py::arg("op")=op_square, 
+            py::arg("formula")=nullptr)
+        .def("getOperator", &ModalFormula::getOperator)
+        .def("getFormula", &ModalFormula::getFormula)
+        .def("setOperator", &ModalFormula::setOperator,
+            py::arg("op").none(false))
+        .def("setFormula", &ModalFormula::setFormula,
+            py::arg("formula").none(false))
+        .def("getString", &ModalFormula::getString)
+        .def("clone", &ModalFormula::clone);
+
+    // Proposition
+    py::class_<Proposition, 
+        std::shared_ptr<Proposition>,
+        LogicFormula>(m, "Proposition")
+        .def(py::init<>())
+        .def(py::init<std::shared_ptr<Value> &>(),
+            py::arg("v").none(false))
+        .def("getType", &Proposition::getType)
+        .def("getValue", &Proposition::getValue)
+        .def("getName", &Proposition::getName)
+        .def("setValue", &Proposition::setValue,
+            py::arg("v").none(false))
+        .def("setName", &Proposition::setName,
+            py::arg("n").none(false))
+        .def("accept_visitor", &Proposition::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Proposition::getString)
+        .def("clone", &Proposition::clone);
+
+    // UnaryBooleanFormula
+    py::class_<UnaryBooleanFormula,
+        std::shared_ptr<UnaryBooleanFormula>,
+        LogicFormula>(m, "UnaryBooleanFormula")
+        .def(py::init<BooleanOperator &,
+            std::shared_ptr<LogicFormula> &>(),
+            py::arg("op")=op_not,
+            py::arg("op1")=nullptr)
+        .def("getOp", &UnaryBooleanFormula::getOp)
+        .def("getOp1", &UnaryBooleanFormula::getOp1)
+        .def("setOp", &UnaryBooleanFormula::setOp,
+            py::arg("op").none(false))
+        .def("setOp1", &UnaryBooleanFormula::setOp1,
+            py::arg("op1").none(false))
+        .def("accept_visitor", &UnaryBooleanFormula::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &UnaryBooleanFormula::getString)
+        .def("clone", &UnaryBooleanFormula::clone);
+
+    // UnaryTemporalFormula
+    py::class_<UnaryTemporalFormula,
+        std::shared_ptr<UnaryTemporalFormula>,
+        LogicFormula>(m, "UnaryTemporalFormula")
+        .def(py::init<TemporalOperator &,
+            std::shared_ptr<LogicFormula> &>(),
+            py::arg("op")=op_globally,
+            py::arg("op1")=nullptr)
+        .def("getOp", &UnaryTemporalFormula::getOp)
+        .def("getFormula", &UnaryTemporalFormula::getFormula)
+        .def("setOp", &UnaryTemporalFormula::setOp,
+            py::arg("op").none(false))
+        .def("setFormula", &UnaryTemporalFormula::setFormula,
+            py::arg("formula").none(false))
+        .def("accept_visitor", &UnaryTemporalFormula::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &UnaryTemporalFormula::getString)
+        .def("clone", &UnaryTemporalFormula::clone);
+
+    
+    /**
+    * GRAPH BINDINGS
+    */ 
+
+    // Edge  
+    py::class_<Edge, std::shared_ptr<Edge>, ChaseObject>
+        (m, "Edge")
+        .def(py::init<unsigned int &, unsigned int &>(),
+            py::arg("source").none(false), 
+            py::arg("target").none(false))
+        .def("getSource", &Edge::getSource)
+        .def("setSource", &Edge::setSource,
+            py::arg("source").none(false))
+        .def("getTarget", &Edge::getTarget)
+        .def("setTarget", &Edge::setTarget,
+            py::arg("target").none(false))
+        .def("accept_visitor", &Edge::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Edge::getString)
+        .def("clone", &Edge::clone);
+
+    // WeightedEdge
+    py::class_<WeightedEdge, 
+        std::shared_ptr<WeightedEdge>, Edge>
+        (m, "WeightedEdge")
+        .def(py::init<unsigned int &, 
+            unsigned int &,
+            std::shared_ptr<Value> & >(),
+            py::arg("source").none(false), 
+            py::arg("target").none(false),
+            py::arg("weight").none(false))
+        .def("getWeight", &WeightedEdge::getWeight)
+        .def("setWeight", &WeightedEdge::setWeight,
+            py::arg("weight").none(false))
+        .def("getString", &Edge::getString)
+        .def("clone", &Edge::clone);
+    
+    // Vertex
+    py::class_<Vertex, std::shared_ptr<Vertex>,
+        ChaseObject>(m, "Vertex")
+        .def(py::init<std::shared_ptr<Name> &>(),
+            py::arg("name")=nullptr)
+        .def("getName", &Vertex::getName)
+        .def("setName", &Vertex::setName,
+            py::arg("name").none(false))
+        .def("accept_visitor", &Vertex::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Vertex::getString)
+        .def("clone", &Vertex::clone);
+    
+    // Graph
+    py::class_<Graph, std::shared_ptr<Graph>,
+        Specification>(m, "Graph")
+        .def(py::init<unsigned int &, 
+            bool &, std::shared_ptr<Name> &>(),
+            py::arg("size").none(false), 
+            py::arg("directed")=false,
+            py::arg("name")=std::make_shared<Name>("GenericGraph"))
+        .def("accept_visitor", &Graph::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Graph::getString)
+        .def("associateVertex", &Graph::associateVertex,
+            py::arg("index").none(false),
+            py::arg("vertex").none(false))
+        .def("addEdge", &Graph::addEdge,
+            py::arg("edge").none(false))
+        .def("isDirected", &Graph::isDirected)
+        .def("getEdge", &Graph::getEdge,
+            py::arg("source").none(false),
+            py::arg("target").none(false))
+        .def("getVertex", &Graph::getVertex,
+            py::arg("vertex_id").none(false))
+        .def("getSize", &Graph::getSize)
+        .def("getVertexIndex", &Graph::getVertexIndex,
+            py::arg("name").none(false))
+        .def("getName", &Graph::getName)
+        .def("setName", &Graph::setName,
+            py::arg("name"))
+        .def("getGraphViz", &Graph::getGraphViz)
+        .def("getAdjacentNodes", &Graph::getAdjacentNodes,
+            py::arg("id").none(false))
+        .def("clone", &Graph::clone);
+
+    m.def("getSubGraph", &chase::getSubGraph,
+        py::arg("graph"), py::arg("vertexes"));
+    m.def("findAllPathsBetweenNodes", &chase::findAllPathsBetweenNodes,
+        py::arg("graph"), py::arg("visited"),
+        py::arg("end"), py::arg("result"));
 }
 
