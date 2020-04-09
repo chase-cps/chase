@@ -167,6 +167,12 @@ chase::Var(std::shared_ptr<Type> type, std::shared_ptr<Name> name,
     return std::make_shared<Variable>(type, name, causality);
 }
 
+std::shared_ptr<Constant>
+chase::Const(std::shared_ptr<Type> type, std::shared_ptr<Name> name,
+           std::shared_ptr<Value> value) {
+    return std::make_shared<Constant>(type, name, value);
+}
+
 std::shared_ptr<Boolean> chase::Bool() {
     return std::make_shared<Boolean>();
 }

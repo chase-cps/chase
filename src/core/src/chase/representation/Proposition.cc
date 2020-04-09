@@ -97,7 +97,7 @@ std::string Proposition::getString() {
     if( _value->IsA() == identifier_node )
         ret = _name->getString();
     else if( _value->IsA() == expression_node )
-        ret = static_cast< Expression * >(_value.get())->getString();
+        ret = _value->getString();
     return ret;
 }
 

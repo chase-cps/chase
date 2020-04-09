@@ -206,7 +206,7 @@ namespace chase
     /// @param l
     /// @param r
     /// @return Pointer to the integer type object.
-    std::shared_ptr< Integer > Int( int l, int r );
+    std::shared_ptr< Integer > Int( int l = -2147483647, int r = 2147483647);
 
     /// @brief Factory to create a Variable declaration.
     /// @param type Type of the variable.
@@ -216,6 +216,15 @@ namespace chase
     std::shared_ptr< Variable > Var(std::shared_ptr< Type > type,
                                     std::shared_ptr< Name > name,
                                     causality_t causality = generic );
+
+    /// @brief Factory to create a constant declaration.
+    /// @param type Type of the constant.
+    /// @param name Name of the constant.
+    /// @param value Value of the constant.
+    /// @return Pointer to the constant declaration object.
+    std::shared_ptr< Constant > Const(std::shared_ptr< Type > type,
+                                    std::shared_ptr< Name > name,
+                                    std::shared_ptr< Value > value );
 
     /// @brief Factory to create a Name.
     /// @param n The string of the name to create.
