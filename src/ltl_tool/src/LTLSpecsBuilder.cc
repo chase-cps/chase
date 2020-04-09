@@ -14,6 +14,8 @@ using namespace chase;
 using namespace ltl_tool;
 using namespace antlr4;
 
+#include "utilities/Factory.hh"
+
 LTLSpecsBuilder::LTLSpecsBuilder() :
     _system(nullptr),
     _currContract(nullptr)
@@ -65,32 +67,33 @@ LTLSpecsBuilder::visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) {
 antlrcpp::Any
 LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
     std::string name = ctx->ID()->getText();
-    DataDeclaration * dec = nullptr;
+    DataDeclaration * dec_p = nullptr;
     if (ctx->variableKW() != nullptr)
-        dec = new Variable(new Integer(), new Name(name));
+        dec_p = new Variable(Int(), Nam(name));
     else if (ctx->constantKW() != nullptr)
     {
         int num = std::stoi(ctx->NUMBER()->getText().c_str());
-        dec = new Constant(
-                new Integer(),
-                new Name(name),
-                new IntegerValue(num));
+        dec_p = new Constant(
+                Int(),
+                Nam(name),
+                IntVal(num));
     }
     else if (ctx->propositionKw() != nullptr)
     {
-        dec = new Variable(
-                new Boolean(), new Name(name));
+        dec_p = new Variable(Bool(), Nam(name));
 
         if( ctx->relation() != nullptr ) {
             Expression *exp = createRelation(ctx->relation());
 
             _map_props_values.insert(
                     std::pair<Variable *, Expression *>(
-                            reinterpret_cast<Variable *>(dec), exp));
+                            reinterpret_cast<Variable *>(dec_p), exp));
         }
     }
     else
         messageError("Unknown entry:\t" + ctx->getText());
+
+    std::shared_ptr< DataDeclaration > dec(dec_p);
 
     if( _currContract != nullptr )
         _currContract->addDeclaration(dec);
@@ -113,12 +116,10 @@ LTLSpecsBuilder::createRelation(LTLContractsParser::RelationContext *ctx)
     else if( rel_op == "<=" ) op = op_le;
     else messageError("Unsupported relation operator: " + rel_op);
 
-    return new Expression(op,
-                          createValue(ctx->lvalue()->value()),
-                          createValue(ctx->rvalue()->value()));
-
-
-
+    std::shared_ptr<Value> v1(createValue(ctx->lvalue()->value()));
+    std::shared_ptr<Value> v2(createValue(ctx->rvalue()->value()));
+    auto exp = new Expression(op,v1, v2);
+    return exp;
 }
 
 Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
@@ -155,32 +156,38 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
         if(ctx->children[0] == ctx->ID(0) &&
             ctx->children[2] == ctx->ID(1))
         {
-            return new Expression(op,
-                    createIdentifier(ctx->ID(0)->getText()),
+            std::shared_ptr< Identifier > id1(
+                    createIdentifier(ctx->ID(0)->getText()));
+            std::shared_ptr< Identifier > id2(
                     createIdentifier(ctx->ID(1)->getText()));
+
+            Expression * exp = new Expression(op,id1,id2);
+            return exp;
         }
         // Brute force with combinations.
         if(ctx->children[0] == ctx->value(0) &&
            ctx->children[2] == ctx->value(1))
         {
-            return new Expression(op,
-                                  createValue(ctx->value(0)),
-                                  createValue(ctx->value(1)));
-
+            std::shared_ptr<Value> v1(createValue(ctx->value(0)));
+            std::shared_ptr<Value> v2(createValue(ctx->value(1)));
+            auto e = new Expression(op, v1, v2);
+            return e;
         }
         if(ctx->children[0] == ctx->ID(0) &&
            ctx->children[2] == ctx->value(0))
         {
-            return new Expression(op,
-                                  createIdentifier(ctx->ID(0)->getText()),
-                                  createValue(ctx->value(0)));
+            std::shared_ptr<Identifier> i(
+                    createIdentifier(ctx->ID(0)->getText()));
+            std::shared_ptr<Value> v(createValue(ctx->value(0)));
+            return new Expression(op,i,v);
         }
         if(ctx->children[0] == ctx->value(0) &&
            ctx->children[2] == ctx->ID(0))
         {
-            return new Expression(op,
-                    createValue(ctx->value(0)),
+            std::shared_ptr<Identifier> i(
                     createIdentifier(ctx->ID(0)->getText()));
+            std::shared_ptr<Value> v(createValue(ctx->value(0)));
+            return new Expression(op,v,i);
         }
     }
     return nullptr;
@@ -190,7 +197,7 @@ Identifier *LTLSpecsBuilder::createIdentifier(std::string name)
 {
     auto dd = findDeclaration(name);
     if( dd != nullptr )
-        return new Identifier(dd);
+        return new Identifier(std::shared_ptr<DataDeclaration>(dd));
     else
         messageError(name + "is not declared in the current scope.");
     return nullptr;
@@ -200,7 +207,7 @@ antlrcpp::Any
 LTLSpecsBuilder::visitContract(LTLContractsParser::ContractContext *ctx)
 {
     _currContract = new Contract(ctx->ID()->getText());
-    _system->addContract(_currContract);
+    _system->addContract(std::shared_ptr<Contract>(_currContract));
 
     // Visit the contract.
     for(size_t it = 0; it != ctx->declaration().size(); ++it)
@@ -220,20 +227,28 @@ antlrcpp::Any
 LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
 {
     size_t i = 0;
-    auto vec = new std::vector< LogicFormula * >();
-    vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+    auto vec = new std::vector< std::shared_ptr<LogicFormula> >();
+    std::shared_ptr<LogicFormula> f(
+            createFormula(ctx->single_formula(i)->formula()));
+    vec->push_back(f);
     ++i;
 
     while(i < ctx->single_formula().size())
     {
-        vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+        std::shared_ptr<LogicFormula> f(
+                createFormula(ctx->single_formula(i)->formula()));
+        vec->push_back(f);
         ++i;
     }
 
     if( vec->size() == 1)
-        _currContract->addAssumptions(logic, (*vec)[0]);
+        _currContract->addAssumptions(
+                logic,
+                std::shared_ptr<Specification>((*vec)[0]));
     else
-        _currContract->addAssumptions(logic, LargeAnd(*vec));
+        _currContract->addAssumptions(
+                logic,
+                LargeAnd(*vec));
 
     return antlrcpp::Any();
 }
@@ -242,18 +257,24 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
 antlrcpp::Any
 LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
     size_t i = 0;
-    auto vec = new std::vector< LogicFormula * >();
-    vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+    auto vec = new std::vector< std::shared_ptr<LogicFormula> >();
+    std::shared_ptr<LogicFormula> f(
+            createFormula(ctx->single_formula(i)->formula()));
+    vec->push_back(f);
     ++i;
 
     while(i < ctx->single_formula().size())
     {
-        vec->push_back(createFormula(ctx->single_formula(i)->formula()));
+        std::shared_ptr<LogicFormula> f(
+                createFormula(ctx->single_formula(i)->formula()));
+        vec->push_back(f);
         ++i;
     }
 
     if( vec->size() == 1)
-        _currContract->addGuarantees(logic, (*vec)[0]);
+        _currContract->addGuarantees(
+                logic,
+                std::shared_ptr<Specification>((*vec)[0]));
     else
         _currContract->addGuarantees(logic, LargeAnd(*vec));
 
@@ -263,7 +284,7 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
 
 
 
-LogicFormula *
+std::shared_ptr< LogicFormula >
 LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
 {
     if(ctx->unary_logic_op())
@@ -308,10 +329,16 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
     }
     if(ctx->atom() != nullptr)
     {
-        if(ctx->atom()->ID())
-            return createProposition(ctx->atom()->ID()->getText());
-        if(ctx->atom()->logic_constant())
-            return createLogicConstant(ctx->atom()->logic_constant());
+        if(ctx->atom()->ID()) {
+            std::shared_ptr<Proposition> p(
+                    createProposition(ctx->atom()->ID()->getText()));
+            return p;
+        }
+        if(ctx->atom()->logic_constant()) {
+            std::shared_ptr<BooleanConstant> c(
+                    createLogicConstant(ctx->atom()->logic_constant()));
+            return c;
+        }
     }
     return nullptr;
 }
@@ -336,9 +363,10 @@ Proposition *LTLSpecsBuilder::createProposition(std::string name)
     auto p = _map_props_values.find(v);
     if(p != _map_props_values.end())
     {
-        prop->setValue(p->second);
+        std::shared_ptr< Expression > exp(p->second);
+        prop->setValue(exp);
     } else {
-        prop->setValue(new Identifier(v));
+        prop->setValue(Id(std::shared_ptr<Variable>(v)));
     }
     return prop;
 }
@@ -349,7 +377,7 @@ DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
         // search declaration inside contract.
         for(auto & declaration : _currContract->declarations)
         {
-            auto currDec = dynamic_cast<DataDeclaration *>(declaration);
+            auto currDec = dynamic_cast<DataDeclaration *>(declaration.get());
             if( currDec == nullptr ) continue;
             if(currDec->getName()->getString() == name )
                 return currDec;
@@ -359,7 +387,7 @@ DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
     // if it is not in the current contract, search in the global declarations.
     for(auto i : _system->getDeclarationsSet())
     {
-        auto currDec = dynamic_cast<DataDeclaration *>(i);
+        auto currDec = dynamic_cast<DataDeclaration *>(i.get());
         if( currDec == nullptr ) continue;
         if(currDec->getName()->getString() == name )
             return currDec;
