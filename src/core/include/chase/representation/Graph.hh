@@ -192,6 +192,11 @@ namespace chase {
         /// @param edge The edge to be added.
         void addEdge( sptr_edge edge );
 
+        /// @brief Function to remove a edge from the graph.
+        /// @param i the source index.
+        /// @param j the target index.
+        void deleteEdge(int i, int j);
+
         /// @brief Function retrieving the type of graph.
         /// @return True if the graph is directed. False otherwise.
         bool isDirected() const;

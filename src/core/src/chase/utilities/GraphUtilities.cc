@@ -66,60 +66,9 @@ void chase::findAllPathsBetweenNodes(
     }
 }
 
-sptr_graph chase::getSubGraph(sptr_graph graph, std::set< Vertex * > vertexes)
+std::shared_ptr< Graph > chase::getSubGraph(
+        std::shared_ptr< Graph > graph, std::set<Vertex *> vertexes)
 {
-    sptr_graph ret = make_shared<Graph>(vertexes.size(), graph->isDirected());
-
-    unsigned index = 0;
-    for( auto v = vertexes.begin(); v != vertexes.end(); ++v)
-    {
-        std::string name = (*v)->getName()->getString();
-        ret->associateVertex(index, make_shared<Vertex>(Nam(name)));
-        ++index;
-    }
-
-    for( size_t i = 0; i < vertexes.size()-1; ++i )
-        for( size_t j = 1; j < vertexes.size(); ++j )
-        {
-            std::string name_first(ret->getVertex(i)->getName()->getString());
-            std::string name_second(ret->getVertex(j)->getName()->getString());
-            int index_first = graph->getVertexIndex(name_first);
-            int index_second = graph->getVertexIndex(name_second);
-
-            if( index_first < 0 || index_second < 0) continue;
-
-            Edge * edge = graph->getEdge(index_first, index_second).get();
-            WeightedEdge * wedge = dynamic_cast<WeightedEdge*>(edge);
-            bool weighted = (wedge != nullptr);
-
-            if(edge != nullptr) {
-                if (weighted) {
-                    auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
-                    if(id)
-                        ret->addEdge(make_shared<WeightedEdge>(i,j,
-                                                               make_shared<Identifier>(id->getDeclaration())));
-                }
-                else {
-                    ret->addEdge(make_shared<Edge>(i, j));
-                }
-            }
-
-            edge = graph->getEdge(index_second, index_first).get();
-
-            if(edge != nullptr) {
-                if (weighted) {
-                    auto id = dynamic_cast< Identifier * >(wedge->getWeight().get());
-                    if(id)
-                        ret->addEdge(make_shared<WeightedEdge>(j,i,
-                                                               make_shared<Identifier>(id->getDeclaration())));
-                }
-                else {
-                    ret->addEdge(make_shared<Edge>(j,i));
-                }
-            }
-
-
-        }
-
-    return ret;
+    /// \todo Implement this method. For the current demo, it is not needed.
+    return graph->clone();
 }

@@ -283,11 +283,8 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
         vertexes.insert(v.get());
     }
 
-    std::cout << _architecture->getString() << std::endl;
     std::shared_ptr<Graph> subgraph =
             chase::getSubGraph(_architecture, vertexes);
-
-    std::cout << _architecture->getString() << std::endl;
 
     for(auto sit = sources.begin(); sit != sources.end(); ++sit)
     {
@@ -306,6 +303,8 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
 
             findAllPathsBetweenNodes(
                     subgraph, visited, target_id,  result);
+
+
 
             for(auto lit = result.begin(); lit != result.end(); ++lit)
             {
@@ -397,16 +396,12 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
             findAllPathsBetweenNodes(
                     _architecture, visited, target_id, result);
 
-            std::cout << result.size() << std::endl;
-
             for( auto rit = result.begin(); rit != result.end(); ++rit )
             {
                 if(consequence.get() == nullptr) {
                     consequence = _pathDoesExist(*rit);
-                    std::cout << consequence->getString() << std::endl;
                 } else {
                     consequence = Or(consequence, _pathDoesExist(*rit));
-                    std::cout << consequence->getString() << std::endl;
                 }
             }
         }

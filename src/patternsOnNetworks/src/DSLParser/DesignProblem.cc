@@ -447,7 +447,6 @@ void DesignProblem::_completeCommandState()
     for( auto cit = components.begin(); cit != components.end(); ++cit)
     {
         std::string comp_name = (*cit).first;
-        std::cout << comp_name << std::endl;
 
         auto found = _offTimer.find(comp_name);
         auto controllable = _commandVariables.find(comp_name);

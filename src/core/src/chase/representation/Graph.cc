@@ -56,9 +56,8 @@ std::string Graph::getString() {
 
     for( auto it = _edges.begin(); it != _edges.end(); ++it )
     {
-        Edge * e = it->get();
         ret += "\t";
-        ret += e->getString();
+        ret += (*it)->getString();
         ret += "\n";
     }
 
@@ -94,18 +93,34 @@ void Graph::addEdge(sptr_edge edge) {
     }
 }
 
+void Graph::deleteEdge(int i, int j)
+{
+    AdjMatrix::iterator it;
+    it = _matrix.find(std::pair<unsigned int, unsigned int>(i,j));
+    if(it != _matrix.end()) {
+        delete it->second;
+        it->second = nullptr;
+    }
+}
+
 bool Graph::isDirected() const {
     return _directed;
 }
 
 sptr_edge Graph::getEdge(unsigned int source, unsigned int target) {
 
-    for(auto it = _edges.begin(); it != _edges.end(); ++it )
-    {
-        Edge * edge = it->get();
+    for(auto it = _edges.begin(); it != _edges.end(); ++it ) {
+        Edge *edge = it->get();
 
-        if(edge->getSource() == source && edge->getTarget() == target)
+        if (edge->getSource() == source && edge->getTarget() == target)
             return shared_ptr<Edge>(edge);
+
+        if (!_directed &&
+            edge->getSource() == target && edge->getTarget() == source)
+        {
+            return shared_ptr<Edge>(edge);
+        }
+
     }
     return nullptr;
 }
@@ -198,3 +213,5 @@ sptr_graph Graph::clone() {
 
     return ret;
 }
+
+
