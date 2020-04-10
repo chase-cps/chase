@@ -39,8 +39,9 @@ print(formula.getString())
 graph = chasecorebnd.Graph(4)
 graph.addEdge(chasecorebnd.Edge(0,1))
 graph.addEdge(chasecorebnd.Edge(0,2))
+graph.addEdge(chasecorebnd.Edge(1,2))
 graph.addEdge(chasecorebnd.Edge(2,3))
-print(graph.getString())
+graph.addEdge(chasecorebnd.Edge(3,1))
 
 v0 = chasecorebnd.Vertex(chasecorebnd.Name('0'))
 v1 = chasecorebnd.Vertex(chasecorebnd.Name('1'))
@@ -51,6 +52,8 @@ graph.associateVertex(0, v0)
 graph.associateVertex(1, v1)
 graph.associateVertex(2, v2)
 graph.associateVertex(3, v3)
+
+print(graph.getString())
 
 vertexes = {v1, v2}
 
