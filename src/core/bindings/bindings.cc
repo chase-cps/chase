@@ -26,10 +26,6 @@ PYBIND11_MODULE(chasecorebnd, m) {
             py::arg("name"))
         .def("clone", &Name::clone);
 
-    py::class_<Contract, std::unique_ptr<Contract, 
-        py::nodelete>,
-        ChaseObject>(m, "Contract");
-
     /**
     *  OPERATORS 
     */
@@ -239,11 +235,27 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
 
     /**
-    *   DATA DECLARATION BINDINGS
+    *   DECLARATION BINDINGS
     */
 
     py::class_<Declaration, std::unique_ptr<Declaration, 
         py::nodelete>, ChaseObject>(m, "Declaration");
+
+    // ComponentDefinition Binding
+    py::class_<ComponentDefinition, std::unique_ptr<
+        ComponentDefinition, py::nodelete>, 
+        Declaration>(m, "ComponentDefinition")
+        .def(py::init<>())
+        .def(py::init<Name *>(),
+            py::arg("name").none(false))
+        .def(py::init<std::string &>(),
+            py::arg("name").none(false))
+        .def("accept_visitor", &ComponentDefinition::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &ComponentDefinition::getString)
+        .def("clone", &ComponentDefinition::clone)
+        .def_readwrite("views", &ComponentDefinition::views);
+    
     py::class_<DataDeclaration, std::unique_ptr<DataDeclaration, 
         py::nodelete>, Declaration>(m, "DataDeclaration");
 
@@ -288,13 +300,18 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
 
     /**
-    *  LOGIC FORMULA BINDINGS
+    *  SPECIFICATIONS BINDINGS
     */
 
     py::class_<Specification, std::unique_ptr<Specification, 
         py::nodelete>, ChaseObject>(m, "Specification");
     py::class_<LogicFormula, std::unique_ptr<LogicFormula, 
         py::nodelete>, Specification>(m, "LogicFormula");
+
+    py::enum_<chase::semantic_domain>(m, "semantic_domain")
+        .value("logic", chase::semantic_domain::logic)
+        .value("graph", chase::semantic_domain::graph)
+        .export_values();
 
     // BinaryBooleanFormula
     py::class_<BinaryBooleanFormula, 
@@ -534,5 +551,118 @@ PYBIND11_MODULE(chasecorebnd, m) {
     m.def("findAllPathsBetweenNodes", &chase::findAllPathsBetweenNodes,
         py::arg("graph"), py::arg("visited"),
         py::arg("end"), py::arg("result"));
+
+    
+    /**
+    * SYSTEM BINDINGS
+    */ 
+    py::class_<System, std::unique_ptr<System,
+        py::nodelete>, ChaseObject>(m, "System")
+        .def(py::init<std::string &>(),
+            py::arg("name")="System")
+        .def("addDeclaration", &System::addDeclaration,
+            py::arg("declaration").none(false))
+        .def("addContract", &System::addContract,
+            py::arg("contract").none(false))
+        .def("addComponent", &System::addComponent,
+            py::arg("component").none(false))
+        .def("getDeclarationsSet", &System::getDeclarationsSet,
+            py::return_value_policy::reference)
+        .def("getContractsSet", &System::getContractsSet,
+            py::return_value_policy::reference)
+        .def("getComponentsSet", &System::getComponentsSet,
+            py::return_value_policy::reference)
+        .def("accept_visitor", &System::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &System::getString)
+        .def("clone", &System::clone)
+        .def("getName", &System::getName,
+            py::return_value_policy::reference)
+        .def("setName", &System::setName,
+            py::arg("name").none(false));
+    
+    /**
+    * CONTRACT BINDINGS
+    */ 
+
+    py::class_<Contract, std::unique_ptr<Contract, 
+        py::nodelete>, ChaseObject>(m, "Contract")
+        .def(py::init<std::string >(),
+            py::arg("name")="contract")
+        .def("getName", &Contract::getName,
+            py::return_value_policy::reference)
+        .def("setName", &Contract::setName,
+            py::arg("name").none(false))
+        .def("addDeclaration", &Contract::addDeclaration,
+            py::arg("declaration").none(false))
+        .def("addAssumptions", &Contract::addAssumptions,
+            py::arg("domain").none(false),
+            py::arg("spec").none(false))
+        .def("addGuarantees", &Contract::addGuarantees,
+            py::arg("domain").none(false),
+            py::arg("spec").none(false))
+        .def("accept_visitor", &Contract::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Contract::getString)
+        .def("clone", &Contract::clone)
+        .def_static("saturate", &Contract::saturate,
+            py::arg("c").none(false))
+        .def_static("composition", &Contract::composition,
+            py::arg("c1").none(false),
+            py::arg("c2").none(false),
+            py::arg("correspondences").none(false),
+            py::arg("name")="composition")
+        .def_static("composeLogic", &Contract::composeLogic,
+            py::arg("c1").none(false),
+            py::arg("c2").none(false),
+            py::arg("r").none(false))
+        .def_static("conjunction", &Contract::conjunction,
+            py::arg("c1").none(false),
+            py::arg("c2").none(false),
+            py::arg("correspondences").none(false),
+            py::arg("name")="conjunction")
+        .def_static("conjoinLogic", &Contract::conjoinLogic,
+            py::arg("c1").none(false),
+            py::arg("c2").none(false),
+            py::arg("r").none(false))
+        .def_static("mergeDeclarations", 
+            &Contract::mergeDeclarations,
+            py::arg("c1").none(false),
+            py::arg("c2").none(false),
+            py::arg("r").none(false),
+            py::arg("correspondences").none(false),
+            py::arg("declaration_map").none(false))
+        .def_static("saturateLogic", &Contract::saturateLogic,
+            py::arg("c").none(false))
+        .def_readwrite("declarations", &Contract::declarations)
+        .def_readwrite("assumptions", &Contract::assumptions)
+        .def_readwrite("guarantees", &Contract::guarantees);
+
+    /**
+    * COMPONENT BINDINGS
+    */ 
+    py::class_<Component, std::unique_ptr<Component, 
+        py::nodelete>, ChaseObject>(m, "Component")
+        .def(py::init<ComponentDefinition *, std::string &>(),
+            py::arg("definition").none(false),
+            py::arg("name").none(false))
+        .def("getDefinition", &Component::getDefinition)
+        .def("setDefinition", &Component::setDefinition,
+            py::arg("definition").none(false))
+        .def("getName", &Component::getName)
+        .def("setName", &Component::setName,
+            py::arg("name").none(false))
+        .def("getParameterValue", &Component::getParameterValue,
+            py::arg("view").none(false),
+            py::arg("param").none(false))
+        .def("setParameter", &Component::setParameter,
+            py::arg("view").none(false),
+            py::arg("param").none(false),
+            py::arg("value").none(false))
+        .def("accept_visitor", &Component::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Component::getString)
+        .def("clone", &Component::clone);
+        
 }
 

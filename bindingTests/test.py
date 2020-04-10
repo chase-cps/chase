@@ -57,7 +57,22 @@ print(graph.getString())
 
 vertexes = {v1, v2}
 
-print(chasecorebnd.getSubGraph(graph, vertexes).getString())
+graph1 = chasecorebnd.getSubGraph(graph, vertexes)
+graph1.setName(chasecorebnd.Name("GenericSubGraph"))
+print(graph1.getString())
 
 
 
+comp1 = chasecorebnd.ComponentDefinition("Test")
+print(comp1.getString())
+print(comp1.views)
+
+c = chasecorebnd.Contract('Test')
+c.addDeclaration(state)
+c.addAssumptions(chasecorebnd.semantic_domain.logic, formula)
+print(c.getString())
+
+sys1 = chasecorebnd.System()
+sys1.addDeclaration(state)
+sys1.addContract(c)
+print(sys1.getString())
