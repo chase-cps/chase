@@ -12,9 +12,6 @@
 #include "representation/Boolean.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_bool = std::shared_ptr<Boolean>;
 
 Boolean::Boolean() :
     SimpleType()
@@ -37,9 +34,9 @@ std::string Boolean::getString()
     return "boolean";
 }
 
-sptr_bool Boolean::clone()
+Boolean *Boolean::clone()
 {
-    return make_shared<Boolean>();
+    return new Boolean();
 }
 
 

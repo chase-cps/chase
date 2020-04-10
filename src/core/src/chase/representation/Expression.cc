@@ -11,11 +11,6 @@
 #include "representation/Expression.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_type = std::shared_ptr<Type>;
-using sptr_value = std::shared_ptr<Value>;
-using sptr_exp = std::shared_ptr<Expression>;
 
 Expression::Expression() :
     Value(),
@@ -28,8 +23,7 @@ Expression::Expression() :
     _op2->setParent(this);
 }
 
-Expression::Expression(Operator op, sptr_value op1, 
-    sptr_value op2 ) :
+Expression::Expression(Operator op, Value *op1, Value *op2 ) :
     Value(),
     _op(op),
     _op1(op1),
@@ -50,12 +44,12 @@ Operator Expression::getOperator()
     return _op;
 }
 
-sptr_value Expression::getOp1()
+Value * Expression::getOp1()
 {
     return _op1;
 }
 
-sptr_value Expression::getOp2()
+Value * Expression::getOp2()
 {
     return _op2;
 }
@@ -65,12 +59,12 @@ void Expression::setOperator(Operator op )
     _op = op;
 }
 
-void Expression::setOp1(sptr_value op )
+void Expression::setOp1(Value * op )
 {
     _op1 = op;
 }
 
-void Expression::setOp2(sptr_value op )
+void Expression::setOp2(Value * op )
 {
     _op2 = op;
 }
@@ -88,16 +82,16 @@ int Expression::accept_visitor(BaseVisitor &v )
     return v.visitExpression(*this);
 }
 
-sptr_type Expression::getType()
+Type * Expression::getType()
 {
     if( _op >= op_eq && _op <= op_ge )
-        return make_shared<Boolean>();
+        return new Boolean();
     else
         return nullptr;
     /// \todo Fix this to find the actual type.
 }
 
-sptr_exp Expression::clone() {
-    return make_shared<Expression>(_op, _op1, _op2);
+Expression *Expression::clone() {
+    return new Expression(_op, _op1->clone(), _op2->clone());
 }
 

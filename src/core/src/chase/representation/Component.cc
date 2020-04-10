@@ -11,14 +11,8 @@
 
 
 using namespace chase;
-using namespace std;
 
-using sptr_compdef = std::shared_ptr<ComponentDefinition>;
-using sptr_name = std::shared_ptr<Name>;
-using sptr_value = std::shared_ptr<Value>;
-using sptr_comp = std::shared_ptr<Component>;
-
-Component::Component( sptr_compdef definition, std::string name ) :
+Component::Component( ComponentDefinition * definition, std::string name ) :
     _definition(definition),
     _name(new Name(name))
 {
@@ -26,28 +20,29 @@ Component::Component( sptr_compdef definition, std::string name ) :
 }
 
 Component::~Component() {
+    delete _name;
 }
 
-sptr_compdef Component::getDefinition() const {
+ComponentDefinition * Component::getDefinition() const {
     return _definition;
 }
 
-void Component::setDefinition(sptr_compdef definition) {
+void Component::setDefinition(ComponentDefinition * definition) {
     _definition = definition;
 }
 
-sptr_name Component::getName() const {
+Name *Component::getName() const {
     return _name;
 }
 
-void Component::setName(sptr_name name) {
+void Component::setName(Name *name) {
     _name = name;
 }
 
 void
-Component::setParameter(std::string view, std::string param, sptr_value value)
+Component::setParameter(std::string view, std::string param, Value *value)
 {
-    std::pair< std::string, Value * > p(param, value.get());
+    std::pair< std::string, Value * > p(param, value);
     auto it = _params.find(view);
     if( it == _params.end() )
     {
@@ -60,7 +55,7 @@ Component::setParameter(std::string view, std::string param, sptr_value value)
     it->second.insert(p);
 }
 
-sptr_value Component::getParameterValue(std::string view, std::string param)
+Value *Component::getParameterValue(std::string view, std::string param)
 {
     auto v = _params.find(view);
     if( v == _params.end() ) return nullptr;
@@ -68,7 +63,7 @@ sptr_value Component::getParameterValue(std::string view, std::string param)
     auto p = v->second.find(param);
     if( p == v->second.end() ) return nullptr;
 
-    return shared_ptr<Value>(p->second);
+    return p->second;
 }
 
 std::map<std::string, Value *>&
@@ -103,18 +98,18 @@ std::string Component::getString() {
     return ret;
 }
 
-sptr_comp Component::clone() {
-    auto ret = make_shared<Component>(_definition, _name->getString());
+Component *Component::clone() {
+    auto ret = new Component(_definition, _name->getString());
 
     for(auto i = _params.begin(); i != _params.end(); ++i)
     {
         std::string view = i->first;
-        std::pair< std::string,std::map< std::string, Value * > > p;
+        std::pair< std::string,std::map< std::string, chase::Value * > > p;
 
         for( auto j = i->second.begin(); j != i->second.end(); ++j )
         {
             std::string param = j->first;
-            Value * val = dynamic_cast< Value * >(j->second->clone().get());
+            Value * val = j->second->clone();
             std::pair< std::string, chase::Value * > par( param,val );
 
             p.second.insert(par);

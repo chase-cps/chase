@@ -8,14 +8,8 @@
 #include "chase/representation/Parameter.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_type = std::shared_ptr<Type>;
-using sptr_name = std::shared_ptr<Name>;
-using sptr_param = std::shared_ptr<Parameter>;
-
-Parameter::Parameter(sptr_type type, 
-    sptr_name name) :
+Parameter::Parameter(Type * type, Name * name) :
     DataDeclaration(type, name)
 {
     _node_type = parameter_node;
@@ -23,6 +17,8 @@ Parameter::Parameter(sptr_type type,
 
 Parameter::~Parameter()
 {
+    delete _name;
+    delete _type;
 }
 
 int Parameter::accept_visitor(chase::BaseVisitor &v)
@@ -34,7 +30,7 @@ std::string Parameter::getString() {
     return std::__cxx11::string();
 }
 
-sptr_param Parameter::clone() {
+Parameter *Parameter::clone() {
     return nullptr;
 }
 

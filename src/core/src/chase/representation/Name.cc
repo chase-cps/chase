@@ -11,9 +11,6 @@
 #include "representation/Name.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_name = std::shared_ptr<Name>;
 
 Name::Name( std::string s ) :
         ChaseObject(),
@@ -55,6 +52,6 @@ int Name::accept_visitor( BaseVisitor & v )
     return v.visitName(*this);
 }
 
-sptr_name Name::clone() {
-    return make_shared<Name>(_name);
+Name * Name::clone() {
+    return new Name(_name);
 }

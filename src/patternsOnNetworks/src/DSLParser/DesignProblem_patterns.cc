@@ -24,14 +24,20 @@ void DesignProblem::_noRecovery(SpecFunction *spec)
     std::set< std::string >::iterator cit;
     for(cit = comps.begin(); cit != comps.end(); ++cit)
     {
-        auto state = _stateVariables.find(*cit)->second;
+        Variable * state = _stateVariables.find(*cit)->second;
+        auto id_now = new Identifier(state);
+        auto id_next = new Identifier(state);
+        auto p_now = new Proposition(id_now);
+        auto p_next = new Proposition(id_next);
+        auto np_now = new UnaryBooleanFormula(op_not, p_now);
+        auto np_next = new UnaryBooleanFormula(op_not, p_next);
 
-        auto p_now = Prop(state);
-        auto p_next = Prop(state);
-        auto np_now = Not(p_now);
-        auto np_next = Not(p_next);
-
-        auto formula = Always(Implies(np_now, Next(np_next)));
+        auto formula = new UnaryTemporalFormula(
+                op_globally,
+                new BinaryBooleanFormula(
+                        op_implies,
+                        np_now,
+                        new UnaryTemporalFormula(op_next, np_next)));
 
         _gr1_env_safety.insert(formula);
     }
@@ -42,8 +48,7 @@ void DesignProblem::_maxFailures(SpecFunction *spec)
     std::set<std::string> comps =
             _findComponents(spec->parameters[0]);
 
-    unsigned int max = std::strtoul(
-            spec->parameters[1].c_str() , NULL, 0);
+    unsigned int max = std::strtoul(spec->parameters[1].c_str() , NULL, 0);
 
     if( comps.size() <= max )
         return;
@@ -60,30 +65,35 @@ void DesignProblem::_maxFailures(SpecFunction *spec)
             safe, 0 , first, results );
 
 
-    std::vector< std::shared_ptr<LogicFormula> > v;
+    std::vector< LogicFormula * > v;
     for( auto rit = results.begin(); rit != results.end(); ++rit )
     {
         auto curr = (*rit);
-        std::vector< std::shared_ptr<LogicFormula> > wv;
+        std::vector< LogicFormula * > wv;
         for( size_t i = 0; i < curr.size(); ++i )
         {
             if(_stateVariables.find(curr[i]) == _stateVariables.end())
                 messageError("Component not found: " + curr[i]);
 
-            auto var = _stateVariables.find(curr[i])->second;
-            wv.push_back(Prop(var));
+            Variable * var = _stateVariables.find(curr[i])->second;
+            wv.push_back(new Proposition(new Identifier(var)));
         }
-        std::shared_ptr<LogicFormula> lf = wv[0];
+        auto lf = static_cast< LogicFormula * >(wv[0]);
         for(size_t i = 1; i < wv.size(); ++i)
-            lf = And(lf, wv[i]);
+            lf = static_cast< LogicFormula * >(
+                    new BinaryBooleanFormula(op_and, lf, wv[i]));
 
         v.push_back(lf);
     }
-    std::shared_ptr<LogicFormula> lf = v[0];
+    auto lf = static_cast< LogicFormula * >(v[0]);
     for(size_t i = 1; i < v.size(); ++i)
-        lf = Or(lf, v[i]);
-    auto formula = Always(lf);
+        lf = static_cast< LogicFormula * >(
+                new BinaryBooleanFormula(op_or, lf, v[i]));
+
+    auto formula = new UnaryTemporalFormula(op_globally,lf);
+
     _gr1_env_safety.insert(formula);
+
 }
 
 void DesignProblem::_initialState(SpecFunction *spec) {
@@ -96,7 +106,7 @@ void DesignProblem::_initialState(SpecFunction *spec) {
     std::set<std::string>::iterator it;
     for (it = comps.begin(); it != comps.end(); ++it)
     {
-        auto state = _stateVariables.find(*it)->second;
+        Variable * state = _stateVariables.find(*it)->second;
         if(value) _gr1_env_init.insert(Prop(state));
         else _gr1_env_init.insert(Not(Prop(state)));
     }
@@ -123,26 +133,25 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
         onoff ? counter_varname += "_on_counter"
               : counter_varname += "_off_counter";
 
-        auto counter_var = Var(
-                Int(0, steps - 1),
-                Nam(counter_varname),
+        auto counter_var = new Variable(
+                new Integer(0, steps - 1),
+                new Name(counter_varname),
                 chase::input);
 
-        std::pair<std::string, std::shared_ptr<Variable> >
-                p(*cit, counter_var);
+        std::pair<std::string, Variable *> p(*cit, counter_var);
         onoff ? _onTimer.insert(p) : _offTimer.insert(p);
 
         // Declare the variable in the contract.
         _contract->addDeclaration(counter_var);
 
         // Create the constraints.
-        auto state_var = _stateVariables.find(*cit)->second;
-        auto command_var = _commandVariables.find(*cit)->second;
+        Variable * state_var = _stateVariables.find(*cit)->second;
+        Variable * command_var = _commandVariables.find(*cit)->second;
 
-        std::shared_ptr< LogicFormula > state_prop = Prop(state_var);
-        std::shared_ptr< LogicFormula > state_prop_copy = Prop(state_var);
+        LogicFormula * state_prop = Prop(state_var);
+        LogicFormula * state_prop_copy = Prop(state_var);
 
-        std::shared_ptr< LogicFormula > command_prop = Prop(command_var);
+        LogicFormula * command_prop = Prop(command_var);
 
         if(! onoff)
         {
@@ -169,9 +178,11 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
         _gr1_env_safety.insert(formula_base_step);
 
         // Add the final step.
-        auto expr_minus_one = Eq(Id(counter_var),IntVal(steps-1));
+        auto expr_minus_one = Eq(
+                new Identifier(counter_var),
+                new IntegerValue(steps-1));
 
-        std::shared_ptr< LogicFormula > final_step;
+        LogicFormula * final_step;
 
         if( onoff )
         {
@@ -182,7 +193,8 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
                     ), Next(And(
                             Prop(state_var),
                             Prop(
-                                    Eq(Id(counter_var), IntVal(0)))
+                                    Eq(new Identifier(counter_var),
+                                            new IntegerValue(0)))
                             ))
             ));
         } else
@@ -194,8 +206,8 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
                             ), Next(And(
                             Not(Prop(state_var)),
                             Prop(
-                                    Eq(Id(counter_var),
-                                       IntVal(0)))
+                                    Eq(new Identifier(counter_var),
+                                       new IntegerValue(0)))
                             ))
                     ));
         }
@@ -212,10 +224,10 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
                     Id(counter_var),
                     IntVal(step + 1));
 
-            std::shared_ptr<LogicFormula> f_state = Prop(state_var);
-            std::shared_ptr<LogicFormula> f_command = Prop(command_var);
-            std::shared_ptr<LogicFormula> f_rev_state = Prop(state_var);
-            std::shared_ptr<LogicFormula> f_state_copy = Prop(state_var);
+            LogicFormula * f_state = Prop(state_var);
+            LogicFormula * f_command = Prop(command_var);
+            LogicFormula * f_rev_state = Prop(state_var);
+            LogicFormula * f_state_copy = Prop(state_var);
 
             if(onoff) {
                 f_state = Not(f_state);
@@ -236,6 +248,8 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
             auto formula = Always(Implies(now, next));
 
             _gr1_env_safety.insert(formula);
+
+
         }
     }
 }
@@ -269,7 +283,7 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
         tmp.clear();
     }
 
-    auto vertexes = std::set< Vertex * >();
+    auto * vertexes = new std::set< Vertex * >();
 
     for( auto it = comps.begin(); it != comps.end(); ++it )
     {
@@ -279,12 +293,11 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
         if(index < 0)
             messageError("Node does not exist: " + s);
 
-        auto v = _architecture->getVertex(index);
-        vertexes.insert(v.get());
+        Vertex * v = _architecture->getVertex(index);
+        vertexes->insert(v);
     }
 
-    std::shared_ptr<Graph> subgraph =
-            chase::getSubGraph(_architecture, vertexes);
+    Graph * subgraph = chase::getSubGraph(_architecture, *vertexes);
 
     for(auto sit = sources.begin(); sit != sources.end(); ++sit)
     {
@@ -302,9 +315,7 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
             visited.push_back(source_id);
 
             findAllPathsBetweenNodes(
-                    subgraph, visited, target_id,  result);
-
-
+                    subgraph, visited, target_id, result);
 
             for(auto lit = result.begin(); lit != result.end(); ++lit)
             {
@@ -312,11 +323,11 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
                         subgraph->getVertex(
                                 (*lit)[0])->getName()->getString();
 
-                std::shared_ptr< LogicFormula > formula;
+                LogicFormula *  formula = nullptr;
 
                 // If not controllable, do not insert it.
                 if( _commandVariables.find(vname) != _commandVariables.end()) {
-                    auto statevar = _stateVariables.find(vname)->second;
+                    Variable *statevar = _stateVariables.find(vname)->second;
                     formula = Not(Prop(statevar));
                 }
 
@@ -329,9 +340,10 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
                     if (_stateVariables.find(currname) != _stateVariables.end()
                         && _commandVariables.find(currname) != _commandVariables.end() )
                     {
-                        auto currvar = _stateVariables.find(currname)->second;
+                        Variable *currvar = _stateVariables.find(
+                                currname)->second;
 
-                        std::shared_ptr<LogicFormula> f = Not(Prop(currvar));
+                        LogicFormula *f = Not(Prop(currvar));
 
                         if(formula != nullptr) formula = Or(formula, f);
                         else formula = f;
@@ -342,11 +354,11 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
                 /// include the formula in the sys init.
                 // _gr1_sys_init.insert(formula);
                 formula = Always(formula);
-
                 _gr1_sys_safety.insert(formula);
             }
         }
     }
+    delete subgraph;
 }
 
 void DesignProblem::_preferActiveConnection(SpecFunction *spec)
@@ -362,14 +374,14 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
         return;
     }
 
-    std::shared_ptr< LogicFormula > condition;
+    LogicFormula * condition = nullptr;
     //
     for( auto sit = sources.begin(); sit != sources.end(); ++sit )
     {
         auto found = _stateVariables.find(*sit);
         if(found == _stateVariables.end()) continue;
 
-        auto statevar = found->second;
+        Variable * statevar = found->second;
 
         if(condition == nullptr)
             condition = Prop(statevar);
@@ -381,11 +393,13 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
     if( condition == nullptr ) condition = True();
 
     // Find all paths.
-    std::shared_ptr<LogicFormula> consequence;
+    LogicFormula * consequence = nullptr;
 
     for( auto tit = targets.begin(); tit != targets.end(); ++tit )
     {
         int target_id = _architecture->getVertexIndex(*tit);
+
+
 
         for( auto sit = sources.begin(); sit != sources.end(); ++sit )
         {
@@ -393,16 +407,14 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
             std::list< std::vector< unsigned > > result;
             std::vector< unsigned > visited;
             visited.push_back(source_id);
-            findAllPathsBetweenNodes(
-                    _architecture, visited, target_id, result);
+            findAllPathsBetweenNodes(_architecture, visited, target_id, result);
 
             for( auto rit = result.begin(); rit != result.end(); ++rit )
             {
-                if(consequence.get() == nullptr) {
+                if(consequence == nullptr)
                     consequence = _pathDoesExist(*rit);
-                } else {
+                else
                     consequence = Or(consequence, _pathDoesExist(*rit));
-                }
             }
         }
     }
@@ -429,29 +441,29 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
             continue;
         }
         // Retrieve the state variable of the component to disconnect.
-        auto comp_state_var =  _stateVariables.find(*comp)->second;
+        Variable * comp_state_var =  _stateVariables.find(*comp)->second;
         // Create counter variable. It must goes from 0 to steps + 1.
         std::string counter_varname(*comp);
         std::replace(
                 counter_varname.begin(),
                 counter_varname.end(),' ', '_');
         counter_varname += "_disconnect_counter";
-        auto counter_var = Var(
-                Int(0, steps - 1),Nam(counter_varname),output);
+        Variable * counter_var = new Variable(new Integer(0, steps - 1),
+                new Name(counter_varname), output);
 
         // Add variable to contract.
         _contract->addDeclaration(counter_var);
 
         // Set initial value.
 
-        auto init_prop = Prop(
+        Proposition * init_prop = Prop(
                 Eq(Id(counter_var),IntVal(0)));
 
-        init_prop->setName( Nam(counter_varname + "__eq_0"));
+        init_prop->setName( new Name(counter_varname + "__eq_0"));
         _gr1_sys_init.insert(init_prop);
 
         // Create the proposition []( state -> counter = 0 );
-        auto zero = Always(
+        auto * zero = Always(
                 Implies(
                         Prop(comp_state_var),
                         Prop(Eq(Id(counter_var),IntVal(0)
@@ -464,7 +476,7 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
         std::set< unsigned > adjs =
                 _architecture->getAdjacentNodes(vertex_id);
 
-        std::shared_ptr< LogicFormula > tbd;
+        LogicFormula * tbd = nullptr;
         for( auto a = adjs.begin(); a != adjs.end(); ++a)
         {
             std::string node =
@@ -475,7 +487,7 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
                         + "The component " + (*comp) + " cannot be disconnected when it fails.\n"
                         + "No controllable components connected to " + (*comp));
 
-            auto state = _stateVariables.find(node)->second;
+            Variable * state = _stateVariables.find(node)->second;
             auto unactive = Not(Prop(state));
 
             if(tbd == nullptr)
@@ -495,9 +507,9 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
 
             // Check whether the nodes are controllable.
             // Create the formula with the nodes to be disconnected.
-            std::shared_ptr<LogicFormula> tobedisconnected;
-            std::shared_ptr<LogicFormula> tobedisconnected_copy;
-            std::shared_ptr<LogicFormula> not_disconnected;
+            LogicFormula * tobedisconnected = nullptr;
+            LogicFormula * tobedisconnected_copy = nullptr;
+            LogicFormula * not_disconnected = nullptr;
             for(auto a = adjs.begin(); a != adjs.end(); ++a)
             {
                 std::string node =
@@ -508,7 +520,7 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
                             + "The component " + (*comp) + " cannot be disconnected when it fails.\n"
                             + "No controllable components connected to " + (*comp));
 
-                auto state = _stateVariables.find(node)->second;
+                Variable * state = _stateVariables.find(node)->second;
                 auto unactive = Prop(state);
                 auto unactive_copy = Not(Prop(state));
 
@@ -541,7 +553,7 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
                     Not(Prop(comp_state_var)));
 
 
-            std::shared_ptr< LogicFormula > after;
+            LogicFormula * after = nullptr;
             if( step == steps - 1 )
             {
                 after = Next(And(
@@ -600,8 +612,10 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
 
         counter_varname += sourcetype;
 
-        auto counter_var = Var(
-                Int(0, steps - 1), Nam(counter_varname),chase::output);
+        auto counter_var = new Variable(
+                new Integer(0, steps - 1),
+                new Name(counter_varname),
+                chase::output);
 
         _contract->declarations.push_back(counter_var);
 
@@ -622,7 +636,7 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
                 + " the component " + *tit + " is not connected to any " +
                 sourcetype);
 
-        std::shared_ptr<LogicFormula> condition = nullptr;
+        LogicFormula * condition = nullptr;
         for( auto pit = paths.begin(); pit != paths.end(); ++pit )
         {
             if(condition == nullptr)
@@ -631,10 +645,9 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
                 condition = Or(condition, _pathDoesExist(*pit));
         }
 
-        if(condition.get() == nullptr)
-            messageError("Impossible to build a path.");
+        if(condition == nullptr) messageError("Impossible to build a path.");
 
-        auto consequence = Prop(
+        LogicFormula * consequence = Prop(
                 Eq(Id(counter_var), IntVal(0)));
 
         auto counter_zero = Always(Implies(condition, consequence));
@@ -643,10 +656,10 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
 
         for( unsigned step = 0; step < steps; ++ step )
         {
-            std::shared_ptr<LogicFormula> condition;
+            LogicFormula * condition = nullptr;
             for( auto pit = paths.begin(); pit != paths.end(); ++pit )
             {
-                if(condition.get() == nullptr)
+                if(condition == nullptr)
                     condition = _pathDoesExist(*pit);
                 else
                     condition = Or(condition, _pathDoesExist(*pit));
@@ -655,17 +668,17 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
             condition = And(condition,
                     Prop( Eq(Id(counter_var),IntVal(step))));
 
-            std::shared_ptr<LogicFormula> Exist_1;
+            LogicFormula * Exist_1 = nullptr;
             for( auto pit = paths.begin(); pit != paths.end(); ++pit )
             {
-                if(Exist_1.get() == nullptr)
+                if(Exist_1 == nullptr)
                     Exist_1 = _pathDoesExist(*pit);
                 else
                     Exist_1 = Or(Exist_1, _pathDoesExist(*pit));
             }
 
 
-            std::shared_ptr<LogicFormula> Exist_2;
+            LogicFormula * Exist_2 = nullptr;
             for( auto pit = paths.begin(); pit != paths.end(); ++pit )
             {
                 if(Exist_2 == nullptr)
@@ -674,14 +687,14 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
                     Exist_2 = Or(Exist_2, _pathDoesExist(*pit));
             }
 
-            std::shared_ptr<LogicFormula> consequence;
+            LogicFormula * consequence = nullptr;
             if(step == steps - 1)
             {
                 consequence = And(Exist_2, Prop(
                         Eq(Id(counter_var), IntVal(0))));
             }
             else {
-                std::shared_ptr<LogicFormula> notExistPath = Not(Exist_1);
+                LogicFormula * notExistPath = Not(Exist_1);
                 notExistPath = And(notExistPath,
                                    Prop(
                                            Eq(Id(counter_var),
@@ -723,17 +736,20 @@ void DesignProblem::_keepConnectionStable(SpecFunction *spec)
 
             std::list< std::vector< unsigned > > result;
 
-            findAllPathsBetweenNodes(
-                    _architecture, visited, target_id, result);
+            findAllPathsBetweenNodes(_architecture, visited, target_id, result);
 
             for( auto vit = result.begin(); vit != result.end(); ++vit)
             {
-                std::shared_ptr<LogicFormula> livepath = _pathDoesExist(*vit);
-                std::shared_ptr<LogicFormula> activatepath = _activatePath(*vit);
+                LogicFormula * livepath = _pathDoesExist(*vit);
+                LogicFormula * activatepath = _activatePath(*vit);
 
-                auto constraint = Always(Implies( livepath, activatepath));
+                auto * constraint = Always(Implies( livepath, activatepath));
                 _gr1_sys_safety.insert(constraint);
             }
         }
     }
 }
+
+
+
+

@@ -70,7 +70,7 @@ namespace ltl_tool {
         /// the parsed name.
         Identifier * createIdentifier(std::string name);
 
-        std::shared_ptr< LogicFormula >
+        LogicFormula *
         createFormula(LTLContractsParser::FormulaContext * ctx);
 
         BooleanConstant *

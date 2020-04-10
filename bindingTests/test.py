@@ -60,3 +60,4 @@ vertexes = {v1, v2}
 print(chasecorebnd.getSubGraph(graph, vertexes).getString())
 
 
+

@@ -7,10 +7,6 @@
 #include "chase/representation/LargeBooleanFormula.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_logicform = std::shared_ptr<LogicFormula> ;
-using sptr_largeboolform = std::shared_ptr<LargeBooleanFormula>;
 
 LargeBooleanFormula::LargeBooleanFormula(BooleanOperator op ) :
     _op(op)
@@ -89,18 +85,18 @@ std::string LargeBooleanFormula::getString()
     return ret;
 }
 
-sptr_largeboolform LargeBooleanFormula::clone()
+LargeBooleanFormula *LargeBooleanFormula::clone()
 {
-    auto ret = make_shared<LargeBooleanFormula>( _op );
+    auto ret = new LargeBooleanFormula( _op );
     for( size_t i = 0; i < operands.size(); ++i )
     {
-        ret->addOperand(operands[i]);
+        ret->addOperand(operands[i]->clone());
     }
 
     return ret;
 }
 
-void LargeBooleanFormula::addOperand(sptr_logicform  f)
+void LargeBooleanFormula::addOperand(LogicFormula *f)
 {
     operands.push_back(f);
     f->setParent(this);

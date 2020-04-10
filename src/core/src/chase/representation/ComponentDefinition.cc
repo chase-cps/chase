@@ -10,10 +10,6 @@
 #include "representation/Contract.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_compdef = std::shared_ptr<ComponentDefinition>;
-using sptr_name = std::shared_ptr<Name>;
 
 ComponentDefinition::ComponentDefinition() :
     Declaration()
@@ -23,9 +19,10 @@ ComponentDefinition::ComponentDefinition() :
 
 ComponentDefinition::~ComponentDefinition()
 {
+    delete _name;
 }
 
-ComponentDefinition::ComponentDefinition(sptr_name name) :
+ComponentDefinition::ComponentDefinition(Name *name) :
     Declaration(name)
 {
     _node_type = componentDefinition_node;
@@ -53,16 +50,15 @@ std::string ComponentDefinition::getString()
     return ret;
 }
 
-sptr_compdef ComponentDefinition::clone()
+ComponentDefinition * ComponentDefinition::clone()
 {
-    auto ret = make_shared<ComponentDefinition>(_name);
+    auto ret = new ComponentDefinition(_name->clone());
     for( auto i = views.begin(); i != views.end(); ++i )
     {
         std::string view_name = i->first;
         Contract * view = i->second;
 
-        std::pair< std::string, Contract * > p(view_name, 
-            view->clone().get());
+        std::pair< std::string, Contract * > p(view_name, view->clone());
         ret->views.insert(p);
     }
     return ret;

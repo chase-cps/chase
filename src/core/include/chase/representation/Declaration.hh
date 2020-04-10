@@ -14,14 +14,9 @@
 #include "representation/Name.hh"
 
 namespace chase {
-
     /// @brief Base abstract class for all the declarations.
     class Declaration : public ChaseObject
     {
-            
-    using sptr_name = std::shared_ptr<Name>;
-    using sptr_decl = std::shared_ptr<Declaration>;
-    
         public:
             /// @brief Constructor.
             Declaration();
@@ -30,7 +25,7 @@ namespace chase {
 
             /// @brief Constructor.
             /// @param n Name of the object being declared.
-            explicit Declaration( sptr_name n );
+            explicit Declaration( Name * n );
 
             /// @brief Constructor.
             /// @param n String of the name.
@@ -38,16 +33,20 @@ namespace chase {
 
             /// @brief Getter function for the name of the declaration.
             /// @return The Name of the declaration. 
-            sptr_name getName();
+            Name * getName();
 
             /// @brief Setter for the Name of the declaration.
             /// @param name The Name to be setted.
-            void setName( sptr_name name );
+            void setName( Name * name );
+
+            /// @brief Clone method.
+            /// @return Clone of the object.
+            Declaration * clone() override = 0;
 
         protected:
 
             /// @brief Name of the declaration.
-            sptr_name _name;
+            Name * _name;
 
     };
 }

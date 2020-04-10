@@ -14,14 +14,12 @@ namespace chase {
 
     /// @brief Visitor fixing the declarations after cloning a contract.
     class ClonedDeclarationVisitor : public GuideVisitor {
-    using sptr_datadecl = std::shared_ptr<DataDeclaration>;
-    using sptr_decl = std::shared_ptr<Declaration>;
 
     public:
         /// @brief Explicit constructor.
         /// @param m Reference to the declaration map.
         explicit ClonedDeclarationVisitor(
-                std::map< sptr_decl, sptr_decl > &m );
+                std::map< Declaration *, Declaration * > &m );
 
         /// @brief Function visiting the identifiers.
         /// @param o The identifier to be visited.
@@ -32,7 +30,7 @@ namespace chase {
         /// @brief Declaration map. Generated when cloning a contract. For each
         /// entry: the key is a pointer to the original declaration, the value
         /// is a pointer to the cloned declaration.
-        std::map< sptr_decl, sptr_decl > * _map;
+        std::map< Declaration *, Declaration * > * _map;
     };
 
 }

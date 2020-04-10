@@ -70,16 +70,16 @@ namespace patternsOnNetworks {
         chase::Contract * _contract;
 
         /// @brief Map containing the state variables of the components.
-        std::map< std::string, std::shared_ptr< chase::Variable > > _stateVariables;
+        std::map< std::string, chase::Variable * > _stateVariables;
 
         /// @brief Map containing the intention variables of the components.
-        std::map< std::string, std::shared_ptr< chase::Variable > > _commandVariables;
+        std::map< std::string, chase::Variable * > _commandVariables;
 
         /// @brief Map containing the OFF timers for the components.
-        std::map< std::string, std::shared_ptr< chase::Variable > > _offTimer;
+        std::map< std::string, chase::Variable * > _offTimer;
 
         /// @brief Map containing the ON timers for the components.
-        std::map< std::string, std::shared_ptr< chase::Variable > > _onTimer;
+        std::map< std::string, chase::Variable * > _onTimer;
 
         /// @brief Set of components which state does not vary.
         std::set< std::string > _nonVariableComponents;
@@ -91,7 +91,7 @@ namespace patternsOnNetworks {
         chase::chase_time * _precision;
 
         /// @brief Pointer to the architecture of the system.
-        std::shared_ptr< chase::Graph > _architecture;
+        chase::Graph * _architecture;
 
         /// @brief Function generating the contract from a populated
         /// DesignProblem object.
@@ -153,13 +153,13 @@ namespace patternsOnNetworks {
         // ----- Functions managing the patterns.
         /// \todo Deep documentation of the functions.
 
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_env_init;
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_env_safety;
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_env_liveness;
+        std::set< chase::LogicFormula * > _gr1_env_init;
+        std::set< chase::LogicFormula * > _gr1_env_safety;
+        std::set< chase::LogicFormula * > _gr1_env_liveness;
 
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_sys_init;
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_sys_safety;
-        std::set< std::shared_ptr< chase::LogicFormula > > _gr1_sys_liveness;
+        std::set< chase::LogicFormula * > _gr1_sys_init;
+        std::set< chase::LogicFormula * > _gr1_sys_safety;
+        std::set< chase::LogicFormula * > _gr1_sys_liveness;
 
         // ----- Functions managing the patterns: Assumptions
         // ----- Implemented in DesignProblem_patterns.cc
@@ -212,10 +212,8 @@ namespace patternsOnNetworks {
         // -------------- Support functions ----------------------------------
         // ---- Implemented in DesignProblem_support.cc ----------------------
 
-        std::shared_ptr< chase::LogicFormula >
-            _activatePath( std::vector< unsigned >& path );
-        std::shared_ptr< chase::LogicFormula >
-            _pathDoesExist( std::vector< unsigned >& path );
+        chase::LogicFormula * _activatePath( std::vector< unsigned >& path );
+        chase::LogicFormula * _pathDoesExist( std::vector< unsigned >& path );
 
     };
 

@@ -17,20 +17,15 @@ namespace chase {
     /// @brief Class representing a Constant declaration.
     class Constant : public DataDeclaration
     {
-        using sptr_name = std::shared_ptr<Name>;
-        using sptr_value = std::shared_ptr<Value>;
-        using sptr_type = std::shared_ptr<Type>;
-        using sptr_const = std::shared_ptr<Constant>;
-
         public:
             /// @brief Constructor.
             /// @param type The name of the declared constant.
             /// @param name The name of the declared constant.
             /// @param value The value of the declared constant.
             explicit Constant(
-                    sptr_type type = nullptr,
-                    sptr_name name = nullptr,
-                    sptr_value value = nullptr );
+                    Type * type = nullptr,
+                    Name * name = nullptr,
+                    Value * value = nullptr );
             
             /// @brief Destructor.
             ~Constant() override;
@@ -46,11 +41,11 @@ namespace chase {
 
             /// @brief Getter for the value.
             /// @return A pointer to the value.
-            sptr_value getValue();
+            Value * getValue();
 
             /// @brief Setter for the value.
             /// @param value A pointer to the value.
-            void setValue(sptr_value value);
+            void setValue(Value * value);
 
             /// @brief Function to print the constant.
             /// @return The textual representation of the constant.
@@ -63,10 +58,10 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            sptr_const clone();
+            Constant * clone() override;
 
         protected:
             /// @brief Value of the constant.
-            sptr_value _value;
+            Value * _value;
     };
 }

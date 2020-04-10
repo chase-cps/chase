@@ -14,17 +14,13 @@ namespace chase {
 
     /// @brief Class representing the diamond or the square modal operations.
     class ModalFormula : public LogicFormula {
-        
-    using sptr_modform = std::shared_ptr<ModalFormula>;
-    using sptr_logicform = std::shared_ptr<LogicFormula>;
-
     public:
         /// @brief Constructor.
         /// @param op The operator of the operation, i.e., diamond or square.
         /// @param formula The logic formula within the Modal Operation.
         explicit ModalFormula(
                 ModalOperator op = op_square,
-                sptr_logicform formula = nullptr );
+                LogicFormula * formula = nullptr );
 
         /// @brief Destructor.
         ~ModalFormula() override;
@@ -39,11 +35,11 @@ namespace chase {
 
         /// @brief Getter of the formula.
         /// @return Pointer to the formula.
-        sptr_logicform getFormula();
+        LogicFormula * getFormula();
 
         /// @brief Setter of the formula.
         /// @param formula The formula to be set.
-        void setFormula(sptr_logicform formula );
+        void setFormula(LogicFormula * formula );
 
 
         int accept_visitor(chase::BaseVisitor &v) override;
@@ -51,14 +47,14 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return The cloned object.
-        sptr_modform clone();
+        ModalFormula * clone() override;
 
     protected:
 
         /// @brief The operator.
         ModalOperator _operator;
         /// @brief The formula to which the operator applies.
-        sptr_logicform _formula;
+        LogicFormula * _formula;
 
     };
 

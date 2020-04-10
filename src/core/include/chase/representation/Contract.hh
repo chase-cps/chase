@@ -24,22 +24,16 @@ namespace chase {
 
     /// @brief Class to represent contracts.
     class Contract : public ChaseObject {
-
-    using sptr_decl = std::shared_ptr<Declaration>;
-    using sptr_spec = std::shared_ptr<Specification>;
-    using sptr_name = std::shared_ptr<Name>;
-    using sptr_contract = std::shared_ptr<Contract>;
-
     public:
 
         /// @brief List of declarations.
-        std::list< sptr_decl > declarations;
+        std::list< DataDeclaration * > declarations;
 
         /// @brief List of assumptions.
-        std::map< semantic_domain, sptr_spec > assumptions;
+        std::map< semantic_domain, Specification * > assumptions;
 
         /// @brief List of guarantees.
-        std::map< semantic_domain, sptr_spec > guarantees;
+        std::map< semantic_domain, Specification * > guarantees;
 
         /// @brief Constructor.
         explicit Contract(std::string name = std::string("contract"));
@@ -49,26 +43,26 @@ namespace chase {
 
         /// @brief Getter of the contract's name.
         /// @return The contract name.
-        sptr_name getName() const;
+        Name * getName() const;
 
         /// @brief Setter of the contract's name.
         /// @param name The contract name.
-        void setName(sptr_name name);
+        void setName(Name *name);
 
         /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
-        void addDeclaration(sptr_decl declaration );
+        void addDeclaration(DataDeclaration *declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.
         /// @param spec Pointer to the the specification to add.
-        void addAssumptions( semantic_domain domain, sptr_spec spec );
+        void addAssumptions( semantic_domain domain, Specification * spec );
         /// @brief Function to safely add the guarantees for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.
         /// @param spec Pointer to the the specification to add.
-        void addGuarantees( semantic_domain domain, sptr_spec spec );
+        void addGuarantees( semantic_domain domain, Specification * spec );
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be used.
@@ -81,7 +75,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the contract.
-        sptr_contract clone();
+        Contract * clone() override;
 
 
         // -- Methods for the Contract Algebra.
@@ -89,7 +83,7 @@ namespace chase {
         /// @brief Method to saturate a contract. Note: the contract is
         /// saturated in loco. No copies are produced.
         /// @param c Contract to saturate.
-        static void saturate( sptr_contract c );
+        static void saturate( Contract * c );
 
         /// @brief Method implementing the composition of two contracts.
         /// @param c1 The first contract.
@@ -103,8 +97,8 @@ namespace chase {
         /// @param name The name of the resulting contract.
         /// @return Pointer to a new contract that is the composition of the
         /// two.
-        static sptr_contract composition(
-                sptr_contract c1, sptr_contract c2,
+        static Contract * composition(
+                Contract * c1, Contract * c2,
                 names_projection_map & correspondences,
                 std::string name = std::string("composition"));
 
@@ -113,7 +107,7 @@ namespace chase {
         /// @param c2 The second contract.
         /// @param r The resulting contract.
         static void composeLogic(
-                sptr_contract c1, sptr_contract c2, sptr_contract r);
+                Contract *c1, Contract *c2, Contract * r);
 
         /// @brief Method implementing the composition of two contracts.
         /// @param c1 The first contract.
@@ -127,8 +121,8 @@ namespace chase {
         /// @param name The name of the resulting contract.
         /// @return Pointer to a new contract that is the composition of the
         /// two.
-        static sptr_contract conjunction(
-                sptr_contract c1, sptr_contract c2,
+        static Contract * conjunction(
+                Contract * c1, Contract * c2,
                 names_projection_map & correspondences,
                 std::string name = std::string("composition"));
 
@@ -137,7 +131,7 @@ namespace chase {
         /// @param c2 The second contract.
         /// @param r The resulting contract.
         static void conjoinLogic(
-                sptr_contract c1, sptr_contract c2, sptr_contract r);
+                Contract *c1, Contract *c2, Contract * r);
 
 
         /// @brief Method merging the declarations of two contracts into one. It
@@ -150,23 +144,23 @@ namespace chase {
         /// @param correspondences Map of the correspondences of variable
         /// names.
         static void mergeDeclarations(
-                sptr_contract c1,
-                sptr_contract c2,
-                sptr_contract r,
+                Contract * c1,
+                Contract * c2,
+                Contract * r,
                 names_projection_map & correspondences,
-                std::map< sptr_decl, sptr_decl >& declaration_map);
+                std::map< Declaration *, Declaration * >& declaration_map);
 
         /// @brief Method implementing the saturation for the temporal logic
         /// specifications in contracts.
         /// @param c The contract to saturate. Saturation happens in loco.
-        static void saturateLogic(sptr_contract c );
+        static void saturateLogic(Contract * c );
 
     protected:
 
         /// @brief Name of the contract. The default value will be "contract".
         /// It will be useful to identify a contract within a system modeled
         /// by multiple contracts.
-        sptr_name  _name;
+        Name * _name;
 
 
 

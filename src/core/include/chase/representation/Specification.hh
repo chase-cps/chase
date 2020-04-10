@@ -29,6 +29,10 @@ namespace chase {
         /// @brief Destructor.
         ~Specification() override;
 
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        Specification * clone() override = 0;
+
     protected:
 
     };

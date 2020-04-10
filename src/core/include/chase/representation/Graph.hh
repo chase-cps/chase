@@ -23,8 +23,6 @@ namespace chase {
     class Edge : public ChaseObject
     {
     public:
-
-        using sptr_edge = std::shared_ptr<Edge>;
         /// @brief Constructor.
         /// @param source the source node of the edge.
         /// @param target the target node of the edge.
@@ -57,7 +55,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        sptr_edge clone();
+        Edge * clone() override;
 
     protected:
         /// @brief The index of the source node.
@@ -74,19 +72,15 @@ namespace chase {
     class Vertex : public ChaseObject
     {
     public:
-    
-        using sptr_name = std::shared_ptr<Name>;
-        using sptr_vert = std::shared_ptr<Vertex>;
-
         /// @brief Constructor.
-        Vertex(sptr_name name = nullptr);
+        Vertex(Name *name = nullptr);
 
         /// @brief Destructor.
         ~Vertex() override;
 
         /// @brief Function returning the name of the vertex.
         /// @return The name of the vertex.
-        sptr_name getName() const;
+        Name *getName() const;
 
         /// @brief Function to set the name of the vertex.
         /// @param name the standard string of the vertex name to be assigned.
@@ -103,36 +97,32 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        sptr_vert clone();
+        Vertex * clone() override;
 
     protected:
         /// @brief Pointer to the name object of the vertex.
-        sptr_name _name;
+        Name * _name;
     };
 
     /// @brief Base class for the weighted edges.
     class WeightedEdge : public Edge
     {
     public:
-        using sptr_value = std::shared_ptr<Value>;
-        using sptr_wedge = std::shared_ptr<WeightedEdge>;
-
         /// @brief Constructor.
         /// @param source the source node of the edge.
         /// @param target the target node of the edge.
         /// @param weight The weight to apply to the edge.
-        WeightedEdge(unsigned int source, unsigned int target, 
-            sptr_value weight);
+        WeightedEdge(unsigned int source, unsigned int target, Value *weight);
 
         /// @brief Destructor.
         ~WeightedEdge() override;
 
         /// @brief Function retrieving the weight of the edge.
         /// @return The weight Value of the edge.
-        sptr_value getWeight() const;
+        Value *getWeight() const;
         /// @brief Setter of the weight of the edge.
         /// @param weight The Value to be set as weight.
-        void setWeight(sptr_value weight);
+        void setWeight(Value *weight);
 
         /// @brief Function to print the edge.
         /// @return Return the textual representation of the edge.
@@ -140,11 +130,11 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        sptr_wedge clone();
+        WeightedEdge * clone() override;
 
     protected:
         /// @brief The weight of the edge, expressed as a Value object.
-        sptr_value _weight;
+        Value * _weight;
     };
 
     /// @brief Adjacency Map defined as a map of map of edges. Nullptr edges
@@ -161,15 +151,10 @@ namespace chase {
     /// @todo GraphViz support for the graphical representation of the Graph.
     class Graph : public Specification {
     public:
-    
-        using sptr_name = std::shared_ptr<Name>;
-        using sptr_vert = std::shared_ptr<Vertex>;
-        using sptr_edge = std::shared_ptr<Edge>;
-        using sptr_graph = std::shared_ptr<Graph>;
 
         /// @brief Constructor.
         Graph( unsigned int size, bool directed = false,
-                sptr_name name = std::make_shared<Name>("GenericGraph") );
+                Name * name = new Name("GenericGraph") );
 
         /// @brief Destructor.
         ~Graph() override;
@@ -186,16 +171,11 @@ namespace chase {
         /// @param vertex The vertex to be added.
         /// @param index The index of the node to be associated with the
         /// Vertex object.
-        void associateVertex(unsigned int index, sptr_vert vertex);
+        void associateVertex(unsigned int index, Vertex *vertex);
 
         /// @brief Function to add a edge to the graph.
         /// @param edge The edge to be added.
-        void addEdge( sptr_edge edge );
-
-        /// @brief Function to remove a edge from the graph.
-        /// @param i the source index.
-        /// @param j the target index.
-        void deleteEdge(int i, int j);
+        void addEdge( Edge * edge );
 
         /// @brief Function retrieving the type of graph.
         /// @return True if the graph is directed. False otherwise.
@@ -206,7 +186,7 @@ namespace chase {
         /// @param target The target of the searched edge.
         /// @return A pointer to the edge if the edge exists.
         /// A nullptr otherwise.
-        sptr_edge getEdge( unsigned int source, unsigned int target );
+        Edge * getEdge( unsigned int source, unsigned int target );
 
         /// @brief Return the Vertex object associated to a index of vertex in
         /// the graph. Notice: it is not mandatory to associate a vertex in the
@@ -216,7 +196,7 @@ namespace chase {
         /// @return A pointer to the associated vertex object (if any). A nullptr
         /// is returned if the node is not in the graph, or if the node is not
         /// associated to a Vertex object.
-        sptr_vert getVertex( unsigned int vertex_id );
+        Vertex * getVertex( unsigned int vertex_id );
 
         /// @brief Return the size of the graph, i.e., the number of nodes.
         /// @return The number of nodes.
@@ -230,11 +210,11 @@ namespace chase {
 
         /// @brief Getter of the name.
         /// @return The name of the graph.
-        sptr_name getName() const;
+        Name * getName() const;
 
         /// @brief Setter of the name.
         /// @param name Pointer to the Name object containing the name.
-        void setName(sptr_name name);
+        void setName(Name *name);
 
         /// @brief Function creating the GraphViz representation of the graph.
         /// @return A string containing the GraphViz representation of the graph.
@@ -249,16 +229,16 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return Clone of the object.
-        sptr_graph clone();
+        Graph * clone() override;
 
     protected:
 
         /// @brief Adjacency matrix of the graph.
         AdjMatrix _matrix;
         /// @brief Set of edges of the graph.
-        std::set< std::shared_ptr<Edge> > _edges;
+        std::set< Edge * > _edges;
         /// @brief Set of nodes in the graph.
-        std::vector< std::shared_ptr<Vertex> > _vertexes;
+        std::vector< Vertex * > _vertexes;
 
         /// @brief The number of vertexes in the graph.
         unsigned int _size;
@@ -266,7 +246,7 @@ namespace chase {
         bool _directed;
 
         /// @brief the name of the graph.
-        sptr_name _name;
+        Name * _name;
 
     };
 

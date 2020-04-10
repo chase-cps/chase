@@ -12,39 +12,32 @@
 #include "chase/utilities/ClonedDeclarationVisitor.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_decl = std::shared_ptr<Declaration>;
-using sptr_contract = std::shared_ptr<Contract>;
-using sptr_comp = std::shared_ptr<Component>;
-using sptr_name = std::shared_ptr<Name>;
-using sptr_sys = std::shared_ptr<System>;
 
 System::System( std::string name ) :
-    _name(make_shared<Name>(name))
+    _name(new Name(name))
 {
     _name->setParent(this);
 }
 
 System::~System() = default;
 
-void System::addDeclaration(sptr_decl declaration)
+void System::addDeclaration(Declaration *declaration)
 {
     _declarations.insert(declaration);
     declaration->setParent(this);
 }
 
-void System::addContract(sptr_contract contract)
+void System::addContract(Contract *contract)
 {
     _contracts.insert(contract);
     contract->setParent(this);
 }
 
-std::set<sptr_decl> &System::getDeclarationsSet() {
+std::set<Declaration *> &System::getDeclarationsSet() {
     return _declarations;
 }
 
-std::set<sptr_contract> &System::getContractsSet() {
+std::set<Contract *> &System::getContractsSet() {
     return _contracts;
 }
 
@@ -76,19 +69,18 @@ std::string System::getString() {
     return ret;
 }
 
-sptr_sys System::clone()
+System *System::clone()
 {
-    auto ret = make_shared<System>(_name->getString());
+    auto ret = new System(_name->getString());
 
-    std::map< sptr_decl, sptr_decl > declaration_map;
+    std::map< Declaration *, Declaration * > declaration_map;
 
     for(auto it = _declarations.begin(); it != _declarations.end(); ++it)
     {
-        Declaration * current = (*it).get();
+        Declaration * current = *it;
         auto dec = current->clone();
-        std::pair< Declaration *, Declaration * > p(current, 
-            dynamic_cast<Declaration *>(dec.get()));
-        ret->addDeclaration(dynamic_pointer_cast<Declaration>(dec));
+        std::pair< Declaration *, Declaration * > p(current, dec);
+        ret->addDeclaration(dec);
         declaration_map.insert(p);
     }
 
@@ -108,23 +100,23 @@ sptr_sys System::clone()
     return ret;
 }
 
-sptr_name System::getName()
+Name * System::getName()
 {
     return _name;
 }
 
-void System::setName(sptr_name name)
+void System::setName(Name * name)
 {
     _name = name;
     _name->setParent(this);
 }
 
-void System::addComponent(sptr_comp component)
+void System::addComponent(Component * component)
 {
     _components.insert(component);
     component->setParent(this);
 }
 
-std::set<sptr_comp> &System::getComponentsSet() {
+std::set<Component *> &System::getComponentsSet() {
     return _components;
 }

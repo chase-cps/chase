@@ -12,15 +12,8 @@
 #include "representation/Value.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_name = std::shared_ptr<Name>;
-using sptr_value = std::shared_ptr<Value>;
-using sptr_type = std::shared_ptr<Type>;
-using sptr_const = std::shared_ptr<Constant>;
-
-Constant::Constant( sptr_type type, sptr_name name, 
-    sptr_value value ) :
+Constant::Constant( Type * type, Name * name, Value * value ) :
     DataDeclaration( type, name ),
     _value(value)
 {
@@ -32,6 +25,8 @@ Constant::Constant( sptr_type type, sptr_name name,
 
 Constant::~Constant()
 {
+    if(_name != nullptr) delete _name;
+    if(_type != nullptr) delete _type;
 }
 
 Constant::Constant( const Constant &o ) :
@@ -70,14 +65,15 @@ int Constant::accept_visitor( BaseVisitor &v )
     return v.visitConstant(*this);
 }
 
-void Constant::setValue(sptr_value value) {
+void Constant::setValue(Value *value) {
     _value = value;
 }
 
-sptr_value Constant::getValue() {
+Value *Constant::getValue() {
     return _value;
 }
 
-sptr_const Constant::clone() {
-    return make_shared<Constant>(_type, _name, _value);
+Constant * Constant::clone() {
+    return new Constant(
+            _type->clone(), _name->clone(), _value->clone());
 }

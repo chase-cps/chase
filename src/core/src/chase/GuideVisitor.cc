@@ -24,29 +24,29 @@ int chase::GuideVisitor::visitRange(chase::Range &)
 
 int chase::GuideVisitor::visitIntegerValue(chase::IntegerValue &o )
 {
-    return continueVisit(*o.getType());
+    return continueVisit(o.getType());
 }
 
 int chase::GuideVisitor::visitRealValue(chase::RealValue &o )
 {
-    return continueVisit(*o.getType());
+    return continueVisit(o.getType());
 }
 
 int chase::GuideVisitor::visitBooleanValue(chase::BooleanValue &o )
 {
-    return continueVisit(*o.getType());
+    return continueVisit(o.getType());
 }
 
 int chase::GuideVisitor::visitExpression(chase::Expression &o)
 {
-    int rv = continueVisit(*o.getOp1());
-    rv |= continueVisit(*o.getOp2());
+    int rv = continueVisit(o.getOp1());
+    rv |= continueVisit(o.getOp2());
     return rv;
 }
 
 int chase::GuideVisitor::visitIdentifier(chase::Identifier &o)
 {
-    return continueVisit(*o.getType());
+    return continueVisit(o.getType());
 }
 
 int chase::GuideVisitor::visitInteger(chase::Integer &o)
@@ -72,21 +72,21 @@ int chase::GuideVisitor::visitName(chase::Name & ) {
 
 int chase::GuideVisitor::visitVariable(chase::Variable &o) {
     int rv = visitName(* o.getName());
-    rv |= continueVisit(*o.getType());
+    rv |= continueVisit(o.getType());
     return rv;
 }
 
 int chase::GuideVisitor::visitConstant(chase::Constant &o) {
     int rv = visitName(* o.getName());
-    rv |= continueVisit(*o.getType());
-    rv |= continueVisit(*o.getValue());
+    rv |= continueVisit(o.getType());
+    rv |= continueVisit(o.getValue());
     return rv;
 }
 
 int chase::GuideVisitor::visitProposition(chase::Proposition &o) {
     int rv = visitName(* o.getName());
-    rv |= continueVisit(*o.getType());
-    rv |= continueVisit(*o.getValue());
+    rv |= continueVisit(o.getType());
+    rv |= continueVisit(o.getValue());
     return rv;
 }
 
@@ -97,15 +97,15 @@ int chase::GuideVisitor::visitBooleanConstant(chase::BooleanConstant &) {
 int chase::GuideVisitor::visitBinaryBooleanOperation(
         chase::BinaryBooleanFormula &o)
 {
-    int rv = continueVisit(*o.getOp1());
-    rv |= continueVisit(*o.getOp2());
+    int rv = continueVisit(o.getOp1());
+    rv |= continueVisit(o.getOp2());
     return rv;
 }
 
 int
 chase::GuideVisitor::visitUnaryBooleanOperation(chase::UnaryBooleanFormula &o)
 {
-    return continueVisit(*o.getOp1());
+    return continueVisit(o.getOp1());
 }
 
 int
@@ -116,20 +116,20 @@ chase::GuideVisitor::visitLargeBooleanFormula(chase::LargeBooleanFormula &o)
 
 int chase::GuideVisitor::visitModalFormula(chase::ModalFormula &o)
 {
-    return continueVisit(*o.getFormula());
+    return continueVisit(o.getFormula());
 }
 
 int chase::GuideVisitor::visitUnaryTemporalOperation(
         chase::UnaryTemporalFormula &o)
 {
-    return continueVisit(*o.getFormula());
+    return continueVisit(o.getFormula());
 }
 
 int chase::GuideVisitor::visitBinaryTemporalOperation(
         chase::BinaryTemporalFormula &o)
 {
-    int rv = continueVisit(*o.getFormula1());
-    rv |= continueVisit(*o.getFormula2());
+    int rv = continueVisit(o.getFormula1());
+    rv |= continueVisit(o.getFormula2());
     return rv;
 }
 
@@ -141,12 +141,12 @@ int chase::GuideVisitor::visitContract(chase::Contract &o)
 
     for (auto it = o.assumptions.begin(); it != o.assumptions.end(); ++it)
     {
-        rv |= continueVisit(*(*it).second);
+        rv |= continueVisit((*it).second);
     }
 
     for (auto it = o.guarantees.begin(); it != o.guarantees.end(); ++it)
     {
-        rv |= continueVisit(*(*it).second);
+        rv |= continueVisit((*it).second);
     }
 
     return rv;
@@ -156,7 +156,7 @@ int chase::GuideVisitor::visitEdge(chase::Edge &o)
 {
     WeightedEdge * w = dynamic_cast< WeightedEdge * >(&o);
     if( w != nullptr )
-        return continueVisit( *w->getWeight() );
+        return continueVisit( w->getWeight() );
     else
         return _rv;
 }
@@ -175,7 +175,7 @@ int chase::GuideVisitor::visitGraph(chase::Graph &o) {
     for( size_t i = 0; i < o.getSize(); ++i )
         for( size_t j = 0; j < o.getSize(); ++j )
         {
-            Edge * e = o.getEdge(i, j).get();
+            Edge * e = o.getEdge(i, j);
             if(e != nullptr)
                 rv |= visitEdge(*e);
         }
@@ -185,13 +185,10 @@ int chase::GuideVisitor::visitGraph(chase::Graph &o) {
 
 
 
-//Da modificare con passaggio referenza
-//crei poi puntatore da referenza
 
-int chase::GuideVisitor::continueVisit(chase::ChaseObject &obj)
+
+int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
 {
-    ChaseObject * o = & obj;
-
     // If o is Null, then it means that something is missing. In general,
     // it may be ok. Consider the case of a proposition with no value assigned
     // yet: in general it is like that.

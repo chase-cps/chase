@@ -22,9 +22,6 @@ namespace chase {
     /// @brief Class to represent a range of values.
     class Range : public Value
     {
-        using sptr_type = std::shared_ptr<Type>;
-        using sptr_range = std::shared_ptr<Range>;
-
         public:
             /// @brief Constructor.
             Range();
@@ -37,7 +34,7 @@ namespace chase {
             /// @param rbound Right bound of the range.
             Range(int lbound, int rbound );
 
-            sptr_type getType() override;
+            Type *getType() override;
 
 
             /// @brief Setter for the left bound.
@@ -65,7 +62,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            sptr_range clone();
+            Range * clone() override;
 
 
         protected:

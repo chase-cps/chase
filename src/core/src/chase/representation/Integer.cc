@@ -12,10 +12,6 @@
 #include "representation/Range.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_range = std::shared_ptr<Range>;
-using sptr_int = std::shared_ptr<Integer>;
 
 Integer::Integer() :
     SimpleType(),
@@ -23,32 +19,32 @@ Integer::Integer() :
     _range(nullptr)
 {
     _node_type = integer_node;
-    _range = make_shared<Range>(-2147483647, 2147483647);
+    _range = new Range(-2147483647, 2147483647);
 }
 
 Integer::Integer(int l, int r) :
     SimpleType(),
     _signed(l < 0),
-    _range(make_shared<Range>(l,r))
+    _range(new Range(l,r))
 {
     _node_type = integer_node;
 }
 
 
 
-Integer::Integer(sptr_range r) :
+Integer::Integer(Range *r) :
     SimpleType(),
     _range(r)
 {
     _node_type = integer_node;
-    if( r->getParent() == nullptr ) 
-        r->setParent(this);
+    if( r->getParent() == nullptr ) r->setParent(this);
     if(r->getLeftValue() < 0) _signed = true;
 }
 
 
 Integer::~Integer()
 {
+    delete _range;
 }
 
 bool Integer::isSigned()
@@ -56,7 +52,7 @@ bool Integer::isSigned()
     return _signed;
 }
 
-std::shared_ptr<Range> Integer::getRange()
+Range * Integer::getRange()
 {
     return _range;
 }
@@ -71,9 +67,9 @@ std::string Integer::getString()
     return "integer";
 }
 
-sptr_int Integer::clone()
+Integer *Integer::clone()
 {
-    return make_shared<Integer>(_range);
+    return new Integer(_range->clone());
 }
 
 

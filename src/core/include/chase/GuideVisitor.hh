@@ -15,7 +15,6 @@
 #include <set>
 #include <list>
 #include <vector>
-#include <memory>
 
 namespace chase {
 
@@ -91,22 +90,22 @@ namespace chase {
         /// not known.
         /// @param o A pointer to the object to visit.
         /// @return T the standard return value of the visitor.
-        virtual int continueVisit( ChaseObject &obj );
+        virtual int continueVisit( ChaseObject *o );
 
         /// @brief Method to visit a list.
         /// @param l the list to visit.
         /// @return the standard return value of the visitor.
         template<typename T>
-        int visitList(std::list<T> &l)
+        int visitList(std::list<T *> &l)
         {
             int rv = _rv;
             for(auto it = l.begin(); it != l.end(); ++it)
             {
-                auto o = std::dynamic_pointer_cast< ChaseObject >(*it);
+                auto * o = dynamic_cast< ChaseObject * >(*it);
                 if( o == nullptr )
                     messageError("Visit List: wrong object in list");
 
-                rv |= continueVisit(*o);
+                rv |= continueVisit(o);
             }
             return rv;
         }
@@ -115,15 +114,15 @@ namespace chase {
         /// @param v the vector to visit.
         /// @return the standard return value of the visitor.
         template<typename T>
-        int visitVector(std::vector<T> &v) {
+        int visitVector(std::vector<T *> &v) {
             int rv = _rv;
             for(auto it = v.begin(); it != v.end(); ++it)
             {
-                auto o = std::dynamic_pointer_cast< ChaseObject >(*it);
+                auto * o = dynamic_cast< ChaseObject * >(*it);
                 if( o == nullptr )
                     messageError("Visit Vector: wrong object in vector");
 
-                rv |= continueVisit(*o);
+                rv |= continueVisit(o);
             }
             return rv;
         }
@@ -132,15 +131,15 @@ namespace chase {
         /// @param s the set to visit.
         /// @return the standard return value of the visitor.
         template<typename T>
-        int visitSet(std::set<T> &s) {
+        int visitSet(std::set<T *> &s) {
             int rv = _rv;
             for(auto it = s.begin(); it != s.end(); ++it)
             {
-                auto o = std::dynamic_pointer_cast< ChaseObject >(*it);
+                auto * o = dynamic_cast< ChaseObject * >(*it);
                 if( o == nullptr )
                     messageError("Visit Set: wrong object in set");
 
-                rv |= continueVisit(*o);
+                rv |= continueVisit(o);
             }
             return rv;
         }

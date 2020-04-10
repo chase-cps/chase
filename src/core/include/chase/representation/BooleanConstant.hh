@@ -13,9 +13,6 @@ namespace chase {
 
     /// @brief Class representing a boolean constant.
     class BooleanConstant : public LogicFormula {
-
-    using sptr_boolconst = std::shared_ptr<BooleanConstant>;
-    
     public:
         /// @brief Constructor.
         explicit BooleanConstant(bool value = true);
@@ -38,7 +35,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return The cloned object.
-        sptr_boolconst clone();
+        BooleanConstant * clone() override;
 
     protected:
 

@@ -7,18 +7,14 @@
 #include "chase/representation/ModalFormula.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_modform = std::shared_ptr<ModalFormula>;
-using sptr_logicform = std::shared_ptr<LogicFormula>;
-
-ModalFormula::ModalFormula(ModalOperator op, sptr_logicform formula) :
+ModalFormula::ModalFormula(ModalOperator op, LogicFormula * formula) :
     _operator(op),
     _formula(formula)
 {
     _node_type = modalFormula_node;
     if( formula->getParent() != nullptr )
-        messageWarning("Formula with parent already set:", formula.get());
+        messageWarning("Formula with parent already set:", formula);
     formula->setParent(this);
 }
 
@@ -34,12 +30,12 @@ void ModalFormula::setOperator(ModalOperator op) {
     _operator = op;
 }
 
-sptr_logicform ModalFormula::getFormula()
+LogicFormula * ModalFormula::getFormula()
 {
     return _formula;
 }
 
-void ModalFormula::setFormula(sptr_logicform formula)
+void ModalFormula::setFormula(LogicFormula * formula)
 {
     _formula = formula;
 }
@@ -56,10 +52,9 @@ std::string ModalFormula::getString() {
     return ret;
 }
 
-sptr_modform ModalFormula::clone()
+ModalFormula *ModalFormula::clone()
 {
-    return make_shared<ModalFormula>(
-        _operator, _formula);
+    return new ModalFormula(_operator, _formula->clone());
 }
 
 

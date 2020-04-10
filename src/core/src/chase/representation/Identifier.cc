@@ -11,13 +11,8 @@
 #include "representation/Identifier.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_datadecl = std::shared_ptr<DataDeclaration>;
-using sptr_type = std::shared_ptr<Type>;
-using sptr_id = std::shared_ptr<Identifier>;
-
-Identifier::Identifier( sptr_datadecl d ) :
+Identifier::Identifier( DataDeclaration * d ) :
     Value(),
     _declaration(d)
 {
@@ -42,21 +37,19 @@ Identifier & Identifier::operator=( const Identifier &i )
     return *this;
 }
 
-sptr_datadecl Identifier::getDeclaration()
+DataDeclaration * Identifier::getDeclaration()
 {
     return _declaration;
 }
 
-void Identifier::setDeclaration( sptr_datadecl d)
+void Identifier::setDeclaration( DataDeclaration * d)
 {
     _declaration = d;
 }
 
 std::string Identifier::getString()
 {
-    return _declaration != nullptr ? 
-        _declaration->getName()->getString() : 
-        "Identifier declaration is null";
+    return _declaration->getName()->getString();
 }
 
 int Identifier::accept_visitor( BaseVisitor &v )
@@ -64,13 +57,13 @@ int Identifier::accept_visitor( BaseVisitor &v )
     return v.visitIdentifier(*this);
 }
 
-sptr_type Identifier::getType() {
+Type *Identifier::getType() {
     return getDeclaration()->getType();
 }
 
-sptr_id Identifier::clone() {
+Identifier *Identifier::clone() {
     /// \todo Fix later in the clone method of Contract the potential
     /// inconsistencies due to cloned declarations.
-    return make_shared<Identifier>(_declaration);
+    return new Identifier(_declaration);
 }
 

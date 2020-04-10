@@ -11,10 +11,6 @@
 #include "representation/Range.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_type = std::shared_ptr<Type>;
-using sptr_range = std::shared_ptr<Range>;
 
 Range::Range() :
     Value(),
@@ -85,11 +81,11 @@ int Range::accept_visitor( BaseVisitor &v )
     return v.visitRange( *this );
 }
 
-sptr_type Range::getType() {
-    return make_shared<Integer>();
+Type *Range::getType() {
+    return new Integer();
 }
 
-sptr_range Range::clone() {
-    return make_shared<Range>(_lbound, _rbound);
+Range *Range::clone() {
+    return new Range(_lbound, _rbound);
 }
 

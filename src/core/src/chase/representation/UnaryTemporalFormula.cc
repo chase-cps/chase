@@ -7,21 +7,17 @@
 #include "chase/representation/UnaryTemporalFormula.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_logicform = std::shared_ptr<LogicFormula>;
-using sptr_utempform = std::shared_ptr<UnaryTemporalFormula>;
 
 UnaryTemporalFormula::UnaryTemporalFormula(
         TemporalOperator op,
-        sptr_logicform formula
+        LogicFormula * formula
         ) :
         _op(op),
         _formula(formula)
 {
     _node_type = unaryTemporalOperation_node;
     if(_formula->getParent() != nullptr )
-        messageWarning("Formula with already set parent", _formula.get());
+        messageWarning("Formula with already set parent", _formula);
     else _formula->setParent(this);
 }
 
@@ -33,11 +29,11 @@ void UnaryTemporalFormula::setOp(TemporalOperator op) {
     _op = op;
 }
 
-sptr_logicform UnaryTemporalFormula::getFormula() const {
+LogicFormula *UnaryTemporalFormula::getFormula() const {
     return _formula;
 }
 
-void UnaryTemporalFormula::setFormula(sptr_logicform formula) {
+void UnaryTemporalFormula::setFormula(LogicFormula *formula) {
     _formula = formula;
 }
 
@@ -55,8 +51,8 @@ std::string UnaryTemporalFormula::getString() {
     return ret;
 }
 
-sptr_utempform UnaryTemporalFormula::clone() {
-    return make_shared<UnaryTemporalFormula>(_op, _formula);
+UnaryTemporalFormula *UnaryTemporalFormula::clone() {
+    return new UnaryTemporalFormula(_op, _formula->clone());
 }
 
 UnaryTemporalFormula::~UnaryTemporalFormula() = default;

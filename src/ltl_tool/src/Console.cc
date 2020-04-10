@@ -52,9 +52,9 @@ int Console::_execCommand(std::string cmd)
         for (auto i = _system->getContractsSet().begin();
              i != _system->getContractsSet().end(); ++i)
         {
-            Contract * c = (*i).get();
+            Contract * c = *i;
             if(c->getName()->getString() == contract_name )
-                Contract::saturate(std::shared_ptr<Contract>(c));
+                Contract::saturate(c);
         }
     }
     else if(tokens[0] == "compose")
@@ -68,7 +68,7 @@ int Console::_execCommand(std::string cmd)
         for (auto i = _system->getContractsSet().begin();
              i != _system->getContractsSet().end(); ++i)
         {
-            Contract * c = (*i).get();
+            Contract * c = *i;
             if(c->getName()->getString() == c1_name )
             {
                 c1 = c;
@@ -84,9 +84,7 @@ int Console::_execCommand(std::string cmd)
         names_projection_map m;
         _parseProjectionMap(m);
 
-        auto r = Contract::composition(
-                std::shared_ptr<Contract>(c1),
-                std::shared_ptr<Contract>(c2), m,tokens[3]);
+        auto r = Contract::composition(c1, c2, m, tokens[3]);
         std::cout << r->getString() << std::endl;
     }
     else if(tokens[0] == "conjunction")
@@ -100,7 +98,7 @@ int Console::_execCommand(std::string cmd)
         for (auto i = _system->getContractsSet().begin();
              i != _system->getContractsSet().end(); ++i)
         {
-            Contract * c = (*i).get();
+            Contract * c = *i;
             if(c->getName()->getString() == c1_name )
             {
                 c1 = c;
@@ -116,9 +114,7 @@ int Console::_execCommand(std::string cmd)
         names_projection_map m;
         _parseProjectionMap(m);
 
-        auto r = Contract::conjunction(
-                std::shared_ptr<Contract>(c1),
-                        std::shared_ptr<Contract>(c2),m, tokens[3]);
+        auto r = Contract::conjunction(c1, c2, m, tokens[3]);
         std::cout << r->getString() << std::endl;
     }
 

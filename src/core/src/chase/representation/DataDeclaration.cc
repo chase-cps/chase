@@ -11,15 +11,8 @@
 #include "representation/DataDeclaration.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_name = std::shared_ptr<Name>;
-using sptr_type = std::shared_ptr<Type>;
-using sptr_datadecl = std::shared_ptr<DataDeclaration>;
-    
-
-DataDeclaration::DataDeclaration( sptr_type t, 
-    sptr_name n ) :
+DataDeclaration::DataDeclaration( Type * t, Name * n ) :
     Declaration(n),
     _type(t)
 {
@@ -28,12 +21,12 @@ DataDeclaration::DataDeclaration( sptr_type t,
     _type->setParent(this);
 }
 
-sptr_type DataDeclaration::getType()
+Type * DataDeclaration::getType()
 {
     return _type;
 }
 
-void DataDeclaration::setType( sptr_type t )
+void DataDeclaration::setType( Type * t )
 {
     _type = t;
     _type->setParent(this);

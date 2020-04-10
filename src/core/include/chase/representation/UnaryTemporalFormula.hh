@@ -13,15 +13,11 @@ namespace chase {
 
     /// @brief Class representing a Unary Temporal Formula.
     class UnaryTemporalFormula : public LogicFormula {
-    
-    using sptr_logicform = std::shared_ptr<LogicFormula>;
-    using sptr_utempform = std::shared_ptr<UnaryTemporalFormula>;
-
     public:
         /// @brief Constructor.
         explicit UnaryTemporalFormula(
                 TemporalOperator op = op_globally,
-                sptr_logicform formula = nullptr
+                LogicFormula * formula = nullptr
                 );
 
         /// @brief Destructor.
@@ -37,11 +33,11 @@ namespace chase {
 
         /// @brief Getter for the first formula.
         /// @return The first formula.
-        sptr_logicform getFormula() const;
+        LogicFormula *getFormula() const;
 
         /// @brief Setter for the first formula.
         /// @param formula The first formula to be set.
-        void setFormula(sptr_logicform formula);
+        void setFormula(LogicFormula *formula);
 
         /// @brief The base class for the visitor pattern.
         /// @param v The visitor to be used.
@@ -54,7 +50,7 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return The cloned object.
-        sptr_utempform  clone();
+        UnaryTemporalFormula * clone() override;
 
     protected:
 
@@ -62,7 +58,7 @@ namespace chase {
         TemporalOperator _op;
 
         /// @brief The formula to which apply the operator.
-        sptr_logicform _formula;
+        LogicFormula * _formula;
 
     };
 

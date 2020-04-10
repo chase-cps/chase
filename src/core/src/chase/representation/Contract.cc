@@ -10,12 +10,6 @@
 #include "chase/utilities/ClonedDeclarationVisitor.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_decl = std::shared_ptr<Declaration>;
-using sptr_spec = std::shared_ptr<Specification>;
-using sptr_name = std::shared_ptr<Name>;
-using sptr_contract = std::shared_ptr<Contract>;
 
 Contract::Contract( std::string name ) :
     _name(new Name(name))
@@ -37,25 +31,25 @@ std::string Contract::getString() {
 
     for(auto dit = declarations.begin(); dit != declarations.end(); ++dit )
     {
-        Declaration * d = (*dit).get();
+        Declaration * d = *dit;
         ret += d->getString();
         ret += "\n";
     }
 
     ret += "Assumptions:\n";
     std::map< semantic_domain, Specification * >::iterator sit;
-    for(auto sit = assumptions.begin(); sit != assumptions.end(); ++sit)
+    for(sit = assumptions.begin(); sit != assumptions.end(); ++sit)
     {
 
-        Specification * s = (*sit).second.get();
+        Specification * s = (*sit).second;
         ret += s->getString();
         ret += "\n";
     }
 
     ret += "Guarantees:\n";
-    for(auto sit = guarantees.begin(); sit != guarantees.end(); ++sit)
+    for(sit = guarantees.begin(); sit != guarantees.end(); ++sit)
     {
-        Specification * s = (*sit).second.get();
+        Specification * s = (*sit).second;
         ret += s->getString();
         ret += "\n";
     }
@@ -65,27 +59,27 @@ std::string Contract::getString() {
     return ret;
 }
 
-sptr_name  Contract::getName() const {
+Name * Contract::getName() const {
     return _name;
 }
 
-void Contract::setName(sptr_name  name) {
+void Contract::setName(Name * name) {
     _name = name;
 }
 
-void Contract::addDeclaration(sptr_decl declaration) {
+void Contract::addDeclaration(DataDeclaration *declaration) {
     declarations.push_back(declaration);
     declaration->setParent(this);
 }
 
-void Contract::addAssumptions(semantic_domain domain, sptr_spec spec) {
-    std::pair< semantic_domain, sptr_spec > a(domain, spec);
+void Contract::addAssumptions(semantic_domain domain, Specification *spec) {
+    std::pair< semantic_domain, Specification * > a(domain, spec);
     assumptions.insert(a);
     spec->setParent(this);
 }
 
-void Contract::addGuarantees(semantic_domain domain, sptr_spec spec) {
-    std::pair< semantic_domain, sptr_spec > g(domain, spec);
+void Contract::addGuarantees(semantic_domain domain, Specification *spec) {
+    std::pair< semantic_domain, Specification * > g(domain, spec);
     guarantees.insert(g);
     spec->setParent(this);
 }
@@ -93,19 +87,18 @@ void Contract::addGuarantees(semantic_domain domain, sptr_spec spec) {
 
 
 /// \todo Implement the clone method.
-sptr_contract Contract::clone() {
-    auto ret = make_shared<Contract>(_name->getString());
+Contract *Contract::clone() {
+    auto ret = new Contract(_name->getString());
 
     // Corresponences maps.
-    std::map< sptr_decl, sptr_decl > declaration_map;
+    std::map< Declaration *, Declaration * > declaration_map;
 
     // Declarations.
     for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
-        sptr_decl current = *it;
-        auto dec = std::dynamic_pointer_cast<DataDeclaration>(
-            current->clone());
-        std::pair< sptr_decl , sptr_decl > p(current, dec);
+        DataDeclaration * current = *it;
+        auto dec = current->clone();
+        std::pair< DataDeclaration *, DataDeclaration * > p(current, dec);
         ret->addDeclaration(dec);
         declaration_map.insert(p);
     }
@@ -114,16 +107,14 @@ sptr_contract Contract::clone() {
     for(auto it = assumptions.begin(); it != assumptions.end(); ++it)
     {
         auto spec = (*it).second->clone();
-        ret->addAssumptions((*it).first, 
-            (std::dynamic_pointer_cast<Specification>(spec)));
+        ret->addAssumptions((*it).first, spec);
     }
 
     // Guarantees.
     for(auto it = guarantees.begin(); it != guarantees.end(); ++it)
     {
         auto spec = (*it).second->clone();
-        ret->addGuarantees((*it).first, 
-            (std::dynamic_pointer_cast<Specification>(spec)));
+        ret->addGuarantees((*it).first, spec);
     }
 
     ClonedDeclarationVisitor c(declaration_map);

@@ -44,15 +44,15 @@ void SlugsPrinter::_printDeclarations()
         vit != _contract->declarations.end(); ++vit)
     {
         if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable *>(vit->get());
+        auto var = reinterpret_cast<Variable *>(*vit);
         if( var->getCausality() == input )
         {
             std::string name = var->getName()->getString();
-            std::shared_ptr<Type> type = var->getType();
+            Type * type = var->getType();
             fout << name;
             if(type->IsA() == integer_node)
             {
-                auto integ = reinterpret_cast<Integer *>(type.get());
+                auto integ = reinterpret_cast<Integer *>(type);
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
@@ -70,15 +70,15 @@ void SlugsPrinter::_printDeclarations()
          vit != _contract->declarations.end(); ++vit)
     {
         if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable *>(vit->get());
+        auto var = reinterpret_cast<Variable *>(*vit);
         if( var->getCausality() == output )
         {
             std::string name = var->getName()->getString();
-            std::shared_ptr< Type > type = var->getType();
+            Type * type = var->getType();
             fout << name;
             if(type->IsA() == integer_node)
             {
-                auto integ = reinterpret_cast<Integer *>(type.get());
+                auto integ = reinterpret_cast<Integer *>(type);
                 auto lv = integ->getRange()->getLeftValue();
                 auto rv = integ->getRange()->getRightValue();
 
@@ -103,7 +103,7 @@ void SlugsPrinter::_printInit() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -134,7 +134,7 @@ void SlugsPrinter::_printInit() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -165,7 +165,7 @@ void SlugsPrinter::_printSafety() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -176,15 +176,14 @@ void SlugsPrinter::_printSafety() {
             if( lbf->operands[f]->IsA() == unaryTemporalOperation_node )
             {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula*>(
-                                lbf->operands[f].get());
+                        reinterpret_cast<UnaryTemporalFormula*>(lbf->operands[f]);
                 if(uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if(uto->getFormula()->IsA() == unaryTemporalOperation_node)
                 {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
-                            uto->getFormula().get());
+                            uto->getFormula());
                     if( inner->getOp() == op_future )
                         continue; // Is a Liveness Property.
                 }
@@ -206,7 +205,7 @@ void SlugsPrinter::_printSafety() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
         if (lbf->getOp() != op_and)
             messageError("Not a GR1 Specification.");
 
@@ -214,14 +213,13 @@ void SlugsPrinter::_printSafety() {
         for (size_t f = 0; f < lbf->operands.size(); ++f) {
             if (lbf->operands[f]->IsA() == unaryTemporalOperation_node) {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula *>(
-                                lbf->operands[f].get());
+                        reinterpret_cast<UnaryTemporalFormula *>(lbf->operands[f]);
                 if (uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if (uto->getFormula()->IsA() == unaryTemporalOperation_node) {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
-                            uto->getFormula().get());
+                            uto->getFormula());
                     if (inner->getOp() == op_future)
                         continue; // Is a Liveness Property.
                 }
@@ -244,7 +242,7 @@ void SlugsPrinter::_printLiveness() {
     auto assumptions = formulae->second;
 
     if( assumptions->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(assumptions);
         if (lbf->getOp() != op_and)
             messageError("Not a GR1 Specification.");
 
@@ -253,14 +251,13 @@ void SlugsPrinter::_printLiveness() {
         for (size_t f = 0; f < lbf->operands.size(); ++f) {
             if (lbf->operands[f]->IsA() == unaryTemporalOperation_node) {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula *>(
-                                lbf->operands[f].get());
+                        reinterpret_cast<UnaryTemporalFormula *>(lbf->operands[f]);
                 if (uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if (uto->getFormula()->IsA() == unaryTemporalOperation_node) {
                     auto inner = reinterpret_cast<UnaryTemporalFormula *>(
-                            uto->getFormula().get());
+                            uto->getFormula());
                     if (inner->getOp() == op_future) {
                         _curr += "\n";
                         uto->accept_visitor(*this);
@@ -281,7 +278,7 @@ void SlugsPrinter::_printLiveness() {
     auto guarantees = formulae->second;
 
     if( guarantees->IsA() == large_boolean_formula_node ) {
-        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees.get());
+        auto lbf = reinterpret_cast< LargeBooleanFormula * >(guarantees);
         if( lbf->getOp() != op_and )
             messageError("Not a GR1 Specification.");
 
@@ -293,15 +290,14 @@ void SlugsPrinter::_printLiveness() {
             if( lbf->operands[f]->IsA() == unaryTemporalOperation_node )
             {
                 auto uto =
-                        reinterpret_cast<UnaryTemporalFormula*>(
-                                lbf->operands[f].get());
+                        reinterpret_cast<UnaryTemporalFormula*>(lbf->operands[f]);
                 if(uto->getOp() != op_globally)
                     messageError("Not a GR1 Specification");
 
                 if(uto->getFormula()->IsA() == unaryTemporalOperation_node)
                 {
                     auto inner = reinterpret_cast<UnaryTemporalFormula*>(
-                            uto->getFormula().get());
+                            uto->getFormula());
                     if( inner->getOp() == op_future ) {
                         _curr += "\n\t";
                         uto->accept_visitor(*this);

@@ -79,16 +79,13 @@ set(chase_library
         ${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
-        src/chase/representation/Contract_algebra.cc
-        src/chase/representation/Component.cc
-        include/chase/representation/Component.hh
-)
+        src/chase/representation/Contract_algebra.cc src/chase/representation/Component.cc include/chase/representation/Component.hh)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include
         ${PROJECT_SOURCE_DIR}/src/core/include/chase
         ${PYTHON_INCLUDE_DIRS}
-)
+        )
 
 
 add_library(chasecore STATIC ${chase_library})

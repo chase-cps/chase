@@ -23,6 +23,10 @@ namespace chase
         /// @brief Destructor.
         ~LogicFormula() override= default;
 
+        /// @brief Clone method.
+        /// @return Clone of the object.
+        LogicFormula * clone() override = 0;
+
     protected:
     };
 

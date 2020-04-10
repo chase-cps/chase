@@ -12,17 +12,18 @@
 using namespace chase;
 using namespace patternsOnNetworks;
 
-std::shared_ptr<LogicFormula>
-        DesignProblem::_activatePath( std::vector<unsigned>& path)
+LogicFormula * DesignProblem::_activatePath( std::vector<unsigned>& path)
 {
-    if( path.empty() )
+    if( path.size() < 1 )
         messageError("Empty path.");
+
+    LogicFormula * ret;
 
     size_t i = 0;
     std::string comp_name;
 
     // Find the first element controllable.
-    std::map< std::string, std::shared_ptr<Variable> >::iterator found;
+    std::map< std::string, Variable * >::iterator found;
     while(i < path.size())
     {
         comp_name =
@@ -34,7 +35,7 @@ std::shared_ptr<LogicFormula>
     if(found == _commandVariables.end() )
         messageError("Empty path.");
 
-    std::shared_ptr< LogicFormula > ret = Prop(found->second);
+    ret = Prop(found->second);
 
     while( i < path.size() )
     {
@@ -50,17 +51,18 @@ std::shared_ptr<LogicFormula>
     return ret;
 }
 
-std::shared_ptr<LogicFormula>
-        DesignProblem::_pathDoesExist( std::vector<unsigned> &path )
+LogicFormula * DesignProblem::_pathDoesExist(std::vector<unsigned> &path)
 {
     if( path.size() < 1 )
         messageError("Empty path.");
+
+    LogicFormula * ret;
 
     size_t i = 0;
     std::string comp_name;
 
     // Find the first element that has a state variable.
-    std::map< std::string, std::shared_ptr<Variable> >::iterator found;
+    std::map< std::string, Variable * >::iterator found;
     while( i < path.size() )
     {
         comp_name =
@@ -72,7 +74,7 @@ std::shared_ptr<LogicFormula>
     if(found == _stateVariables.end() )
         messageError("Empty path.");
 
-    std::shared_ptr< LogicFormula > ret = Prop(found->second);
+    ret = Prop(found->second);
 
     while( i < path.size() )
     {

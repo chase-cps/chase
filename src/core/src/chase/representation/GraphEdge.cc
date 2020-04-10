@@ -8,11 +8,6 @@
 #include "chase/representation/Graph.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_value = std::shared_ptr<Value>;
-using sptr_wedge = std::shared_ptr<WeightedEdge>;
-using sptr_edge = std::shared_ptr<Edge>;
 
 Edge::Edge(unsigned int source, unsigned int target ) :
         _source(source),
@@ -56,22 +51,21 @@ std::string Edge::getString() {
 Edge::~Edge() = default;
 
 WeightedEdge::WeightedEdge(unsigned int source, unsigned int target,
-                           sptr_value weight) :
+                           Value *weight) :
         Edge(source, target),
         _weight(weight)
 {
-    _node_type = graph_weighted_edge_node;
     weight->setParent(this);
 }
 
 WeightedEdge::~WeightedEdge() = default;
 
-sptr_value WeightedEdge::getWeight() const
+Value *WeightedEdge::getWeight() const
 {
     return _weight;
 }
 
-void WeightedEdge::setWeight(sptr_value weight)
+void WeightedEdge::setWeight(Value * weight)
 {
     _weight = weight;
     weight->setParent(this);
@@ -92,14 +86,12 @@ std::string WeightedEdge::getString() {
 
 
 /// \todo Implement the clone for the edges.
-sptr_edge Edge::clone() {
-    return make_shared<Edge>(_source, _target);
+Edge *Edge::clone() {
+    return new Edge(_source, _target);
 }
 
 /// \todo Implement the clone for the WeightedEdges.
-sptr_wedge WeightedEdge::clone() {
-    return make_shared<WeightedEdge>
-        (_source, _target, 
-            dynamic_pointer_cast<Value>(_weight->clone()));
+WeightedEdge *WeightedEdge::clone() {
+    return new WeightedEdge(_source, _target, _weight->clone());
 }
 

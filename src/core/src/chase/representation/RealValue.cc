@@ -12,20 +12,18 @@
 #include "representation/Real.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_realval = std::shared_ptr<RealValue>;
 
 RealValue::RealValue( double value ) :
     NumericValue(),
     _value(value)
 {
     _node_type = realValue_node;
-    setType(make_shared<Real>());
+    setType(new Real());
 }
 
 RealValue::~RealValue()
 {
+    delete _type;
 }
 
 RealValue::RealValue( const RealValue & o ) :
@@ -61,9 +59,9 @@ std::string RealValue::getString()
     return std::to_string(_value);
 }
 
-sptr_realval RealValue::clone()
+RealValue * RealValue::clone()
 {
-    auto ret = make_shared<RealValue>(_value);
-    ret->setType(_type);
+    auto ret = new RealValue(_value);
+    ret->setType(_type->clone());
     return ret;
 }

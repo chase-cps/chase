@@ -8,9 +8,6 @@
 #include "chase/representation/BooleanConstant.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_boolconst = std::shared_ptr<BooleanConstant>;
 
 BooleanConstant::BooleanConstant( bool value ) :
     _value(value)
@@ -33,7 +30,7 @@ bool BooleanConstant::getValue() {
     return _value;
 }
 
-sptr_boolconst BooleanConstant::clone()
+BooleanConstant *BooleanConstant::clone()
 {
-    return make_shared<BooleanConstant>(_value);
+    return new BooleanConstant(_value);
 }

@@ -15,12 +15,6 @@ namespace chase {
 
     /// @brief Class representing a logic proposition.
     class Proposition : public LogicFormula {
-
-    using sptr_name = std::shared_ptr<Name>;
-    using sptr_type = std::shared_ptr<Type>;
-    using sptr_value = std::shared_ptr<Value>;
-    using sptr_prop = std::shared_ptr<Proposition>;
-
     public:
         /// @brief Constructor. It is preferable to use the ad-hoc constructor
         /// specifying the value linked to the proposition.
@@ -29,7 +23,7 @@ namespace chase {
         /// @brief Constructor with value.
         /// @param v The value to be linked to the proposition.
         /// The value must be boolean.
-        explicit Proposition( sptr_value v );
+        explicit Proposition( Value * v );
 
         /// @brief Destructor.
         ~Proposition() override;
@@ -37,24 +31,24 @@ namespace chase {
         /// @brief Return the type of the proposition. It always returns
         /// a boolean.
         /// @return The type of the proposition, i.e., Boolean.
-        sptr_type getType();
+        Type * getType();
 
         /// @brief Returns the value linked to the proposition.
         /// @return Value linked to the proposition.
-        sptr_value getValue();
+        Value * getValue();
 
         /// @brief Returns the name of the proposition.
         /// @return the name of the proposition.
-        sptr_name getName();
+        Name * getName();
 
         /// @brief Set the value linked to the proposition. It should not be
         /// used. Better using the ad-hoc constructor.
         /// @param v The value to link to the proposition.
-        void setValue( sptr_value v );
+        void setValue( Value * v );
 
         /// @brief Set the name of the Proposition.
         /// @param n The name of the proposition.
-        void setName( sptr_name n );
+        void setName( Name * n );
 
         /// @brief Base function for the visitor pattern.
         /// @param v The visitor to be applied during the visit.
@@ -67,20 +61,20 @@ namespace chase {
 
         /// @brief Clone method.
         /// @return A clone of the object.
-        sptr_prop clone();
+        Proposition * clone() override;
 
     protected:
 
         /// @brief the Type of the Proposition. I.e., Boolean.
-        sptr_type _type;
+        Type * _type;
 
         /// @brief The value to which the proposition is connected.
         /// It must be typed boolean. E.g., an expression or a
         /// boolean variable.
-        sptr_value _value;
+        Value * _value;
 
         /// @brief The name of the proposition.
-        sptr_name _name;
+        Name * _name;
 
     };
 }

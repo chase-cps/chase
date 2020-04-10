@@ -15,9 +15,9 @@ int GR1CPrinter::visitIntegerValue(IntegerValue &o) {
 
 int GR1CPrinter::visitExpression(Expression &o) {
     _curr += "(";
-    _continueVisit(* o.getOp1());
+    _continueVisit(o.getOp1());
     _curr += to_string(o.getOperator());
-    _continueVisit(* o.getOp2());
+    _continueVisit(o.getOp2());
     _curr += ")";
     return 1;
 }
@@ -34,18 +34,15 @@ int GR1CPrinter::visitIdentifier(Identifier &o) {
 
 int GR1CPrinter::visitProposition(Proposition &o)
 {
-    /// \todo Evaluate for removal.
-    /*if(o.getValue()->IsA() == identifier_node)
+    if(o.getValue()->IsA() == identifier_node)
     {
-        reinterpret_cast<Identifier*>(
-                o.getValue().get())->accept_visitor(*this);
+        reinterpret_cast<Identifier*>(o.getValue())->accept_visitor(*this);
     }
     else if(o.getValue()->IsA() == expression_node)
     {
-        reinterpret_cast<Expression*>(
-                o.getValue().get())->accept_visitor(*this);
-    }*/
-    return o.getValue()->accept_visitor(*this);
+        reinterpret_cast<Expression*>(o.getValue())->accept_visitor(*this);
+    }
+    return 1;
 }
 
 int GR1CPrinter::visitBooleanConstant(BooleanConstant &o) {
@@ -54,7 +51,7 @@ int GR1CPrinter::visitBooleanConstant(BooleanConstant &o) {
 
 int GR1CPrinter::visitBinaryBooleanOperation(BinaryBooleanFormula &o) {
     _curr += "(";
-    _continueVisit(* o.getOp1());
+    _continueVisit(o.getOp1());
 
     switch(o.getOp())
     {
@@ -80,7 +77,7 @@ int GR1CPrinter::visitBinaryBooleanOperation(BinaryBooleanFormula &o) {
             messageError("Operator not supported.");
             break;
     }
-    _continueVisit(* o.getOp2());
+    _continueVisit(o.getOp2());
     _curr += ")";
     return 1;
 }
@@ -91,7 +88,7 @@ int GR1CPrinter::visitUnaryBooleanOperation(UnaryBooleanFormula &o) {
         case op_not:
             _curr += "(!";
             _curr += "(";
-            _continueVisit(* o.getOp1());
+            _continueVisit(o.getOp1());
             _curr += "))";
             break;
         case op_and:
@@ -128,16 +125,16 @@ int GR1CPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &o) {
             if (_inNext)
                 messageError("Illegal form: double annidated Next.");
             _inNext = true;
-            _continueVisit(* o.getFormula());
+            _continueVisit(o.getFormula());
             _inNext = false;
             break;
         case op_globally:
             _curr += "[]";
-            _continueVisit(* o.getFormula());
+            _continueVisit(o.getFormula());
             break;
         case op_future:
             _curr += "<>";
-            _continueVisit(* o.getFormula());
+            _continueVisit(o.getFormula());
             break;
         case op_until:
             messageError("Until is not unary.");
@@ -171,8 +168,7 @@ int GR1CPrinter::visitBinaryTemporalOperation(BinaryTemporalFormula &o)
     return 1;
 }
 
-int GR1CPrinter::_continueVisit(ChaseObject &obj) {
-    chase::ChaseObject * o = &obj;
+int GR1CPrinter::_continueVisit(ChaseObject *o) {
     switch(o->IsA())
     {
         case integerValue_node:{

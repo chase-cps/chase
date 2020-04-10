@@ -7,12 +7,6 @@
 #include "chase/representation/Proposition.hh"
 
 using namespace chase;
-using namespace std;
-
-using sptr_name = std::shared_ptr<Name>;
-using sptr_type = std::shared_ptr<Type>;
-using sptr_value = std::shared_ptr<Value>;
-using sptr_prop = std::shared_ptr<Proposition>;
 
 Proposition::Proposition() :
     _type(new Boolean()),
@@ -25,9 +19,10 @@ Proposition::Proposition() :
 
 Proposition::~Proposition()
 {
+    delete _type;
 }
 
-Proposition::Proposition(sptr_value v) :
+Proposition::Proposition(Value *v) :
     _type(new Boolean()),
     _value(v),
     _name(nullptr)
@@ -37,9 +32,9 @@ Proposition::Proposition(sptr_value v) :
     switch( _value->IsA()) {
         case (identifier_node) :
             Identifier *id;
-            id = dynamic_cast< Identifier * >(v.get());
+            id = dynamic_cast< Identifier * >(v);
             if (id != nullptr) {
-                _name = std::shared_ptr<Name>(new Name(id->getDeclaration()->getName()->getString()));
+                _name = new Name(id->getDeclaration()->getName()->getString());
                 _name->setParent(this);
             }
             else messageError("Something went wrong in dynamic cast.");
@@ -50,7 +45,7 @@ Proposition::Proposition(sptr_value v) :
             break;
         case (expression_node) :
             Expression *exp;
-            exp = dynamic_cast< Expression * >(v.get());
+            exp = dynamic_cast< Expression * >(v);
             if (exp != nullptr)
                 if (exp->getType()->IsA() != boolean_node)
                     messageError(
@@ -58,34 +53,32 @@ Proposition::Proposition(sptr_value v) :
                             exp);
             break;
         default:
-            messageError("Not boolean object when creating a proposition", v.get());
+            messageError("Not boolean object when creating a proposition", v);
             break;
     }
 
 }
 
-sptr_type Proposition::getType() {
+Type *Proposition::getType() {
     return _type;
 }
 
-std::shared_ptr<Value> Proposition::getValue() {
+Value *Proposition::getValue() {
     return _value;
 }
 
-void Proposition::setValue(std::shared_ptr<Value> v) {
+void Proposition::setValue(Value *v) {
     _value = v;
-    if(_value->getParent() == nullptr ) 
-        _value->setParent(this);
+    if(_value->getParent() == nullptr ) _value->setParent(this);
 }
 
-std::shared_ptr<Name> Proposition::getName() {
+Name *Proposition::getName() {
     return _name;
 }
 
-void Proposition::setName(std::shared_ptr<Name> n) {
+void Proposition::setName(Name *n) {
     _name = n;
-    if(_name->getParent() == nullptr ) 
-        _name->setParent(this);
+    if(_name->getParent() == nullptr ) _name->setParent(this);
 }
 
 int Proposition::accept_visitor(chase::BaseVisitor &v) {
@@ -97,14 +90,14 @@ std::string Proposition::getString() {
     if( _value->IsA() == identifier_node )
         ret = _name->getString();
     else if( _value->IsA() == expression_node )
-        ret = _value->getString();
+        ret = static_cast< Expression * >(_value)->getString();
     return ret;
 }
 
-sptr_prop Proposition::clone()
+Proposition * Proposition::clone()
 {
-    auto ret = make_shared<Proposition>();
-    if( _name != nullptr ) ret->setName(_name);
-    if( _value != nullptr ) ret->setValue(_value);
+    auto ret = new Proposition();
+    if( _name != nullptr ) ret->setName(_name->clone());
+    if( _value != nullptr ) ret->setValue(_value->clone());
     return ret;
 }

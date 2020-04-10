@@ -18,7 +18,6 @@ namespace chase {
     /// @brief Class for nodes representing real values.
     class RealValue : public NumericValue
     {
-        using sptr_realval = std::shared_ptr<RealValue>;
         public:
             /// @brief Constructor.
             /// @param value Value of the integer.
@@ -52,7 +51,7 @@ namespace chase {
 
             /// @brief Clone method.
             /// @return Clone of the object.
-            sptr_realval clone();
+            RealValue * clone() override;
 
         protected:
             /// @brief Value stored.

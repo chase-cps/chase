@@ -10,10 +10,12 @@ using namespace chase;
 PYBIND11_MODULE(chasecorebnd, m) {
     m.doc() = "CHASE Core  Python wrapper module";
 
-    py::class_<ChaseObject, std::shared_ptr<ChaseObject>>
+    py::class_<ChaseObject, std::unique_ptr<ChaseObject, 
+        py::nodelete>>
         (m, "ChaseObject");
 
-    py::class_<Name, std::shared_ptr<Name>, ChaseObject>
+    py::class_<Name, std::unique_ptr<Name, 
+        py::nodelete>, ChaseObject>
         (m, "Name")
         .def(py::init<std::string &>(), py::arg("s"))
         .def(py::init<const Name &>(), py::arg("o"))
@@ -24,7 +26,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
             py::arg("name"))
         .def("clone", &Name::clone);
 
-    py::class_<Contract, std::shared_ptr<Contract>,
+    py::class_<Contract, std::unique_ptr<Contract, 
+        py::nodelete>,
         ChaseObject>(m, "Contract");
 
     /**
@@ -76,12 +79,14 @@ PYBIND11_MODULE(chasecorebnd, m) {
     *   TYPES BINDINGS
     */
 
-    py::class_<Type, std::shared_ptr<Type>>(m, "Type");
-    py::class_<SimpleType, Type, std::shared_ptr<SimpleType>>
+    py::class_<Type, std::unique_ptr<Type, 
+        py::nodelete>>(m, "Type");
+    py::class_<SimpleType, Type, std::unique_ptr<SimpleType, 
+        py::nodelete>>
     (m, "SimpleType");
 
     // Boolean Type
-    py::class_<Boolean, std::shared_ptr<Boolean>, SimpleType>
+    py::class_<Boolean, std::unique_ptr<Boolean>, SimpleType>
         (m, "Boolean")
         .def(py::init<>())
         .def("accept_visitor", &Boolean::accept_visitor,
@@ -90,12 +95,13 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Boolean::clone);
 
     // Integer Type
-    py::class_<Integer, std::shared_ptr<Integer>, 
+    py::class_<Integer, std::unique_ptr<Integer, 
+        py::nodelete>, 
         SimpleType>(m, "Integer")
         .def(py::init<>())
         .def(py::init<const int &, const int &>(),
             py::arg("l").none(false), py::arg("r").none(false))
-        .def(py::init<std::shared_ptr<Range> >(), 
+        .def(py::init<Range * >(), 
             py::arg("r").none(false))
         .def("isSigned", &Integer::isSigned)
         .def("getRange", &Integer::getRange, 
@@ -106,7 +112,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Integer::clone);
 
     // Real Type
-    py::class_<Real, std::shared_ptr<Real>, SimpleType>(m, "Real")
+    py::class_<Real, std::unique_ptr<Real, py::nodelete>,
+        SimpleType>(m, "Real")
         .def(py::init<>())
         .def("getRange", &Real::getRange, 
             py::return_value_policy::reference)
@@ -123,14 +130,15 @@ PYBIND11_MODULE(chasecorebnd, m) {
     *   VALUES BINDINGS
     */
 
-    py::class_<Value, std::shared_ptr<Value>, 
+    py::class_<Value, std::unique_ptr<Value, py::nodelete>, 
         ChaseObject>(m, "Value");
-    py::class_<NumericValue, std::shared_ptr<NumericValue>, 
-        Value>(m, "NumericValue");
+    py::class_<NumericValue, std::unique_ptr<NumericValue, 
+        py::nodelete>, Value>(m, "NumericValue");
 
 
     // Range Binding
-    py::class_<Range, std::shared_ptr<Range>, Value>(m, "Range")
+    py::class_<Range, std::unique_ptr<Range,
+        py::nodelete>, Value>(m, "Range")
         .def(py::init<>())
         .def(py::init<const int &, const int &>(),
             py::arg("lbound").none(false), 
@@ -149,9 +157,9 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Range::clone);
 
     //  Identifier Binding
-    py::class_<Identifier, std::shared_ptr<Identifier>, 
-        Value>(m, "Identifier")
-        .def(py::init<std::shared_ptr<DataDeclaration>>(),
+    py::class_<Identifier, std::unique_ptr<Identifier, 
+        py::nodelete>, Value>(m, "Identifier")
+        .def(py::init<DataDeclaration *>(),
             py::arg("d")=nullptr)
         .def(py::init<const Identifier &>(), py::arg("i"))
         .def("getDeclaration", &Identifier::getDeclaration)
@@ -162,11 +170,11 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Identifier::clone);
 
     // Expression Binding
-    py::class_<Expression, std::shared_ptr<Expression>, 
-    Value>(m, "Expression")
+    py::class_<Expression, std::unique_ptr<Expression, 
+        py::nodelete>, Value>(m, "Expression")
         .def(py::init<>())
-        .def(py::init<Operator, std::shared_ptr<Value>,
-            std::shared_ptr<Value>>(), py::arg("op").none(false),
+        .def(py::init<Operator, Value *,
+            Value *>(), py::arg("op").none(false),
             py::arg("op1").none(false), py::arg("op2")=nullptr)
         .def("getOperator", &Expression::getOperator)
         .def("getOp1", &Expression::getOp1)
@@ -185,8 +193,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
 
     //  BooleanValue Binding
-    py::class_<BooleanValue, std::shared_ptr<BooleanValue>, 
-        NumericValue>(m, "BooleanValue")
+    py::class_<BooleanValue, std::unique_ptr<BooleanValue, 
+        py::nodelete>, NumericValue>(m, "BooleanValue")
         .def(py::init<const bool &>(),
             py::arg("value") = false)
         .def(py::init<const BooleanValue &>(),
@@ -200,8 +208,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &BooleanValue::clone);
 
     //  IntegerValue Binding
-    py::class_<IntegerValue, std::shared_ptr<IntegerValue>, 
-        NumericValue>(m, "IntegerValue")
+    py::class_<IntegerValue, std::unique_ptr<IntegerValue, 
+        py::nodelete>, NumericValue>(m, "IntegerValue")
         .def(py::init<const int64_t &>(),
             py::arg("value") = 0)
         .def(py::init<const IntegerValue &>(),
@@ -215,8 +223,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &IntegerValue::clone);
 
     //  RealValue Binding
-    py::class_<RealValue, std::shared_ptr<RealValue>, 
-        NumericValue>(m, "RealValue")
+    py::class_<RealValue, std::unique_ptr<RealValue, 
+        py::nodelete>, NumericValue>(m, "RealValue")
         .def(py::init<const double &>(),
             py::arg("value") = 0)
         .def(py::init<const RealValue &>(),
@@ -234,17 +242,18 @@ PYBIND11_MODULE(chasecorebnd, m) {
     *   DATA DECLARATION BINDINGS
     */
 
-    py::class_<Declaration, std::shared_ptr<Declaration>, 
-        ChaseObject>(m, "Declaration");
-    py::class_<DataDeclaration, std::shared_ptr<DataDeclaration>, 
-        Declaration>(m, "DataDeclaration");
+    py::class_<Declaration, std::unique_ptr<Declaration, 
+        py::nodelete>, ChaseObject>(m, "Declaration");
+    py::class_<DataDeclaration, std::unique_ptr<DataDeclaration, 
+        py::nodelete>, Declaration>(m, "DataDeclaration");
 
     // Constant Binding
-    py::class_<Constant, std::shared_ptr<Constant>, 
-        DataDeclaration>(m, "Constant")
-        .def(py::init< std::shared_ptr<Type>, std::shared_ptr<Name>,
-            std::shared_ptr<Value> >(), py::arg("type"), 
-            py::arg("name"), py::arg("value"))
+    py::class_<Constant, std::unique_ptr<Constant, 
+        py::nodelete>, DataDeclaration>(m, "Constant")
+        .def(py::init< Type *, Name *, Value* >(), 
+            py::arg("type"), 
+            py::arg("name"), 
+            py::arg("value"))
         .def("getString", &Constant::getString)
         .def("getValue", &Constant::getValue)
         .def("setValue", &Constant::setValue,
@@ -263,12 +272,12 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .export_values();
         
     // Variable Binding
-    py::class_<Variable, std::shared_ptr<Variable>, 
-        DataDeclaration>(m, "Variable")
-        .def(py::init<std::shared_ptr<Type> &, 
-            std::shared_ptr<Name> &,
-            causality_t &>(), py::arg("type"), 
-            py::arg("name"), py::arg("causality_t")=generic)
+    py::class_<Variable, std::unique_ptr<Variable, 
+        py::nodelete>, DataDeclaration>(m, "Variable")
+        .def(py::init<Type *, Name *, causality_t &>(),
+            py::arg("type"), 
+            py::arg("name"), 
+            py::arg("causality_t")=generic)
         .def("getString", &Variable::getString)
         .def("getCausality", &Variable::getCausality)
         .def("setCausality", &Variable::setCausality, 
@@ -282,18 +291,18 @@ PYBIND11_MODULE(chasecorebnd, m) {
     *  LOGIC FORMULA BINDINGS
     */
 
-    py::class_<Specification, std::shared_ptr<Specification>, 
-        ChaseObject>(m, "Specification");
-    py::class_<LogicFormula, std::shared_ptr<LogicFormula>, 
-        Specification>(m, "LogicFormula");
+    py::class_<Specification, std::unique_ptr<Specification, 
+        py::nodelete>, ChaseObject>(m, "Specification");
+    py::class_<LogicFormula, std::unique_ptr<LogicFormula, 
+        py::nodelete>, Specification>(m, "LogicFormula");
 
     // BinaryBooleanFormula
     py::class_<BinaryBooleanFormula, 
-        std::shared_ptr<BinaryBooleanFormula>, 
+        std::unique_ptr<BinaryBooleanFormula, py::nodelete>, 
         LogicFormula>(m, "BinaryBooleanFormula")
         .def(py::init<chase::BooleanOperator, 
-            std::shared_ptr<LogicFormula>, 
-            std::shared_ptr<LogicFormula>>(),
+            LogicFormula *, 
+            LogicFormula *>(),
             py::arg("op")=op_and, 
             py::arg("op1")=nullptr,
             py::arg("op2")=nullptr)
@@ -313,11 +322,11 @@ PYBIND11_MODULE(chasecorebnd, m) {
     
     // BinaryTemporalFormula
     py::class_<BinaryTemporalFormula, 
-        std::shared_ptr<BinaryTemporalFormula>, 
+        std::unique_ptr<BinaryTemporalFormula, py::nodelete>, 
         LogicFormula>(m, "BinaryTemporalFormula")
         .def(py::init<chase::TemporalOperator, 
-            std::shared_ptr<LogicFormula>, 
-            std::shared_ptr<LogicFormula>>(),
+            LogicFormula *, 
+            LogicFormula *>(),
             py::arg("op")=op_until, 
             py::arg("op1")=nullptr,
             py::arg("op2")=nullptr)
@@ -337,7 +346,7 @@ PYBIND11_MODULE(chasecorebnd, m) {
     
     // Boolean Constant
     py::class_<BooleanConstant,
-        std::shared_ptr<BooleanConstant>, 
+        std::unique_ptr<BooleanConstant, py::nodelete>, 
         LogicFormula>(m, "BooleanConstant")
         .def(py::init<bool &>(), py::arg("value")=true)
         .def("getValue", &BooleanConstant::getValue)
@@ -348,7 +357,7 @@ PYBIND11_MODULE(chasecorebnd, m) {
     
     // LargeBooleanFormula
     py::class_<LargeBooleanFormula,
-        std::shared_ptr<LargeBooleanFormula>,
+        std::unique_ptr<LargeBooleanFormula, py::nodelete>,
         LogicFormula>(m, "LargeBooleanFormula")
         .def(py::init<BooleanOperator &>(),
             py::arg("op")=op_and)
@@ -364,10 +373,10 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
     // ModalFormula
     py::class_<ModalFormula,
-        std::shared_ptr<ModalFormula>,
+        std::unique_ptr<ModalFormula, py::nodelete>,
         LogicFormula>(m, "ModalFormula")
         .def(py::init<ModalOperator &,
-            std::shared_ptr<LogicFormula>>(),
+            LogicFormula *>(),
             py::arg("op")=op_square, 
             py::arg("formula")=nullptr)
         .def("getOperator", &ModalFormula::getOperator)
@@ -381,10 +390,10 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
     // Proposition
     py::class_<Proposition, 
-        std::shared_ptr<Proposition>,
+        std::unique_ptr<Proposition, py::nodelete>,
         LogicFormula>(m, "Proposition")
         .def(py::init<>())
-        .def(py::init<std::shared_ptr<Value> &>(),
+        .def(py::init<Value *>(),
             py::arg("v").none(false))
         .def("getType", &Proposition::getType)
         .def("getValue", &Proposition::getValue)
@@ -400,10 +409,10 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
     // UnaryBooleanFormula
     py::class_<UnaryBooleanFormula,
-        std::shared_ptr<UnaryBooleanFormula>,
+        std::unique_ptr<UnaryBooleanFormula, py::nodelete>,
         LogicFormula>(m, "UnaryBooleanFormula")
         .def(py::init<BooleanOperator &,
-            std::shared_ptr<LogicFormula> &>(),
+            LogicFormula *>(),
             py::arg("op")=op_not,
             py::arg("op1")=nullptr)
         .def("getOp", &UnaryBooleanFormula::getOp)
@@ -419,10 +428,10 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
     // UnaryTemporalFormula
     py::class_<UnaryTemporalFormula,
-        std::shared_ptr<UnaryTemporalFormula>,
+        std::unique_ptr<UnaryTemporalFormula, py::nodelete>,
         LogicFormula>(m, "UnaryTemporalFormula")
         .def(py::init<TemporalOperator &,
-            std::shared_ptr<LogicFormula> &>(),
+            LogicFormula *>(),
             py::arg("op")=op_globally,
             py::arg("op1")=nullptr)
         .def("getOp", &UnaryTemporalFormula::getOp)
@@ -442,8 +451,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
     */ 
 
     // Edge  
-    py::class_<Edge, std::shared_ptr<Edge>, ChaseObject>
-        (m, "Edge")
+    py::class_<Edge, std::unique_ptr<Edge, py::nodelete>, 
+        ChaseObject>(m, "Edge")
         .def(py::init<unsigned int &, unsigned int &>(),
             py::arg("source").none(false), 
             py::arg("target").none(false))
@@ -460,11 +469,11 @@ PYBIND11_MODULE(chasecorebnd, m) {
 
     // WeightedEdge
     py::class_<WeightedEdge, 
-        std::shared_ptr<WeightedEdge>, Edge>
+        std::unique_ptr<WeightedEdge, py::nodelete>, Edge>
         (m, "WeightedEdge")
         .def(py::init<unsigned int &, 
             unsigned int &,
-            std::shared_ptr<Value> & >(),
+            Value *>(),
             py::arg("source").none(false), 
             py::arg("target").none(false),
             py::arg("weight").none(false))
@@ -475,9 +484,9 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Edge::clone);
     
     // Vertex
-    py::class_<Vertex, std::shared_ptr<Vertex>,
+    py::class_<Vertex, std::unique_ptr<Vertex, py::nodelete>,
         ChaseObject>(m, "Vertex")
-        .def(py::init<std::shared_ptr<Name> &>(),
+        .def(py::init<Name *>(),
             py::arg("name")=nullptr)
         .def("getName", &Vertex::getName)
         .def("setName", &Vertex::setName,
@@ -488,13 +497,13 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("clone", &Vertex::clone);
     
     // Graph
-    py::class_<Graph, std::shared_ptr<Graph>,
+    py::class_<Graph, std::unique_ptr<Graph, py::nodelete>,
         Specification>(m, "Graph")
         .def(py::init<unsigned int &, 
-            bool &, std::shared_ptr<Name> &>(),
+            bool &, Name *>(),
             py::arg("size").none(false), 
             py::arg("directed")=false,
-            py::arg("name")=std::make_shared<Name>("GenericGraph"))
+            py::arg("name")=new Name("GenericGraph"))
         .def("accept_visitor", &Graph::accept_visitor,
             py::arg("v").none(false))
         .def("getString", &Graph::getString)

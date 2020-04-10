@@ -9,31 +9,28 @@
 
 #include "chase/representation/Graph.hh"
 using namespace chase;
-using namespace std;
 
-using sptr_name = std::shared_ptr<Name>;
-using sptr_vert = std::shared_ptr<Vertex>;
-
-Vertex::Vertex(sptr_name name) :
+Vertex::Vertex(Name *name) :
     _name(name)
 {
     _node_type = graph_vertex_node;
     if( _name == nullptr )
     {
-        _name = make_shared<Name>("GenericVertex");
+        _name = new Name("GenericVertex");
     }
 }
 
 Vertex::~Vertex()
 {
+    delete _name;
 }
 
-sptr_name Vertex::getName() const {
+Name *Vertex::getName() const {
     return _name;
 }
 
 void Vertex::setName(std::string name) {
-    _name = make_shared<Name>(std::move(name));
+    _name = new Name(std::move(name));
 }
 
 int Vertex::accept_visitor(chase::BaseVisitor &v) {
@@ -45,6 +42,6 @@ std::string Vertex::getString() {
 }
 
 
-sptr_vert Vertex::clone() {
-    return make_shared<Vertex>(_name->clone());
+Vertex *Vertex::clone() {
+    return new Vertex(_name->clone());
 }

@@ -8,14 +8,8 @@
 #include "chase/representation/Graph.hh"
 
 using namespace chase;
-using namespace std;
 
-using sptr_name = std::shared_ptr<Name>;
-using sptr_vert = std::shared_ptr<Vertex>;
-using sptr_edge = std::shared_ptr<Edge>;
-using sptr_graph = std::shared_ptr<Graph>;
-
-Graph::Graph( unsigned int size, bool directed, sptr_name name ) :
+Graph::Graph( unsigned int size, bool directed, Name * name ) :
     _vertexes(size, nullptr), // Initialize the vertexes vector.
     _size(size),
     _directed(directed),
@@ -53,18 +47,19 @@ std::string Graph::getString() {
 
     // Print edges.
     ret += "Edges:\n";
-
-    for( auto it = _edges.begin(); it != _edges.end(); ++it )
+    std::set< Edge * >::iterator it;
+    for( it = _edges.begin(); it != _edges.end(); ++it )
     {
+        Edge * e = (*it);
         ret += "\t";
-        ret += (*it)->getString();
+        ret += e->getString();
         ret += "\n";
     }
 
     return ret;
 }
 
-void Graph::associateVertex(unsigned int index, sptr_vert vertex) {
+void Graph::associateVertex(unsigned int index, Vertex *vertex) {
     if(index < _size) {
         _vertexes[index] = vertex;
         vertex->setParent(this);
@@ -73,7 +68,7 @@ void Graph::associateVertex(unsigned int index, sptr_vert vertex) {
 
 }
 
-void Graph::addEdge(sptr_edge edge) {
+void Graph::addEdge(Edge *edge) {
     _edges.insert(edge);
     edge->setParent(this);
 
@@ -85,21 +80,11 @@ void Graph::addEdge(sptr_edge edge) {
     // Find the entry in the matrix.
     it = _matrix.find(std::pair<unsigned int, unsigned int>(s,t));
     // Set the edge as the edge in the matrix.
-    if(it != _matrix.end()) it->second = edge.get();
+    if(it != _matrix.end()) it->second = edge;
 
     if( ! _directed ) {
         it = _matrix.find(std::pair<unsigned int, unsigned int>(t, s));
-        if(it != _matrix.end()) it->second = edge.get();
-    }
-}
-
-void Graph::deleteEdge(int i, int j)
-{
-    AdjMatrix::iterator it;
-    it = _matrix.find(std::pair<unsigned int, unsigned int>(i,j));
-    if(it != _matrix.end()) {
-        delete it->second;
-        it->second = nullptr;
+        if(it != _matrix.end()) it->second = edge;
     }
 }
 
@@ -107,34 +92,27 @@ bool Graph::isDirected() const {
     return _directed;
 }
 
-sptr_edge Graph::getEdge(unsigned int source, unsigned int target) {
+Edge * Graph::getEdge(unsigned int source, unsigned int target) {
 
-    for(auto it = _edges.begin(); it != _edges.end(); ++it ) {
-        Edge *edge = it->get();
-
-        if (edge->getSource() == source && edge->getTarget() == target)
-            return shared_ptr<Edge>(edge);
-
-        if (!_directed &&
-            edge->getSource() == target && edge->getTarget() == source)
-        {
-            return shared_ptr<Edge>(edge);
-        }
-
+    for(auto it = _edges.begin(); it != _edges.end(); ++it )
+    {
+        Edge * edge = *it;
+        if(edge->getSource() == source && edge->getTarget() == target)
+            return edge;
     }
     return nullptr;
 }
 
-sptr_vert Graph::getVertex(unsigned int vertex_id) {
+Vertex *Graph::getVertex(unsigned int vertex_id) {
     if( vertex_id >= _size ) return nullptr;
-    return shared_ptr<Vertex>(_vertexes[vertex_id]);
+    return _vertexes[vertex_id];
 }
 
-sptr_name Graph::getName() const {
+Name *Graph::getName() const {
     return _name;
 }
 
-void Graph::setName(sptr_name name) {
+void Graph::setName(Name *name) {
     _name = name;
 }
 
@@ -146,9 +124,10 @@ std::string Graph::getGraphViz() {
         ret = "graph ";
     ret += _name->getString() + "{\n";
 
-    for(auto it = _edges.begin(); it != _edges.end(); ++it)
+    std::set< Edge * >::iterator it;
+    for(it = _edges.begin(); it != _edges.end(); ++it)
     {
-        Edge * e = it->get();
+        Edge * e = *it;
         unsigned int s = e->getSource();
         unsigned int t = e->getTarget();
         ret += "\t" + std::to_string(s);
@@ -161,13 +140,12 @@ std::string Graph::getGraphViz() {
     return ret;
 }
 
-std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id)
-{
+std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id) {
     std::set< unsigned int> adjList;
 
     for(auto it = _edges.begin(); it != _edges.end(); ++it)
     {
-        Edge * edge = it->get();
+        Edge * edge = *it;
         if(edge->getSource() == id)
             adjList.insert(edge->getTarget());
         if(! _directed && edge->getTarget() == id )
@@ -179,6 +157,7 @@ std::set<unsigned int> Graph::getAdjacentNodes(unsigned int id)
 
 int Graph::getVertexIndex(std::string name)
 {
+
     for (size_t i = 0; i < _vertexes.size(); ++i)
     {
         if( name == _vertexes[i]->getName()->getString() )
@@ -194,9 +173,9 @@ unsigned int Graph::getSize() const {
 Graph::~Graph() = default;
 
 
-sptr_graph Graph::clone() {
+Graph *Graph::clone() {
     /// \todo Manage the graph copy with correspondences.
-    auto ret = make_shared<Graph>(_size, false, _name->clone());
+    auto ret = new Graph(_size, _name->clone());
 
     // Clone all the vertexes.
     for( size_t n = 0; n < _vertexes.size(); ++n )
@@ -213,5 +192,3 @@ sptr_graph Graph::clone() {
 
     return ret;
 }
-
-

@@ -14,10 +14,6 @@
 namespace chase {
 
     class ComponentDefinition : public Declaration {
-
-    using sptr_compdef = std::shared_ptr<ComponentDefinition>;
-    using sptr_name = std::shared_ptr<Name>;
-
     public:
 
         /// @brief Set of views of the component.
@@ -28,7 +24,7 @@ namespace chase {
 
         /// @brief Constructor.
         /// @param name The name of the component definition.
-        ComponentDefinition( sptr_name name );
+        ComponentDefinition( Name * name );
 
         /// @brief Constructor.
         /// @param name The name of the component definition (string).
@@ -41,7 +37,7 @@ namespace chase {
 
         std::string getString() override;
 
-        sptr_compdef clone();
+        ComponentDefinition *clone() override;
 
     protected:
 
