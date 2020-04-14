@@ -1,4 +1,4 @@
-import chasecorebnd
+from chasecorebnd import *
 
 #         Variable * state = _stateVariables.find(*cit)->second;
 #         auto id_now = new Identifier(state);
@@ -15,38 +15,38 @@ import chasecorebnd
 #                         np_now,
 #                         new UnaryTemporalFormula(op_next, np_next)));
 
-b= chasecorebnd.Boolean()
+b= Boolean()
 
-state = chasecorebnd.Variable(b, chasecorebnd.Name('test'), chasecorebnd.generic)
-id_now = chasecorebnd.Identifier(state)
-id_next = chasecorebnd.Identifier(state)
-p_now = chasecorebnd.Proposition(id_now)
-p_next = chasecorebnd.Proposition(id_next)
-np_now = chasecorebnd.UnaryBooleanFormula(chasecorebnd.op_not, p_now)
-np_next = chasecorebnd.UnaryBooleanFormula(chasecorebnd.op_not, p_next)
+state = Variable(b, Name('test'), generic)
+id_now = Identifier(state)
+id_next = Identifier(state)
+p_now = Proposition(id_now)
+p_next = Proposition(id_next)
+np_now = UnaryBooleanFormula(op_not, p_now)
+np_next = UnaryBooleanFormula(op_not, p_next)
 
-formula = chasecorebnd.UnaryTemporalFormula(
-    chasecorebnd.op_globally,
-    chasecorebnd.BinaryBooleanFormula(
-        chasecorebnd.op_implies,
+formula = UnaryTemporalFormula(
+    op_globally,
+    BinaryBooleanFormula(
+        op_implies,
         np_now,
-        chasecorebnd.UnaryTemporalFormula(chasecorebnd.op_next, np_next)
+        UnaryTemporalFormula(op_next, np_next)
     )
 )
 
 print(formula.getString())
 
-graph = chasecorebnd.Graph(4)
-graph.addEdge(chasecorebnd.Edge(0,1))
-graph.addEdge(chasecorebnd.Edge(0,2))
-graph.addEdge(chasecorebnd.Edge(1,2))
-graph.addEdge(chasecorebnd.Edge(2,3))
-graph.addEdge(chasecorebnd.Edge(3,1))
+graph = Graph(4)
+graph.addEdge(Edge(0,1))
+graph.addEdge(Edge(0,2))
+graph.addEdge(Edge(1,2))
+graph.addEdge(Edge(2,3))
+graph.addEdge(Edge(3,1))
 
-v0 = chasecorebnd.Vertex(chasecorebnd.Name('0'))
-v1 = chasecorebnd.Vertex(chasecorebnd.Name('1'))
-v2 = chasecorebnd.Vertex(chasecorebnd.Name('2'))
-v3 = chasecorebnd.Vertex(chasecorebnd.Name('3'))
+v0 = Vertex(Name('0'))
+v1 = Vertex(Name('1'))
+v2 = Vertex(Name('2'))
+v3 = Vertex(Name('3'))
 
 graph.associateVertex(0, v0)
 graph.associateVertex(1, v1)
@@ -57,22 +57,24 @@ print(graph.getString())
 
 vertexes = {v1, v2}
 
-graph1 = chasecorebnd.getSubGraph(graph, vertexes)
-graph1.setName(chasecorebnd.Name("GenericSubGraph"))
+graph1 = getSubGraph(graph, vertexes)
+graph1.setName(Name("GenericSubGraph"))
 print(graph1.getString())
 
 
 
-comp1 = chasecorebnd.ComponentDefinition("Test")
+comp1 = ComponentDefinition("Test")
 print(comp1.getString())
 print(comp1.views)
 
-c = chasecorebnd.Contract('Test')
+c = Contract('Test')
 c.addDeclaration(state)
-c.addAssumptions(chasecorebnd.semantic_domain.logic, formula)
+c.addAssumptions(semantic_domain.logic, formula)
 print(c.getString())
 
-sys1 = chasecorebnd.System()
+sys1 = System()
 sys1.addDeclaration(state)
 sys1.addContract(c)
 print(sys1.getString())
+
+

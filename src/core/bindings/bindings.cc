@@ -2,10 +2,15 @@
 #include <pybind11/stl.h>
 #include "Chase.hh"
 #include "utilities/GraphUtilities.hh"
+#include "utilities/Factory.hh"
+#include "utilities/LogicSimplifyingVisitor.hh"
 
 
 namespace py = pybind11;
 using namespace chase;
+
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
 
 PYBIND11_MODULE(chasecorebnd, m) {
     m.doc() = "CHASE Core  Python wrapper module";
@@ -258,6 +263,17 @@ PYBIND11_MODULE(chasecorebnd, m) {
     
     py::class_<DataDeclaration, std::unique_ptr<DataDeclaration, 
         py::nodelete>, Declaration>(m, "DataDeclaration");
+    
+    //Parameter Binding
+    py::class_<Parameter, std::unique_ptr<Parameter, 
+        py::nodelete>, DataDeclaration>(m, "Parameter")
+        .def(py::init<Type *, Name *>(),
+            py::arg("type")=nullptr, 
+            py::arg("name")=nullptr)
+        .def("accept_visitor", &Parameter::accept_visitor,
+            py::arg("v").none(false))
+        .def("getString", &Parameter::getString)
+        .def("clone", &Parameter::clone);
 
     // Constant Binding
     py::class_<Constant, std::unique_ptr<Constant, 
@@ -663,6 +679,258 @@ PYBIND11_MODULE(chasecorebnd, m) {
             py::arg("v").none(false))
         .def("getString", &Component::getString)
         .def("clone", &Component::clone);
-        
+
+    /**
+    * CHASE TIME BINDING
+    */
+    py::enum_<chase::chase_time_unit>(m, "chase_time_unit")
+        .value("CHASE_SEC", chase::chase_time_unit::CHASE_SEC)
+        .value("CHASE_MS", chase::chase_time_unit::CHASE_MS)
+        .value("CHASE_US", chase::chase_time_unit::CHASE_US)
+        .value("CHASE_NS", chase::chase_time_unit::CHASE_NS)
+        .value("CHASE_PS", chase::chase_time_unit::CHASE_PS)
+        .value("CHASE_FS", chase::chase_time_unit::CHASE_FS)
+        .export_values();
+
+    py::class_<chase_time, std::unique_ptr<chase_time, 
+        py::nodelete>>(m, "chase_time")
+        .def(py::init<unsigned int, chase_time_unit>(),
+            py::arg("a")=1, py::arg("u")=CHASE_SEC)
+        .def(py::init<unsigned int, std::string>(),
+            py::arg("a"), py::arg("u"));
+
+    /**
+    * UTILITIES
+    * BINDINGS
+    *
+    */
+
+    /**
+    * VISITOR BINDINGS
+    */ 
+
+    //BaseVisitor Binding
+    py::class_<BaseVisitor, std::unique_ptr<BaseVisitor, 
+        py::nodelete>>(m, "BaseVisitor");
+    
+    py::class_<GuideVisitor, std::unique_ptr<GuideVisitor, 
+        py::nodelete>>(m, "GuideVisitor")
+        .def(py::init<int &>(),
+            py::arg("rv")=0)
+        .def("visitSystem", &GuideVisitor::visitSystem)
+        .def("vistiRange", &GuideVisitor::visitRange)
+        .def("visitIntegerValue", 
+            &GuideVisitor::visitIntegerValue)
+        .def("visitRealValue", 
+            &GuideVisitor::visitRealValue)
+        .def("visitBooleanValue", 
+            &GuideVisitor::visitBooleanValue)
+        .def("visitExpression", 
+            &GuideVisitor::visitExpression)
+        .def("visitIdentifier", 
+            &GuideVisitor::visitIdentifier)
+        .def("visitInteger", &GuideVisitor::visitInteger)
+        .def("visitReal", &GuideVisitor::visitReal)
+        .def("visitBoolean", &GuideVisitor::visitBoolean)
+        .def("visitName", &GuideVisitor::visitName)
+        .def("visitVariable", &GuideVisitor::visitVariable)
+        .def("visitConstant", &GuideVisitor::visitConstant)
+        .def("visitParameter", &GuideVisitor::visitParameter)
+        .def("visitComponentDefinition", 
+            &GuideVisitor::visitComponentDefinition)
+        .def("visitProposition", 
+            &GuideVisitor::visitProposition)
+        .def("visitBooleanConstant", 
+            &GuideVisitor::visitBooleanConstant)
+        .def("visitBinaryBooleanOperation", 
+            &GuideVisitor::visitBinaryBooleanOperation)
+        .def("visitUnaryBooleanOperation", 
+            &GuideVisitor::visitUnaryBooleanOperation)
+        .def("visitLargeBooleanFormula", 
+            &GuideVisitor::visitLargeBooleanFormula)
+        .def("visitModalFormula",
+            &GuideVisitor::visitModalFormula)
+        .def("visitUnaryTemporalOperation",
+            &GuideVisitor::visitUnaryTemporalOperation)
+        .def("visitBinaryTemporalOperation",
+            &GuideVisitor::visitBinaryTemporalOperation)
+        .def("visitContract", &GuideVisitor::visitContract)
+        .def("visitComponent", &GuideVisitor::visitComponent)
+        .def("visitGraph", &GuideVisitor::visitGraph)
+        .def("visitEdge", &GuideVisitor::visitEdge)
+        .def("visitVertex", &GuideVisitor::visitVertex);
+    
+    // LogicSimplifyingVisitor Bindings
+    py::class_<LogicSimplifyingVisitor, 
+        std::unique_ptr<LogicSimplifyingVisitor, 
+        py::nodelete>>(m, "LogicSimplifyingVisitor")
+        .def(py::init<int &>(),
+            py::arg("rv").none(false));
+
+    /**
+    * FACTORY BINDINGS
+    */  
+    m.def("True", &chase::True);
+    m.def("False", &chase::False);
+    m.def("Not", &chase::Not,
+        py::arg("op").none(false));
+    m.def("And", &chase::And,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Or", &chase::Or,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Implies", &chase::Implies,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Iff", &chase::Iff,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Nand", &chase::Nand,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Xor", &chase::Xor,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Nor", &chase::Nor,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Xnor", &chase::Xnor,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("LargeAnd", &chase::LargeAnd,
+        py::arg("formulas").none(false));
+    m.def("LargeOr", &chase::LargeOr,
+        py::arg("formulas").none(false));
+    m.def("Always", &chase::Always,
+        py::arg("op").none(false));
+    m.def("Eventually", &chase::Eventually,
+        py::arg("op").none(false));
+    m.def("Next", &chase::Next,
+        py::arg("op").none(false));
+    m.def("Until", &chase::Until,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Sum", &chase::Sum,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Sub", &chase::Sub,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Mult", &chase::Mult,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Div", &chase::Div,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Eq", &chase::Eq,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("NEq", &chase::NEq,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Eq", &chase::Eq,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("LE", &chase::LE,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("LT", &chase::LT,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("GE", &chase::GE,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("GT", &chase::GT,
+        py::arg("op1").none(false),
+        py::arg("op2").none(false));
+    m.def("Prop", overload_cast_<Variable*>()
+        (&chase::Prop), 
+        py::arg("var").none(false));
+    m.def("Prop", overload_cast_<Expression*>()
+        (&chase::Prop), 
+        py::arg("var").none(false));
+    m.def("Id", &chase::Id,
+        py::arg("declaration").none(false));
+    m.def("intVal", &chase::IntVal,
+        py::arg("n").none(false));
+    m.def("RealVal", &chase::RealVal,
+        py::arg("r").none(false));
+    m.def("BoolVal", &chase::BoolVal,
+        py::arg("b").none(false));
+    
+    /**
+    * BACKENDS BINDINGS
+    */  
+
+    //GR1C Printer
+    py::class_<GR1CPrinter, std::unique_ptr<GR1CPrinter,
+        py::nodelete>, GuideVisitor>(m, "GR1CPrinter")
+        .def(py::init<>())
+        .def("print", &GR1CPrinter::print,
+            py::arg("contract").none(false),
+            py::arg("path").none(false))
+        .def("visitIntegerValue", 
+            &GR1CPrinter::visitIntegerValue,
+            py::arg("o").none(false))
+        .def("visitExpression", 
+            &GR1CPrinter::visitExpression,
+            py::arg("o").none(false))
+        .def("visitIdentifier", 
+            &GR1CPrinter::visitIdentifier,
+            py::arg("o").none(false))
+        .def("visitProposition", 
+            &GR1CPrinter::visitProposition,
+            py::arg("o").none(false))
+        .def("visitBooleanConstant", 
+            &GR1CPrinter::visitBooleanConstant,
+            py::arg("o").none(false))
+        .def("visitBinaryBooleanOperation", 
+            &GR1CPrinter::visitBinaryBooleanOperation,
+            py::arg("o").none(false))
+        .def("visitUnaryBooleanOperation", 
+            &GR1CPrinter::visitUnaryBooleanOperation,
+            py::arg("o").none(false))
+        .def("visitUnaryTemporalOperation", 
+            &GR1CPrinter::visitUnaryTemporalOperation,
+            py::arg("o").none(false))
+        .def("visitBinaryTemporalOperation", 
+            &GR1CPrinter::visitBinaryTemporalOperation,
+            py::arg("o").none(false));
+    
+    //Slugs Printer
+    py::class_<SlugsPrinter, std::unique_ptr<SlugsPrinter,
+        py::nodelete>, GuideVisitor>(m, "SlugsPrinter")
+        .def(py::init<>())
+        .def("print", &SlugsPrinter::print,
+            py::arg("contract").none(false),
+            py::arg("path").none(false))
+        .def("visitIntegerValue", 
+            &SlugsPrinter::visitIntegerValue,
+            py::arg("o").none(false))
+        .def("visitExpression", 
+            &SlugsPrinter::visitExpression,
+            py::arg("o").none(false))
+        .def("visitIdentifier", 
+            &SlugsPrinter::visitIdentifier,
+            py::arg("o").none(false))
+        .def("visitProposition", 
+            &SlugsPrinter::visitProposition,
+            py::arg("o").none(false))
+        .def("visitBooleanConstant", 
+            &SlugsPrinter::visitBooleanConstant,
+            py::arg("o").none(false))
+        .def("visitBinaryBooleanOperation", 
+            &SlugsPrinter::visitBinaryBooleanOperation,
+            py::arg("o").none(false))
+        .def("visitUnaryBooleanOperation", 
+            &SlugsPrinter::visitUnaryBooleanOperation,
+            py::arg("o").none(false))
+        .def("visitUnaryTemporalOperation", 
+            &SlugsPrinter::visitUnaryTemporalOperation,
+            py::arg("o").none(false))
+        .def("visitBinaryTemporalOperation", 
+            &SlugsPrinter::visitBinaryTemporalOperation,
+            py::arg("o").none(false));
 }
 
