@@ -88,7 +88,7 @@ include_directories(
         )
 
 
-add_library(chasecore STATIC ${chase_library})
+add_library(chasecore SHARED ${chase_library})
 set_target_properties(chasecore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 install(TARGETS chasecore DESTINATION lib)
 
