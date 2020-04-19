@@ -53,3 +53,26 @@ target_link_libraries(ltl_tool
         chasecore
         antlr4_static
         )
+
+install(TARGETS ltl_tool
+        DESTINATION core/bin
+       )
+
+install(TARGETS chase_ltl_parsing_library
+        DESTINATION core/lib
+       )
+
+install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/src/ltl_tool/parser/
+        DESTINATION core/include/ltl_parsing/parser
+        COMPONENT dev
+        FILES_MATCHING PATTERN ".h"
+       )
+
+install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/src/ltl_tool/include/
+        DESTINATION core/include/ltl_parsing
+        COMPONENT dev
+        FILES_MATCHING PATTERN "*LTLSpecsBuilder.hh"
+       )
+

@@ -75,12 +75,12 @@ set_target_properties(antlr4_static
                                  COMPILE_FLAGS "${disabled_compile_warnings}")
 
 install(TARGETS antlr4_shared
-        DESTINATION lib)
+        DESTINATION third_party/antlr4/lib)
 install(TARGETS antlr4_static
-        ARCHIVE DESTINATION lib)
+        ARCHIVE DESTINATION third_party/antlr4/lib)
 
 install(DIRECTORY "${ANTLR_SOURCE_DIR}/runtime/src/" 
-        DESTINATION "include" 
+        DESTINATION "third_party/antlr4/include" 
         COMPONENT dev 
         FILES_MATCHING PATTERN "*.h"
         )

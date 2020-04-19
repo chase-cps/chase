@@ -89,7 +89,10 @@ include_directories(
 
 add_library(chasecore ${chase_library})
 
-install(TARGETS chasecore DESTINATION lib)
+install(TARGETS chasecore DESTINATION core/lib)
 
-
+install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/src/core/include
+        DESTINATION core
+       )
 
