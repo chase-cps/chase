@@ -1,5 +1,3 @@
-# @author Michele Lora
-
 ###############################################################################
 # CMake file for the CHASE Library
 # @author Michele Lora

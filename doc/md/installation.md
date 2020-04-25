@@ -10,6 +10,7 @@ and executed:
 	- tested with *g++-5* and *clang++-3.8*
 	- any compiler supporting C++-11 can be used
 - GNU Make
+- Python 3
 - [gr1c][GR1C]: a collection of tools for GR(1) synthesis,  used to check
     realizability of GR(1) specifications and synthesize discrete control
     strategies from them.

@@ -32,6 +32,7 @@ section of the paper.
 - [Installation and requirements][INST]
 - [Tools and usage][TOOLS]
 - [Library documentation][LIBRARY]
+- [Python binding for the API][PYTHON]
 - [Demonstrators][DEMO]
 
 ## Acknowledgement
@@ -43,4 +44,5 @@ centers supported by the STARnet phase of the Focus Center Research Program
 [INST]: doc/md/installation.md
 [TOOLS]: doc/md/tools.md
 [LIBRARY]: doc/md/library.md
+[PYTHON]: doc/md/python.md
 [DEMO]: doc/md/demo.md
