@@ -14,6 +14,8 @@ using namespace chase;
 ltl_tool::Console::Console(System *system) :
     _system(system)
 {
+    LogicNotNormalizationVisitor visitor;
+    _system->accept_visitor(visitor);
 }
 
 int Console::run()
@@ -31,6 +33,12 @@ int Console::run()
         if( rv == 0 )
             std::cout << "Wrong command" << std::endl;
     }
+
+    LogicNotNormalizationVisitor visitor;
+    _system->accept_visitor(visitor);
+
+    std::cout << _system->getString() << std::endl;
+
     return 1;
 }
 
@@ -85,7 +93,7 @@ int Console::_execCommand(std::string cmd)
         _parseProjectionMap(m);
 
         auto r = Contract::composition(c1, c2, m, tokens[3]);
-        std::cout << r->getString() << std::endl;
+        _system->addContract(r);
     }
     else if(tokens[0] == "conjunction")
     {
@@ -115,7 +123,7 @@ int Console::_execCommand(std::string cmd)
         _parseProjectionMap(m);
 
         auto r = Contract::conjunction(c1, c2, m, tokens[3]);
-        std::cout << r->getString() << std::endl;
+        _system->addContract(r);
     }
 
 

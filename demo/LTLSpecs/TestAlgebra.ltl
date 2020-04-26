@@ -23,6 +23,6 @@ CONTRACT C2:
     proposition w_calculation is w = z + 1;
 
     Assumptions:
-        [](z_leq_zero);
+        [](!(!(!(!(!(z_leq_zero))))));
     Guarantees:
         [](w_calculation);

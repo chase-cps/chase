@@ -17,6 +17,7 @@ int main( int argc, char * argv[] )
     builder.parseSpecificationFile(params->fileIn);
 
     System * system = builder.getSystem();
+
     Console console(system);
 
     while( console.run() );
