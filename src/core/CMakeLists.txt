@@ -60,8 +60,6 @@ set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/UtilityFunctions.cc
         ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
         ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
-        ${SRC_CHASELIB_PATH}/utilities/LogicSimplifyingVisitor.cc
-
 )
 
 set(chase_library_backends
@@ -77,7 +75,9 @@ set(chase_library
         ${chase_library_backends}
         ${SRC_CHASELIB_PATH}/BaseVisitor.cc
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
-        src/chase/representation/Contract_algebra.cc src/chase/representation/Component.cc include/chase/representation/Component.hh)
+        src/chase/representation/Contract_algebra.cc
+        src/chase/representation/Component.cc
+        )
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include

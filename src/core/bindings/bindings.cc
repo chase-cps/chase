@@ -3,7 +3,7 @@
 #include "Chase.hh"
 #include "utilities/GraphUtilities.hh"
 #include "utilities/Factory.hh"
-#include "utilities/LogicSimplifyingVisitor.hh"
+
 
 
 namespace py = pybind11;
@@ -759,13 +759,6 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("visitGraph", &GuideVisitor::visitGraph)
         .def("visitEdge", &GuideVisitor::visitEdge)
         .def("visitVertex", &GuideVisitor::visitVertex);
-    
-    // LogicSimplifyingVisitor Bindings
-    py::class_<LogicSimplifyingVisitor, 
-        std::unique_ptr<LogicSimplifyingVisitor, 
-        py::nodelete>>(m, "LogicSimplifyingVisitor")
-        .def(py::init<int &>(),
-            py::arg("rv").none(false));
 
     /**
     * FACTORY BINDINGS
