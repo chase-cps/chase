@@ -61,6 +61,7 @@ set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/GraphUtilities.cc
         ${SRC_CHASELIB_PATH}/utilities/ClonedDeclarationVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/LogicNotNormalizationVisitor.cc
+        ${SRC_CHASELIB_PATH}/utilities/simplify.cc
 )
 
 set(chase_library_backends

@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include "Console.hh"
+#include "utilities/simplify.hh"
 
 using namespace ltl_tool;
 using namespace chase;
@@ -14,8 +15,7 @@ using namespace chase;
 ltl_tool::Console::Console(System *system) :
     _system(system)
 {
-    LogicNotNormalizationVisitor visitor;
-    _system->accept_visitor(visitor);
+    simplify(_system);
 }
 
 int Console::run()
@@ -34,9 +34,7 @@ int Console::run()
             std::cout << "Wrong command" << std::endl;
     }
 
-    LogicNotNormalizationVisitor visitor;
-    _system->accept_visitor(visitor);
-
+    simplify(_system);
     std::cout << _system->getString() << std::endl;
 
     return 1;

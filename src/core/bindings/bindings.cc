@@ -3,6 +3,9 @@
 #include "Chase.hh"
 #include "utilities/GraphUtilities.hh"
 #include "utilities/Factory.hh"
+#include "utilities/simplify.hh"
+
+
 
 
 
@@ -759,6 +762,13 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("visitGraph", &GuideVisitor::visitGraph)
         .def("visitEdge", &GuideVisitor::visitEdge)
         .def("visitVertex", &GuideVisitor::visitVertex);
+
+    /**
+    * SIMPLIFY
+    */
+
+    m.def("simplify", &chase::simplify,
+            py::arg("o").none(false));
 
     /**
     * FACTORY BINDINGS

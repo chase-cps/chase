@@ -28,13 +28,24 @@ C2.addGuarantees(semantic_domain.logic, G2)
 Contract.saturate(C1)
 print(C1.getString())
 
+print()
+
 Contract.saturate(C2)
 print(C2.getString())
+
+print()
 
 # Important: the map should be composed of pairs of variables of the second and first contract that will
 # be passed to the operation. In this case: x2 (a variable of C2) will be replaced by y1 (a variable of C1).
 map = {'x2': 'y1'}
 # To be consistent with the map being defined above, C1 must be the first parameter, C2 is the second.
 C = Contract.composition(C1, C2, map)
+print()
+print("Before applying any simplification:")
 print(C.getString())
+print()
 
+simplify(C)
+print()
+print("After applying simplifications:")
+print(C.getString())
