@@ -713,7 +713,7 @@ PYBIND11_MODULE(chasecorebnd, m) {
     */ 
 
     //BaseVisitor Binding
-    py::class_<BaseVisitor, std::unique_ptr<BaseVisitor, 
+    py::class_<BaseVisitor, std::unique_ptr<BaseVisitor,
         py::nodelete>>(m, "BaseVisitor");
     
     py::class_<GuideVisitor, std::unique_ptr<GuideVisitor, 
@@ -768,7 +768,18 @@ PYBIND11_MODULE(chasecorebnd, m) {
     */
 
     m.def("simplify", &chase::simplify,
-            py::arg("o").none(false));
+            py::arg("object").none(false),
+            py::arg("options").none(false));
+
+
+    py::class_<simplify_options, std::unique_ptr<simplify_options,
+            py::nodelete>>(m, "simplify_options")
+            .def(py::init<bool&, bool&>(),
+                    py::arg("_nots")=true,
+                    py::arg("_temporal_operators")=true)
+            .def_readwrite("nots", &simplify_options::nots)
+            .def_readwrite("temporal_operators",
+                    &simplify_options::temporal_operators);
 
     /**
     * FACTORY BINDINGS

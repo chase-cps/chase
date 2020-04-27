@@ -7,13 +7,29 @@
 
 #include "utilities/simplify.hh"
 #include "utilities/LogicNotNormalizationVisitor.hh"
+#include "utilities/GroupTemporalOperatorsVisitor.hh"
 
 using namespace chase;
 
-void chase::simplify(chase::ChaseObject * o)
+simplify_options::simplify_options(bool _nots, bool _temporal_operators) :
+        nots(_nots),
+        temporal_operators(_temporal_operators)
 {
-    LogicNotNormalizationVisitor notNormalization;
-    o->accept_visitor(notNormalization);
 }
+
+void chase::simplify(
+        chase::ChaseObject * object,
+        simplify_options * options)
+{
+    if(options->nots) {
+        LogicNotNormalizationVisitor v;
+        object->accept_visitor(v);
+    }
+    if(options->temporal_operators){
+        GroupTemporalOperatorsVisitor v;
+        object->accept_visitor(v);
+    }
+}
+
 
 

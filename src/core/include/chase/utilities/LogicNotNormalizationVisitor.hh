@@ -9,15 +9,17 @@
 #pragma once
 
 #include <chase/representation/LogicFormula.hh>
-#include "GuideVisitor.hh"
+#include "utilities/LogicSimplificationVisitor.hh"
+
 
 
 namespace chase {
 
     /// @todo Binding for python to be declared for all the methods.
-    /// @brief Visitor taking care of visiting the Not logic operations
-    /// in order to remove the "double not"s.
-    class LogicNotNormalizationVisitor : public GuideVisitor {
+    /// @brief Visitor taking care of visiting the Not logic operations.
+    /// It removes the "double not"s, and it moves not operators
+    /// as close as possible to atoms.
+    class LogicNotNormalizationVisitor : public LogicSimplificationVisitor {
     public:
         /// @brief Constructor.
         LogicNotNormalizationVisitor();
@@ -25,17 +27,11 @@ namespace chase {
         /// @brief Destructor.
         ~LogicNotNormalizationVisitor();
 
-
-        int visitBinaryBooleanOperation(BinaryBooleanFormula &formula) override;
-        int visitUnaryBooleanOperation(UnaryBooleanFormula &formula) override;
-        int visitLargeBooleanFormula(LargeBooleanFormula &formula) override;
-        int visitUnaryTemporalOperation(UnaryTemporalFormula &formula) override;
-        int
-        visitBinaryTemporalOperation(BinaryTemporalFormula &formula) override;
-
-
     protected:
 
+        /// @brief Interface for the main optimization function.
+        /// @param formula The formula to analyze and, eventually, simplify.
+        /// @return Pointer to the simplified formula.
         LogicFormula * _analyzeFormula(LogicFormula * formula);
 
     };
