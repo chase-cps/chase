@@ -44,8 +44,6 @@ System *LTLSpecsBuilder::parseSpecificationFile(std::string infile)
     return _system;
 }
 
-
-
 antlrcpp::Any
 LTLSpecsBuilder::visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) {
     LTLContractsParser::NameContext * n_ctx = ctx->name();
@@ -367,6 +365,8 @@ DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
 
     return nullptr;
 }
+
+
 
 
 

@@ -90,7 +90,7 @@ namespace chase {
 
             /// @brief Print the object into a string.
             /// @return a String representation of the object.
-            virtual std::string getString() = 0;
+            virtual std::string getString();
 
             virtual ChaseObject * clone() = 0;
 

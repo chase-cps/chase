@@ -37,7 +37,6 @@ namespace ltl_tool {
         System * parseSpecificationFile( std::string infile );
 
         /// @cond
-
         antlrcpp::Any
         visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) override;
         antlrcpp::Any
