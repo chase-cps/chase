@@ -50,7 +50,8 @@ namespace chase{
             virtual int visitInteger( Integer & );
             virtual int visitReal( Real & );
             virtual int visitBoolean( Boolean & );
-
+            virtual int visitCustomType( CustomType & );
+            virtual int visitEnumeration( Enumeration & );
 
             // Declarations
             virtual int visitName( Name & );

@@ -50,6 +50,8 @@ namespace chase {
         int visitInteger( Integer & ) override;
         int visitReal( Real & ) override;
         int visitBoolean( Boolean & ) override;
+        int visitCustomType( CustomType & ) override;
+        int visitEnumeration( Enumeration & ) override;
 
 
         // Declarations

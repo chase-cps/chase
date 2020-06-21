@@ -12,6 +12,7 @@
 
 #include "representation/Boolean.hh"
 #include "representation/Integer.hh"
+#include "representation/Enumeration.hh"
 
 #include "representation/ComponentDefinition.hh"
 #include "representation/Parameter.hh"

@@ -19,6 +19,8 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/Integer.cc
         ${SRC_CHASELIB_PATH}/representation/Real.cc
         ${SRC_CHASELIB_PATH}/representation/Boolean.cc
+        ${SRC_CHASELIB_PATH}/representation/CustomType.cc
+        ${SRC_CHASELIB_PATH}/representation/Enumeration.cc
 
         ${SRC_CHASELIB_PATH}/representation/Value.cc
         ${SRC_CHASELIB_PATH}/representation/Range.cc

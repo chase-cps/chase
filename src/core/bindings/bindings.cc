@@ -88,6 +88,9 @@ PYBIND11_MODULE(chasecorebnd, m) {
     py::class_<SimpleType, Type, std::unique_ptr<SimpleType, 
         py::nodelete>>
     (m, "SimpleType");
+    py::class_<CustomType, Type, std::unique_ptr<CustomType,
+        py::nodelete>>
+    (m, "CustomType");
 
     // Boolean Type
     py::class_<Boolean, std::unique_ptr<Boolean>, SimpleType>

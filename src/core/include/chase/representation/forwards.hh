@@ -23,6 +23,8 @@ namespace chase {
     class IntegerValue;
     class RealValue;
     class BooleanValue;
+    class CustomType;
+    class Enumeration;
     class Expression;
     class Identifier;
     class Name;

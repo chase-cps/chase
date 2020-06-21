@@ -368,6 +368,16 @@ int chase::GuideVisitor::visitComponent(chase::Component &o)
     return rv;
 }
 
+int chase::GuideVisitor::visitEnumeration(chase::Enumeration &o) {
+    auto rv = o.getName()->accept_visitor(*this);
+    return rv;
+}
+
+int chase::GuideVisitor::visitCustomType(chase::CustomType &o) {
+    auto rv = o.getName()->accept_visitor(*this);
+    return rv;
+}
+
 
 
 
