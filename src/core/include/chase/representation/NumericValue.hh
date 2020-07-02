@@ -26,20 +26,11 @@ namespace chase {
             /// @brief Destructor.
             ~NumericValue() override;
 
-            /// @brief Getter for the type.
-            /// @return the type of the value.
-            Type * getType();
-
-            /// @brief Setter for the type.
-            /// @param t the type of the NumericValue.
-            void setType( Type * t );
-
             NumericValue * clone() override = 0;
 
         protected:
 
-            /// @brief Type of the value.
-            Type * _type;
+
 
     };
 }

@@ -11,24 +11,27 @@
 #include "Declaration.hh"
 #include <map>
 
+
 namespace chase {
+
+    class Component;
 
     class ComponentDefinition : public Declaration {
     public:
 
         /// @brief Set of views of the component.
-        std::map< std::string, Contract * > views;
+        std::map<std::string, Contract *> views;
 
         /// @brief Constructor.
         ComponentDefinition();
 
         /// @brief Constructor.
         /// @param name The name of the component definition.
-        ComponentDefinition( Name * name );
+        ComponentDefinition(Name *name);
 
         /// @brief Constructor.
         /// @param name The name of the component definition (string).
-        ComponentDefinition( std::string name);
+        ComponentDefinition(std::string name);
 
         /// @brief Destructor.
         ~ComponentDefinition();
@@ -42,5 +45,7 @@ namespace chase {
     protected:
 
     };
+
+
 
 }

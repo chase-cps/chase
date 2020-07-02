@@ -378,6 +378,14 @@ int chase::GuideVisitor::visitCustomType(chase::CustomType &o) {
     return rv;
 }
 
+int chase::GuideVisitor::visitStringValue(chase::StringValue &value) {
+    return BaseVisitor::visitStringValue(value);
+}
+
+int chase::GuideVisitor::visitString(chase::String &s) {
+    return BaseVisitor::visitString(s);
+}
+
 
 
 

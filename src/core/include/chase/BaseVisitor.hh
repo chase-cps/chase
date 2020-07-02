@@ -43,6 +43,7 @@ namespace chase{
             virtual int visitIntegerValue( IntegerValue & );
             virtual int visitRealValue( RealValue & );
             virtual int visitBooleanValue(BooleanValue & );
+            virtual int visitStringValue( StringValue & );
             virtual int visitExpression(Expression & );
             virtual int visitIdentifier(Identifier &);
 
@@ -52,6 +53,7 @@ namespace chase{
             virtual int visitBoolean( Boolean & );
             virtual int visitCustomType( CustomType & );
             virtual int visitEnumeration( Enumeration & );
+            virtual int visitString( String & );
 
             // Declarations
             virtual int visitName( Name & );

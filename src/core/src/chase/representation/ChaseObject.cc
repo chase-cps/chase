@@ -39,7 +39,7 @@ nodeType ChaseObject::IsA()
 }
 
 std::string ChaseObject::getString() {
-    return std::__cxx11::string();
+    return std::string();
 }
 
 

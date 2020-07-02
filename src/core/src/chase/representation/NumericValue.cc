@@ -13,23 +13,11 @@
 using namespace chase;
 
 NumericValue::NumericValue() :
-    Value(),
-    _type( nullptr )
+    Value()
 {
     _node_type = numericValue_node;
 }
 
 NumericValue::~NumericValue()
 {
-}
-
-Type * NumericValue::getType()
-{
-    return _type;
-}
-
-void NumericValue::setType( Type * t )
-{
-    _type = t;
-    _type->setParent( this );
 }

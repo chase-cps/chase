@@ -25,14 +25,14 @@ namespace chase {
         Enumeration( Name * name );
 
         /// @brief Destructor.
-        ~Enumeration();
+        ~Enumeration() override;
 
         /// @brief Function to add an Item to the enumeration.
         /// @param item The string identifying the item.
         void addItem(std::string item);
         /// @brief Function to get the string identifieng the item given the position.
         /// @param position The position to access.
-        /// @return The string corresponding to the position. Empty string if
+        /// @return The string corresponding to the position. NULL if
         /// the position does not exists.
         Constant * getItemInPosition( size_t position );
         /// @brief Function to get the position given the enum value.

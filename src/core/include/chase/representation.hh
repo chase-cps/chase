@@ -1,5 +1,7 @@
 #pragma once
 
+/// \todo Implement PyBind for new types recently defined.
+
 //#include "representation/forwards.hh"
 
 #include "representation/TimingDefinitions.hh"
@@ -7,12 +9,24 @@
 
 #include "representation/Component.hh"
 
+// Types.
 #include "representation/Type.hh"
 #include "representation/SimpleType.hh"
-
 #include "representation/Boolean.hh"
 #include "representation/Integer.hh"
+#include "representation/Real.hh"
+#include "representation/String.hh"
+#include "representation/Range.hh"
 #include "representation/Enumeration.hh"
+
+// Values.
+
+#include "representation/Value.hh"
+#include "representation/NumericValue.hh"
+#include "representation/IntegerValue.hh"
+#include "representation/RealValue.hh"
+#include "representation/BooleanValue.hh"
+#include "representation/StringValue.hh"
 
 #include "representation/ComponentDefinition.hh"
 #include "representation/Parameter.hh"
@@ -25,19 +39,10 @@
 
 #include "representation/Contract.hh"
 
-#include "representation/IntegerValue.hh"
+
 #include "representation/Name.hh"
-#include "representation/NumericValue.hh"
+
 #include "representation/Operators.hh"
-
-#include "representation/Value.hh"
-#include "representation/Range.hh"
-#include "representation/Real.hh"
-#include "representation/RealValue.hh"
-#include "representation/BooleanValue.hh"
-
-
-
 
 #include "representation/LogicFormula.hh"
 #include "representation/Proposition.hh"

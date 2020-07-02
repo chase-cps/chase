@@ -51,7 +51,9 @@ namespace chase {
         /// @brief Destructor.
         ~CustomType();
 
+        int accept_visitor(BaseVisitor &v) override;
 
+        Type *clone() override;
 
     protected:
         Name * _name;

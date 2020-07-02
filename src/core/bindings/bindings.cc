@@ -244,7 +244,6 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("getString", &RealValue::getString)
         .def("clone", &RealValue::clone);
 
-
     /**
     *   DECLARATION BINDINGS
     */

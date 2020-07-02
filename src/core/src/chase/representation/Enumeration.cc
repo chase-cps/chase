@@ -16,6 +16,7 @@ using namespace chase;
 Enumeration::Enumeration(std::string name) :
     CustomType(name, new Integer())
 {
+    _node_type = enumeration_node;
 }
 
 Enumeration::Enumeration(Name *name) :
@@ -23,8 +24,7 @@ Enumeration::Enumeration(Name *name) :
 {
 }
 
-Enumeration::~Enumeration() {
-}
+Enumeration::~Enumeration() = default;
 
 void Enumeration::addItem(std::string item) {
     if(getPositionByName(item) == -1)
@@ -62,7 +62,7 @@ std::string Enumeration::getString() {
     for(size_t i = 0; i < _values.size(); ++i)
     {
         ret += "\n\t" + std::to_string(i) + " " +
-                _values[i]->getValue()->getString();
+                _values[i]->getName()->getString();
     }
     ret +="\n";
     return ret;
@@ -72,7 +72,8 @@ int Enumeration::accept_visitor(BaseVisitor &v) {
     return v.visitEnumeration(*this);
 }
 
-Enumeration *Enumeration::clone() {
+Enumeration *Enumeration::clone()
+{
     return new Enumeration(_name->clone());
 }
 

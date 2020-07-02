@@ -28,15 +28,19 @@ namespace chase {
 
             /// @brief Type getter.
             /// @return The type of the value;
-            virtual Type * getType() = 0;
+            virtual Type * getType();
+
+            /// @brief Type setter.
+            /// @param type The type of the value;
+            virtual void setType( Type * type );
 
             /// @brief Clone method.
             /// @return A clone of the value.
             Value * clone() override = 0;
 
         protected:
-
-
+            /// @brief Type of the value.
+            Type * _type;
     };
 }
 

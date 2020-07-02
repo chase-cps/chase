@@ -19,6 +19,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/Integer.cc
         ${SRC_CHASELIB_PATH}/representation/Real.cc
         ${SRC_CHASELIB_PATH}/representation/Boolean.cc
+        ${SRC_CHASELIB_PATH}/representation/String.cc
         ${SRC_CHASELIB_PATH}/representation/CustomType.cc
         ${SRC_CHASELIB_PATH}/representation/Enumeration.cc
 
@@ -28,6 +29,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/IntegerValue.cc
         ${SRC_CHASELIB_PATH}/representation/RealValue.cc
         ${SRC_CHASELIB_PATH}/representation/BooleanValue.cc
+        ${SRC_CHASELIB_PATH}/representation/StringValue.cc
         ${SRC_CHASELIB_PATH}/representation/Identifier.cc
         ${SRC_CHASELIB_PATH}/representation/Expression.cc
 

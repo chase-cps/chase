@@ -64,6 +64,14 @@ int BaseVisitor::visitParameter(Parameter &) {return 0;}
 
 int BaseVisitor::visitComponent(Component &) {return 0;}
 
+int BaseVisitor::visitStringValue(StringValue &) {
+    return 0;
+}
+
+int BaseVisitor::visitString(String &) {
+    return 0;
+}
+
 
 
 
