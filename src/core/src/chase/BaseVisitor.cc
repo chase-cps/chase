@@ -33,6 +33,8 @@ int BaseVisitor::visitIdentifier( Identifier & ){return 0;}
 int BaseVisitor::visitInteger( Integer & ){return 0;}
 int BaseVisitor::visitReal( Real & ){return 0;}
 int BaseVisitor::visitBoolean( Boolean & ){return 0;}
+int BaseVisitor::visitEnumeration(Enumeration &) {return 0;}
+int BaseVisitor::visitCustomType(CustomType &) {return 0;}
 int BaseVisitor::visitName( Name & ){ return 0;}
 int BaseVisitor::visitVariable( Variable & ){return 0;}
 int BaseVisitor::visitConstant( Constant & ){return 0;}
@@ -61,6 +63,18 @@ int BaseVisitor::visitComponentDefinition(ComponentDefinition &) {return 0;}
 int BaseVisitor::visitParameter(Parameter &) {return 0;}
 
 int BaseVisitor::visitComponent(Component &) {return 0;}
+
+int BaseVisitor::visitStringValue(StringValue &) {
+    return 0;
+}
+
+int BaseVisitor::visitString(String &) {
+    return 0;
+}
+
+
+
+
 
 
 

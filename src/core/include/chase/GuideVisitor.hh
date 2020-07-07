@@ -50,6 +50,8 @@ namespace chase {
         int visitInteger( Integer & ) override;
         int visitReal( Real & ) override;
         int visitBoolean( Boolean & ) override;
+        int visitCustomType( CustomType & ) override;
+        int visitEnumeration( Enumeration & ) override;
 
 
         // Declarations
@@ -82,6 +84,11 @@ namespace chase {
         int visitGraph(Graph & ) override;
         int visitEdge( Edge & ) override;
         int visitVertex(Vertex & ) override;
+
+        int visitStringValue(StringValue &value) override;
+
+        int visitString(String &s) override;
+
         /// @endcond
 
         // Generic methods for continue the visit in special cases.

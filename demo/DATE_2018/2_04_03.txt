@@ -53,7 +53,6 @@ never-connect(generator, generator, AC bus);
 must-disconnect-failed(generator, 20, MS);
 prefer-active-connection(left DC bus, left generator);
 prefer-active-connection(right DC bus, right generator);
-never-disconnect(DC bus, generator, 30, MS);
 
 ASSUMPTIONS
 no-recovery(generator);

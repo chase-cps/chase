@@ -12,3 +12,8 @@ obj_linux_64
 .idea/chase.iml
 tests/
 test.in
+build/
+.vscode/
+CMakeCache.txt
+CMakeFiles/*
+venv/*

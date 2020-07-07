@@ -12,13 +12,23 @@
 
 using namespace chase;
 
-Value::Value() 
+Value::Value() :
+    _type(nullptr)
 {
     _node_type = value_node;
 }
 
 Value::~Value()
 {
+}
+
+Type *Value::getType() {
+    return _type;
+}
+
+void Value::setType(Type *type) {
+    _type = type;
+    _type->setParent( this );
 }
 
 

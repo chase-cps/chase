@@ -38,7 +38,11 @@ namespace chase {
         range_node,
         real_node,
         realValue_node,
+        string_node,
+        stringValue_node,
         simpleType_node,
+        customType_node,
+        enumeration_node,
         type_node,
         value_node,
         variable_node,
@@ -90,7 +94,7 @@ namespace chase {
 
             /// @brief Print the object into a string.
             /// @return a String representation of the object.
-            virtual std::string getString() = 0;
+            virtual std::string getString();
 
             virtual ChaseObject * clone() = 0;
 

@@ -61,5 +61,11 @@ ComponentDefinition * ComponentDefinition::clone()
         std::pair< std::string, Contract * > p(view_name, view->clone());
         ret->views.insert(p);
     }
+
+    for( const auto & i : subcomponents )
+    {
+        ret->subcomponents.insert(i->clone());
+    }
+
     return ret;
 }

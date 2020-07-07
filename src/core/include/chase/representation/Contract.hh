@@ -124,7 +124,7 @@ namespace chase {
         static Contract * conjunction(
                 Contract * c1, Contract * c2,
                 names_projection_map & correspondences,
-                std::string name = std::string("composition"));
+                std::string name = std::string("conjunction"));
 
         /// @brief Function performing composition for Logic specifications.
         /// @param c1 The first contract.

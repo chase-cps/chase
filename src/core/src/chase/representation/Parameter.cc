@@ -27,7 +27,7 @@ int Parameter::accept_visitor(chase::BaseVisitor &v)
 }
 
 std::string Parameter::getString() {
-    return std::__cxx11::string();
+    return std::string("Parameter: ") + _name->getString();
 }
 
 Parameter *Parameter::clone() {

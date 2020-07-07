@@ -13,8 +13,6 @@ fragment LETTER: [a-zA-Z];
 
 fragment ALPHANUM: DIGIT | LETTER | '_';
 
-
-
 /**
 * Logic Operators
 **/

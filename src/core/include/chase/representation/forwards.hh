@@ -16,13 +16,17 @@ namespace chase {
     class System;
     class Integer;
     class Real;
+    class String;
     class Boolean;
     class Value;
     class Range;
     class NumericValue;
     class IntegerValue;
     class RealValue;
+    class StringValue;
     class BooleanValue;
+    class CustomType;
+    class Enumeration;
     class Expression;
     class Identifier;
     class Name;

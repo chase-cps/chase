@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include "Console.hh"
+#include "utilities/simplify.hh"
 
 using namespace ltl_tool;
 using namespace chase;
@@ -14,6 +15,7 @@ using namespace chase;
 ltl_tool::Console::Console(System *system) :
     _system(system)
 {
+    simplify(_system);
 }
 
 int Console::run()
@@ -31,6 +33,10 @@ int Console::run()
         if( rv == 0 )
             std::cout << "Wrong command" << std::endl;
     }
+
+    simplify(_system);
+    std::cout << _system->getString() << std::endl;
+
     return 1;
 }
 
@@ -85,7 +91,7 @@ int Console::_execCommand(std::string cmd)
         _parseProjectionMap(m);
 
         auto r = Contract::composition(c1, c2, m, tokens[3]);
-        std::cout << r->getString() << std::endl;
+        _system->addContract(r);
     }
     else if(tokens[0] == "conjunction")
     {
@@ -115,7 +121,7 @@ int Console::_execCommand(std::string cmd)
         _parseProjectionMap(m);
 
         auto r = Contract::conjunction(c1, c2, m, tokens[3]);
-        std::cout << r->getString() << std::endl;
+        _system->addContract(r);
     }
 
 

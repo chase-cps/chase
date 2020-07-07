@@ -38,5 +38,9 @@ nodeType ChaseObject::IsA()
     return _node_type;
 }
 
+std::string ChaseObject::getString() {
+    return std::string();
+}
+
 
 

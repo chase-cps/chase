@@ -309,8 +309,25 @@ int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
     return _rv;
 }
 
-int chase::GuideVisitor::visitSystem(chase::System &o) {
-    return BaseVisitor::visitSystem(o);
+int chase::GuideVisitor::visitSystem(chase::System &o)
+{
+    int rv = 0;
+    auto declarations = o.getDeclarationsSet();
+    for(auto i = declarations.begin(); i != declarations.end(); ++i)
+    {
+        rv |= (*i)->accept_visitor(*this);
+    }
+    auto contracts = o.getContractsSet();
+    for(auto i = contracts.begin(); i != contracts.end(); ++i)
+    {
+        rv |= (*i)->accept_visitor(*this);
+    }
+    auto components = o.getComponentsSet();
+    for(auto i = components.begin(); i != components.end(); ++i)
+    {
+        rv |= (*i)->accept_visitor(*this);
+    }
+    return rv;
 }
 
 int chase::GuideVisitor::visitComponentDefinition(
@@ -349,6 +366,24 @@ int chase::GuideVisitor::visitComponent(chase::Component &o)
         }
     }
     return rv;
+}
+
+int chase::GuideVisitor::visitEnumeration(chase::Enumeration &o) {
+    auto rv = o.getName()->accept_visitor(*this);
+    return rv;
+}
+
+int chase::GuideVisitor::visitCustomType(chase::CustomType &o) {
+    auto rv = o.getName()->accept_visitor(*this);
+    return rv;
+}
+
+int chase::GuideVisitor::visitStringValue(chase::StringValue &value) {
+    return BaseVisitor::visitStringValue(value);
+}
+
+int chase::GuideVisitor::visitString(chase::String &s) {
+    return BaseVisitor::visitString(s);
 }
 
 
