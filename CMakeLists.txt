@@ -4,11 +4,11 @@
 # @author Michele Lora
 #
 
-cmake_minimum_required (VERSION 2.4)
+cmake_minimum_required (VERSION 3.10)
 
 add_subdirectory(third_party)
 
-project (CHASE)
+project (CHASE VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb")
@@ -44,7 +44,6 @@ if ( ENABLE_INSTALL_PREFIX )
 else()
         set (CMAKE_INSTALL_PREFIX ${DEFAULT_INSTALL_LOCATION} CACHE PATH "Installation root" FORCE)
 endif()
-
 
 add_subdirectory(src)
 add_subdirectory(doc)
