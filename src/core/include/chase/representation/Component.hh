@@ -17,6 +17,8 @@
 
 namespace chase {
 
+    /// @brief Class representing a component instance. The component definition
+    /// is represented by object of the ComponentInstance class.
     class Component : public ChaseObject {
     public:
 

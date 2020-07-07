@@ -264,7 +264,8 @@ PYBIND11_MODULE(chasecorebnd, m) {
             py::arg("v").none(false))
         .def("getString", &ComponentDefinition::getString)
         .def("clone", &ComponentDefinition::clone)
-        .def_readwrite("views", &ComponentDefinition::views);
+        .def_readwrite("views", &ComponentDefinition::views)
+        .def_readwrite("subcomponents", &ComponentDefinition::subcomponents);
     
     py::class_<DataDeclaration, std::unique_ptr<DataDeclaration, 
         py::nodelete>, Declaration>(m, "DataDeclaration");
