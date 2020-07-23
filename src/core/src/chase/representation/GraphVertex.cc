@@ -42,6 +42,10 @@ std::string Vertex::getString() {
 }
 
 
+std::string Vertex::getGraphViz() {
+    return std::string();
+}
+
 Vertex *Vertex::clone() {
     return new Vertex(_name->clone());
 }

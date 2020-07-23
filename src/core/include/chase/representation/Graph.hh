@@ -91,6 +91,8 @@ namespace chase {
         /// @return The return value of the visitor.
         int accept_visitor(chase::BaseVisitor &v) override;
 
+        virtual std::string getGraphViz();
+
         /// @brief Function printing the vertex.
         /// @return The string representing the node.
         std::string getString() override;
