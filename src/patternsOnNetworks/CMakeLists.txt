@@ -44,4 +44,4 @@ target_link_libraries(patternsOnNetwork
         chasecore
         antlr4_static)
 
-install(TARGETS patternsOnNetwork DESTINATION core/bin)
+install(TARGETS patternsOnNetwork DESTINATION chase/bin)

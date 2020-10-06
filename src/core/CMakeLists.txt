@@ -51,7 +51,6 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/UnaryTemporalFormula.cc
         ${SRC_CHASELIB_PATH}/representation/BinaryTemporalFormula.cc
         ${SRC_CHASELIB_PATH}/representation/LargeBooleanFormula.cc
-
         ${SRC_CHASELIB_PATH}/representation/Graph.cc
         ${SRC_CHASELIB_PATH}/representation/GraphVertex.cc
         ${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
@@ -98,20 +97,61 @@ include_directories(
 add_library(chasecore ${chase_library})
 set_target_properties(chasecore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-install(TARGETS chasecore DESTINATION core/lib)
+include(GNUInstallDirs)
+set(LIB_INSTALL_DIR chase/lib  CACHE STRING ¨¨)
+set(INCLUDE_INSTALL_DIR chase  CACHE STRING ¨¨)
 
+pybind11_add_module(
+        chasecorebnd MODULE 
+        ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc
+)
+    
+target_link_libraries(chasecorebnd PRIVATE chasecore)
 
 install(
         DIRECTORY ${PROJECT_SOURCE_DIR}/src/core/include
-        DESTINATION core
+        DESTINATION ${INCLUDE_INSTALL_DIR}
        )
 
-pybind11_add_module(
-    chasecorebnd MODULE 
-    ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc
-    )
-    
-target_link_libraries(chasecorebnd PRIVATE chasecore)
-install(TARGETS chasecorebnd DESTINATION core/pylib)
+install( 
+        TARGETS chasecore
+        EXPORT chaseTargets
+        DESTINATION ${LIB_INSTALL_DIR}
+)
 
+install(
+        TARGETS chasecorebnd
+        EXPORT chaseBndTargets
+        DESTINATION ${LIB_INSTALL_DIR}/pylib)
 
+install(
+        EXPORT chaseTargets
+        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
+        FILE chaseTargets.cmake # Not sure if this is still needed
+)
+
+install(
+        EXPORT chaseBndTargets
+        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
+        FILE chaseBndTargets.cmake # Not sure if this is still needed
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file( 
+        ${PROJECT_SOURCE_DIR}/chaseConfig.cmake.in
+        "chaseConfig.cmake"
+        INSTALL_DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
+        PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR )
+
+write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/chaseConfigVersion.cmake
+        VERSION 1.0.0
+        COMPATIBILITY SameMajorVersion
+)
+
+### Install Config and ConfigVersion files
+install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/chaseConfig.cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/chaseConfigVersion.cmake"
+        DESTINATION "${LIB_INSTALL_DIR}/cmake/chase"
+)
