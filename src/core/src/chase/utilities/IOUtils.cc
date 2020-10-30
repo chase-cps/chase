@@ -18,7 +18,7 @@ namespace chase{
             ChaseObject * object,
             std::ostream &str )
     {
-        std::string application("GENERIC HETEROS APPLICATION");
+        std::string application("GENERIC CHASE APPLICATION");
 #ifdef APPLICATION
         application = std::string(APPLICATION);
 #endif
