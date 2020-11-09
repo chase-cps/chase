@@ -123,8 +123,8 @@ int SlugsPrinter::visitUnaryBooleanOperation(UnaryBooleanFormula &o) {
 int SlugsPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &o) {
     switch(o.getOp()) {
         case op_next:
-            if (_inNext)
-                messageError("Illegal form: double annidated Next.");
+            //if (_inNext)
+                //messageError("Illegal form: double annidated Next.");
             _inNext = true;
             _continueVisit(o.getFormula());
             _inNext = false;
