@@ -1,5 +1,5 @@
 
-// Generated from LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -37,6 +37,10 @@ public:
 
     virtual antlrcpp::Any visitVariableKW(LTLContractsParser::VariableKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitInputKW(LTLContractsParser::InputKWContext *context) = 0;
+
+    virtual antlrcpp::Any visitOutputKW(LTLContractsParser::OutputKWContext *context) = 0;
+
     virtual antlrcpp::Any visitConstantKW(LTLContractsParser::ConstantKWContext *context) = 0;
 
     virtual antlrcpp::Any visitPropositionKw(LTLContractsParser::PropositionKwContext *context) = 0;
@@ -54,6 +58,8 @@ public:
     virtual antlrcpp::Any visitGuaranteesKW(LTLContractsParser::GuaranteesKWContext *context) = 0;
 
     virtual antlrcpp::Any visitNameKw(LTLContractsParser::NameKwContext *context) = 0;
+
+    virtual antlrcpp::Any visitCausality(LTLContractsParser::CausalityContext *context) = 0;
 
     virtual antlrcpp::Any visitLogic_constant(LTLContractsParser::Logic_constantContext *context) = 0;
 

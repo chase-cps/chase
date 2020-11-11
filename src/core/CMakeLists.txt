@@ -66,6 +66,7 @@ set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/LogicSimplificationVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/LogicNotNormalizationVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/GroupTemporalOperatorsVisitor.cc
+        ${SRC_CHASELIB_PATH}/utilities/VarsCausalityVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/simplify.cc
 )
 

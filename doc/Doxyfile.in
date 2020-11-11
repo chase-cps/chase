@@ -2494,6 +2494,3 @@ GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
 
 # Add files to extra stylesheet
-
-HTML_EXTRA_STYLESHEET  = "@CMAKE_SOURCE_DIR@/doc/custom.css" \
-                         "@CMAKE_SOURCE_DIR@/doc/custom_dark_theme.css"

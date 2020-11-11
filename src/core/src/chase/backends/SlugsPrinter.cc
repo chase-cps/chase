@@ -66,11 +66,10 @@ void SlugsPrinter::_printDeclarations()
 
     // Print the system variables.
     fout << "[OUTPUT]" << std::endl;
-    for( auto vit = _contract->declarations.begin();
-         vit != _contract->declarations.end(); ++vit)
+    for(auto & declaration : _contract->declarations)
     {
-        if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable *>(*vit);
+        if( declaration->IsA() != variable_node ) continue;
+        auto var = reinterpret_cast<Variable *>(declaration);
         if( var->getCausality() == output )
         {
             std::string name = var->getName()->getString();

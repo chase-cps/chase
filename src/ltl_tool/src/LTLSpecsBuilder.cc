@@ -64,8 +64,16 @@ antlrcpp::Any
 LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
     std::string name = ctx->ID()->getText();
     DataDeclaration * dec = nullptr;
-    if (ctx->variableKW() != nullptr)
-        dec = new Variable(new Integer(), new Name(name));
+    if (ctx->variableKW() != nullptr) {
+        auto var = new Variable(new Integer(), new Name(name));
+        if(ctx->causality() != nullptr){
+            if(ctx->causality()->inputKW() != nullptr)
+                var->setCausality(input);
+            if(ctx->causality()->outputKW() != nullptr)
+                var->setCausality(output);
+        }
+        dec = var;
+    }
     else if (ctx->constantKW() != nullptr)
     {
         int num = std::stoi(ctx->NUMBER()->getText().c_str());
@@ -78,10 +86,8 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
     {
         dec = new Variable(
                 new Boolean(), new Name(name));
-
         if( ctx->relation() != nullptr ) {
             Expression *exp = createRelation(ctx->relation());
-
             _map_props_values.insert(
                     std::pair<Variable *, Expression *>(
                             reinterpret_cast<Variable *>(dec), exp));

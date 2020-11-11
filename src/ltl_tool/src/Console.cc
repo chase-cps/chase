@@ -101,10 +101,8 @@ int Console::_execCommand(std::string cmd)
         std::string c2_name = tokens[2];
         Contract * c1 = nullptr;
         Contract * c2 = nullptr;
-        for (auto i = _system->getContractsSet().begin();
-             i != _system->getContractsSet().end(); ++i)
+        for (auto c : _system->getContractsSet())
         {
-            Contract * c = *i;
             if(c->getName()->getString() == c1_name )
             {
                 c1 = c;
@@ -122,6 +120,31 @@ int Console::_execCommand(std::string cmd)
 
         auto r = Contract::conjunction(c1, c2, m, tokens[3]);
         _system->addContract(r);
+    }
+    else if(tokens[0] == "synthesize")
+    {
+        std::string fileOut = "outuput.structuredSlugs";
+        if(tokens.size() > 2)
+            fileOut = std::string(tokens[2]);
+        if(tokens.size() < 2)
+            messageWarning("Wrong command. Usage: synthesize contract file");
+
+        std::string contract_name = tokens[1];
+        chase::Contract * contract = nullptr;
+        for (auto c : _system->getContractsSet())
+        {
+            if( c->getName()->getString() == contract_name)
+            {
+                contract = c;
+                break;
+            }
+        }
+        if(contract == nullptr) return 1;
+
+        VarsCausalityVisitor varsCausality(contract);
+        contract->accept_visitor(varsCausality);
+        SlugsPrinter printer;
+        printer.print(contract, fileOut);
     }
 
 

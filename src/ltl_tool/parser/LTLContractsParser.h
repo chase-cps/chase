@@ -1,5 +1,5 @@
 
-// Generated from LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -14,22 +14,24 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
-    IMPLIES = 21, IFF = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, 
-    EQ = 27, NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
-    TIMES = 35, DIVIDE = 36, ID = 37, NUMBER = 38, ENDST = 39
+    T__14 = 15, T__15 = 16, T__16 = 17, WS = 18, LINE_COMMENT = 19, AND = 20, 
+    OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, ALWAYS = 25, EVENTUALLY = 26, 
+    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
+    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, ID = 39, NUMBER = 40, 
+    ENDST = 41
   };
 
   enum {
     RuleBin_logic_op = 0, RuleUnary_logic_op = 1, RuleUnary_temp_op = 2, 
     RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RuleIntegerKW = 6, 
-    RuleBooleanKW = 7, RuleVariableKW = 8, RuleConstantKW = 9, RulePropositionKw = 10, 
-    RuleIsKw = 11, RuleTrueKW = 12, RuleFalseKW = 13, RuleContractKW = 14, 
-    RuleAssumptionsKW = 15, RuleGuaranteesKW = 16, RuleNameKw = 17, RuleLogic_constant = 18, 
-    RuleTypeKW = 19, RuleLvalue = 20, RuleRvalue = 21, RuleRelation = 22, 
-    RuleFormula = 23, RuleMinus_number = 24, RuleValue = 25, RuleAtom = 26, 
-    RuleSingle_formula = 27, RuleAssumptions = 28, RuleGuarantees = 29, 
-    RuleDeclaration = 30, RuleContract = 31, RuleName = 32, RuleSystemSpec = 33
+    RuleBooleanKW = 7, RuleVariableKW = 8, RuleInputKW = 9, RuleOutputKW = 10, 
+    RuleConstantKW = 11, RulePropositionKw = 12, RuleIsKw = 13, RuleTrueKW = 14, 
+    RuleFalseKW = 15, RuleContractKW = 16, RuleAssumptionsKW = 17, RuleGuaranteesKW = 18, 
+    RuleNameKw = 19, RuleCausality = 20, RuleLogic_constant = 21, RuleTypeKW = 22, 
+    RuleLvalue = 23, RuleRvalue = 24, RuleRelation = 25, RuleFormula = 26, 
+    RuleMinus_number = 27, RuleValue = 28, RuleAtom = 29, RuleSingle_formula = 30, 
+    RuleAssumptions = 31, RuleGuarantees = 32, RuleDeclaration = 33, RuleContract = 34, 
+    RuleName = 35, RuleSystemSpec = 36
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -51,6 +53,8 @@ public:
   class IntegerKWContext;
   class BooleanKWContext;
   class VariableKWContext;
+  class InputKWContext;
+  class OutputKWContext;
   class ConstantKWContext;
   class PropositionKwContext;
   class IsKwContext;
@@ -60,6 +64,7 @@ public:
   class AssumptionsKWContext;
   class GuaranteesKWContext;
   class NameKwContext;
+  class CausalityContext;
   class Logic_constantContext;
   class TypeKWContext;
   class LvalueContext;
@@ -204,6 +209,30 @@ public:
 
   VariableKWContext* variableKW();
 
+  class  InputKWContext : public antlr4::ParserRuleContext {
+  public:
+    InputKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  InputKWContext* inputKW();
+
+  class  OutputKWContext : public antlr4::ParserRuleContext {
+  public:
+    OutputKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  OutputKWContext* outputKW();
+
   class  ConstantKWContext : public antlr4::ParserRuleContext {
   public:
     ConstantKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -311,6 +340,20 @@ public:
   };
 
   NameKwContext* nameKw();
+
+  class  CausalityContext : public antlr4::ParserRuleContext {
+  public:
+    CausalityContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    InputKWContext *inputKW();
+    OutputKWContext *outputKW();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  CausalityContext* causality();
 
   class  Logic_constantContext : public antlr4::ParserRuleContext {
   public:
@@ -499,6 +542,7 @@ public:
     antlr4::tree::TerminalNode *ID();
     TypeKWContext *typeKW();
     antlr4::tree::TerminalNode *ENDST();
+    CausalityContext *causality();
     ConstantKWContext *constantKW();
     IntegerKWContext *integerKW();
     antlr4::tree::TerminalNode *NUMBER();

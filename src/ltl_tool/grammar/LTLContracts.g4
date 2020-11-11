@@ -77,6 +77,8 @@ ENDST: ';';
 integerKW:      'integer';
 booleanKW:      'boolean';
 variableKW:     'variable';
+inputKW:        'input';
+outputKW:       'output';
 constantKW:     'constant';
 propositionKw:  'proposition';
 isKw:           'is';
@@ -89,6 +91,7 @@ guaranteesKW:   'Guarantees';
 
 nameKw: 'NAME';
 
+causality: inputKW | outputKW;
 logic_constant: trueKW | falseKW;
 typeKW: integerKW | booleanKW;
 
@@ -139,7 +142,7 @@ guarantees:
 
 
 declaration:
-    variableKW ID typeKW ENDST |
+    (causality)? variableKW ID typeKW ENDST |
     constantKW ID integerKW NUMBER ENDST |
     propositionKw ID (isKw relation)? ENDST ;
 

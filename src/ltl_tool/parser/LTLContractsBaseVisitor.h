@@ -1,5 +1,5 @@
 
-// Generated from LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -51,6 +51,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitInputKW(LTLContractsParser::InputKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOutputKW(LTLContractsParser::OutputKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitConstantKW(LTLContractsParser::ConstantKWContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -84,6 +92,10 @@ public:
   }
 
   virtual antlrcpp::Any visitNameKw(LTLContractsParser::NameKwContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitCausality(LTLContractsParser::CausalityContext *ctx) override {
     return visitChildren(ctx);
   }
 
