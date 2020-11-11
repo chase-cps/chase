@@ -46,7 +46,7 @@ void Contract:: mergeDeclarations(
                     j != r->declarations.end();++j)
             {
                 if( name == (*j)->getName()->getString() )
-                    messageError("Name clashing in composition.");
+                    messageError("Name clashing in composition: " + name);
             }
 
             auto cloned = original->clone();

@@ -20,6 +20,8 @@ int main( int argc, char * argv[] )
     builder.parseSpecificationFile(parameters->fileIn);
     Contract * c = builder.getProblem()->getContract();
 
+    std::cout << c->getString() << std::endl << std::endl;
+
     if( parameters->backend == "gr1c" )
     {    
         GR1CPrinter printer;
@@ -47,7 +49,7 @@ void patternsOnNetworks::printHelp()
               << std::endl <<
               "\t-o : specifies the txt output file. Default: input file with .structuredslugs"
               "\n\t\trather than .txt extension." << std::endl <<
-              "\t-b : specifies the backend to be used. Default: gr1c." <<
+              "\t-b : specifies the backend to be used. Default: slugs." <<
               "\n\t\tLegal values: gr1c, slugs" << std::endl <<
               "\t-V : activate the verbose mode." << std::endl;
 }
@@ -85,7 +87,7 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
     {
         parameters->backend = "slugs";
     }
-    else if (parameters->backend != "slugs" || parameters->backend != "gr1c")
+    else if (parameters->backend != "slugs" && parameters->backend != "gr1c")
     {
         printHelp();
         exit(-1);
