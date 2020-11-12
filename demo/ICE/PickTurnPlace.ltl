@@ -1,0 +1,37 @@
+NAME : PickTurnPlace;
+
+CONTRACT Recipe:
+    input variable pick_exec boolean;
+    input variable turn_exec boolean;
+    input variable place_exec boolean;
+
+    output variable req_pick boolean;
+    output variable req_turn boolean;
+    output variable req_place boolean;
+
+    output variable pick_done boolean;
+    output variable turn_done boolean;
+    output variable place_done boolean;
+
+    Assumptions:
+        ~pick_exec /\ ~turn_exec /\ ~place_exec;
+        []<>(pick_exec);
+        []<>(turn_exec);
+        []<>(place_exec);
+
+    Guarantees:
+        ~pick_done /\ ~turn_done /\ ~place_done;
+
+        [](pick_exec -> X(pick_done));
+        [](pick_done -> X(pick_done));
+        [](~pick_done /\ ~pick_exec -> X(~pick_done));
+
+        [](turn_exec -> X(turn_done));
+        [](turn_done -> X(turn_done));
+        [](~turn_done /\ ~turn_exec -> X(~turn_done));
+
+        [](place_exec -> X(place_done));
+        [](place_done -> X(place_done));
+        [](~place_done /\ ~place_exec -> X(~place_done));
+
+        []<>(pick_done /\ turn_done /\ place_done);

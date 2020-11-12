@@ -17,3 +17,7 @@ build/
 CMakeCache.txt
 CMakeFiles/*
 venv/*
+.idea/repo.iml
+.idea/shelf/Uncommitted_changes_before_Checkout_at_11_9_2020_4_18_PM__Default_Changelist_.xml
+.idea/shelf/Uncommitted_changes_before_Checkout_at_11_9_2020_4_18_PM_\[Default_Changelist\]/shelved.patch
+demo/Timing/template_0_synthesizable.structuredslugs
