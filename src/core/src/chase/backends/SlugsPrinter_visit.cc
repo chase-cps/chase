@@ -9,7 +9,8 @@
 using namespace chase;
 
 
-int SlugsPrinter::visitIntegerValue(IntegerValue &o) {
+int SlugsPrinter::visitIntegerValue(IntegerValue &o)
+{
     _curr += std::to_string(o.getValue());
     return 1;
 }
@@ -24,7 +25,7 @@ int SlugsPrinter::visitExpression(Expression &o) {
 }
 
 int SlugsPrinter::visitIdentifier(Identifier &o) {
-    if(_inNext)
+    if(_inNext == true)
     {
         _curr += o.getString();
         _curr +="'";
@@ -123,8 +124,8 @@ int SlugsPrinter::visitUnaryBooleanOperation(UnaryBooleanFormula &o) {
 int SlugsPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &o) {
     switch(o.getOp()) {
         case op_next:
-            //if (_inNext)
-                //messageError("Illegal form: double annidated Next.");
+            if (_inNext == true)
+                messageWarning("Illegal form: double annidated Next.");
             _inNext = true;
             _continueVisit(o.getFormula());
             _inNext = false;

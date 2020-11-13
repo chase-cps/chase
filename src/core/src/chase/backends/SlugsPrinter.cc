@@ -9,7 +9,8 @@
 using namespace chase;
 
 SlugsPrinter::SlugsPrinter() :
-    GuideVisitor()
+    GuideVisitor(),
+    _inNext(false)
 {
 }
 
@@ -28,8 +29,11 @@ void SlugsPrinter::print(Contract *contract, std::string path)
     // Print the declarations.
     _printDeclarations();
 
+    // Print the initial conditions of the contract.
     _printInit();
+    // Print the safety properties of the contract.
     _printSafety();
+    // Print the liveness properties of the contract.
     _printLiveness();
 
 }

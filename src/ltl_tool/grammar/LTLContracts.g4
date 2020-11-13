@@ -142,8 +142,8 @@ guarantees:
 
 
 declaration:
-    (causality)? variableKW ID typeKW ENDST |
-    constantKW ID integerKW NUMBER ENDST |
+    (causality)? typeKW variableKW ID ENDST |
+    typeKW constantKW ID  NUMBER ENDST |
     propositionKw ID (isKw relation)? ENDST ;
 
 contract:

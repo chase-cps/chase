@@ -538,13 +538,12 @@ public:
   public:
     DeclarationContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    TypeKWContext *typeKW();
     VariableKWContext *variableKW();
     antlr4::tree::TerminalNode *ID();
-    TypeKWContext *typeKW();
     antlr4::tree::TerminalNode *ENDST();
     CausalityContext *causality();
     ConstantKWContext *constantKW();
-    IntegerKWContext *integerKW();
     antlr4::tree::TerminalNode *NUMBER();
     PropositionKwContext *propositionKw();
     IsKwContext *isKw();

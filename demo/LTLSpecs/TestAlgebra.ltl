@@ -1,8 +1,8 @@
 NAME : TEST_SYSTEM;
 
 CONTRACT C1:
-    variable x integer;
-    variable y integer;
+    integer variable x;
+    integer variable y;
 
     constant A integer 10;
 
@@ -16,8 +16,8 @@ CONTRACT C1:
 
 
 CONTRACT C2:
-    variable z integer;
-    variable w integer;
+    integer variable z;
+    integer variable w;
 
     proposition z_leq_zero is z >= 0;
     proposition w_calculation is w = z + 1;

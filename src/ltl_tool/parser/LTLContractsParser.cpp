@@ -1982,16 +1982,16 @@ LTLContractsParser::DeclarationContext::DeclarationContext(ParserRuleContext *pa
   : ParserRuleContext(parent, invokingState) {
 }
 
+LTLContractsParser::TypeKWContext* LTLContractsParser::DeclarationContext::typeKW() {
+  return getRuleContext<LTLContractsParser::TypeKWContext>(0);
+}
+
 LTLContractsParser::VariableKWContext* LTLContractsParser::DeclarationContext::variableKW() {
   return getRuleContext<LTLContractsParser::VariableKWContext>(0);
 }
 
 tree::TerminalNode* LTLContractsParser::DeclarationContext::ID() {
   return getToken(LTLContractsParser::ID, 0);
-}
-
-LTLContractsParser::TypeKWContext* LTLContractsParser::DeclarationContext::typeKW() {
-  return getRuleContext<LTLContractsParser::TypeKWContext>(0);
 }
 
 tree::TerminalNode* LTLContractsParser::DeclarationContext::ENDST() {
@@ -2004,10 +2004,6 @@ LTLContractsParser::CausalityContext* LTLContractsParser::DeclarationContext::ca
 
 LTLContractsParser::ConstantKWContext* LTLContractsParser::DeclarationContext::constantKW() {
   return getRuleContext<LTLContractsParser::ConstantKWContext>(0);
-}
-
-LTLContractsParser::IntegerKWContext* LTLContractsParser::DeclarationContext::integerKW() {
-  return getRuleContext<LTLContractsParser::IntegerKWContext>(0);
 }
 
 tree::TerminalNode* LTLContractsParser::DeclarationContext::NUMBER() {
@@ -2050,70 +2046,66 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
   try {
     setState(239);
     _errHandler->sync(this);
-    switch (_input->LA(1)) {
-      case LTLContractsParser::T__2:
-      case LTLContractsParser::T__3:
-      case LTLContractsParser::T__4: {
-        enterOuterAlt(_localctx, 1);
-        setState(217);
-        _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 14, _ctx)) {
+    case 1: {
+      enterOuterAlt(_localctx, 1);
+      setState(217);
+      _errHandler->sync(this);
 
-        _la = _input->LA(1);
-        if (_la == LTLContractsParser::T__3
+      _la = _input->LA(1);
+      if (_la == LTLContractsParser::T__3
 
-        || _la == LTLContractsParser::T__4) {
-          setState(216);
-          causality();
-        }
-        setState(219);
-        variableKW();
-        setState(220);
-        match(LTLContractsParser::ID);
-        setState(221);
-        typeKW();
-        setState(222);
-        match(LTLContractsParser::ENDST);
-        break;
+      || _la == LTLContractsParser::T__4) {
+        setState(216);
+        causality();
       }
+      setState(219);
+      typeKW();
+      setState(220);
+      variableKW();
+      setState(221);
+      match(LTLContractsParser::ID);
+      setState(222);
+      match(LTLContractsParser::ENDST);
+      break;
+    }
 
-      case LTLContractsParser::T__5: {
-        enterOuterAlt(_localctx, 2);
-        setState(224);
-        constantKW();
-        setState(225);
-        match(LTLContractsParser::ID);
-        setState(226);
-        integerKW();
-        setState(227);
-        match(LTLContractsParser::NUMBER);
-        setState(228);
-        match(LTLContractsParser::ENDST);
-        break;
+    case 2: {
+      enterOuterAlt(_localctx, 2);
+      setState(224);
+      typeKW();
+      setState(225);
+      constantKW();
+      setState(226);
+      match(LTLContractsParser::ID);
+      setState(227);
+      match(LTLContractsParser::NUMBER);
+      setState(228);
+      match(LTLContractsParser::ENDST);
+      break;
+    }
+
+    case 3: {
+      enterOuterAlt(_localctx, 3);
+      setState(230);
+      propositionKw();
+      setState(231);
+      match(LTLContractsParser::ID);
+      setState(235);
+      _errHandler->sync(this);
+
+      _la = _input->LA(1);
+      if (_la == LTLContractsParser::T__7) {
+        setState(232);
+        isKw();
+        setState(233);
+        relation();
       }
+      setState(237);
+      match(LTLContractsParser::ENDST);
+      break;
+    }
 
-      case LTLContractsParser::T__6: {
-        enterOuterAlt(_localctx, 3);
-        setState(230);
-        propositionKw();
-        setState(231);
-        match(LTLContractsParser::ID);
-        setState(235);
-        _errHandler->sync(this);
-
-        _la = _input->LA(1);
-        if (_la == LTLContractsParser::T__7) {
-          setState(232);
-          isKw();
-          setState(233);
-          relation();
-        }
-        setState(237);
-        match(LTLContractsParser::ENDST);
-        break;
-      }
-
-    default:
-      throw NoViableAltException(this);
     }
    
   }
@@ -2189,10 +2181,10 @@ LTLContractsParser::ContractContext* LTLContractsParser::contract() {
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__2)
+      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__0)
+      | (1ULL << LTLContractsParser::T__1)
       | (1ULL << LTLContractsParser::T__3)
       | (1ULL << LTLContractsParser::T__4)
-      | (1ULL << LTLContractsParser::T__5)
       | (1ULL << LTLContractsParser::T__6))) != 0)) {
       setState(244);
       declaration();
@@ -2347,10 +2339,10 @@ LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__2)
+      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__0)
+      | (1ULL << LTLContractsParser::T__1)
       | (1ULL << LTLContractsParser::T__3)
       | (1ULL << LTLContractsParser::T__4)
-      | (1ULL << LTLContractsParser::T__5)
       | (1ULL << LTLContractsParser::T__6))) != 0)) {
       setState(264);
       declaration();
@@ -2607,10 +2599,10 @@ LTLContractsParser::Initializer::Initializer() {
     0xd6, 0x3, 0x2, 0x2, 0x2, 0xd8, 0xd9, 0x3, 0x2, 0x2, 0x2, 0xd9, 0x43, 
     0x3, 0x2, 0x2, 0x2, 0xda, 0xdc, 0x5, 0x2a, 0x16, 0x2, 0xdb, 0xda, 0x3, 
     0x2, 0x2, 0x2, 0xdb, 0xdc, 0x3, 0x2, 0x2, 0x2, 0xdc, 0xdd, 0x3, 0x2, 
-    0x2, 0x2, 0xdd, 0xde, 0x5, 0x12, 0xa, 0x2, 0xde, 0xdf, 0x7, 0x29, 0x2, 
-    0x2, 0xdf, 0xe0, 0x5, 0x2e, 0x18, 0x2, 0xe0, 0xe1, 0x7, 0x2b, 0x2, 0x2, 
-    0xe1, 0xf2, 0x3, 0x2, 0x2, 0x2, 0xe2, 0xe3, 0x5, 0x18, 0xd, 0x2, 0xe3, 
-    0xe4, 0x7, 0x29, 0x2, 0x2, 0xe4, 0xe5, 0x5, 0xe, 0x8, 0x2, 0xe5, 0xe6, 
+    0x2, 0x2, 0xdd, 0xde, 0x5, 0x2e, 0x18, 0x2, 0xde, 0xdf, 0x5, 0x12, 0xa, 
+    0x2, 0xdf, 0xe0, 0x7, 0x29, 0x2, 0x2, 0xe0, 0xe1, 0x7, 0x2b, 0x2, 0x2, 
+    0xe1, 0xf2, 0x3, 0x2, 0x2, 0x2, 0xe2, 0xe3, 0x5, 0x2e, 0x18, 0x2, 0xe3, 
+    0xe4, 0x5, 0x18, 0xd, 0x2, 0xe4, 0xe5, 0x7, 0x29, 0x2, 0x2, 0xe5, 0xe6, 
     0x7, 0x2a, 0x2, 0x2, 0xe6, 0xe7, 0x7, 0x2b, 0x2, 0x2, 0xe7, 0xf2, 0x3, 
     0x2, 0x2, 0x2, 0xe8, 0xe9, 0x5, 0x1a, 0xe, 0x2, 0xe9, 0xed, 0x7, 0x29, 
     0x2, 0x2, 0xea, 0xeb, 0x5, 0x1c, 0xf, 0x2, 0xeb, 0xec, 0x5, 0x34, 0x1b, 

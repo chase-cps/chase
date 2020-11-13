@@ -1,5 +1,5 @@
 /**
-    * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
+ * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
  * @date        1/23/2020
  *              This project is released under the 3-Clause BSD License.
  *
@@ -33,10 +33,7 @@ int Console::run()
         if( rv == 0 )
             std::cout << "Wrong command" << std::endl;
     }
-
     simplify(_system);
-    std::cout << _system->getString() << std::endl;
-
     return 1;
 }
 
@@ -55,10 +52,8 @@ int Console::_execCommand(std::string cmd)
         if (tokens.size() != 2)
             return 0;
         std::string contract_name = tokens[1];
-        for (auto i = _system->getContractsSet().begin();
-             i != _system->getContractsSet().end(); ++i)
+        for (auto c : _system->getContractsSet())
         {
-            Contract * c = *i;
             if(c->getName()->getString() == contract_name )
                 Contract::saturate(c);
         }
@@ -71,10 +66,8 @@ int Console::_execCommand(std::string cmd)
         std::string c2_name = tokens[2];
         Contract * c1 = nullptr;
         Contract * c2 = nullptr;
-        for (auto i = _system->getContractsSet().begin();
-             i != _system->getContractsSet().end(); ++i)
+        for (auto c : _system->getContractsSet())
         {
-            Contract * c = *i;
             if(c->getName()->getString() == c1_name )
             {
                 c1 = c;
@@ -123,11 +116,14 @@ int Console::_execCommand(std::string cmd)
     }
     else if(tokens[0] == "synthesize")
     {
-        std::string fileOut = "outuput.structuredSlugs";
+        std::string fileOut = "output.structuredSlugs";
         if(tokens.size() > 2)
             fileOut = std::string(tokens[2]);
         if(tokens.size() < 2)
             messageWarning("Wrong command. Usage: synthesize contract file");
+
+        if(fileOut.find("structuredSlugs") == std::string::npos)
+            fileOut += ".structuredSlugs";
 
         std::string contract_name = tokens[1];
         chase::Contract * contract = nullptr;
@@ -145,9 +141,9 @@ int Console::_execCommand(std::string cmd)
         contract->accept_visitor(varsCausality);
         SlugsPrinter printer;
         printer.print(contract, fileOut);
+        messageInfo(
+                "SLUGS specification for synthesis stored in file: " + fileOut);
     }
-
-
     return 1;
 }
 

@@ -64,8 +64,17 @@ antlrcpp::Any
 LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
     std::string name = ctx->ID()->getText();
     DataDeclaration * dec = nullptr;
+
+    Type *type = nullptr;
+    if( ctx->typeKW()->integerKW() != nullptr )
+        type = new chase::Integer();
+    else if( ctx->typeKW()->booleanKW() != nullptr )
+        type = new chase::Boolean();
+    else
+        messageError("Wrong type: " + ctx->typeKW()->getText());
+
     if (ctx->variableKW() != nullptr) {
-        auto var = new Variable(new Integer(), new Name(name));
+        auto var = new Variable(type, new Name(name));
         if(ctx->causality() != nullptr){
             if(ctx->causality()->inputKW() != nullptr)
                 var->setCausality(input);
