@@ -18,12 +18,12 @@ ltl_tool::Console::Console(System *system) :
     simplify(_system);
 }
 
-int Console::run()
+int Console::run(std::string cmd)
 {
-    std::cout << std::endl << "$> ";
-    std::string cmd;
-
-    std::getline(std::cin, cmd);
+    if(cmd.empty()) {
+        std::cout << std::endl << "$> ";
+        std::getline(std::cin, cmd);
+    }
 
     if(cmd == "exit") return 0;
     if(cmd == "show")

@@ -22,15 +22,15 @@ namespace ltl_tool
     {
         /// @brief Input file path.
         std::string fileIn;
-        /// @brief Output file path.
-        std::string fileOut;
+        /// @brief Commands file path.
+        std::string cmdFile;
 
         /// @brief Verbose flag. Execution is verbose when flag is set to true.
         bool verbose;
 
         _params() :
                 fileIn("chase_spec.txt"),
-                fileOut(""),
+                cmdFile(""),
                 verbose(false)
         {
         }

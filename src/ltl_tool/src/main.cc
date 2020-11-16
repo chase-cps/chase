@@ -20,10 +20,26 @@ int main( int argc, char * argv[] )
 
     Console console(system);
 
-    while( console.run() );
-
+    if(params->cmdFile.empty()) {
+        while (console.run());
+    } else {
+        std::ifstream cmds;
+        std::string line;
+        cmds.open(params->cmdFile.c_str());
+        int ret = 1;
+        while(std::getline(cmds, line) && ret != 0)
+        {
+            if(line == "\r" || line == "\n") continue;
+            size_t semicolon = line.find(';');
+            if( semicolon == std::string::npos ) {
+                messageWarning("Missing semicolon. Skipped command: " + line);
+                continue;
+            }
+            line = line.substr(0, semicolon);
+            ret = console.run(line);
+        }
+    }
     delete system;
-
 }
 
 Params * ltl_tool::parseCmdLine(int argc, char **argv) {
@@ -32,13 +48,13 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
     opterr = 0;
     int c;
 
-    while ((c = getopt(argc, argv, "i:o:b:V")) != -1) {
+    while ((c = getopt(argc, argv, "i:c:b:V")) != -1) {
         switch (c) {
             case 'i':
                 parameters->fileIn = std::string(optarg);
                 break;
-            case 'o':
-                parameters->fileOut = std::string(optarg);
+            case 'c':
+                parameters->cmdFile = std::string(optarg);
                 break;
             case '?':
                 printHelp();
@@ -51,19 +67,6 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
                 exit(-1);
         }
     }
-
-    if( parameters->fileOut.empty() )
-    {
-        size_t lastindex = parameters->fileIn.find_last_of('.');
-        size_t firstindex = parameters->fileIn.find_last_of('/');
-        if( firstindex > 0 ) ++firstindex;
-        std::string rawname = parameters->fileIn.substr(firstindex, lastindex-firstindex);
-
-        rawname += ".txt";
-
-        parameters->fileOut = rawname;
-    }
-
 
     std::ifstream f(parameters->fileIn.c_str());
     if( ! f.good() )
@@ -80,12 +83,12 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
 void ltl_tool::printHelp()
 {
     std::cerr << "[USAGE]\n" <<
-              "ltl_tool -i input_file [-o output_file] [-V]"
+              "ltl_tool -i input_file -c commands_file [-V]"
               << std::endl <<
               std::endl <<
               "\t-i : specifies the txt input file containing the specifications."
               << std::endl <<
-              "\t-o : specifies the txt output file. Default: input file with .py"
-              "\n\t\trather than .txt extension." << std::endl <<
+              "\t-c : command file to be executed."
+              << std::endl <<
               "\t-V : activate the verbose mode." << std::endl;
 }

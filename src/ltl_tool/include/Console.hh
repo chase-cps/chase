@@ -24,8 +24,9 @@ namespace ltl_tool
         Console( System * system );
 
         /// @brief The main function of the console.
+        /// @param cmd The command being read.
         /// @return 0 when the console finished. 1 Otherwise.
-        int run();
+        int run(std::string cmd = std::string(""));
 
     protected:
         System * _system;
