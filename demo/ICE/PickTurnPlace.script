@@ -1,3 +1,4 @@
 show;
 saturate Recipe;
+synthesize Recipe recipe gr1c;
 verify Recipe recipe;

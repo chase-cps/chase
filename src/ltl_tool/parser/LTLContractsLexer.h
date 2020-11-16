@@ -14,10 +14,10 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, WS = 18, LINE_COMMENT = 19, AND = 20, 
-    OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, ALWAYS = 25, EVENTUALLY = 26, 
-    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
-    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, ID = 39, NUMBER = 40, 
+    WS = 15, LINE_COMMENT = 16, AND = 17, OR = 18, NOT = 19, IMPLIES = 20, 
+    IFF = 21, COLON = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, 
+    EQ = 27, NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
+    TIMES = 35, DIVIDE = 36, LBRACKET = 37, RBRACKET = 38, ID = 39, NUMBER = 40, 
     ENDST = 41
   };
 

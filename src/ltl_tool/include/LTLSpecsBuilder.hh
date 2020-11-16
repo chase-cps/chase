@@ -91,10 +91,6 @@ namespace ltl_tool {
         /// @brief Map of propositions and values.
         std::map< Variable *, Expression * > _map_props_values;
 
-
-
-
-
     };
 
 }

@@ -14,10 +14,10 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, WS = 18, LINE_COMMENT = 19, AND = 20, 
-    OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, ALWAYS = 25, EVENTUALLY = 26, 
-    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
-    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, ID = 39, NUMBER = 40, 
+    WS = 15, LINE_COMMENT = 16, AND = 17, OR = 18, NOT = 19, IMPLIES = 20, 
+    IFF = 21, COLON = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, 
+    EQ = 27, NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
+    TIMES = 35, DIVIDE = 36, LBRACKET = 37, RBRACKET = 38, ID = 39, NUMBER = 40, 
     ENDST = 41
   };
 
@@ -374,6 +374,11 @@ public:
     TypeKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     IntegerKWContext *integerKW();
+    antlr4::tree::TerminalNode *LBRACKET();
+    std::vector<antlr4::tree::TerminalNode *> NUMBER();
+    antlr4::tree::TerminalNode* NUMBER(size_t i);
+    antlr4::tree::TerminalNode *COLON();
+    antlr4::tree::TerminalNode *RBRACKET();
     BooleanKWContext *booleanKW();
 
 
@@ -432,6 +437,8 @@ public:
     std::vector<FormulaContext *> formula();
     FormulaContext* formula(size_t i);
     Unary_temp_opContext *unary_temp_op();
+    antlr4::tree::TerminalNode *LBRACKET();
+    antlr4::tree::TerminalNode *RBRACKET();
     AtomContext *atom();
     Bin_logic_opContext *bin_logic_op();
     Bin_temp_opContext *bin_temp_op();
@@ -468,6 +475,8 @@ public:
     ValueContext* value(size_t i);
     Minus_numberContext *minus_number();
     antlr4::tree::TerminalNode *NUMBER();
+    antlr4::tree::TerminalNode *LBRACKET();
+    antlr4::tree::TerminalNode *RBRACKET();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -509,6 +518,7 @@ public:
     AssumptionsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     AssumptionsKWContext *assumptionsKW();
+    antlr4::tree::TerminalNode *COLON();
     std::vector<Single_formulaContext *> single_formula();
     Single_formulaContext* single_formula(size_t i);
 
@@ -524,6 +534,7 @@ public:
     GuaranteesContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     GuaranteesKWContext *guaranteesKW();
+    antlr4::tree::TerminalNode *COLON();
     std::vector<Single_formulaContext *> single_formula();
     Single_formulaContext* single_formula(size_t i);
 
@@ -562,6 +573,7 @@ public:
     virtual size_t getRuleIndex() const override;
     ContractKWContext *contractKW();
     antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *COLON();
     std::vector<DeclarationContext *> declaration();
     DeclarationContext* declaration(size_t i);
     AssumptionsContext *assumptions();
@@ -579,6 +591,7 @@ public:
     NameContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     NameKwContext *nameKw();
+    antlr4::tree::TerminalNode *COLON();
     antlr4::tree::TerminalNode *ID();
     antlr4::tree::TerminalNode *ENDST();
 

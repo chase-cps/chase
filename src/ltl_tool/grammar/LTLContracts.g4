@@ -23,6 +23,8 @@ NOT:        '!' | '~';
 IMPLIES:    '->';
 IFF:        '<->';
 
+COLON:      ':';
+
 bin_logic_op: AND | OR | IFF | IMPLIES;
 unary_logic_op: NOT;
 
@@ -64,9 +66,11 @@ DIVIDE: '/';
 
 bin_math_op: TIMES | DIVIDE | PLUS | MINUS;
 
+LBRACKET: '(';
+RBRACKET: ')';
 
 ID: LETTER ALPHANUM*;
-NUMBER: DIGIT+;
+NUMBER: MINUS? DIGIT+;
 
 ENDST: ';';
 
@@ -92,7 +96,9 @@ nameKw: 'NAME';
 
 causality: inputKW | outputKW;
 logic_constant: trueKW | falseKW;
-typeKW: integerKW | booleanKW;
+
+typeKW: integerKW LBRACKET NUMBER COLON NUMBER RBRACKET | booleanKW;
+
 
 
 /**
@@ -111,7 +117,7 @@ formula:
     formula bin_logic_op formula |
     unary_temp_op formula |
     formula bin_temp_op formula |
-    '(' formula ')' | atom;
+    LBRACKET formula RBRACKET | atom;
 
 minus_number: MINUS NUMBER;
 
@@ -119,7 +125,7 @@ value: value bin_math_op value |
         ID bin_math_op value |
         ID bin_math_op ID |
         value bin_math_op ID |
-        ID | minus_number | NUMBER | '(' value ')';
+        ID | minus_number | NUMBER | LBRACKET value RBRACKET;
 
 
 
