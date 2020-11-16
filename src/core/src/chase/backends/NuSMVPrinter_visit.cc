@@ -78,6 +78,8 @@ int NuSMVPrinter::visitLargeBooleanFormula(LargeBooleanFormula &formula) {
 
 int NuSMVPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &formula) {
     std::string op = _printTemporalOperator(formula.getOp());
+    if( formula.getOp() == op_globally)
+        _fout << "\n\t\t";
     _fout << "(";
     _fout << " " << op << " ";
     int rv = formula.getFormula()->accept_visitor(*this);
@@ -87,8 +89,6 @@ int NuSMVPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &formula) {
 
 int NuSMVPrinter::visitBinaryTemporalOperation(BinaryTemporalFormula &formula) {
     std::string op = _printTemporalOperator(formula.getOp());
-    if( formula.getOp() == op_globally)
-        _fout << "\n\t\t";
     _fout << "(";
     int rv = formula.getFormula1()->accept_visitor(*this);
     _fout << " " << op << " ";
