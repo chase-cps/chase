@@ -97,9 +97,8 @@ nameKw: 'NAME';
 causality: inputKW | outputKW;
 logic_constant: trueKW | falseKW;
 
-typeKW: integerKW LBRACKET NUMBER COLON NUMBER RBRACKET | booleanKW;
-
-
+range: LBRACKET NUMBER COLON NUMBER RBRACKET;
+typeKW: integerKW range? | booleanKW;
 
 /**
   GRAMMAR RULES

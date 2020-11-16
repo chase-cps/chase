@@ -67,8 +67,13 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
 
     Type *type = nullptr;
     if( ctx->typeKW()->integerKW() != nullptr ) {
-        int lb = std::stoi(ctx->typeKW()->NUMBER()[0]->getText());
-        int ub = std::stoi(ctx->typeKW()->NUMBER()[1]->getText());
+        int lb = 0;
+        int ub = 16;
+        if(ctx->typeKW()->range() != nullptr)
+        {
+            lb = std::stoi(ctx->typeKW()->range()->NUMBER(0)->getText());
+            ub = std::stoi(ctx->typeKW()->range()->NUMBER(1)->getText());
+        }
         type = new chase::Integer(lb, ub);
     }
     else if( ctx->typeKW()->booleanKW() != nullptr )

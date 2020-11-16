@@ -2,13 +2,13 @@ NAME : MANIPULATOR;
 
 CONTRACT Coordinator:
     boolean variable grip;
-    integer variable command;
+    integer (0 : 3) variable command;
     boolean variable turn_executed;
     boolean variable place_executed;
     boolean variable pick_executed;
     boolean variable available;
-    integer variable angle;
-    integer variable desired_angle;
+    integer (0 : 3) variable angle;
+    integer (0 : 3) variable desired_angle;
 
     proposition command_turn is command = 1;
     proposition command_pick is command = 2;
@@ -26,11 +26,11 @@ CONTRACT Coordinator:
 
 CONTRACT Turn:
     boolean variable grip;
-    integer variable command;
+    integer (0 : 3) variable command;
     boolean variable turn_executed;
-    integer variable angle;
-    integer variable next_angle;
-    integer variable desired_angle;
+    integer (0 : 3) variable angle;
+    integer (0 : 3) variable next_angle;
+    integer (0 : 3) variable desired_angle;
     boolean variable turning; 
 
     proposition command_turn is command = 1;
@@ -46,6 +46,7 @@ CONTRACT Turn:
 
     Assumptions:
         []<>(command_turn);
+
     Guarantees:
         []((turning & angle_lt_desired & angle_0) -> X(angle_90));
         []((turning & angle_lt_desired & angle_90) -> X(angle_180));

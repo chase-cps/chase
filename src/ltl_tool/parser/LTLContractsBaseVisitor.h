@@ -103,6 +103,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitRange(LTLContractsParser::RangeContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitTypeKW(LTLContractsParser::TypeKWContext *ctx) override {
     return visitChildren(ctx);
   }

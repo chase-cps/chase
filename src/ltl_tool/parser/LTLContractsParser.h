@@ -27,11 +27,11 @@ public:
     RuleBooleanKW = 7, RuleVariableKW = 8, RuleInputKW = 9, RuleOutputKW = 10, 
     RuleConstantKW = 11, RulePropositionKw = 12, RuleIsKw = 13, RuleTrueKW = 14, 
     RuleFalseKW = 15, RuleContractKW = 16, RuleAssumptionsKW = 17, RuleGuaranteesKW = 18, 
-    RuleNameKw = 19, RuleCausality = 20, RuleLogic_constant = 21, RuleTypeKW = 22, 
-    RuleLvalue = 23, RuleRvalue = 24, RuleRelation = 25, RuleFormula = 26, 
-    RuleMinus_number = 27, RuleValue = 28, RuleAtom = 29, RuleSingle_formula = 30, 
-    RuleAssumptions = 31, RuleGuarantees = 32, RuleDeclaration = 33, RuleContract = 34, 
-    RuleName = 35, RuleSystemSpec = 36
+    RuleNameKw = 19, RuleCausality = 20, RuleLogic_constant = 21, RuleRange = 22, 
+    RuleTypeKW = 23, RuleLvalue = 24, RuleRvalue = 25, RuleRelation = 26, 
+    RuleFormula = 27, RuleMinus_number = 28, RuleValue = 29, RuleAtom = 30, 
+    RuleSingle_formula = 31, RuleAssumptions = 32, RuleGuarantees = 33, 
+    RuleDeclaration = 34, RuleContract = 35, RuleName = 36, RuleSystemSpec = 37
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -66,6 +66,7 @@ public:
   class NameKwContext;
   class CausalityContext;
   class Logic_constantContext;
+  class RangeContext;
   class TypeKWContext;
   class LvalueContext;
   class RvalueContext;
@@ -369,16 +370,29 @@ public:
 
   Logic_constantContext* logic_constant();
 
-  class  TypeKWContext : public antlr4::ParserRuleContext {
+  class  RangeContext : public antlr4::ParserRuleContext {
   public:
-    TypeKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    RangeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    IntegerKWContext *integerKW();
     antlr4::tree::TerminalNode *LBRACKET();
     std::vector<antlr4::tree::TerminalNode *> NUMBER();
     antlr4::tree::TerminalNode* NUMBER(size_t i);
     antlr4::tree::TerminalNode *COLON();
     antlr4::tree::TerminalNode *RBRACKET();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  RangeContext* range();
+
+  class  TypeKWContext : public antlr4::ParserRuleContext {
+  public:
+    TypeKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    IntegerKWContext *integerKW();
+    RangeContext *range();
     BooleanKWContext *booleanKW();
 
 
