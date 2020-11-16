@@ -9,7 +9,8 @@
 using namespace chase;
 
 GR1CPrinter::GR1CPrinter() :
-    GuideVisitor()
+    GuideVisitor(),
+    _inNext(false)
 {
 }
 

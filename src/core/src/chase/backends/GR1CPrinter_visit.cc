@@ -122,7 +122,7 @@ int GR1CPrinter::visitUnaryBooleanOperation(UnaryBooleanFormula &o) {
 int GR1CPrinter::visitUnaryTemporalOperation(UnaryTemporalFormula &o) {
     switch(o.getOp()) {
         case op_next:
-            if (_inNext)
+            if (_inNext == true)
                 messageError("Illegal form: double annidated Next.");
             _inNext = true;
             _continueVisit(o.getFormula());

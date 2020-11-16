@@ -35,6 +35,11 @@ namespace ltl_tool
         /// @return 1 if the command has been executed properly. 0 otherwise.
         int _execCommand( std::string cmd );
 
+        /// @brief Function parsing the projection map.
+        /// @param m Projection map to be parsed.
         void _parseProjectionMap( names_projection_map & m );
+
+        /// @brief Procedure printing the help of the console.
+        void _printHelp(std::string cmd = std::string(""));
     };
 }
