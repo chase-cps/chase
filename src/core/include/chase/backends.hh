@@ -18,3 +18,4 @@
 
 #include "backends/GR1CPrinter.hh"
 #include "backends/SlugsPrinter.hh"
+#include "backends/NuSMVPrinter.hh"

@@ -75,6 +75,8 @@ set(chase_library_backends
         ${SRC_CHASELIB_PATH}/backends/GR1CPrinter_visit.cc
         ${SRC_CHASELIB_PATH}/backends/SlugsPrinter.cc
         ${SRC_CHASELIB_PATH}/backends/SlugsPrinter_visit.cc
+        ${SRC_CHASELIB_PATH}/backends/NuSMVPrinter.cc
+        ${SRC_CHASELIB_PATH}/backends/NuSMVPrinter_visit.cc
 )
 
 set(chase_library

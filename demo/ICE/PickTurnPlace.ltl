@@ -35,14 +35,3 @@ CONTRACT Recipe:
         [](~place_done /\ ~place_exec -> X(~place_done));
 
         []<>(pick_done /\ turn_done /\ place_done);
-
-CONTRACT Turn:
-    input boolean variable pick_requested;
-    input boolean variable turn_requested;
-    input boolean variable place_requested;
-
-    output boolean variable pick_executed;
-    output boolean variable turn_executed;
-    output boolean variable place_executed;
-
-

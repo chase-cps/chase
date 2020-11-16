@@ -7,8 +7,12 @@
 
 #pragma once
 
-#include "Chase.hh"
+#include "representation.hh"
+#include "GuideVisitor.hh"
+
 #include <fstream>
+
+
 
 namespace chase {
 

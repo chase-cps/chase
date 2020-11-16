@@ -88,7 +88,6 @@ contractKW:     'CONTRACT';
 assumptionsKW:  'Assumptions';
 guaranteesKW:   'Guarantees';
 
-
 nameKw: 'NAME';
 
 causality: inputKW | outputKW;

@@ -144,6 +144,34 @@ int Console::_execCommand(std::string cmd)
         messageInfo(
                 "SLUGS specification for synthesis stored in file: " + fileOut);
     }
+    else if(tokens[0] == "verify")
+    {
+        std::string fileOut = "output.smv";
+        if(tokens.size() > 2)
+            fileOut = std::string(tokens[2]);
+        if(tokens.size() < 2)
+            messageWarning("Wrong command. Usage: verify contract file");
+
+        if(fileOut.find("smv") == std::string::npos)
+            fileOut += ".smv";
+
+        std::string contract_name = tokens[1];
+        chase::Contract * contract = nullptr;
+        for (auto c : _system->getContractsSet())
+        {
+            if( c->getName()->getString() == contract_name)
+            {
+                contract = c;
+                break;
+            }
+        }
+        if(contract == nullptr) return 1;
+        NuSMVPrinter printer;
+        printer.print(contract, fileOut);
+        messageInfo(
+                "SLUGS specification for synthesis stored in file: " + fileOut);
+
+    }
     return 1;
 }
 
