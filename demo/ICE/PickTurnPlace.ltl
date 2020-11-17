@@ -41,13 +41,20 @@ CONTRACT Coordinator:
     input boolean variable req_turn;
     input boolean variable req_place;
 
-    output boolean variable pick_exec;
-    output boolean variable turn_exec;
-    output boolean variable place_exec;
+    input boolean variable pick_exec;
+    input boolean variable turn_exec;
+    input boolean variable place_exec;
+
+    output boolean variable picked;
+    output boolean variable turned;
+    output boolean variable placed;
 
     output boolean variable cmd_pick;
     output boolean variable cmd_turn;
     output boolean variable cmd_place;
+    output boolean variable cmd_none;
+
+    input boolean variable grip;
 
     Assumptions:
         !req_pick;
@@ -55,6 +62,66 @@ CONTRACT Coordinator:
         !req_place;
 
     Guarantees:
+        cmd_none;
+
+        [](cmd_none-> ~(cmd_pick | cmd_turn | cmd_place));
+        []((req_pick /\ ~grip) -> X(cmd_pick));
+        []((req_turn /\ grip) -> X(cmd_turn));
+        []((req_place /\ grip) -> X(cmd_place));
+        [](picked -> pick_exec);
+        [](turned -> turn_exec);
+        [](placed -> place_exec);
         []<>(pick_exec);
         []<>(turn_exec);
         []<>(place_exec);
+
+CONTRACT Turn:
+    input boolean variable cmd_turn;
+    output boolean variable turned;
+    output boolean variable turn_requested;
+
+    Assumptions:
+        ~cmd_turn;
+
+    Guarantees:
+        ~turned /\ ~turn_requested;
+        [](~turn_requested -> ~turned);
+        [](turn_requested -> X(turn_requested));
+        [](turned -> X(turned));
+        [](cmd_turn -> X(turn_requested));
+        [](turn_requested -> X(turned));
+
+CONTRACT Pick:
+    input boolean variable cmd_pick;
+    output boolean variable picked;
+    output boolean variable pick_requested;
+    output boolean variable grip;
+
+    Assumptions:
+        ~cmd_pick;
+
+    Guarantees:
+        ~picked /\ ~pick_requested /\ ~grip;
+        [](~pick_requested -> ~picked);
+        [](pick_requested -> X(pick_requested));
+        [](picked -> X(picked));
+        [](cmd_pick -> X(pick_requested));
+        [](pick_requested -> X(picked));
+        [](~picked -> ~grip);
+        [](picked -> grip);
+        
+CONTRACT Place:
+    input boolean variable cmd_place;
+    output boolean variable placed;
+    output boolean variable place_requested;
+
+    Assumptions:
+        ~cmd_place;
+
+    Guarantees:
+        ~placed /\ ~place_requested;
+        [](~place_requested -> ~placed);
+        [](place_requested -> X(place_requested));
+        [](placed -> X(placed));
+        [](cmd_place -> X(place_requested));
+        [](place_requested -> X(placed));

@@ -65,6 +65,8 @@ public:
 
     virtual antlrcpp::Any visitRange(LTLContractsParser::RangeContext *context) = 0;
 
+    virtual antlrcpp::Any visitInteger(LTLContractsParser::IntegerContext *context) = 0;
+
     virtual antlrcpp::Any visitTypeKW(LTLContractsParser::TypeKWContext *context) = 0;
 
     virtual antlrcpp::Any visitLvalue(LTLContractsParser::LvalueContext *context) = 0;

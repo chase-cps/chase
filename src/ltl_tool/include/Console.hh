@@ -38,7 +38,25 @@ namespace ltl_tool
 
         /// @brief Function parsing the projection map.
         /// @param m Projection map to be parsed.
-        void _parseProjectionMap( names_projection_map & m );
+        /// @param mode Mode of the creation.
+        void _createProjectionMap(
+                names_projection_map & m, std::string mode,
+                Contract * c1 = nullptr, Contract * c2 = nullptr);
+
+        /// @brief Function parsing the projection map given manually.
+        /// @param m Projection map to be parsed.
+        void _createProjectionMapManual(names_projection_map & m );
+
+        /// @brief Function creating the projection map by name matching.
+        /// @param m Projection map to be parsed.
+        void _createProjectionMapName(
+                names_projection_map & m, Contract * c1, Contract * c2);
+
+        /// @brief Function parsing a file containing the projection map.
+        /// @param m Projection map to be parsed.
+        /// @param file File to be parsed to create the map.
+        void _createProjectionMapFile(
+                names_projection_map & m, std::string file );
 
         /// @brief Procedure printing the help of the console.
         void _printHelp(std::string cmd = std::string(""));

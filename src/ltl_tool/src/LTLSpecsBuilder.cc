@@ -63,23 +63,26 @@ LTLSpecsBuilder::visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) {
 antlrcpp::Any
 LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
     std::string name = ctx->ID()->getText();
-    DataDeclaration * dec = nullptr;
 
-    Type *type = nullptr;
-    if( ctx->typeKW()->integerKW() != nullptr ) {
-        int lb = 0;
-        int ub = 16;
-        if(ctx->typeKW()->range() != nullptr)
-        {
-            lb = std::stoi(ctx->typeKW()->range()->NUMBER(0)->getText());
-            ub = std::stoi(ctx->typeKW()->range()->NUMBER(1)->getText());
-        }
-        type = new chase::Integer(lb, ub);
+    DataDeclaration * dec = nullptr;
+    Type * type = nullptr;
+
+    auto tctx = ctx->typeKW();
+    if( tctx != nullptr) {
+        if (tctx->booleanKW() != nullptr)
+            type = new chase::Boolean();
+        else if (tctx->integer() != nullptr) {
+            LTLContractsParser::IntegerContext *ictx = tctx->integer();
+            int lb = 0;
+            int ub = 16;
+            if (ictx->range() != nullptr) {
+                lb = std::stoi(ictx->range()->NUMBER(0)->getText());
+                ub = std::stoi(ictx->range()->NUMBER(1)->getText());
+            }
+            type = new chase::Integer(lb, ub);
+        } else
+            messageError("Wrong type: " + ctx->typeKW()->getText());
     }
-    else if( ctx->typeKW()->booleanKW() != nullptr )
-        type = new chase::Boolean();
-    else
-        messageError("Wrong type: " + ctx->typeKW()->getText());
 
     if (ctx->variableKW() != nullptr) {
         auto var = new Variable(type, new Name(name));

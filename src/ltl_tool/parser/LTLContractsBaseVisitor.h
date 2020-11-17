@@ -107,6 +107,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitInteger(LTLContractsParser::IntegerContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitTypeKW(LTLContractsParser::TypeKWContext *ctx) override {
     return visitChildren(ctx);
   }

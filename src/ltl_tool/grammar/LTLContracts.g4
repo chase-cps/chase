@@ -98,7 +98,10 @@ causality: inputKW | outputKW;
 logic_constant: trueKW | falseKW;
 
 range: LBRACKET NUMBER COLON NUMBER RBRACKET;
-typeKW: integerKW range? | booleanKW;
+integer : integerKW range?;
+typeKW: integer | booleanKW;
+
+
 
 /**
   GRAMMAR RULES
