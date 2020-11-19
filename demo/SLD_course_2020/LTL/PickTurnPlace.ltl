@@ -71,9 +71,6 @@ CONTRACT Coordinator:
         [](picked -> pick_exec);
         [](turned -> turn_exec);
         [](placed -> place_exec);
-        []<>(pick_exec);
-        []<>(turn_exec);
-        []<>(place_exec);
 
 CONTRACT Turn:
     input boolean variable cmd_turn;

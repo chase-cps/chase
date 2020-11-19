@@ -1,5 +1,14 @@
 show;
-saturate Recipe;
+compose Recipe Coordinator RC name;
+compose RC Turn RCT name;
+compose RCT Pick RCTP name;
+compose RCTP Place System name;
+show;
+verify System system.smv;
+synthesize Recipe recipe;
 synthesize Recipe recipe gr1c;
-synthesize Recipe recipe slugs;
-verify Recipe recipe;
+synthesize Coordinator coordinator
+synthesize Coordinator coordinator gr1c;
+synthesize Turn turn gr1c;
+synthesize Place place gr1c;
+synthesize Pick pick gr1c;
