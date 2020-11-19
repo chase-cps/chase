@@ -20,17 +20,20 @@ int main( int argc, char * argv[] )
     builder.parseSpecificationFile(parameters->fileIn);
     Contract * c = builder.getProblem()->getContract();
 
-    std::cout << c->getString() << std::endl << std::endl;
+    if( parameters->verbose == true )
+        std::cout << c->getString() << std::endl << std::endl;
 
     if( parameters->backend == "gr1c" )
     {    
         GR1CPrinter printer;
         printer.print(c, parameters->fileOut);
+        messageInfo("GR1C specification written in " + parameters->fileOut);
     }
     else if( parameters->backend == "slugs" )
     {
         SlugsPrinter printer;
         printer.print(c, parameters->fileOut);
+        messageInfo("GR1C specification written in " + parameters->fileOut);
     }
     
     delete(c);

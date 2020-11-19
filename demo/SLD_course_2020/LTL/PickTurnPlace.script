@@ -1,0 +1,5 @@
+show;
+saturate Recipe;
+synthesize Recipe recipe gr1c;
+synthesize Recipe recipe slugs;
+verify Recipe recipe;
