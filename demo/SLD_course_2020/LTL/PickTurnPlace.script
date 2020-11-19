@@ -1,8 +1,13 @@
 show;
-compose Recipe Coordinator RC name;
-compose RC Turn RCT name;
-compose RCT Pick RCTP name;
-compose RCTP Place System name;
+compose Recipe Coordinator Top name;
+verify Top top;
+compose Pick Turn PT name;
+compose PT Place Bottom name;
+verify Bottom bottom;
+compose Bottom Coordinator Middle;
+verify Middle middle;
+compose Bottom Top System;
+verify system;
 show;
 verify System system.smv;
 synthesize Recipe recipe;
