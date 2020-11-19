@@ -23,6 +23,7 @@ int Console::run(std::string cmd)
     if(cmd.empty()) {
         std::cout << std::endl << "$> ";
         std::getline(std::cin, cmd);
+        if(cmd.empty()) return 1;
     }
 
     if(cmd == "exit") return 0;
