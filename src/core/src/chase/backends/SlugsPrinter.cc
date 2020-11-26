@@ -199,6 +199,10 @@ void SlugsPrinter::_printSafety() {
             fout<< "[ENV_TRANS]"
                 << _curr << std::endl << std::endl;
     }
+    else
+    {
+        std::cout << "Not a large boolean formula." << std::endl;
+    }
 
     // Guarantees
     formulae = _contract->guarantees.find(logic);

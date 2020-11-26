@@ -140,9 +140,6 @@ LTLSpecsBuilder::createRelation(LTLContractsParser::RelationContext *ctx)
     return new Expression(op,
                           createValue(ctx->lvalue()->value()),
                           createValue(ctx->rvalue()->value()));
-
-
-
 }
 
 Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
@@ -254,10 +251,7 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
         ++i;
     }
 
-    if( vec->size() == 1)
-        _currContract->addAssumptions(logic, (*vec)[0]);
-    else
-        _currContract->addAssumptions(logic, LargeAnd(*vec));
+    _currContract->addAssumptions(logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }
@@ -276,10 +270,7 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
         ++i;
     }
 
-    if( vec->size() == 1)
-        _currContract->addGuarantees(logic, (*vec)[0]);
-    else
-        _currContract->addGuarantees(logic, LargeAnd(*vec));
+    _currContract->addGuarantees(logic, LargeAnd(*vec));
 
     return antlrcpp::Any();
 }
@@ -290,7 +281,6 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
 LogicFormula *
 LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
 {
-    std::cout << ctx->getText() << std::endl;
     if(ctx->unary_logic_op())
     {
         if(ctx->unary_logic_op()->NOT())

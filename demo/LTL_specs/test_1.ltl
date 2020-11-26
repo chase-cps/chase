@@ -1,18 +1,18 @@
 NAME : test_1;
 
 CONTRACT C1:
-    input integer (-7 : 7) variable x;
-    input integer (-7 : 7) variable y;
-    output integer (-7 : 7) variable z;
+    input integer (0 : 3) variable x;
+    input integer (0 : 3) variable y;
+    output integer (0 : 7) variable z;
 
     Assumptions:
         [](y != 0);
     Guarantees:
-        [](z = x / y);
+        [](X(z) = x + y);
 
 CONTRACT C2:
-    input integer (-7 : 7) variable u;
-    output integer (-7 : 7) variable x;
+    input integer (0 : 7) variable u;
+    output integer (0 : 7) variable x;
 
     Assumptions:
         true;
@@ -20,8 +20,8 @@ CONTRACT C2:
         [](x > u);
 
 CONTRACT C2_primed:
-    input integer (-7 : 7) variable v;
-    output integer (-7 : 7) variable y;
+    input integer (0 : 7) variable v;
+    output integer (-7 : 0) variable y;
 
     Assumptions:
         true;
