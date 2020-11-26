@@ -290,6 +290,7 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
 LogicFormula *
 LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
 {
+    std::cout << ctx->getText() << std::endl;
     if(ctx->unary_logic_op())
     {
         if(ctx->unary_logic_op()->NOT())
@@ -336,6 +337,8 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
             return createProposition(ctx->atom()->ID()->getText());
         if(ctx->atom()->logic_constant())
             return createLogicConstant(ctx->atom()->logic_constant());
+        if(ctx->atom()->relation())
+            return createPropositionFromRelation(ctx->atom()->relation());
     }
     return nullptr;
 }
@@ -391,6 +394,15 @@ DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
 
     return nullptr;
 }
+
+Proposition *LTLSpecsBuilder::createPropositionFromRelation(
+        LTLContractsParser::RelationContext * ctx )
+{
+    Expression * exp = createRelation(ctx);
+    auto proposition = new Proposition(exp);
+    return proposition;
+}
+
 
 
 

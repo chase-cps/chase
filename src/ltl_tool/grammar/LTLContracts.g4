@@ -101,8 +101,6 @@ range: LBRACKET NUMBER COLON NUMBER RBRACKET;
 integer : integerKW range?;
 typeKW: integer | booleanKW;
 
-
-
 /**
   GRAMMAR RULES
 **/
@@ -113,7 +111,6 @@ rvalue: value;
 relation:
     lvalue relation_op rvalue;
 
-
 formula:
     unary_logic_op formula |
     formula bin_logic_op formula |
@@ -122,22 +119,18 @@ formula:
     LBRACKET formula RBRACKET | atom;
 
 minus_number: MINUS NUMBER;
+minus_ID: MINUS ID;
 
 value: value bin_math_op value |
         ID bin_math_op value |
         ID bin_math_op ID |
         value bin_math_op ID |
-        ID | minus_number | NUMBER | LBRACKET value RBRACKET;
-
-
+        ID | minus_ID | minus_number | NUMBER | LBRACKET value RBRACKET;
 
 atom:
-    logic_constant | ID;
-
-
+    logic_constant | relation | ID;
 
 single_formula: formula ENDST;
-
 
 assumptions:
     assumptionsKW ':'
@@ -164,21 +157,3 @@ name: nameKw ':' ID ENDST;
 systemSpec:
     name?
     declaration* contract+;
-
-
-
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -79,6 +79,8 @@ public:
 
     virtual antlrcpp::Any visitMinus_number(LTLContractsParser::Minus_numberContext *context) = 0;
 
+    virtual antlrcpp::Any visitMinus_ID(LTLContractsParser::Minus_IDContext *context) = 0;
+
     virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *context) = 0;
 
     virtual antlrcpp::Any visitAtom(LTLContractsParser::AtomContext *context) = 0;

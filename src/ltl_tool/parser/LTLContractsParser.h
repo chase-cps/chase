@@ -29,9 +29,10 @@ public:
     RuleFalseKW = 15, RuleContractKW = 16, RuleAssumptionsKW = 17, RuleGuaranteesKW = 18, 
     RuleNameKw = 19, RuleCausality = 20, RuleLogic_constant = 21, RuleRange = 22, 
     RuleInteger = 23, RuleTypeKW = 24, RuleLvalue = 25, RuleRvalue = 26, 
-    RuleRelation = 27, RuleFormula = 28, RuleMinus_number = 29, RuleValue = 30, 
-    RuleAtom = 31, RuleSingle_formula = 32, RuleAssumptions = 33, RuleGuarantees = 34, 
-    RuleDeclaration = 35, RuleContract = 36, RuleName = 37, RuleSystemSpec = 38
+    RuleRelation = 27, RuleFormula = 28, RuleMinus_number = 29, RuleMinus_ID = 30, 
+    RuleValue = 31, RuleAtom = 32, RuleSingle_formula = 33, RuleAssumptions = 34, 
+    RuleGuarantees = 35, RuleDeclaration = 36, RuleContract = 37, RuleName = 38, 
+    RuleSystemSpec = 39
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -74,6 +75,7 @@ public:
   class RelationContext;
   class FormulaContext;
   class Minus_numberContext;
+  class Minus_IDContext;
   class ValueContext;
   class AtomContext;
   class Single_formulaContext;
@@ -492,6 +494,20 @@ public:
 
   Minus_numberContext* minus_number();
 
+  class  Minus_IDContext : public antlr4::ParserRuleContext {
+  public:
+    Minus_IDContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *MINUS();
+    antlr4::tree::TerminalNode *ID();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Minus_IDContext* minus_ID();
+
   class  ValueContext : public antlr4::ParserRuleContext {
   public:
     ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -501,6 +517,7 @@ public:
     Bin_math_opContext *bin_math_op();
     std::vector<ValueContext *> value();
     ValueContext* value(size_t i);
+    Minus_IDContext *minus_ID();
     Minus_numberContext *minus_number();
     antlr4::tree::TerminalNode *NUMBER();
     antlr4::tree::TerminalNode *LBRACKET();
@@ -518,6 +535,7 @@ public:
     AtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     Logic_constantContext *logic_constant();
+    RelationContext *relation();
     antlr4::tree::TerminalNode *ID();
 
 

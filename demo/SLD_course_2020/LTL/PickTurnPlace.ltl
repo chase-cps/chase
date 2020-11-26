@@ -21,6 +21,12 @@ CONTRACT Recipe:
 
     Guarantees:
         ~pick_done /\ ~turn_done /\ ~place_done;
+        ~req_pick /\ ~req_turn /\ ~req_place;
+
+        
+        [](req_pick -> ~(req_turn \/ req_place));
+        [](req_turn -> ~(req_pick \/ req_place));
+        [](req_place -> ~(req_pick \/ req_turn));
 
         [](pick_exec -> X(pick_done));
         [](pick_done -> X(pick_done));
@@ -35,6 +41,12 @@ CONTRACT Recipe:
         [](~place_done /\ ~place_exec -> X(~place_done));
 
         []<>(pick_done /\ turn_done /\ place_done);
+
+        [](~pick_done -> X(req_pick));
+        []((pick_done /\ ~turn_done) -> X(req_turn));
+        []((pick_done /\ turn_done /\ ~place_done) -> X(req_place));
+        [](pick_done /\ place_done /\ turn_done -> X(~(req_turn \/ req_pick \/ req_place)));
+
 
 CONTRACT Coordinator:
     input boolean variable req_pick;

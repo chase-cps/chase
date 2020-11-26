@@ -79,6 +79,9 @@ namespace ltl_tool {
 
         DataDeclaration * findDeclaration(std::string name);
 
+        Proposition * createPropositionFromRelation(
+                LTLContractsParser::RelationContext * ctx);
+
     protected:
 
         /// @brief The system being built.

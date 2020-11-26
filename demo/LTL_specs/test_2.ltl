@@ -1,0 +1,36 @@
+NAME : test_1;
+
+CONTRACT C1:
+    input integer (-7 : 7) variable x;
+    input integer (-7 : 7) variable y;
+    output integer (-7 : 7) variable z;
+
+    proposition y_not_0 is y != 0;
+    proposition z_is_x_over_y is z = x/y;
+
+    Assumptions:
+        [](y_not_0);
+    Guarantees:
+        [](z_is_x_over_y);
+
+CONTRACT C2:
+    input integer (-7 : 7) variable u;
+    output integer (-7 : 7) variable x;
+
+    proposition x_gt_u is x > u;
+
+    Assumptions:
+        true;
+    Guarantees:
+        [](x_gt_u);
+
+CONTRACT C2_primed:
+    input integer (-7 : 7) variable v;
+    output integer (-7 : 7) variable y;
+
+    proposition x_is_minus_v is y = 0 - v;
+
+    Assumptions:
+        true;
+    Guarantees:
+        [](x_is_minus_v);

@@ -26,11 +26,21 @@ int NuSMVPrinter::visitVariable(Variable &variable) {
     auto type = variable.getType();
     auto name = variable.getName()->getString();
     /// \todo Add support for integers.
-    if( type->IsA() != boolean_node)
-        messageError("Trying to use a non-boolean variable in NuSMV. " + name);
+    if (!(type->IsA() == boolean_node || type->IsA() == integer_node))
+        messageError(
+                "Trying to use a non supported type variable in NuSMV. " + name);
 
-    std::string stype("boolean");
-    _fout << "\t" << name << " : " << stype << ";" << std::endl;
+    if (type->IsA() == boolean_node) {
+        std::string stype("boolean");
+        _fout << "\t" << name << " : " << stype << ";" << std::endl;
+    }
+    if (type->IsA() == integer_node)
+    {
+        _fout << "\t" << name << " : ";
+        auto i = reinterpret_cast< Integer * >(type);
+        _fout << i->getRange()->getLeftValue() << ".."
+            << i->getRange()->getRightValue() << ";" << std::endl;
+    }
 
     return GuideVisitor::visitVariable(variable);
 }
@@ -97,5 +107,59 @@ int NuSMVPrinter::visitBinaryTemporalOperation(BinaryTemporalFormula &formula) {
     return rv;
 }
 
+int NuSMVPrinter::visitExpression(Expression &expression) {
+    auto op = expression.getOperator();
+    std::string sop;
+    switch(op)
+    {
+        case op_divide:
+            sop = "/";
+            break;
+        case op_plus:
+            sop = "+";
+            break;
+        case op_minus:
+            sop = "-";
+            break;
+        case op_multiply:
+            sop = "*";
+            break;
+        case op_mod:
+            sop = "%";
+            break;
+        case op_eq:
+            sop = "=";
+            break;
+        case op_neq:
+            sop = "!=";
+            break;
+        case op_lt:
+            sop = "<";
+            break;
+        case op_gt:
+            sop = ">";
+            break;
+        case op_le:
+            sop = "<=";
+            break;
+        case op_ge:
+            sop = ">=";
+            break;
+        case op_none:
+        default:
+            messageWarning("Missing operator in expression: "
+                + expression.getString());
+            break;
+    }
+    _fout << "( ";
+    int ret = expression.getOp1()->accept_visitor(*this);
+    _fout << " " << sop << " ";
+    ret |= expression.getOp2()->accept_visitor(*this);
+    _fout << " )";
+    return ret;
+}
 
-
+int NuSMVPrinter::visitIntegerValue(IntegerValue &value) {
+    _fout << value.getString();
+    return 1;
+}

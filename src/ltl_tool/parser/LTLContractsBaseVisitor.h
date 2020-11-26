@@ -135,6 +135,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitMinus_ID(LTLContractsParser::Minus_IDContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *ctx) override {
     return visitChildren(ctx);
   }

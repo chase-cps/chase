@@ -41,6 +41,9 @@ namespace chase {
         int visitLargeBooleanFormula(LargeBooleanFormula &formula) override;
         int visitUnaryTemporalOperation(UnaryTemporalFormula &formula) override;
         int visitBinaryTemporalOperation(BinaryTemporalFormula &formula) override;
+
+        int visitExpression(Expression &expression) override;
+        int visitIntegerValue(IntegerValue &value) override;
         /// @endcond
 
     protected:
@@ -69,5 +72,4 @@ namespace chase {
         /// @return The string corresponding to the NuSMV operator.
         std::string _printTemporalOperator(TemporalOperator op);
     };
-
 }
