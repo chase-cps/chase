@@ -14,25 +14,25 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    WS = 15, LINE_COMMENT = 16, AND = 17, OR = 18, NOT = 19, IMPLIES = 20, 
-    IFF = 21, COLON = 22, ALWAYS = 23, EVENTUALLY = 24, NEXT = 25, UNTIL = 26, 
-    EQ = 27, NEQ = 28, LT = 29, LE = 30, GT = 31, GE = 32, PLUS = 33, MINUS = 34, 
-    TIMES = 35, DIVIDE = 36, LBRACKET = 37, RBRACKET = 38, ID = 39, NUMBER = 40, 
-    ENDST = 41
+    T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
+    IMPLIES = 21, IFF = 22, COLON = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
+    UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
+    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, ID = 40, 
+    NUMBER = 41, ENDST = 42
   };
 
   enum {
     RuleBin_logic_op = 0, RuleUnary_logic_op = 1, RuleUnary_temp_op = 2, 
-    RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RuleIntegerKW = 6, 
-    RuleBooleanKW = 7, RuleVariableKW = 8, RuleInputKW = 9, RuleOutputKW = 10, 
-    RuleConstantKW = 11, RulePropositionKw = 12, RuleIsKw = 13, RuleTrueKW = 14, 
-    RuleFalseKW = 15, RuleContractKW = 16, RuleAssumptionsKW = 17, RuleGuaranteesKW = 18, 
-    RuleNameKw = 19, RuleCausality = 20, RuleLogic_constant = 21, RuleRange = 22, 
-    RuleInteger = 23, RuleTypeKW = 24, RuleLvalue = 25, RuleRvalue = 26, 
-    RuleRelation = 27, RuleFormula = 28, RuleMinus_number = 29, RuleMinus_ID = 30, 
-    RuleValue = 31, RuleAtom = 32, RuleSingle_formula = 33, RuleAssumptions = 34, 
-    RuleGuarantees = 35, RuleDeclaration = 36, RuleContract = 37, RuleName = 38, 
-    RuleSystemSpec = 39
+    RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RulePrimed_ID = 6, 
+    RuleIntegerKW = 7, RuleBooleanKW = 8, RuleVariableKW = 9, RuleInputKW = 10, 
+    RuleOutputKW = 11, RuleConstantKW = 12, RulePropositionKw = 13, RuleIsKw = 14, 
+    RuleTrueKW = 15, RuleFalseKW = 16, RuleContractKW = 17, RuleAssumptionsKW = 18, 
+    RuleGuaranteesKW = 19, RuleNameKw = 20, RuleCausality = 21, RuleLogic_constant = 22, 
+    RuleRange = 23, RuleInteger = 24, RuleTypeKW = 25, RuleLvalue = 26, 
+    RuleRvalue = 27, RuleRelation = 28, RuleFormula = 29, RuleMinus_number = 30, 
+    RuleMinus_ID = 31, RuleValue = 32, RuleAtom = 33, RuleSingle_formula = 34, 
+    RuleAssumptions = 35, RuleGuarantees = 36, RuleDeclaration = 37, RuleContract = 38, 
+    RuleName = 39, RuleSystemSpec = 40
   };
 
   LTLContractsParser(antlr4::TokenStream *input);
@@ -51,6 +51,7 @@ public:
   class Bin_temp_opContext;
   class Relation_opContext;
   class Bin_math_opContext;
+  class Primed_IDContext;
   class IntegerKWContext;
   class BooleanKWContext;
   class VariableKWContext;
@@ -176,6 +177,19 @@ public:
   };
 
   Bin_math_opContext* bin_math_op();
+
+  class  Primed_IDContext : public antlr4::ParserRuleContext {
+  public:
+    Primed_IDContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ID();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Primed_IDContext* primed_ID();
 
   class  IntegerKWContext : public antlr4::ParserRuleContext {
   public:
@@ -463,12 +477,12 @@ public:
   public:
     FormulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    Unary_logic_opContext *unary_logic_op();
+    antlr4::tree::TerminalNode *LBRACKET();
     std::vector<FormulaContext *> formula();
     FormulaContext* formula(size_t i);
-    Unary_temp_opContext *unary_temp_op();
-    antlr4::tree::TerminalNode *LBRACKET();
     antlr4::tree::TerminalNode *RBRACKET();
+    Unary_logic_opContext *unary_logic_op();
+    Unary_temp_opContext *unary_temp_op();
     AtomContext *atom();
     Bin_logic_opContext *bin_logic_op();
     Bin_temp_opContext *bin_temp_op();
@@ -512,16 +526,16 @@ public:
   public:
     ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<antlr4::tree::TerminalNode *> ID();
-    antlr4::tree::TerminalNode* ID(size_t i);
-    Bin_math_opContext *bin_math_op();
-    std::vector<ValueContext *> value();
-    ValueContext* value(size_t i);
+    Primed_IDContext *primed_ID();
+    antlr4::tree::TerminalNode *ID();
     Minus_IDContext *minus_ID();
     Minus_numberContext *minus_number();
     antlr4::tree::TerminalNode *NUMBER();
     antlr4::tree::TerminalNode *LBRACKET();
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
     antlr4::tree::TerminalNode *RBRACKET();
+    Bin_math_opContext *bin_math_op();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -537,6 +551,7 @@ public:
     Logic_constantContext *logic_constant();
     RelationContext *relation();
     antlr4::tree::TerminalNode *ID();
+    Primed_IDContext *primed_ID();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

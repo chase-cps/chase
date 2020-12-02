@@ -23,6 +23,9 @@ int GR1CPrinter::visitExpression(Expression &o) {
 }
 
 int GR1CPrinter::visitIdentifier(Identifier &o) {
+    if( _inNext && o.isPrimed())
+        messageError("Primed identifier in the scope of a next operator: "
+                     + o.getString());
     if(_inNext)
     {
         _curr += o.getString();

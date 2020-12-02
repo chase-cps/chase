@@ -25,7 +25,10 @@ int SlugsPrinter::visitExpression(Expression &o) {
 }
 
 int SlugsPrinter::visitIdentifier(Identifier &o) {
-    if(_inNext == true)
+    if( _inNext && o.isPrimed())
+        messageError("Primed identifier in the scope of a next operator: "
+                     + o.getString());
+    if(_inNext)
     {
         _curr += o.getString();
         _curr +="'";

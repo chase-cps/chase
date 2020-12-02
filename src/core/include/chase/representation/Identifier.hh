@@ -21,7 +21,9 @@ namespace chase {
         public:
             /// @brief Constructor.
             /// @param d Declaration of the identifier.
-            explicit Identifier( DataDeclaration * d = nullptr );
+            /// @param primed Set whether the variable is primed or not.
+            explicit Identifier(
+                    DataDeclaration * d = nullptr, bool primed = false );
 
             /// @brief Copy constructor.
             Identifier( const Identifier &i );
@@ -51,7 +53,14 @@ namespace chase {
             /// @return The return value of the visitor.
             int accept_visitor( BaseVisitor &v ) override;
 
-            Identifier * clone() override;
+            /// @brief Function returning whether the identifier refer to a primed variable.
+            /// @return The value of the _primed variable. True if the variable is primed.
+            bool isPrimed() const;
+            /// @brief Function to set a variable as primed or not.
+            /// @param primed the value to set about primarity of the variable.
+            void setPrimed(bool primed);
+
+        Identifier * clone() override;
 
         protected:
 
@@ -59,6 +68,10 @@ namespace chase {
             // It MUST be a pointer to a object ALREADY present in the AST.
             // Otherwise, the declaration is not valid.
             DataDeclaration * _declaration;
+
+            /// @brief Boolean to indicate whether the identified variable
+            /// is primed or not.
+            bool _primed;
     };
 
 }

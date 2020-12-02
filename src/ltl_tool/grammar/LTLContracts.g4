@@ -72,6 +72,10 @@ RBRACKET: ')';
 ID: LETTER ALPHANUM*;
 NUMBER: MINUS? DIGIT+;
 
+primed_ID : ID'\'';
+
+
+
 ENDST: ';';
 
 /*
@@ -112,23 +116,20 @@ relation:
     lvalue relation_op rvalue;
 
 formula:
+    LBRACKET formula RBRACKET |
     unary_logic_op formula |
     formula bin_logic_op formula |
     unary_temp_op formula |
-    formula bin_temp_op formula |
-    LBRACKET formula RBRACKET | atom;
+    formula bin_temp_op formula | atom;
 
 minus_number: MINUS NUMBER;
 minus_ID: MINUS ID;
 
-value: value bin_math_op value |
-        ID bin_math_op value |
-        ID bin_math_op ID |
-        value bin_math_op ID |
+value: value bin_math_op value | primed_ID |
         ID | minus_ID | minus_number | NUMBER | LBRACKET value RBRACKET;
 
 atom:
-    logic_constant | relation | ID;
+    logic_constant | relation | ID | primed_ID;
 
 single_formula: formula ENDST;
 
@@ -157,3 +158,4 @@ name: nameKw ':' ID ENDST;
 systemSpec:
     name?
     declaration* contract+;
+

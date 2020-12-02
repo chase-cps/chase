@@ -8,7 +8,7 @@ CONTRACT C1:
     Assumptions:
         [](y != 0);
     Guarantees:
-        [](X(z) = x + y);
+        [](z = x' / y);
 
 CONTRACT C2:
     input integer (0 : 7) variable u;

@@ -18,7 +18,11 @@ int NuSMVPrinter::visitBooleanValue(BooleanValue &value) {
 }
 
 int NuSMVPrinter::visitIdentifier(Identifier &identifier) {
-    _fout << identifier.getString();
+    std::string name = identifier.getDeclaration()->getName()->getString();
+    if (!identifier.isPrimed()) _fout << identifier.getString();
+    else {
+        _fout << "X(" << name << ")";
+    }
     return GuideVisitor::visitIdentifier(identifier);
 }
 

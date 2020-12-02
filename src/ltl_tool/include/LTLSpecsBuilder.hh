@@ -67,7 +67,7 @@ namespace ltl_tool {
         /// @param name A name (string) being parsed.
         /// @return Pointer to a new CHASE Identifier object representing
         /// the parsed name.
-        Identifier * createIdentifier(std::string name);
+        Identifier * createIdentifier(std::string name, bool primed = false);
 
         LogicFormula *
         createFormula(LTLContractsParser::FormulaContext * ctx);
@@ -75,7 +75,7 @@ namespace ltl_tool {
         BooleanConstant *
         createLogicConstant(LTLContractsParser::Logic_constantContext * ctx);
 
-        Proposition * createProposition(std::string name);
+        Proposition * createProposition(std::string name, bool primed = false);
 
         DataDeclaration * findDeclaration(std::string name);
 

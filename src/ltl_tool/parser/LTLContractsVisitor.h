@@ -31,6 +31,8 @@ public:
 
     virtual antlrcpp::Any visitBin_math_op(LTLContractsParser::Bin_math_opContext *context) = 0;
 
+    virtual antlrcpp::Any visitPrimed_ID(LTLContractsParser::Primed_IDContext *context) = 0;
+
     virtual antlrcpp::Any visitIntegerKW(LTLContractsParser::IntegerKWContext *context) = 0;
 
     virtual antlrcpp::Any visitBooleanKW(LTLContractsParser::BooleanKWContext *context) = 0;

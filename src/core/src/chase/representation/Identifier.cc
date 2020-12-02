@@ -12,12 +12,15 @@
 
 using namespace chase;
 
-Identifier::Identifier( DataDeclaration * d ) :
+Identifier::Identifier( DataDeclaration * d, bool primed ) :
     Value(),
-    _declaration(d)
+    _declaration(d),
+    _primed(primed)
 {
     _node_type = identifier_node;
     // ASSUMPTION: The declaration must already have a parent.
+    if(d->IsA() != variable_node && _primed)
+        messageWarning("Primed identifier may refer only to variables.");
 }
 
 Identifier::Identifier( const Identifier &i ) :
@@ -49,7 +52,9 @@ void Identifier::setDeclaration( DataDeclaration * d)
 
 std::string Identifier::getString()
 {
-    return _declaration->getName()->getString();
+    std::string ret = _declaration->getName()->getString();
+    if(isPrimed()) ret += "'";
+    return ret;
 }
 
 int Identifier::accept_visitor( BaseVisitor &v )
@@ -65,5 +70,13 @@ Identifier *Identifier::clone() {
     /// \todo Fix later in the clone method of Contract the potential
     /// inconsistencies due to cloned declarations.
     return new Identifier(_declaration);
+}
+
+bool Identifier::isPrimed() const {
+    return _primed;
+}
+
+void Identifier::setPrimed(bool primed) {
+    _primed = primed;
 }
 

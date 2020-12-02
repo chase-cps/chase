@@ -34,6 +34,10 @@ CONTRACT Recipe:
         [](place_done -> X(place_done));
         [](~place_done /\ ~place_exec -> X(~place_done));
 
+        [](~pick_done -> X(req_pick & ~req_turn & ~req_place));
+        []((pick_done /\ ~turn_done) -> X(~req_pick & req_turn & ~req_place));
+        []((pick_done /\ turn_done /\ ~place_done) -> X(~req_pick & ~req_turn & req_place));
+
         []<>(pick_done /\ turn_done /\ place_done);
 
 CONTRACT Coordinator:
@@ -41,13 +45,13 @@ CONTRACT Coordinator:
     input boolean variable req_turn;
     input boolean variable req_place;
 
-    input boolean variable pick_exec;
-    input boolean variable turn_exec;
-    input boolean variable place_exec;
+    output boolean variable pick_exec;
+    output boolean variable turn_exec;
+    output boolean variable place_exec;
 
-    output boolean variable picked;
-    output boolean variable turned;
-    output boolean variable placed;
+    input boolean variable picked;
+    input boolean variable turned;
+    input boolean variable placed;
 
     output boolean variable cmd_pick;
     output boolean variable cmd_turn;

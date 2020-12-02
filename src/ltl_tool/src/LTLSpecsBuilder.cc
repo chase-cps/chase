@@ -147,10 +147,12 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
     // The value is terminal.
     if(ctx->children.size() == 1)
     {
-        if(ctx->ID(0) != nullptr)
-            return createIdentifier(ctx->ID(0)->getText());
+        if(ctx->ID() != nullptr)
+            return createIdentifier(ctx->ID()->getText());
         if(ctx->value(0))
             return createValue(ctx->value(0));
+        if(ctx->primed_ID())
+            return createIdentifier(ctx->primed_ID()->ID()->getText(), true);
         if(ctx->NUMBER())
             return new IntegerValue(std::stoi(ctx->getText()));
         if(ctx->minus_number())
@@ -172,46 +174,19 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
         if(math_op == "*") op = op_multiply;
         if(math_op == "/") op = op_divide;
 
-        // Brute force with combinations.
-        if(ctx->children[0] == ctx->ID(0) &&
-            ctx->children[2] == ctx->ID(1))
-        {
-            return new Expression(op,
-                    createIdentifier(ctx->ID(0)->getText()),
-                    createIdentifier(ctx->ID(1)->getText()));
-        }
-        // Brute force with combinations.
-        if(ctx->children[0] == ctx->value(0) &&
-           ctx->children[2] == ctx->value(1))
-        {
-            return new Expression(op,
-                                  createValue(ctx->value(0)),
-                                  createValue(ctx->value(1)));
+        return new Expression(op,
+                              createValue(ctx->value(0)),
+                              createValue(ctx->value(1)));
 
-        }
-        if(ctx->children[0] == ctx->ID(0) &&
-           ctx->children[2] == ctx->value(0))
-        {
-            return new Expression(op,
-                                  createIdentifier(ctx->ID(0)->getText()),
-                                  createValue(ctx->value(0)));
-        }
-        if(ctx->children[0] == ctx->value(0) &&
-           ctx->children[2] == ctx->ID(0))
-        {
-            return new Expression(op,
-                    createValue(ctx->value(0)),
-                    createIdentifier(ctx->ID(0)->getText()));
-        }
     }
     return nullptr;
 }
 
-Identifier *LTLSpecsBuilder::createIdentifier(std::string name)
+Identifier *LTLSpecsBuilder::createIdentifier(std::string name, bool primed)
 {
     auto dd = findDeclaration(name);
     if( dd != nullptr )
-        return new Identifier(dd);
+        return new Identifier(dd, primed);
     else
         messageError(name + "is not declared in the current scope.");
     return nullptr;
@@ -252,7 +227,6 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
     }
 
     _currContract->addAssumptions(logic, LargeAnd(*vec));
-
     return antlrcpp::Any();
 }
 
@@ -325,6 +299,8 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
     {
         if(ctx->atom()->ID())
             return createProposition(ctx->atom()->ID()->getText());
+        if(ctx->atom()->primed_ID())
+            return createProposition(ctx->atom()->primed_ID()->ID()->getText(), true);
         if(ctx->atom()->logic_constant())
             return createLogicConstant(ctx->atom()->logic_constant());
         if(ctx->atom()->relation())
@@ -339,7 +315,7 @@ BooleanConstant *LTLSpecsBuilder::createLogicConstant(
     return new BooleanConstant(ctx->trueKW() != nullptr);
 }
 
-Proposition *LTLSpecsBuilder::createProposition(std::string name)
+Proposition *LTLSpecsBuilder::createProposition(std::string name, bool primed)
 {
     auto v = dynamic_cast<Variable *>(findDeclaration(name));
     if( v == nullptr) {
@@ -352,11 +328,9 @@ Proposition *LTLSpecsBuilder::createProposition(std::string name)
 
     auto p = _map_props_values.find(v);
     if(p != _map_props_values.end())
-    {
         prop->setValue(p->second);
-    } else {
-        prop->setValue(new Identifier(v));
-    }
+    else
+        prop->setValue(new Identifier(v, primed));
     return prop;
 }
 

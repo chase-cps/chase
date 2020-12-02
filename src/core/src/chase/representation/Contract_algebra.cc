@@ -82,6 +82,36 @@ Contract * Contract::composition(
     std::map< Declaration *, Declaration * > declaration_map;
     mergeDeclarations(c1, c2, composed, correspondences, declaration_map);
 
+    // Fix variables causality.
+    // If it is output in at least of the composing contracts, then it must be
+    // output (i.e., controlled) variable.
+    for(auto & dit : composed->declarations)
+    {
+        if(dit->IsA() == variable_node)
+        {
+            std::vector< Declaration * > originals;
+            for(auto & mit : declaration_map )
+            {
+                if(mit.second == dit)
+                    originals.push_back(mit.first);
+            }
+            for(size_t vit = 0; vit < originals.size(); ++vit )
+            {
+                if(originals[vit]->IsA() == variable_node)
+                {
+                    auto var = reinterpret_cast< Variable * >(dit);
+                    auto original =
+                            reinterpret_cast< Variable * >(originals[vit]);
+                    if(original->getCausality() == output && var->getCausality() == input)
+                    {
+                        std::cout << "replace: " << var->getName()->getString() << std::endl;
+                        var->setCausality(output);
+                    }
+                }
+            }
+        }
+    }
+
     composeLogic(c1, c2, composed);
 
     ClonedDeclarationVisitor v(declaration_map);
@@ -268,9 +298,8 @@ void Contract::saturateLogic(Contract * c )
             messageError("Non logic formula in temporal logic domain");
     }
 
-    LogicFormula * saturation = nullptr;
     if(assumptions != nullptr ) {
-        saturation = Not(assumptions->clone());
+        guarantees = Implies(assumptions->clone(), guarantees);
     }else{
         return; // No saturation necessary.
     }
@@ -280,13 +309,12 @@ void Contract::saturateLogic(Contract * c )
         // assumptions.
     {
         std::pair< semantic_domain, Specification * > p(
-                logic, saturation);
+                logic, Not(assumptions->clone()));
         c->guarantees.insert(p);
     }
     else
     {
         auto parent = guarantees->getParent();
-        guarantees = Or(guarantees, saturation);
         g->second = guarantees;
         guarantees->setParent(parent);
     }

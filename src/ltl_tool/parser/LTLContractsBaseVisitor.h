@@ -39,6 +39,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitPrimed_ID(LTLContractsParser::Primed_IDContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitIntegerKW(LTLContractsParser::IntegerKWContext *ctx) override {
     return visitChildren(ctx);
   }

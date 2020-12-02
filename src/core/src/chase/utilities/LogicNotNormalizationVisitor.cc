@@ -9,6 +9,10 @@
 #include "../../../include/chase/utilities/LogicNotNormalizationVisitor.hh"
 #include "representation.hh"
 #include "utilities/Factory.hh"
+#include "representation/Expression.hh"
+
+
+#include "utilities/simplify.hh"
 
 using namespace chase;
 
@@ -94,6 +98,72 @@ LogicNotNormalizationVisitor::_analyzeFormula(LogicFormula *formula)
                         return Next(Not(inner_temporal->getFormula()));
                     default:
                         break;
+                }
+            }
+            if( f->IsA() == large_boolean_formula_node )
+            {
+                auto inner = static_cast< LargeBooleanFormula * >(f);
+
+                for(size_t i = 0; i < inner->operands.size(); ++i)
+                {
+                    inner->operands[i] =
+                            Not(inner->operands[i]);
+                    simplify(inner->operands[i]);
+                }
+                auto op = inner->getOp();
+                switch(op) {
+                    case op_and:
+                        inner->setOp(op_or);
+                        break;
+                    case op_or:
+                        inner->setOp(op_and);
+                        break;
+                    default:
+                        break;
+                }
+                return inner;
+            }
+            if (f->IsA() == proposition_node)
+            {
+                auto inner_proposition = static_cast< Proposition * >(f);
+                if(inner_proposition->getValue()->IsA() == expression_node)
+                {
+                    auto exp = static_cast< Expression * >(
+                            inner_proposition->getValue());
+                    Operator op = exp->getOperator();
+                    Operator nop = op;
+                    switch(op)
+                    {
+                        case op_eq:
+                            nop = op_neq;
+                            break;
+                        case op_neq:
+                            nop = op_eq;
+                            break;
+                        case op_ge:
+                            nop = op_lt;
+                            break;
+                        case op_gt:
+                            nop = op_le;
+                            break;
+                        case op_lt:
+                            nop = op_ge;
+                            break;
+                        case op_le:
+                            nop = op_gt;
+                            break;
+                        default:
+                            break;
+                    }
+                    if(op != nop)
+                    {
+                         return
+                            new Proposition(
+                                    new Expression(
+                                            nop,
+                                            exp->getOp1(),
+                                            exp->getOp2()));
+                    }
                 }
             }
         }

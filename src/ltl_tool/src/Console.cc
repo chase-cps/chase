@@ -169,9 +169,6 @@ int Console::_execCommand(std::string cmd)
         }
         if(contract == nullptr) return 1;
 
-        VarsCausalityVisitor varsCausality(contract);
-        contract->accept_visitor(varsCausality);
-
         if(solver == "slugs") {
             if (fileOut.find("structuredSlugs") == std::string::npos)
                 fileOut += ".structuredSlugs";
