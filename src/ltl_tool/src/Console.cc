@@ -27,8 +27,6 @@ int Console::run(std::string cmd)
     }
 
     if(cmd == "exit") return 0;
-    if(cmd == "show")
-        std::cout << _system->getString() << std::endl;
     else {
         int rv = _execCommand(cmd);
         if( rv == 0 )
@@ -45,181 +43,25 @@ int Console::_execCommand(std::string cmd)
     std::vector< std::string > tokens;
     std::string intermediate;
     while(std::getline(ss, intermediate, ' '))
-    {
         tokens.push_back(intermediate);
-    }
 
     if(tokens[0] == "help")
     {
-        std::string cmd;
         if(tokens.size() > 1) cmd = tokens[1];
         _printHelp(cmd);
     }
-    else if(tokens[0] == "saturate") {
-        if (tokens.size() != 2)
-            return 0;
-        std::string contract_name = tokens[1];
-        for (auto c : _system->getContractsSet())
-        {
-            if(c->getName()->getString() == contract_name )
-                Contract::saturate(c);
-        }
-    }
+    else if(tokens[0] == "saturate")
+        return _execSaturation(tokens);
     else if(tokens[0] == "compose")
-    {
-        if(tokens.size() < 4) {
-            messageWarning("Wrong command.");
-            _printHelp(tokens[0]);
-
-        }
-        std::string c1_name = tokens[1];
-        std::string c2_name = tokens[2];
-        std::string res_name = tokens[3];
-        std::string mode("name");
-        if(tokens.size() > 4)
-            mode = tokens[4];
-
-
-        Contract * c1 = nullptr;
-        Contract * c2 = nullptr;
-        for (auto c : _system->getContractsSet())
-        {
-            if(c->getName()->getString() == c1_name )
-            {
-                c1 = c;
-                continue;
-            }
-            if(c->getName()->getString() == c2_name )
-            {
-                c2 = c;
-                continue;
-            }
-        }
-        if( c1 == nullptr || c2 == nullptr ) {
-            messageWarning("Impossible to find the contracts.");
-            return 1;
-        }
-        names_projection_map m;
-        _createProjectionMap(m, mode, c1, c2);
-
-        auto r = Contract::composition(c1, c2, m, tokens[3]);
-        _system->addContract(r);
-    }
-    else if(tokens[0] == "conjunction") {
-        if (tokens.size() < 4) {
-            messageWarning("Wrong command.");
-            _printHelp(tokens[0]);
-
-        }
-        std::string c1_name = tokens[1];
-        std::string c2_name = tokens[2];
-        std::string res_name = tokens[3];
-        std::string mode("name");
-        if (tokens.size() > 4)
-            mode = tokens[4];
-
-
-        Contract *c1 = nullptr;
-        Contract *c2 = nullptr;
-        for (auto c : _system->getContractsSet()) {
-            if (c->getName()->getString() == c1_name) {
-                c1 = c;
-                continue;
-            }
-            if (c->getName()->getString() == c2_name) {
-                c2 = c;
-                continue;
-            }
-        }
-        if (c1 == nullptr || c2 == nullptr) {
-            messageWarning("Impossible to find the contracts.");
-            return 1;
-        }
-        names_projection_map m;
-        _createProjectionMap(m, mode, c1, c2);
-
-        auto r = Contract::conjunction(c1, c2, m, res_name);
-        _system->addContract(r);
-    }
+        return _execComposition(tokens);
+    else if(tokens[0] == "conjunction")
+        return _execConjunction(tokens);
     else if(tokens[0] == "synthesize")
-    {
-        std::string fileOut = "output.structuredSlugs";
-        std::string solver = "slugs";
-        if(tokens.size() > 2)
-            fileOut = std::string(tokens[2]);
-        if(tokens.size() < 2)
-            messageWarning("Wrong command. Usage: synthesize contract file");
-        if(tokens.size() > 3)
-            solver = std::string(tokens[3]);
-
-        if(solver != "slugs" && solver != "gr1c") {
-            messageWarning("Invalid solver: " + solver);
-            return 1;
-        }
-
-        std::string contract_name = tokens[1];
-        chase::Contract * contract = nullptr;
-        for (auto c : _system->getContractsSet())
-        {
-            if( c->getName()->getString() == contract_name)
-            {
-                contract = c;
-                break;
-            }
-        }
-        if(contract == nullptr) return 1;
-
-        if(solver == "slugs") {
-            if (fileOut.find("structuredSlugs") == std::string::npos)
-                fileOut += ".structuredSlugs";
-            SlugsPrinter printer;
-            printer.print(contract, fileOut);
-            messageInfo(
-                    "SLUGS specification for synthesis stored in file: " + fileOut);
-        }
-        else if(solver == "gr1c") {
-            if (fileOut.find(".spc") == std::string::npos)
-                fileOut += ".spc";
-            GR1CPrinter printer;
-            printer.print(contract, fileOut);
-            messageInfo(
-                    "GR1C specification for synthesis stored in file: " + fileOut);
-        }
-        else
-        {
-            messageWarning("Unsupported solver.");
-            return 1;
-        }
-
-    }
+        return _execSynthesis(tokens);
     else if(tokens[0] == "verify")
-    {
-        std::string fileOut = "output.smv";
-        if(tokens.size() > 2)
-            fileOut = std::string(tokens[2]);
-        if(tokens.size() < 2)
-            messageWarning("Wrong command. Usage: verify contract file");
-
-        if(fileOut.find("smv") == std::string::npos)
-            fileOut += ".smv";
-
-        std::string contract_name = tokens[1];
-        chase::Contract * contract = nullptr;
-        for (auto c : _system->getContractsSet())
-        {
-            if( c->getName()->getString() == contract_name)
-            {
-                contract = c;
-                break;
-            }
-        }
-        if(contract == nullptr) return 1;
-        NuSMVPrinter printer;
-        printer.print(contract, fileOut);
-        messageInfo(
-                "NuSMV specification for synthesis stored in file: " + fileOut);
-
-    }
+        return _execVerification(tokens);
+    else if(tokens[0] == "show")
+        return _execShow(tokens);
     return 1;
 }
 
@@ -354,3 +196,15 @@ void Console::_printHelp(std::string cmd) {
     else
         std::cout << "Wrong command." << std::endl;
 }
+
+
+
+
+
+
+
+
+
+
+
+

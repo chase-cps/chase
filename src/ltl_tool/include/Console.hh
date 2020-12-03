@@ -36,6 +36,38 @@ namespace ltl_tool
         /// @return 1 if the command has been executed properly. 0 otherwise.
         int _execCommand( std::string cmd );
 
+        /// @brief Method executing the conjunction command.
+        /// @param tokens Tokens of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execConjunction( std::vector< std::string >& tokens );
+
+        /// @brief Method executing the conjunction command.
+        /// @param tokens Tokens of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execComposition( std::vector< std::string >& tokens );
+
+        /// @brief Method executing the conjunction command.
+        /// @param cmd String of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execSaturation(std::vector< std::string >& tokens );
+
+        /// @brief Method executing the conjunction command.
+        /// @param tokens Tokens of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execSynthesis( std::vector< std::string >& tokens );
+
+        /// @brief Method executing the conjunction command.
+        /// @param cmd String of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execVerification( std::vector< std::string >& tokens );
+
+        /// @brief Method executing the conjunction command.
+        /// @param tokens Tokens of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _execShow( std::vector< std::string >& tokens );
+
+
+
         /// @brief Function parsing the projection map.
         /// @param m Projection map to be parsed.
         /// @param mode Mode of the creation.

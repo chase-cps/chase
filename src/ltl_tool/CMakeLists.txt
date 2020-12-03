@@ -26,6 +26,7 @@ set(LTL_PARSER_SRCS
 set(LTL_TOOL_SRCS
         ${LTL_SRC_DIR}/src/main.cc
         ${LTL_SRC_DIR}/src/Console.cc
+        ${LTL_SRC_DIR}/src/Console_commands.cc
 )
 
 
