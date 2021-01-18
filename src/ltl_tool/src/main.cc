@@ -61,6 +61,8 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
                 exit(-1);
             case 'o':
                 parameters->outDir = std::string(optarg);
+                parameters->outDir.back() != '/' ? parameters->outDir += "/"
+                        : parameters->outDir = parameters->outDir;
                 break;
             case 'V':
                 parameters->verbose = true;
@@ -81,10 +83,9 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
     }
     f.close();
 
-    parameters->outDir.back() != '/' ? parameters->outDir += "/"
-                                     : parameters->outDir = parameters->outDir;
     struct stat info;
-    if(stat (parameters->outDir.c_str(), &info) != 0) {
+    if(stat (parameters->outDir.c_str(), &info) != 0 && !parameters->outDir
+    .empty()) {
         if (mkdir(parameters->outDir.c_str(), 0755) == -1)
         {
             std::cout << strerror(errno) << std::endl;
@@ -92,6 +93,7 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
 
         } else messageInfo(parameters->outDir + " created.");
     }
+    std::cout << parameters->outDir << std::endl;
     return parameters;
 }
 
