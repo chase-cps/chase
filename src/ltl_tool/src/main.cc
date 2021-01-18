@@ -18,7 +18,7 @@ int main( int argc, char * argv[] )
 
     System * system = builder.getSystem();
 
-    Console console(system);
+    Console console(system, params->outDir);
 
     if(params->cmdFile.empty()) {
         while (console.run());
@@ -48,7 +48,7 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
     opterr = 0;
     int c;
 
-    while ((c = getopt(argc, argv, "i:c:b:V")) != -1) {
+    while ((c = getopt(argc, argv, "i:c:b:o:V")) != -1) {
         switch (c) {
             case 'i':
                 parameters->fileIn = std::string(optarg);
@@ -59,6 +59,9 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
             case '?':
                 printHelp();
                 exit(-1);
+            case 'o':
+                parameters->outDir = std::string(optarg);
+                break;
             case 'V':
                 parameters->verbose = true;
                 break;
@@ -77,6 +80,18 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
         exit(-1);
     }
     f.close();
+
+    parameters->outDir.back() != '/' ? parameters->outDir += "/"
+                                     : parameters->outDir = parameters->outDir;
+    struct stat info;
+    if(stat (parameters->outDir.c_str(), &info) != 0) {
+        if (mkdir(parameters->outDir.c_str(), 0755) == -1)
+        {
+            std::cout << strerror(errno) << std::endl;
+            exit(-1);
+
+        } else messageInfo(parameters->outDir + " created.");
+    }
     return parameters;
 }
 
@@ -89,6 +104,8 @@ void ltl_tool::printHelp()
               "\t-i : specifies the txt input file containing the specifications."
               << std::endl <<
               "\t-c : command file to be executed."
+              << std::endl <<
+              "\t-o : output directory path."
               << std::endl <<
               "\t-V : activate the verbose mode." << std::endl;
 }

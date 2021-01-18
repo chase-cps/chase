@@ -12,8 +12,8 @@
 using namespace ltl_tool;
 using namespace chase;
 
-ltl_tool::Console::Console(System *system) :
-    _system(system)
+ltl_tool::Console::Console(System *system, std::string &outDir) :
+    _system(system), _outDir(outDir)
 {
     simplify(_system);
 }
@@ -47,8 +47,12 @@ int Console::_execCommand(std::string cmd)
 
     if(tokens[0] == "help")
     {
-        if(tokens.size() > 1) cmd = tokens[1];
-        _printHelp(cmd);
+        if(tokens.size() > 1)
+        {
+            cmd = tokens[1];
+            _printHelp(cmd);
+        }
+        else _printHelp();
     }
     else if(tokens[0] == "saturate")
         return _execSaturation(tokens);
@@ -146,7 +150,14 @@ void Console::_createProjectionMapFile(
 
 void Console::_printHelp(std::string cmd) {
     if(cmd.empty()) {
+        std::string contracts = "";
+        for (auto & c : _system->getContractsSet())
+        {
+            contracts += c->getName()->getString() + " ";
+        }
         std::cout
+                << "\tSystem's contracts\t: " << contracts
+                << std::endl
                 << "Commands:" << std::endl
                 << "\tcompose\t\t: compute the composition of two contracts."
                 << std::endl

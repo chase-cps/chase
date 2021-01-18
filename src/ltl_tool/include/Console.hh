@@ -21,7 +21,7 @@ namespace ltl_tool
     public:
         /// @brief Constructor of the console object.
         /// @param system System to be manipulated by the console.
-        Console( System * system );
+        Console( System * system, std::string &outDir );
 
         /// @brief The main function of the console.
         /// @param cmd The command being read.
@@ -30,6 +30,7 @@ namespace ltl_tool
 
     protected:
         System * _system;
+        std::string _outDir;
 
         /// @brief Method parsing the command different than "show" and "exit".
         /// @param cmd The command to be parsed.

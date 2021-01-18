@@ -104,10 +104,10 @@ int Console::_execSaturation(std::vector<std::string> &tokens) {
 }
 
 int Console::_execSynthesis(std::vector<std::string> &tokens) {
-    std::string fileOut = "output.structuredSlugs";
+    std::string fileOut = _outDir + "output.structuredSlugs";
     std::string solver = "slugs";
     if(tokens.size() > 2)
-        fileOut = std::string(tokens[2]);
+        fileOut =  _outDir + std::string(tokens[2]);
     if(tokens.size() < 2)
         messageWarning("Wrong command. Usage: synthesize contract file");
     if(tokens.size() > 3)
@@ -156,9 +156,9 @@ int Console::_execSynthesis(std::vector<std::string> &tokens) {
 }
 
 int Console::_execVerification(std::vector<std::string> &tokens) {
-    std::string fileOut = "output.smv";
+    std::string fileOut = _outDir + "output.smv";
     if(tokens.size() > 2)
-        fileOut = std::string(tokens[2]);
+        fileOut = _outDir + std::string(tokens[2]);
     if(tokens.size() < 2)
         messageWarning("Wrong command. Usage: verify contract file");
 

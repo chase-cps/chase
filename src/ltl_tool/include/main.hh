@@ -14,6 +14,7 @@
 
 #include <unistd.h>
 #include <fstream>
+#include <sys/stat.h>
 
 namespace ltl_tool
 {
@@ -25,12 +26,16 @@ namespace ltl_tool
         /// @brief Commands file path.
         std::string cmdFile;
 
+        /// @brief Output directory path.
+        std::string outDir;
+
         /// @brief Verbose flag. Execution is verbose when flag is set to true.
         bool verbose;
 
         _params() :
                 fileIn("chase_spec.txt"),
                 cmdFile(""),
+                outDir(""),
                 verbose(false)
         {
         }
