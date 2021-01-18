@@ -90,7 +90,7 @@ CONTRACT Turn:
     Guarantees:
         ~turned /\ ~turn_requested;
         [](~turn_requested -> ~turned);
-        [](turn_requested -> X(turn_requested));
+        [   ](turn_requested -> X(turn_requested));
         [](turned -> X(turned));
         [](cmd_turn -> X(turn_requested));
         [](turn_requested -> X(turned));

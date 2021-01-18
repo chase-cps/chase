@@ -1,0 +1,25 @@
+NAME: PickTurnPlace;
+
+CONTRACT Turn:
+    input boolean variable request;
+    output boolean variable done;
+
+    input integer (0:15) variable desired_angle;
+    input integer (0:15) variable angle;
+
+    output integer (0:2) variable command;
+
+    Assumptions:
+        !request;
+        desired_angle = 0;
+        angle = 0;
+
+        [](command = 1 -> angle' = angle + 1);
+        [](command = 2 -> angle = angle' + 1);
+        [](command = 0 -> angle' = angle);
+
+    Guarantees:
+        !done;
+        command = 0;
+        []<>(request -> angle = desired_angle);
+
