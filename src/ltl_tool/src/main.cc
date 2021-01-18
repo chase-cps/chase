@@ -93,7 +93,6 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
 
         } else messageInfo(parameters->outDir + " created.");
     }
-    std::cout << parameters->outDir << std::endl;
     return parameters;
 }
 
