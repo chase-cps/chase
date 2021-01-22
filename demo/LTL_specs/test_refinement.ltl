@@ -1,0 +1,22 @@
+NAME: test_refinement;
+
+CONTRACT C1:
+    input integer (0:4) variable x;
+    output integer (1:5) variable y;
+
+    Assumptions:
+        [](x > 0 & x < 4);
+    Guarantees:
+        [](x = 1 -> (y = 2));
+        [](x = 2 -> (y = 3));
+        [](x = 3 -> (y = 4));
+  
+CONTRACT C2:
+    input integer (0:4) variable x;
+    output integer (0:4) variable y;
+
+    Assumptions:
+        [](x > 1 & x < 3);
+    Guarantees:
+        [](y > 2 & y < 4);
+

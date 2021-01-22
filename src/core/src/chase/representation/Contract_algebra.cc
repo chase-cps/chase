@@ -321,4 +321,74 @@ void Contract::saturateLogic(Contract * c )
 }
 
 
+Contract *Contract::refinementCheck(Contract *c1, Contract *c2, names_projection_map &correspondences,
+                               std::string name) {
+    auto rcheck = new Contract(name);
 
+    std::map< Declaration *, Declaration * > declaration_map;
+    mergeDeclarations(c1, c2, rcheck, correspondences, declaration_map);
+
+    /// \todo Check that variables have the same causality in both contracts.
+
+    refinementCheckLogic(c1, c2, rcheck);
+
+    ClonedDeclarationVisitor v(declaration_map);
+    rcheck->accept_visitor(v);
+
+    return rcheck;
+}
+
+void Contract::refinementCheckLogic(Contract *c1, Contract *c2, Contract *r) {
+    LogicFormula * a1 = nullptr;
+    LogicFormula * a2 = nullptr;
+    LogicFormula * g1 = nullptr;
+    LogicFormula * g2 = nullptr;
+
+    auto i = c1->assumptions.find(logic);
+    if(i != c1->assumptions.end())
+    {
+        a1 = dynamic_cast<LogicFormula *>(i->second);
+        if( a1 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->assumptions.find(logic);
+    if(i != c2->assumptions.end())
+    {
+        a2 = dynamic_cast<LogicFormula *>(i->second);
+        if( a2 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c1->guarantees.find(logic);
+    if(i != c1->guarantees.end())
+    {
+        g1 = dynamic_cast<LogicFormula *>(i->second);
+        if( g1 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->guarantees.find(logic);
+    if(i != c2->guarantees.end())
+    {
+        g2 = dynamic_cast<LogicFormula *>(i->second);
+        if( g2 == nullptr ) messageError("Wrong format in Logic.");
+    }
+
+
+    /// \todo Reason about correctness in the case one is a nullptr.
+    if( a1 == nullptr )
+        a1 = True();
+    if( a2 == nullptr )
+        a2 = True();
+    auto assumptions = Implies(a2, a1);
+
+    if( g1 == nullptr )
+        g1 = True();
+    if( g2 == nullptr )
+        g2 = True();
+
+    g1 = Or(g1, Not(a1->clone()));
+    g2 = Or(g2, Not(a2->clone()));
+
+    auto guarantees = Implies(g1, g2);
+    r->addAssumptions(logic, assumptions);
+    r->addGuarantees(logic, guarantees);
+}

@@ -102,12 +102,25 @@ namespace chase {
                 names_projection_map & correspondences,
                 std::string name = std::string("composition"));
 
+
+
         /// @brief Function performing composition for Logic specifications.
         /// @param c1 The first contract.
         /// @param c2 The second contract.
         /// @param r The resulting contract.
         static void composeLogic(
                 Contract *c1, Contract *c2, Contract * r);
+
+
+        static Contract * refinementCheck(
+                Contract * c1, Contract * c2,
+                names_projection_map & correspondences,
+                std::string name = std::string("refinement")
+        );
+
+        static void refinementCheckLogic(
+                Contract *c1, Contract *c2, Contract * r
+                );
 
         /// @brief Method implementing the composition of two contracts.
         /// @param c1 The first contract.
@@ -132,7 +145,6 @@ namespace chase {
         /// @param r The resulting contract.
         static void conjoinLogic(
                 Contract *c1, Contract *c2, Contract * r);
-
 
         /// @brief Method merging the declarations of two contracts into one. It
         /// is used by the operations to create the declarations of the

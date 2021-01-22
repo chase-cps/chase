@@ -10,10 +10,11 @@
 
 using namespace chase;
 
-NuSMVPrinter::NuSMVPrinter() :
+NuSMVPrinter::NuSMVPrinter( std::string path ) :
     GuideVisitor(),
     _contract(nullptr)
 {
+    _fout.open(path);
 }
 
 NuSMVPrinter::~NuSMVPrinter()
@@ -21,16 +22,15 @@ NuSMVPrinter::~NuSMVPrinter()
     if(_fout.is_open()) _fout.close();
 }
 
-void NuSMVPrinter::print(Contract *contract, std::string path)
+void NuSMVPrinter::print(Contract *contract)
 {
     _contract = contract;
-    _fout.open(path);
-    _printDeclarations();
-    _printCompatibility();
-    _printConsistency();
+    printDeclarations();
+    printAssumptions();
+    printGuarantees();
 }
 
-void NuSMVPrinter::_printDeclarations() {
+void NuSMVPrinter::printDeclarations() {
     _fout << "MODULE main" << std::endl;
     _fout << "VAR" << std::endl;
     for (auto vit = _contract->declarations.begin();
@@ -43,9 +43,9 @@ void NuSMVPrinter::_printDeclarations() {
     }
 }
 
-void NuSMVPrinter::_printCompatibility()
+void NuSMVPrinter::printAssumptions()
 {
-    _fout << "\tLTLSPEC ! (" << std::endl << "\t\t";
+    _fout << "\tLTLSPEC (" << std::endl << "\t\t";
     auto it = _contract->assumptions.find(logic);
     // No assumptions. Surely true.
     if(it == _contract->assumptions.end()) {
@@ -57,9 +57,9 @@ void NuSMVPrinter::_printCompatibility()
     _fout << " )\n\n";
 }
 
-void NuSMVPrinter::_printConsistency()
+void NuSMVPrinter::printGuarantees()
 {
-    _fout << "\tLTLSPEC ! (" << std::endl << "\t\t";
+    _fout << "\tLTLSPEC (" << std::endl << "\t\t";
     auto it = _contract->guarantees.find(logic);
     // No assumptions. Surely true.
     if(it == _contract->guarantees.end()) {

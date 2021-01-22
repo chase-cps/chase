@@ -8,6 +8,8 @@
 #include <sstream>
 #include "Console.hh"
 #include "utilities/simplify.hh"
+#include "utilities/Factory.hh"
+#include "utilities/ClonedDeclarationVisitor.hh"
 
 using namespace ltl_tool;
 using namespace chase;
@@ -165,7 +167,6 @@ int Console::_execVerification(std::vector<std::string> &tokens) {
     if(fileOut.find("smv") == std::string::npos)
         fileOut += ".smv";
 
-
     std::string contract_name = tokens[1];
     chase::Contract * contract = nullptr;
     for (auto c : _system->getContractsSet())
@@ -177,8 +178,30 @@ int Console::_execVerification(std::vector<std::string> &tokens) {
         }
     }
     if(contract == nullptr) return 1;
-    NuSMVPrinter printer;
-    printer.print(contract, fileOut);
+    contract = contract->clone();
+
+    auto it = contract->assumptions.find(logic);
+    // No assumptions. Surely true.
+    if(it == contract->assumptions.end()) {
+        return 0;
+    }
+    // Else...
+    auto assumptions = static_cast< LogicFormula * >((*it).second);
+
+    it->second = Not(assumptions);
+
+    it = contract->guarantees.find(logic);
+    // No assumptions. Surely true.
+    if(it == contract->guarantees.end()) {
+        return 0;
+    }
+    // Else...
+    auto guarantees = static_cast< LogicFormula * >((*it).second);
+
+    it->second = Not(guarantees);
+
+    NuSMVPrinter printer(fileOut);
+    printer.print(contract);
     messageInfo(
             "NuSMV specification for synthesis stored in file: " + fileOut);
     return 1;
@@ -210,3 +233,54 @@ int Console::_execShow(std::vector<std::string> &tokens)
     std::cout << ret << std::endl;
     return 1;
 }
+
+int Console::_checkRefinement(std::vector<std::string> &tokens) {
+    std::string fileOut = _outDir + "output.smv";
+    if(tokens.size() > 3)
+        fileOut = _outDir + std::string(tokens[3]);
+    if(tokens.size() < 3) {
+        messageWarning("Wrong command. Usage: refinement contract1 contract2 file");
+        return 1;
+    }
+
+    std::string c1_name = tokens[1];
+    std::string c2_name = tokens[2];
+
+    std::string mode("name");
+    if(tokens.size() > 4)
+        mode = tokens[4];
+
+    chase::Contract * c1 = nullptr;
+    chase::Contract * c2 = nullptr;
+    for (auto c : _system->getContractsSet())
+    {
+        if( c->getName()->getString() == c1_name)
+            c1 = c;
+        if( c->getName()->getString() == c2_name)
+            c2 = c;
+    }
+    if(c1 == nullptr) {
+        messageWarning("Contract not found: " + c1_name);
+        return 1;
+    }
+    if(c2 == nullptr) {
+        messageWarning("Contract not found: " + c2_name);
+        return 1;
+    }
+    c1 = c1->clone();
+    c2 = c2->clone();
+
+    names_projection_map m;
+    _createProjectionMap(m, mode, c1, c2);
+    auto r = Contract::refinementCheck(c1, c2, m);
+
+    NuSMVPrinter printer(fileOut);
+    printer.print(r);
+    messageInfo(
+            "NuSMV specification for synthesis stored in file: " + fileOut);
+
+    return 1;
+}
+
+
+

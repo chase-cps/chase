@@ -61,8 +61,8 @@ Params * ltl_tool::parseCmdLine(int argc, char **argv) {
                 exit(-1);
             case 'o':
                 parameters->outDir = std::string(optarg);
-                parameters->outDir.back() != '/' ? parameters->outDir += "/"
-                        : parameters->outDir = parameters->outDir;
+                if(parameters->outDir.back() != '/')
+                    parameters->outDir += "/";
                 break;
             case 'V':
                 parameters->verbose = true;

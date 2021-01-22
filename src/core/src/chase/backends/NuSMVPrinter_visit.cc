@@ -67,8 +67,7 @@ int NuSMVPrinter::visitBinaryBooleanOperation(BinaryBooleanFormula &formula)
 
 int NuSMVPrinter::visitUnaryBooleanOperation(UnaryBooleanFormula &formula) {
     std::string op = _printBooleanOperator(formula.getOp());
-    _fout << "(";
-    _fout << " " << op << " ";
+    _fout << " " << op << "(";
     int rv = formula.getOp1()->accept_visitor(*this);
     _fout << ")";
     return rv;

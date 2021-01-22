@@ -83,6 +83,10 @@ CONTRACT Move:
     output integer (0:4) variable command;
 
     Assumptions:
+        xpos = 0;
+        ypos = 0;
+        xtarget = 0;
+        ytarget = 0;
         [](command = 0 -> (xpos' = xpos & ypos' = ypos));
         [](command = 1 -> (xpos' = xpos + 1 & ypos' = ypos));
         [](command = 2 -> (xpos = xpos' + 1 & ypos' = ypos));
