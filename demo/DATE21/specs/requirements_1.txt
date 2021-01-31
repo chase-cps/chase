@@ -1,0 +1,16 @@
+Requirements
+    If possible, left DC buses shall be powered by left generators
+    Failed generators must be disconnected within 15 ms
+    Generators shall never connect in parallel through AC buses
+    When a contactor receives an open signal, it opens in 10ms or less
+    When a contactor receives an close signal, it closes in 10ms or less
+    A DC bus shall never be unpowered for more than 30ms
+
+Assumptions
+    Generators do not recover from failures
+    AC buses do not fail
+    Rectifiers do not fail
+    DC buses do not fail
+    Loads do not fail
+    At most 1 generator may fail
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+
+
+~/third_party/sources/slugs/tools/StructuredSlugsParser/compiler.py $1.structuredSlugs > $1.slugsin
+slugs --explicitStrategy --jsonOutput $1.slugsin > $1.json
+
+

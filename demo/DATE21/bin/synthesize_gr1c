@@ -1,0 +1,9 @@
+#!/bin/bash
+
+gr1c -t dot -o $1.dot $1.spc
+dot -Tjpg -o $1.jpg $1.dot
+
+echo "Press enter to open see Mealy Machine"
+read
+xdg-open $1.jpg
+
