@@ -24,16 +24,22 @@ int main( int argc, char * argv[] )
         std::cout << c->getString() << std::endl << std::endl;
 
     if( parameters->backend == "gr1c" )
-    {    
+    {
+        std::string fileOut = parameters->fileOut;
+        if (fileOut.find(".spc") == std::string::npos)
+            fileOut += ".spc";
         GR1CPrinter printer;
-        printer.print(c, parameters->fileOut);
-        messageInfo("GR1C specification written in " + parameters->fileOut);
+        printer.print(c, fileOut);
+        messageInfo("GR1C specification written in " + fileOut);
     }
     else if( parameters->backend == "slugs" )
     {
+        std::string fileOut = parameters->fileOut;
+        if (fileOut.find("structuredSlugs") == std::string::npos)
+            fileOut += ".structuredSlugs";
         SlugsPrinter printer;
-        printer.print(c, parameters->fileOut);
-        messageInfo("GR1C specification written in " + parameters->fileOut);
+        printer.print(c, fileOut);
+        messageInfo("SLUGS specification written in " + fileOut);
     }
     
     delete(c);

@@ -207,7 +207,7 @@ void Console::_printHelp(std::string cmd) {
                   cmd + std::string(" contract file solver\n")
                   << "\t\tcontract:\t\tthe contract to synthesize.\n"
                   << "\t\tfile:\t\tfile generated for the solver.\n"
-                  << "\t\tsolver:\t\tmight be either slugs or gr1c (default, slugs).\n"
+                  << "\t\tsolver:\t\tmight be either slugs, gr1c or all (default, slugs).\n"
                   << std::endl;
     else if(cmd == "verify")
         std::cout << "Usage:\n\t$> " <<

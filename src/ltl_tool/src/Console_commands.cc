@@ -115,7 +115,7 @@ int Console::_execSynthesis(std::vector<std::string> &tokens) {
     if(tokens.size() > 3)
         solver = std::string(tokens[3]);
 
-    if(solver != "slugs" && solver != "gr1c") {
+    if(solver != "slugs" && solver != "gr1c" && solver != "all") {
         messageWarning("Invalid solver: " + solver);
         return 1;
     }
@@ -132,7 +132,26 @@ int Console::_execSynthesis(std::vector<std::string> &tokens) {
     }
     if(contract == nullptr) return 1;
 
-    if(solver == "slugs") {
+    if(solver == "all")
+    {
+        auto sf = fileOut;
+        if (sf.find("structuredSlugs") == std::string::npos)
+            sf += ".structuredSlugs";
+        auto gf = fileOut;
+        if (gf.find(".spc") == std::string::npos)
+            gf += ".spc";
+        SlugsPrinter sprinter;
+        sprinter.print(contract, sf);
+        messageInfo(
+                "SLUGS specification for synthesis stored in file: " + sf);
+        GR1CPrinter gprinter;
+        gprinter.print(contract, gf);
+        messageInfo(
+                "GR1C specification for synthesis stored in file: " + gf);
+        return 1;
+    }
+
+    else if(solver == "slugs") {
         if (fileOut.find("structuredSlugs") == std::string::npos)
             fileOut += ".structuredSlugs";
         SlugsPrinter printer;
