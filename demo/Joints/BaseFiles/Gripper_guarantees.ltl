@@ -1,0 +1,11 @@
+        gripper_command;
+        [](request_gripper -> X(grasped));
+        [](!request_gripper -> X(!grasped));
+
+        [](gripper_status -> !grasped);
+        []((gripper_status & ! gripper_status') -> grasped');
+        []((grasped & ! gripper_status') -> grasped');
+        [](grasped -> X(grasped | gripper_status));
+
+
+

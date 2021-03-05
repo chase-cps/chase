@@ -1,0 +1,12 @@
+        !req_jNUM;
+
+        [](req_jNUM & jNUM_angle = 0 & jNUM_cmd = 2 -> X(jNUM_angle = 0));
+        [](req_jNUM & jNUM_cmd = 1 -> jNUM_angle' = jNUM_angle + 1);
+        [](req_jNUM & jNUM_cmd = 2 -> jNUM_angle' + 1 = jNUM_angle);
+        [](req_jNUM & jNUM_cmd = 0 -> jNUM_angle' = jNUM_angle);
+        [](req_jNUM & jNUM_angle = MAX & jNUM_cmd = 1 -> X(jNUM_angle = MAX));
+        []((req_jNUM & !jNUM_done) -> X(req_jNUM));
+        [](req_jNUM -> jNUM_dangle' = jNUM_dangle);
+
+        []<>(req_jNUM);
+        []<>(req_jNUM & jNUM_done -> X(!req_jNUM));

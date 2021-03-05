@@ -1,0 +1,35 @@
+CONTRACT JointNUM:
+     output boolean variable jNUM_done;
+
+    input integer (0:MAX) variable jNUM_dangle;
+    input integer (0:MAX) variable jNUM_angle;
+
+    input boolean variable req_jNUM;
+
+    output integer (0:2) variable jNUM_cmd;
+
+    Assumptions:
+        !req_jNUM;
+
+        [](req_jNUM & jNUM_angle = 0 & jNUM_cmd = 2 -> X(jNUM_angle = 0));
+
+        [](req_jNUM & jNUM_cmd = 1 -> jNUM_angle' = jNUM_angle + 1);
+        [](req_jNUM & jNUM_cmd = 2 -> jNUM_angle' + 1 = jNUM_angle);
+        [](req_jNUM & jNUM_cmd = 0 -> jNUM_angle' = jNUM_angle);
+
+        [](req_jNUM & jNUM_angle = MAX & jNUM_cmd = 1 -> X(jNUM_angle = MAX));
+
+        []((req_jNUM & !jNUM_done) -> X(req_jNUM));
+
+        [](req_jNUM -> jNUM_dangle' = jNUM_dangle);
+        []<>(req_jNUM);
+        []<>(req_jNUM & jNUM_done -> X(!req_jNUM));
+
+    Guarantees:
+        jNUM_cmd = 0;
+
+        []((jNUM_done | !req_jNUM) -> X(jNUM_cmd = 0));
+        [](jNUM_angle = jNUM_dangle <-> jNUM_done);      
+
+        []<>(jNUM_done);
+

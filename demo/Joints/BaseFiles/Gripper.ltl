@@ -1,0 +1,28 @@
+CONTRACT Gripper:
+    # In the following, Open = 1; Closed = 0.
+    output boolean variable gripper_command;
+    input boolean variable gripper_status;
+
+    # Grasped, 1 if Grasped, 0 Released.
+    output boolean variable grasped;
+    input boolean variable request_gripper;
+
+    Assumptions:
+        ! request_gripper;
+        gripper_status;
+
+        [](gripper_command -> X(gripper_status));
+        [](!gripper_command -> X(!gripper_status));
+
+    Guarantees:
+        gripper_command;
+        [](request_gripper -> X(grasped));
+        [](!request_gripper -> X(!grasped));
+
+        [](gripper_status -> !grasped);
+        []((gripper_status & ! gripper_status') -> grasped');
+        []((grasped & ! gripper_status') -> grasped');
+        [](grasped -> X(grasped | gripper_status));
+
+
+

@@ -1,0 +1,7 @@
+        jNUM_cmd = 0;
+
+        []((jNUM_done | !req_jNUM) -> X(jNUM_cmd = 0));
+        [](jNUM_angle = jNUM_dangle <-> jNUM_done);      
+
+        []<>(jNUM_done);
+

@@ -1,0 +1,8 @@
+    # In the following, Open = 1; Closed = 0.
+    output boolean variable gripper_command;
+    input boolean variable gripper_status;
+
+    # Grasped, 1 if Grasped, 0 Released.
+    output boolean variable grasped;
+    input boolean variable request_gripper;
+

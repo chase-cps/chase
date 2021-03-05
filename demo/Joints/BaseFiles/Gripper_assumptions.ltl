@@ -1,0 +1,6 @@
+        ! request_gripper;
+        gripper_status;
+
+        [](gripper_command -> X(gripper_status));
+        [](!gripper_command -> X(!gripper_status));
+

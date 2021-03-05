@@ -1,0 +1,6 @@
+    input integer (0:MAX) variable jNUM_dangle;
+    input integer (0:MAX) variable jNUM_angle;
+    input boolean variable req_jNUM;
+    output integer (0:2) variable jNUM_cmd;
+    output boolean variable jNUM_done;
+
