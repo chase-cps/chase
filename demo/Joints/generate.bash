@@ -17,7 +17,7 @@ do
     echo >> $file
 done
 
-cat BaseFiles/Base.ltl >> $file
+cat BaseFiles/Gripper.ltl >> $file
 
 
 # - Generation of the complete system
@@ -36,7 +36,7 @@ do
     echo >> $file
 done
 
-cat BaseFiles/Base_declaration.ltl >> $file 
+cat BaseFiles/Gripper_declaration.ltl >> $file 
 
 echo "  Assumptions:" >> $file
 for i in $(seq 1 $num_joints)
@@ -45,7 +45,7 @@ do
     echo >> $file
 done
 
-cat BaseFiles/Base_assumptions.ltl >> $file 
+cat BaseFiles/Gripper_assumptions.ltl >> $file 
 
 echo "   Guarantees:" >> $file
 for i in $(seq 1 $num_joints)
@@ -54,7 +54,7 @@ do
     echo >> $file
 done
 
-cat BaseFiles/Base_guarantees.ltl >> $file 
+cat BaseFiles/Gripper_guarantees.ltl >> $file 
 
 
 
