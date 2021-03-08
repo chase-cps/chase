@@ -14,11 +14,37 @@ int GR1CPrinter::visitIntegerValue(IntegerValue &o) {
 }
 
 int GR1CPrinter::visitExpression(Expression &o) {
-    _curr += "(";
-    _continueVisit(o.getOp1());
-    _curr += to_string(o.getOperator());
-    _continueVisit(o.getOp2());
-    _curr += ")";
+    /// \todo Fix to unroll.
+
+    Operator op = o.getOperator();
+    auto op1 = o.getOp1();
+    auto op2 = o.getOp2();
+    if (op == op_eq)
+    {
+        _curr += "(";
+        _continueVisit(op1);
+        _curr += to_string(op);
+
+        if( op2->IsA() == integerValue_node) {
+            _continueVisit(o.getOp2());
+            _curr += ")";
+        }
+        else
+        {
+            /// \todo Unroll the expression.
+            messageWarning(
+                    std::string("Impossible to generate GR1C description.\n")
+                + "Unsupported expression: " + op2->getString());
+        }
+    }
+    else
+    {
+        /// \todo Unroll the expression.
+        messageWarning(
+                std::string("Impossible to generate GR1C description.\n")
+                + "Unsupported expression: " + o.getString());
+    }
+
     return 1;
 }
 
