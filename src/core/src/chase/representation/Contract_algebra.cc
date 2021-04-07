@@ -204,6 +204,9 @@ Contract * Contract::conjunction(
     return res;
 }
 
+
+
+
 void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
 {
     LogicFormula * a1 = nullptr;
@@ -268,6 +271,93 @@ void Contract::conjoinLogic(Contract *c1, Contract *c2, Contract *r)
 
 
 }
+
+Contract * Contract::quotient(
+        Contract *c1, Contract *c2,
+        names_projection_map &correspondences,
+        std::string name, bool synthesizable)
+{
+    auto res = new Contract(name);
+
+    std::map< Declaration *, Declaration * > declaration_map;
+    mergeDeclarations(c1, c2, res,
+                      correspondences, declaration_map);
+
+    quotientLogic(c1, c2, res, synthesizable);
+
+    ClonedDeclarationVisitor v(declaration_map);
+    res->accept_visitor(v);
+
+    return res;
+}
+
+
+
+void Contract::quotientLogic(
+        Contract *c1, Contract *c2, Contract *r, bool synthesizable) {
+    LogicFormula *a1 = nullptr;
+    LogicFormula *a2 = nullptr;
+    LogicFormula *g1 = nullptr;
+    LogicFormula *g2 = nullptr;
+
+    auto i = c1->assumptions.find(logic);
+    if (i != c1->assumptions.end()) {
+        a1 = dynamic_cast<LogicFormula *>(i->second);
+        if (a1 == nullptr) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->assumptions.find(logic);
+    if (i != c2->assumptions.end()) {
+        a2 = dynamic_cast<LogicFormula *>(i->second);
+        if (a2 == nullptr) messageError("Wrong format in Logic.");
+    }
+
+    i = c1->guarantees.find(logic);
+    if (i != c1->guarantees.end()) {
+        g1 = dynamic_cast<LogicFormula *>(i->second);
+        if (g1 == nullptr) messageError("Wrong format in Logic.");
+    }
+
+    i = c2->guarantees.find(logic);
+    if (i != c2->guarantees.end()) {
+        g2 = dynamic_cast<LogicFormula *>(i->second);
+        if (g2 == nullptr) messageError("Wrong format in Logic.");
+    }
+
+    LogicFormula *assumptions = nullptr;
+    LogicFormula *guarantees = nullptr;
+
+    if (a1 != nullptr && g2 != nullptr)
+        assumptions = And(a1->clone(), g2->clone());
+    else if (a1 == nullptr && g2 == nullptr)
+        assumptions = True();
+    else if (a1 == nullptr && g2 != nullptr)
+        assumptions = a1->clone();
+    else
+        assumptions = g2->clone();
+
+    if (a2 != nullptr && g1 != nullptr)
+        guarantees = And(a2->clone(), g1->clone());
+    else if (a2 == nullptr && g1 == nullptr)
+        guarantees = True();
+    else if (a2 != nullptr && g1 == nullptr)
+        guarantees = a2->clone();
+    else
+        guarantees = g1->clone();
+
+    if (!synthesizable)
+    {
+        if(a1 != nullptr)
+            guarantees = Or(guarantees, Not(a1->clone()));
+        if(g2 != nullptr)
+            guarantees = Or(guarantees, Not(g2->clone()));
+    }
+
+    r->addAssumptions(logic, assumptions);
+    r->addGuarantees(logic, guarantees);
+
+}
+
 
 
 

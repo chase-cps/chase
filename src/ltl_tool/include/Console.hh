@@ -63,11 +63,17 @@ namespace ltl_tool
         /// @return 1 if the command has been executed properly, 0 otherwise.
         int _execVerification( std::vector< std::string >& tokens );
 
-        /// @brief Methdo generating the files necessary to check a refinement
+        /// @brief Method generating the files necessary to check a refinement
         /// relation between two contracts.
         /// @param tokens Tokens of the command.
         /// @return 1 if the command has been executed properly, 0 otherwise.
         int _checkRefinement( std::vector< std::string >& tokens );
+
+        /// @brief Method computing the Quotient between two contracts.
+        /// relation between two contracts.
+        /// @param tokens Tokens of the command.
+        /// @return 1 if the command has been executed properly, 0 otherwise.
+        int _computeQuotient( std::vector< std::string >& tokens );
 
         /// @brief Method showing the system or a contract.
         /// @param tokens Tokens of the command.

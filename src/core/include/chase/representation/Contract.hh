@@ -146,6 +146,32 @@ namespace chase {
         static void conjoinLogic(
                 Contract *c1, Contract *c2, Contract * r);
 
+        /// @brief Method implementing the quotient of two contracts.
+        /// @param c1 The first contract.
+        /// @param c2 The second contract.
+        /// @param correspondences Map of the correspondences between variables
+        /// in the two contracts being composed. Each entry in the map has key
+        /// the names in the second contract, and the value is the name of the
+        /// projected variable in the first contract.
+        /// This choice improve computational complexity, as the variables of
+        /// the first contract are used as base for the composed contract.
+        /// @param name The name of the resulting contract.
+        /// @return Pointer to a new contract that is the quotient of the
+        /// two.
+        static Contract * quotient(
+                Contract * c1, Contract * c2,
+                names_projection_map & correspondences,
+                std::string name = std::string("quotient"),
+                bool synthesizable=false);
+
+        /// @brief Function performing Quotient for Logic specifications.
+        /// @param c1 The first contract.
+        /// @param c2 The second contract.
+        /// @param r The resulting contract.
+        static void quotientLogic(
+                Contract *c1, Contract *c2, Contract * r,
+                bool synthesizable=false);
+
         /// @brief Method merging the declarations of two contracts into one. It
         /// is used by the operations to create the declarations of the
         /// resulting contract when applying operations over two contracts.
