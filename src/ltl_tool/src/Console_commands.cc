@@ -43,8 +43,12 @@ int Console::_execComposition(std::vector< std::string >& tokens) {
             continue;
         }
     }
-    if( c1 == nullptr || c2 == nullptr ) {
-        messageWarning("Impossible to find the contracts.");
+    if (c1 == nullptr) {
+        messageWarning("Impossible to find the contracts: " + c1_name);
+        return 1;
+    }
+    if (c2 == nullptr) {
+        messageWarning("Impossible to find the contracts: " + c2_name);
         return 1;
     }
     names_projection_map m;
@@ -81,8 +85,12 @@ int Console::_execConjunction(std::vector<std::string> &tokens) {
             continue;
         }
     }
-    if (c1 == nullptr || c2 == nullptr) {
-        messageWarning("Impossible to find the contracts.");
+    if (c1 == nullptr) {
+        messageWarning("Impossible to find the contracts: " + c1_name);
+        return 1;
+    }
+    if (c2 == nullptr) {
+        messageWarning("Impossible to find the contracts: " + c2_name);
         return 1;
     }
     names_projection_map m;

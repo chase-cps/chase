@@ -35,7 +35,7 @@ int main( int argc, char * argv[] )
     else if( parameters->backend == "slugs" )
     {
         std::string fileOut = parameters->fileOut;
-        if (fileOut.find("structuredSlugs") == std::string::npos)
+        if (parameters->fileOut.find("structuredSlugs") == std::string::npos)
             fileOut += ".structuredSlugs";
         SlugsPrinter printer;
         printer.print(c, fileOut);
@@ -108,12 +108,6 @@ Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
         size_t firstindex = parameters->fileIn.find_last_of('/');
         if( firstindex > 0 ) ++firstindex;
         std::string rawname = parameters->fileIn.substr(firstindex, lastindex-firstindex);
-        if( parameters->backend == "gr1c" )
-            rawname += ".spc";
-        else if ( parameters->backend == "slugs" )  
-            rawname += ".structuredslugs";
-        else
-            messageError("Backend Error");
 
         parameters->fileOut = rawname;
     }
