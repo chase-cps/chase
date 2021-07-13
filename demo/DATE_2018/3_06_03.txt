@@ -73,16 +73,6 @@ never-disconnect(DC bus, generator, 30, MS);
 
 ASSUMPTIONS
 
-
-
-
-
-
-
-
-
-
-
 no-recovery(generator);
 max-failures(generator, 1);
 no-failures(load);

@@ -1,5 +1,5 @@
 /**
- * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
+ _* @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
  * @date        11/12/2019
  *              This project is released under the 3-Clause BSD License.
  *
@@ -446,6 +446,8 @@ void DesignProblem::_completeCommandState()
 
         Variable * state = _stateVariables.find(comp_name)->second;
         Variable * command = _commandVariables.find(comp_name)->second;
+
+        if( _stateVariables.find(comp_name) == _stateVariables.end() ) continue;
 
         std::map< std::string, chase::Variable *>::iterator found;
         found = _offTimer.find(comp_name);
