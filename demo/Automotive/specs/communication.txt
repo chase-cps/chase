@@ -1,0 +1,71 @@
+TYPES
+ECU : Sink(DATA);
+LP : Source(LOW);
+HP : Source(HIGH);
+HBUS : Converter(HIGH, DATA);
+LBUS : Converter(LOW, DATA);
+
+switch : Switch;
+
+COMPONENTS
+
+fast ECU: 1;
+slow ECU: 1;
+main HBUS: 1;
+main LBUS: 1;
+rain LP: 1;
+light LP: 1;
+collision HP: 1;
+line HP: 1;
+
+switch : *;
+
+ABBREVIATIONS
+fast ECU 1: FCPU;
+slow ECU 1: SCPU;
+main HBUS 1: HBUS1;
+main LBUS 1: LBUS1;
+rain LP 1: RAIN;
+light LP 1: LIGHT;
+collision HP 1: COLLISION;
+line HP 1: LINE;
+
+CONNECTIONS
+
+HBUS1 -(switch 1)- FCPU;
+LBUS1 -(switch 2)- SCPU;
+LBUS1 -(switch 3)- FCPU;
+HBUS1 -(switch 4)- SCPU;
+
+COLLISION -(switch 5)- HBUS1;
+LINE -(switch 6)- HBUS1;
+
+RAIN -(switch 7)- LBUS1;
+LIGHT -(switch 8)- LBUS1;
+
+REQUIREMENTS
+never-connect(ECU, ECU, HBUS);
+never-connect(ECU, ECU, LBUS);
+
+never-disconnect(LP, ECU, 8, MS);
+never-disconnect(HP, ECU, 2, MS);
+
+ASSUMPTIONS
+initial-state(switch 1, 1);
+initial-state(switch 2, 1);
+initial-state(switch 3, 0);
+initial-state(switch 4, 0);
+initial-state(switch 5, 1);
+initial-state(switch 6, 0);
+initial-state(switch 7, 1);
+initial-state(switch 8, 0);
+
+no-failures(ECU);
+no-failures(LP);
+no-failure(HP);
+no-failure(HBUS);
+no-failure(LBUS);
+
+switch-on-time(switch, 1, MS);
+switch-off-time(switch, 1, MS);
+
