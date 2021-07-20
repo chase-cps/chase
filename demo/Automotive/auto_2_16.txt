@@ -1,0 +1,89 @@
+TYPES
+ECU : Sink(DATA);
+LP : Source(LOW);
+HP : Source(HIGH);
+HBUS : Converter(HIGH, DATA);
+LBUS : Converter(LOW, DATA);
+
+switch : Switch;
+
+COMPONENTS
+
+fast ECU: 1;
+slow ECU: 1;
+main HBUS: 1;
+main LBUS: 1;
+rain LP: 1;
+rain HP: 1;
+light LP: 1;
+light HP: 1;
+collision HP: 1;
+collision LP: 1;
+line HP: 1;
+line LP: 1;
+
+switch : *;
+
+ABBREVIATIONS
+fast ECU 1: FCPU;
+slow ECU 1: SCPU;
+main HBUS 1: HBUS1;
+main LBUS 1: LBUS1;
+rain LP 1: LRAIN;
+light LP 1: LLIGHT;
+collision HP 1: HCOLLISION;
+line HP 1: HLINE;
+collision LP 1: LCOLLISION;
+line LP 1: LLINE;
+
+
+CONNECTIONS
+
+HBUS1 -(switch 1)- FCPU;
+LBUS1 -(switch 2)- SCPU;
+LBUS1 -(switch 3)- FCPU;
+HBUS1 -(switch 4)- SCPU;
+
+HCOLLISION -(switch 5)- HBUS1;
+HLINE -(switch 6)- HBUS1;
+
+LRAIN -(switch 7)- LBUS1;
+LLIGHT -(switch 8)- LBUS1;
+
+LCOLLISION -(switch 9)- LBUS1;
+LLINE -(switch 10)- LBUS1;
+
+REQUIREMENTS
+never-connect(ECU, ECU, HBUS);
+never-connect(ECU, ECU, LBUS);
+
+never-disconnect(LP, ECU, 16, MS);
+never-disconnect(HP, ECU, 8, MS);
+
+ASSUMPTIONS
+initial-state(switch 1, 1);
+initial-state(switch 2, 1);
+initial-state(switch 3, 0);
+initial-state(switch 4, 0);
+initial-state(switch 5, 1);
+initial-state(switch 6, 0);
+initial-state(switch 7, 1);
+initial-state(switch 8, 0);
+initial-state(switch 9, 1);
+initial-state(switch 10, 0);
+
+no-failures(ECU);
+no-failures(LP);
+no-failures(HP);
+no-failures(HBUS);
+no-failures(LBUS);
+
+no-control(ECU);
+no-control(LP);
+no-control(HP);
+no-control(HBUS);
+no-control(LBUS);
+
+switch-on-time(switch, 1, MS);
+switch-off-time(switch, 1, MS);
+

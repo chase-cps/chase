@@ -427,14 +427,16 @@ void DesignProblem::_analyzeAssumptions()
         SpecFunction *spec = *it;
         if (spec->name == "no-recovery")
             _noRecovery(spec);
-        if (spec->name == "max-failures")
+        else if (spec->name == "max-failures")
             _maxFailures(spec);
-        if (spec->name == "initial-state")
+        else if (spec->name == "initial-state")
             _initialState(spec);
-        if (spec->name == "switch-on-time")
+        else if (spec->name == "switch-on-time")
             _switchTime(spec, true);
-        if (spec->name == "switch-off-time")
+        else if (spec->name == "switch-off-time")
             _switchTime(spec, false);
+        else if (spec->name != "no-control" && spec->name != "no-failures")
+            chase::messageWarning("Invalid assumption patters: " + spec->name);
     }
 }
 
