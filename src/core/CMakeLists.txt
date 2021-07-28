@@ -33,6 +33,8 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/Identifier.cc
         ${SRC_CHASELIB_PATH}/representation/Expression.cc
 
+        ${SRC_CHASELIB_PATH}/representation/Interval.cc
+
         ${SRC_CHASELIB_PATH}/representation/Name.cc
         ${SRC_CHASELIB_PATH}/representation/Declaration.cc
         ${SRC_CHASELIB_PATH}/representation/DataDeclaration.cc

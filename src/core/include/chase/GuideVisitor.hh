@@ -46,6 +46,8 @@ namespace chase {
         int visitExpression(Expression & ) override;
         int visitIdentifier(Identifier & ) override;
 
+        int visitInterval(Interval &interval) override;
+
         // Types
         int visitInteger( Integer & ) override;
         int visitReal( Real & ) override;

@@ -386,6 +386,12 @@ int chase::GuideVisitor::visitString(chase::String &s) {
     return BaseVisitor::visitString(s);
 }
 
+int chase::GuideVisitor::visitInterval(chase::Interval &o ) {
+    int rv = o.getLeftBound()->accept_visitor(*this);
+    rv |= o.getRightBound()->accept_visitor(*this);
+    return rv;
+}
+
 
 
 

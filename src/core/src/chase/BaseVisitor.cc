@@ -72,6 +72,10 @@ int BaseVisitor::visitString(String &) {
     return 0;
 }
 
+int BaseVisitor::visitInterval(Interval &) {
+    return 0;
+}
+
 
 
 

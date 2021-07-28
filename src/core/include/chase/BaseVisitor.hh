@@ -47,6 +47,8 @@ namespace chase{
             virtual int visitExpression(Expression & );
             virtual int visitIdentifier(Identifier &);
 
+            virtual int visitInterval(Interval & );
+
             // Types
             virtual int visitInteger( Integer & );
             virtual int visitReal( Real & );

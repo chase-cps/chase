@@ -27,6 +27,7 @@ namespace chase {
     class BooleanValue;
     class CustomType;
     class Enumeration;
+    class Interval;
     class Expression;
     class Identifier;
     class Name;

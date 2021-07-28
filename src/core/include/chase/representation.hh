@@ -36,6 +36,7 @@
 #include "representation/Declaration.hh"
 #include "representation/Expression.hh"
 #include "representation/Identifier.hh"
+#include "representation/Interval.hh"
 
 #include "representation/Contract.hh"
 
