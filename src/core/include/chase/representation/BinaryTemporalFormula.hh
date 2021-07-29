@@ -8,6 +8,7 @@
 #pragma once
 
 #include "representation/LogicFormula.hh"
+#include "representation/Interval.hh"
 #include "Chase.hh"
 
 namespace chase {
@@ -19,7 +20,8 @@ namespace chase {
         BinaryTemporalFormula(
                 TemporalOperator op = op_until,
                 LogicFormula * op1 = nullptr,
-                LogicFormula * op2 = nullptr
+                LogicFormula * op2 = nullptr,
+                Interval * interval = nullptr
                 );
 
         /// @brief Destructor.
@@ -49,6 +51,18 @@ namespace chase {
         /// @param formula2 the second formula.
         void setFormula2(LogicFormula *formula2);
 
+        /// @brief Getter of the interval in which the temporal operator holds.
+        /// Important: nullptr is to be interpreted as a [0, +Inf) interval.
+        /// @return Interval of the temporal operator.
+        /// Important: nullptr is to be interpreted as a [0, +Inf) interval.
+        Interval *getInterval() const;
+
+        /// @brief Setter of the interval in which the temporal operator holds.
+        /// Important: nullptr is to be interpreted as a [0, +Inf) interval.
+        /// @param interval Interval of the temporal operator.
+        /// Important: nullptr is to be interpreted as a [0, +Inf) interval.
+        void setInterval(Interval *interval);
+
         /// @brief The base class for the visitor pattern.
         /// @param v The visitor to be used.
         /// @return The return value of the visitor.
@@ -70,6 +84,10 @@ namespace chase {
         LogicFormula * _formula1;
         /// @brief The second operand.
         LogicFormula * _formula2;
+
+        /// @brief Interval in which the temporal operator holds.
+        /// Notice: nullptr is to be interpreted as a [0, +Inf) interval.
+        Interval * _interval;
 
     };
 

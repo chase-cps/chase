@@ -49,16 +49,14 @@ int chase::GuideVisitor::visitIdentifier(chase::Identifier &o)
     return continueVisit(o.getType());
 }
 
-int chase::GuideVisitor::visitInteger(chase::Integer &o)
+int chase::GuideVisitor::visitInteger(chase::Integer & )
 {
-    if( o.getRange() == nullptr ) return _rv;
-    return visitRange(*o.getRange());
+    return _rv;
 }
 
-int chase::GuideVisitor::visitReal(chase::Real &o)
+int chase::GuideVisitor::visitReal(chase::Real & )
 {
-    if( o.getRange() == nullptr ) return _rv;
-    return visitRange(*o.getRange());
+    return _rv;
 }
 
 int chase::GuideVisitor::visitBoolean(chase::Boolean & )

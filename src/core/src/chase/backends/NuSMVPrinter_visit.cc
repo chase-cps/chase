@@ -42,8 +42,8 @@ int NuSMVPrinter::visitVariable(Variable &variable) {
     {
         _fout << "\t" << name << " : ";
         auto i = reinterpret_cast< Integer * >(type);
-        _fout << i->getRange()->getLeftValue() << ".."
-            << i->getRange()->getRightValue() << ";" << std::endl;
+        _fout << i->getMin() << ".."
+            << i->getMax() << ";" << std::endl;
     }
 
     return GuideVisitor::visitVariable(variable);

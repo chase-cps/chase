@@ -58,4 +58,6 @@ namespace chase {
             double _value;
 
     };
+
+
 }

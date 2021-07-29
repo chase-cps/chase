@@ -19,6 +19,8 @@
 
 namespace chase {
 
+
+    /// @deprecated This class has been deprecated as of July 2021.
     /// @brief Class to represent a range of values.
     class Range : public Value
     {

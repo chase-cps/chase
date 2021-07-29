@@ -23,24 +23,28 @@ namespace chase {
             /// @brief Constructor.
             Integer();
             /// @brief Constructor with integer range.
-            /// @param l The leff bound of the range.
-            /// @param r The right bound of the range.
-            Integer( int l, int r );
+            /// @param min The leff bound of the range.
+            /// @param max The right bound of the range.
+            Integer( int64_t min, int64_t max );
 
             /// @brief Constructor with range.
             /// @param r The range.
-            explicit Integer( Range * r );
+            // explicit Integer( Range * r );
 
             /// @brief Destructor.
             ~Integer() override;
 
             /// @brief Verifies whether the type is signed.
             /// @return true if signed, false otherwise.
-            bool isSigned();
+            bool isSigned() const;
 
-            /// @brief Retrieve the range of the Integer.
-            /// @return a pointer to the range.
-            Range * getRange();
+            /// @brief Function to access the minimum number represented by the type.
+            /// @return The minimum number that can be represented.
+            int64_t getMin() const;
+
+            /// @brief Function to access the maximum number represented by the type.
+            /// @return The maximum number that can be represented.
+            int64_t getMax() const;
 
             /// @brief Main function for visit.
             /// @param v The visitor being used.
@@ -59,8 +63,11 @@ namespace chase {
         protected:
             /// @brief True if it is a signed value, false otherwise.
             bool _signed;
+            /// @brief Min value representable.
+            int64_t _min;
+            /// @brief Max value representable.
+            int64_t _max;
 
-            /// @brief The range of values valid for the Integer.
-            Range * _range;
+
     };
 }

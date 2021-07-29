@@ -11,29 +11,27 @@
 #include "representation/Real.hh"
 #include "representation/Range.hh"
 
+
+
 using namespace chase;
 
 Real::Real() :
     SimpleType(),
-    _range(nullptr)
+    _min(-infinity),
+    _max(infinity)
 {
     _node_type = real_node;
 }
 
-Real::~Real()
+Real::Real(double min, double max) :
+SimpleType(),
+_min(min),
+_max(max)
 {
-    if( _range != nullptr ) delete _range;
+    _node_type = real_node;
 }
 
-Range * Real::getRange()
-{
-    return _range;
-}
-
-void Real::setRange( Range * r )
-{
-    _range = r;
-}
+Real::~Real() = default;
 
 int Real::accept_visitor( BaseVisitor &v )
 {
@@ -46,7 +44,16 @@ std::string Real::getString()
 }
 
 Real * Real::clone() {
-    auto ret = new Real();
-    if( _range != nullptr ) ret->setRange(_range->clone());
+    auto ret = new Real(_min, _max);
     return ret;
 }
+
+double Real::getMin() const {
+    return _min;
+}
+
+double Real::getMax() const {
+    return _max;
+}
+
+

@@ -22,18 +22,24 @@ namespace chase {
 
             /// @brief Constructor.
             Real();
+
+            /// @brief Constructor.
+            /// @param min Minimum value that can be represented.
+            /// @param max Maximum value that can be represented.
+            Real( double min, double max );
+
             /// @brief Destructor.
             ~Real() override;
 
-            /// @brief Retrieve the range of the Real.
-            /// @return a pointer to the range.
-            Range * getRange();
+            /// @brief Getter of the minimum representable number.
+            /// @return The minimum representable number.
+            double getMin() const;
+            /// @brief Getter of the maximum representable number.
+            /// @return The maximum representable number.
+            double getMax() const;
 
-            /// @brief Set the range of the Real.
-            /// @param r range for the real.
-            void setRange( Range * r );
 
-            /// @brief Main function for visit.
+        /// @brief Main function for visit.
             /// @param v The visitor being used.
             /// @return the return value of the visit.
             int accept_visitor( BaseVisitor &v ) override;
@@ -48,7 +54,12 @@ namespace chase {
             Real * clone() override ;
 
         protected:
-            /// @brief Range of value for the type.
-            Range * _range;
+
+            /// @brief Min value representable.
+            double _min;
+            /// @brief Max value representable.
+            double _max;
     };
+
+
 }

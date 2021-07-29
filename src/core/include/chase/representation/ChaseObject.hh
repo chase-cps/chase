@@ -11,10 +11,14 @@
 #pragma once
 
 #include <string>
+#include <limits>
 
 #include "BaseVisitor.hh"
 
 namespace chase {
+
+    /// @brief Constant useful to represent the infinity.
+    const int64_t infinity = std::numeric_limits<int64_t>::max();
 
     /// @brief Enumeration of the nodes types.
     enum nodeType
@@ -33,6 +37,7 @@ namespace chase {
         identifier_node,
         integer_node,
         integerValue_node,
+        interval_node,
         name_node,
         numericValue_node,
         range_node,

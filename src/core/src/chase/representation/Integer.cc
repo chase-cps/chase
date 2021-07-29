@@ -16,45 +16,27 @@ using namespace chase;
 Integer::Integer() :
     SimpleType(),
     _signed(true),
-    _range(nullptr)
+    _min(-infinity),
+    _max(infinity)
 {
     _node_type = integer_node;
-    _range = new Range(-2147483647, 2147483647);
 }
 
-Integer::Integer(int l, int r) :
+Integer::Integer(int64_t min, int64_t max) :
     SimpleType(),
-    _signed(l < 0),
-    _range(new Range(l,r))
+    _signed(min < 0),
+    _min(min),
+    _max(max)
 {
     _node_type = integer_node;
 }
-
-
-
-Integer::Integer(Range *r) :
-    SimpleType(),
-    _range(r)
-{
-    _node_type = integer_node;
-    if( r->getParent() == nullptr ) r->setParent(this);
-    if(r->getLeftValue() < 0) _signed = true;
-}
-
 
 Integer::~Integer()
-{
-    delete _range;
-}
+= default;
 
-bool Integer::isSigned()
+bool Integer::isSigned() const
 {
     return _signed;
-}
-
-Range * Integer::getRange()
-{
-    return _range;
 }
 
 int Integer::accept_visitor( BaseVisitor &v )
@@ -69,7 +51,15 @@ std::string Integer::getString()
 
 Integer *Integer::clone()
 {
-    return new Integer(_range->clone());
+    return new Integer(_min, _max);
+}
+
+int64_t Integer::getMin() const {
+    return _min;
+}
+
+int64_t Integer::getMax() const {
+    return _max;
 }
 
 

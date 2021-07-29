@@ -18,6 +18,6 @@ NumericValue::NumericValue() :
     _node_type = numericValue_node;
 }
 
-NumericValue::~NumericValue()
-{
-}
+NumericValue::~NumericValue() = default;
+
+

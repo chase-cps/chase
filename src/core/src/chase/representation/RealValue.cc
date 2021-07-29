@@ -11,6 +11,8 @@
 #include "representation/RealValue.hh"
 #include "representation/Real.hh"
 
+#include <limits>
+
 using namespace chase;
 
 RealValue::RealValue( double value ) :

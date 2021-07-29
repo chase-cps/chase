@@ -25,6 +25,14 @@ Interval::Interval(Value *lbound, Value *rbound, bool leftOpen, bool rightOpen) 
     _leftOpen(leftOpen),
     _rightOpen(rightOpen)
 {
+    _node_type = interval_node;
+    if(_leftBound->getParent() != nullptr)
+        messageWarning("Already used value in left bound.", _leftBound);
+    else _leftBound->setParent(this);
+
+    if(_rightBound->getParent() != nullptr)
+        messageWarning("Already used value in right bound.", _rightBound);
+    else _rightBound->setParent(this);
 }
 
 Value *Interval::getLeftBound() const {

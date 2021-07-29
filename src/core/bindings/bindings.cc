@@ -106,13 +106,11 @@ PYBIND11_MODULE(chasecorebnd, m) {
         py::nodelete>, 
         SimpleType>(m, "Integer")
         .def(py::init<>())
-        .def(py::init<const int &, const int &>(),
-            py::arg("l").none(false), py::arg("r").none(false))
-        .def(py::init<Range * >(), 
-            py::arg("r").none(false))
+        .def(py::init<const int64_t &, const int64_t &>(),
+            py::arg("min").none(false), py::arg("max").none(false))
         .def("isSigned", &Integer::isSigned)
-        .def("getRange", &Integer::getRange, 
-            py::return_value_policy::reference)
+        .def("getMin", &Integer::getMin)
+        .def("getMax", &Integer::getMax)
         .def("accept_visitor", &Integer::accept_visitor,
             py::arg("v").none(false))
         .def("getString", &Integer::getString)
@@ -122,10 +120,10 @@ PYBIND11_MODULE(chasecorebnd, m) {
     py::class_<Real, std::unique_ptr<Real, py::nodelete>,
         SimpleType>(m, "Real")
         .def(py::init<>())
-        .def("getRange", &Real::getRange, 
-            py::return_value_policy::reference)
-        .def("setRange", &Real::setRange,
-            py::arg("r").none(false))
+        .def(py::init<const double &, const double &>(),
+             py::arg("min").none(false), py::arg("max").none(false))
+        .def("getMin", &Real::getMin)
+        .def("getMax", &Real::getMax)
         .def("accept_visitor", &Real::accept_visitor,
             py::arg("v").none(false))
         .def("getString", &Real::getString)
@@ -143,25 +141,7 @@ PYBIND11_MODULE(chasecorebnd, m) {
         py::nodelete>, Value>(m, "NumericValue");
 
 
-    // Range Binding
-    py::class_<Range, std::unique_ptr<Range,
-        py::nodelete>, Value>(m, "Range")
-        .def(py::init<>())
-        .def(py::init<const int &, const int &>(),
-            py::arg("lbound").none(false), 
-            py::arg("rbound").none(false))
-        .def("getType", &Range::getType, 
-            py::return_value_policy::reference)
-        .def("setRightValue", &Range::setRightValue,
-            py::arg("rbound").none(false))
-        .def("setLeftValue", &Range::setLeftValue,
-            py::arg("lbound").none(false))
-        .def("getLeftValue", &Range::getLeftValue)
-        .def("getRightValue", &Range::getRightValue)
-        .def("getString", &Range::getString)
-        .def("accept_visitor", &Range::accept_visitor,
-            py::arg("v").none(false))
-        .def("clone", &Range::clone);
+
 
     //  Identifier Binding
     py::class_<Identifier, std::unique_ptr<Identifier, 
@@ -244,6 +224,45 @@ PYBIND11_MODULE(chasecorebnd, m) {
         .def("getString", &RealValue::getString)
         .def("clone", &RealValue::clone);
 
+    // Range Binding
+    py::class_<Range, std::unique_ptr<Range,
+    py::nodelete>, Value>(m, "Range")
+    .def(py::init<>())
+    .def(py::init<const int &, const int &>(),
+         py::arg("lbound").none(false),
+         py::arg("rbound").none(false))
+    .def("getType", &Range::getType,
+        py::return_value_policy::reference)
+    .def("setRightValue", &Range::setRightValue,
+       py::arg("rbound").none(false))
+   .def("setLeftValue", &Range::setLeftValue,
+            py::arg("lbound").none(false))
+    .def("getLeftValue", &Range::getLeftValue)
+    .def("getRightValue", &Range::getRightValue)
+    .def("getString", &Range::getString)
+    .def("accept_visitor", &Range::accept_visitor,
+         py::arg("v").none(false))
+     .def("clone", &Range::clone);
+
+    // Interval Binding
+    py::class_<Interval, std::unique_ptr<Interval,
+    py::nodelete>, Value>(m, "Interval")
+    .def(py::init<Value *, Value*, bool, bool>(),
+            py::arg("lbound").none(false),
+            py::arg("rbound").none(false),
+            py::arg("leftOpen").none(false),
+            py::arg("rightOpen").none(false))
+    .def("getLeftBound", &Interval::getLeftBound,
+         py::return_value_policy::reference)
+    .def("getRightBound", &Interval::getRightBound,
+         py::return_value_policy::reference)
+    .def("isLeftOpen", &Interval::isLeftOpen)
+    .def("isRightOpen", &Interval::isRightOpen)
+    .def("getType", &Interval::getType)
+    .def("getString", &Interval::getString)
+    .def("accept_visitor", &Interval::accept_visitor,
+         py::arg("v").none(false))
+    .def("clone", &Interval::clone);
     /**
     *   DECLARATION BINDINGS
     */

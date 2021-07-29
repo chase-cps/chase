@@ -29,9 +29,8 @@ namespace chase {
             NumericValue * clone() override = 0;
 
         protected:
-
-
-
     };
+
+
 }
 

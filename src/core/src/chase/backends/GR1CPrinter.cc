@@ -54,8 +54,8 @@ void GR1CPrinter::_printDeclarations()
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
-                auto lv = integ->getRange()->getLeftValue();
-                auto rv = integ->getRange()->getRightValue();
+                auto lv = integ->getMin();
+                auto rv = integ->getMax();
 
                 fout << "[" << lv << ", " << rv << "]";
             }
@@ -80,8 +80,8 @@ void GR1CPrinter::_printDeclarations()
             if(type->IsA() == integer_node)
             {
                 auto integ = reinterpret_cast<Integer *>(type);
-                auto lv = integ->getRange()->getLeftValue();
-                auto rv = integ->getRange()->getRightValue();
+                auto lv = integ->getMin();
+                auto rv = integ->getMax();
 
                 fout << "[" << lv << ", " << rv << "]";
             }
