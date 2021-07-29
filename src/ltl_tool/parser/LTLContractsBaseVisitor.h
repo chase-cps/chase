@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -131,6 +131,34 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPair(LTLContractsParser::PairContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitInterval_leftopen(LTLContractsParser::Interval_leftopenContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitInterval_rightopen(LTLContractsParser::Interval_rightopenContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitInterval_fullopen(LTLContractsParser::Interval_fullopenContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitInterval_closed(LTLContractsParser::Interval_closedContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitInterval(LTLContractsParser::IntervalContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitFormula(LTLContractsParser::FormulaContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -140,10 +168,6 @@ public:
   }
 
   virtual antlrcpp::Any visitMinus_ID(LTLContractsParser::Minus_IDContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *ctx) override {
     return visitChildren(ctx);
   }
 

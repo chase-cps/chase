@@ -69,12 +69,17 @@ bin_math_op: TIMES | DIVIDE | PLUS | MINUS;
 LBRACKET: '(';
 RBRACKET: ')';
 
+LSQUARE:    '[';
+RSQUARE:    ']';
+
+COMMA:  ',';
+DOT:    '.';
+
 ID: LETTER ALPHANUM*;
-NUMBER: MINUS? DIGIT+;
+DECIMAL: DOT DIGIT+;
+NUMBER: MINUS? DIGIT+ DECIMAL?;
 
 primed_ID : ID'\'';
-
-
 
 ENDST: ';';
 
@@ -115,18 +120,43 @@ rvalue: value;
 relation:
     lvalue relation_op rvalue;
 
+value: value bin_math_op value | primed_ID |
+        ID | minus_ID | minus_number | NUMBER | LBRACKET value RBRACKET;
+
+pair:
+    value COMMA value;
+
+interval_leftopen:
+    RSQUARE pair RSQUARE;
+
+interval_rightopen:
+    LSQUARE pair LSQUARE;
+
+interval_fullopen:
+    RSQUARE pair LSQUARE;
+
+interval_closed:
+    LSQUARE pair RSQUARE;
+
+
+
+interval:
+    interval_closed |
+    interval_fullopen |
+    interval_leftopen |
+    interval_rightopen;
+
 formula:
     LBRACKET formula RBRACKET |
-    unary_logic_op formula |
+    unary_logic_op  formula |
     formula bin_logic_op formula |
-    unary_temp_op formula |
-    formula bin_temp_op formula | atom;
+    unary_temp_op (interval)? formula |
+    formula bin_temp_op (interval)? formula | atom;
 
 minus_number: MINUS NUMBER;
 minus_ID: MINUS ID;
 
-value: value bin_math_op value | primed_ID |
-        ID | minus_ID | minus_number | NUMBER | LBRACKET value RBRACKET;
+
 
 atom:
     logic_constant | relation | ID | primed_ID;

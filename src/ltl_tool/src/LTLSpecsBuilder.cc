@@ -153,10 +153,8 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
             return createValue(ctx->value(0));
         if(ctx->primed_ID())
             return createIdentifier(ctx->primed_ID()->ID()->getText(), true);
-        if(ctx->NUMBER())
-            return new IntegerValue(std::stoi(ctx->getText()));
-        if(ctx->minus_number())
-            return new IntegerValue(std::stoi(ctx->getText()));
+        if(ctx->NUMBER() || ctx->minus_number())
+            return createNumericValue(ctx->getText());
     }
 
     if(ctx->children.size() == 3)
@@ -262,12 +260,16 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
     }
     if(ctx->unary_temp_op())
     {
+        UnaryTemporalFormula * lf;
         if(ctx->unary_temp_op()->ALWAYS())
-            return Always(createFormula(ctx->formula(0)));
+            lf = Always(createFormula(ctx->formula(0)));
         if(ctx->unary_temp_op()->EVENTUALLY())
-            return Eventually(createFormula(ctx->formula(0)));
+            lf = Eventually(createFormula(ctx->formula(0)));
         if(ctx->unary_temp_op()->NEXT())
-            return Next(createFormula(ctx->formula(0)));
+            lf = Next(createFormula(ctx->formula(0)));
+        if(ctx->interval())
+            lf->setInterval(createInterval(ctx->interval()));
+        return lf;
     }
     if(ctx->bin_logic_op())
     {
@@ -286,10 +288,14 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
     }
     if(ctx->bin_temp_op())
     {
+        BinaryTemporalFormula * lf;
         if(ctx->bin_temp_op()->UNTIL())
-            return Until(
+            lf = Until(
                     createFormula(ctx->formula(0)),
                     createFormula(ctx->formula(1)));
+        if(ctx->interval())
+            lf->setInterval(createInterval(ctx->interval()));
+        return lf;
     }
     if(ctx->formula(0) != nullptr)
     {
@@ -365,6 +371,64 @@ Proposition *LTLSpecsBuilder::createPropositionFromRelation(
     Expression * exp = createRelation(ctx);
     auto proposition = new Proposition(exp);
     return proposition;
+}
+
+Interval *LTLSpecsBuilder::createInterval(LTLContractsParser::IntervalContext *ctx) {
+    LTLContractsParser::PairContext * pairContext;
+    bool leftOpen, rightOpen = false;
+
+    if( ctx->interval_closed() != nullptr )
+    {
+        leftOpen = false;
+        rightOpen = false;
+        pairContext = ctx->interval_closed()->pair();
+    } else if( ctx->interval_fullopen() != nullptr )
+    {
+        leftOpen = true;
+        rightOpen = true;
+        pairContext = ctx->interval_fullopen()->pair();
+    } else if( ctx->interval_leftopen() != nullptr )
+    {
+        leftOpen = true;
+        rightOpen = false;
+        pairContext = ctx->interval_leftopen()->pair();
+    } else if( ctx->interval_rightopen() != nullptr )
+    {
+        leftOpen = false;
+        rightOpen = true;
+        pairContext = ctx->interval_rightopen()->pair();
+    }
+    else
+    {
+        messageError("Invalid interval.");
+    }
+
+    Value * v1 = createValue(pairContext->value(0));
+    Value * v2 = createValue(pairContext->value(1));
+
+    return new Interval(v1, v2, leftOpen, rightOpen);
+}
+
+NumericValue *LTLSpecsBuilder::createNumericValue(std::string s) {
+    bool real = false;
+    bool error = false;
+    for(size_t i = 0; i < s.length(); ++i)
+    {
+        if(isdigit(s[i])) continue;
+        if(s[i] == '.')
+        {
+            if(real) error = true;
+            else real = true;
+        } else error = true;
+    }
+
+    if(error == true)
+    {
+        messageError("Invalid number format: "+ s);
+        return nullptr;
+    }
+    if(real == true) return new RealValue(std::stod(s));
+    else return new IntegerValue(std::stoi(s));
 }
 
 

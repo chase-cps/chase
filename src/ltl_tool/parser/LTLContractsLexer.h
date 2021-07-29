@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -17,11 +17,12 @@ public:
     T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
     IMPLIES = 21, IFF = 22, COLON = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
     UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
-    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, ID = 40, 
-    NUMBER = 41, ENDST = 42
+    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, LSQUARE = 40, 
+    RSQUARE = 41, COMMA = 42, DOT = 43, ID = 44, DECIMAL = 45, NUMBER = 46, 
+    ENDST = 47
   };
 
-  LTLContractsLexer(antlr4::CharStream *input);
+  explicit LTLContractsLexer(antlr4::CharStream *input);
   ~LTLContractsLexer();
 
   virtual std::string getGrammarFileName() const override;

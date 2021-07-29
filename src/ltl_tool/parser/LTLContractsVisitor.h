@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -77,13 +77,25 @@ public:
 
     virtual antlrcpp::Any visitRelation(LTLContractsParser::RelationContext *context) = 0;
 
+    virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *context) = 0;
+
+    virtual antlrcpp::Any visitPair(LTLContractsParser::PairContext *context) = 0;
+
+    virtual antlrcpp::Any visitInterval_leftopen(LTLContractsParser::Interval_leftopenContext *context) = 0;
+
+    virtual antlrcpp::Any visitInterval_rightopen(LTLContractsParser::Interval_rightopenContext *context) = 0;
+
+    virtual antlrcpp::Any visitInterval_fullopen(LTLContractsParser::Interval_fullopenContext *context) = 0;
+
+    virtual antlrcpp::Any visitInterval_closed(LTLContractsParser::Interval_closedContext *context) = 0;
+
+    virtual antlrcpp::Any visitInterval(LTLContractsParser::IntervalContext *context) = 0;
+
     virtual antlrcpp::Any visitFormula(LTLContractsParser::FormulaContext *context) = 0;
 
     virtual antlrcpp::Any visitMinus_number(LTLContractsParser::Minus_numberContext *context) = 0;
 
     virtual antlrcpp::Any visitMinus_ID(LTLContractsParser::Minus_IDContext *context) = 0;
-
-    virtual antlrcpp::Any visitValue(LTLContractsParser::ValueContext *context) = 0;
 
     virtual antlrcpp::Any visitAtom(LTLContractsParser::AtomContext *context) = 0;
 

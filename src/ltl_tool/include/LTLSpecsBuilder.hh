@@ -82,6 +82,11 @@ namespace ltl_tool {
         Proposition * createPropositionFromRelation(
                 LTLContractsParser::RelationContext * ctx);
 
+        Interval * createInterval(
+                LTLContractsParser::IntervalContext * ctx);
+
+        NumericValue * createNumericValue(std::string s);
+
     protected:
 
         /// @brief The system being built.

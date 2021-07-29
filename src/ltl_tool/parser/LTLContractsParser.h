@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.8
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/ltl_tool/grammar\LTLContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -17,8 +17,9 @@ public:
     T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
     IMPLIES = 21, IFF = 22, COLON = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
     UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
-    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, ID = 40, 
-    NUMBER = 41, ENDST = 42
+    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, LSQUARE = 40, 
+    RSQUARE = 41, COMMA = 42, DOT = 43, ID = 44, DECIMAL = 45, NUMBER = 46, 
+    ENDST = 47
   };
 
   enum {
@@ -29,13 +30,14 @@ public:
     RuleTrueKW = 15, RuleFalseKW = 16, RuleContractKW = 17, RuleAssumptionsKW = 18, 
     RuleGuaranteesKW = 19, RuleNameKw = 20, RuleCausality = 21, RuleLogic_constant = 22, 
     RuleRange = 23, RuleInteger = 24, RuleTypeKW = 25, RuleLvalue = 26, 
-    RuleRvalue = 27, RuleRelation = 28, RuleFormula = 29, RuleMinus_number = 30, 
-    RuleMinus_ID = 31, RuleValue = 32, RuleAtom = 33, RuleSingle_formula = 34, 
-    RuleAssumptions = 35, RuleGuarantees = 36, RuleDeclaration = 37, RuleContract = 38, 
-    RuleName = 39, RuleSystemSpec = 40
+    RuleRvalue = 27, RuleRelation = 28, RuleValue = 29, RulePair = 30, RuleInterval_leftopen = 31, 
+    RuleInterval_rightopen = 32, RuleInterval_fullopen = 33, RuleInterval_closed = 34, 
+    RuleInterval = 35, RuleFormula = 36, RuleMinus_number = 37, RuleMinus_ID = 38, 
+    RuleAtom = 39, RuleSingle_formula = 40, RuleAssumptions = 41, RuleGuarantees = 42, 
+    RuleDeclaration = 43, RuleContract = 44, RuleName = 45, RuleSystemSpec = 46
   };
 
-  LTLContractsParser(antlr4::TokenStream *input);
+  explicit LTLContractsParser(antlr4::TokenStream *input);
   ~LTLContractsParser();
 
   virtual std::string getGrammarFileName() const override;
@@ -74,10 +76,16 @@ public:
   class LvalueContext;
   class RvalueContext;
   class RelationContext;
+  class ValueContext;
+  class PairContext;
+  class Interval_leftopenContext;
+  class Interval_rightopenContext;
+  class Interval_fullopenContext;
+  class Interval_closedContext;
+  class IntervalContext;
   class FormulaContext;
   class Minus_numberContext;
   class Minus_IDContext;
-  class ValueContext;
   class AtomContext;
   class Single_formulaContext;
   class AssumptionsContext;
@@ -473,6 +481,119 @@ public:
 
   RelationContext* relation();
 
+  class  ValueContext : public antlr4::ParserRuleContext {
+  public:
+    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Primed_IDContext *primed_ID();
+    antlr4::tree::TerminalNode *ID();
+    Minus_IDContext *minus_ID();
+    Minus_numberContext *minus_number();
+    antlr4::tree::TerminalNode *NUMBER();
+    antlr4::tree::TerminalNode *LBRACKET();
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
+    antlr4::tree::TerminalNode *RBRACKET();
+    Bin_math_opContext *bin_math_op();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  ValueContext* value();
+  ValueContext* value(int precedence);
+  class  PairContext : public antlr4::ParserRuleContext {
+  public:
+    PairContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
+    antlr4::tree::TerminalNode *COMMA();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  PairContext* pair();
+
+  class  Interval_leftopenContext : public antlr4::ParserRuleContext {
+  public:
+    Interval_leftopenContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> RSQUARE();
+    antlr4::tree::TerminalNode* RSQUARE(size_t i);
+    PairContext *pair();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Interval_leftopenContext* interval_leftopen();
+
+  class  Interval_rightopenContext : public antlr4::ParserRuleContext {
+  public:
+    Interval_rightopenContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> LSQUARE();
+    antlr4::tree::TerminalNode* LSQUARE(size_t i);
+    PairContext *pair();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Interval_rightopenContext* interval_rightopen();
+
+  class  Interval_fullopenContext : public antlr4::ParserRuleContext {
+  public:
+    Interval_fullopenContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *RSQUARE();
+    PairContext *pair();
+    antlr4::tree::TerminalNode *LSQUARE();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Interval_fullopenContext* interval_fullopen();
+
+  class  Interval_closedContext : public antlr4::ParserRuleContext {
+  public:
+    Interval_closedContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *LSQUARE();
+    PairContext *pair();
+    antlr4::tree::TerminalNode *RSQUARE();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Interval_closedContext* interval_closed();
+
+  class  IntervalContext : public antlr4::ParserRuleContext {
+  public:
+    IntervalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Interval_closedContext *interval_closed();
+    Interval_fullopenContext *interval_fullopen();
+    Interval_leftopenContext *interval_leftopen();
+    Interval_rightopenContext *interval_rightopen();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  IntervalContext* interval();
+
   class  FormulaContext : public antlr4::ParserRuleContext {
   public:
     FormulaContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -483,6 +604,7 @@ public:
     antlr4::tree::TerminalNode *RBRACKET();
     Unary_logic_opContext *unary_logic_op();
     Unary_temp_opContext *unary_temp_op();
+    IntervalContext *interval();
     AtomContext *atom();
     Bin_logic_opContext *bin_logic_op();
     Bin_temp_opContext *bin_temp_op();
@@ -522,28 +644,6 @@ public:
 
   Minus_IDContext* minus_ID();
 
-  class  ValueContext : public antlr4::ParserRuleContext {
-  public:
-    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Primed_IDContext *primed_ID();
-    antlr4::tree::TerminalNode *ID();
-    Minus_IDContext *minus_ID();
-    Minus_numberContext *minus_number();
-    antlr4::tree::TerminalNode *NUMBER();
-    antlr4::tree::TerminalNode *LBRACKET();
-    std::vector<ValueContext *> value();
-    ValueContext* value(size_t i);
-    antlr4::tree::TerminalNode *RBRACKET();
-    Bin_math_opContext *bin_math_op();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  ValueContext* value();
-  ValueContext* value(int precedence);
   class  AtomContext : public antlr4::ParserRuleContext {
   public:
     AtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -682,8 +782,8 @@ public:
 
 
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
-  bool formulaSempred(FormulaContext *_localctx, size_t predicateIndex);
   bool valueSempred(ValueContext *_localctx, size_t predicateIndex);
+  bool formulaSempred(FormulaContext *_localctx, size_t predicateIndex);
 
 private:
   static std::vector<antlr4::dfa::DFA> _decisionToDFA;

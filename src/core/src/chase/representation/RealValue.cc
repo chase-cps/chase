@@ -58,7 +58,9 @@ int RealValue::accept_visitor( BaseVisitor &v )
 
 std::string RealValue::getString()
 {
-    return std::to_string(_value);
+    std::string ret = std::to_string(_value);
+    ret.erase(ret.find_last_not_of('0') + 1, std::string::npos);
+    return ret;
 }
 
 RealValue * RealValue::clone()
