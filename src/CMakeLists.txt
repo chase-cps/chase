@@ -6,5 +6,6 @@
 ###############################################################################
 
 add_subdirectory(core)
-add_subdirectory(patternsOnNetworks)
-add_subdirectory(ltl_tool)
+add_subdirectory(dsl_frontend)
+add_subdirectory(logics_frontend)
+add_subdirectory(pychase)

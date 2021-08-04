@@ -7,7 +7,7 @@ The demo directory contains four different demonstrations:
     contention.
 - **DATE_2018**: specification files used to produce the experimental results
     presented in the DATE 2018 paper.
-- **LTLSpecs**: specification files used to exemplify the usage of the `ltl_tool`.
+- **LTLSpecs**: specification files used to exemplify the usage of the `chase`.
 - **python_examples**: examples showing the usage of the Python API. 
 - **Terraswarm**: demonstration of the `patternsOnNetwork` tool on an aircraft power
     distribution network without real time intervals in the specification.

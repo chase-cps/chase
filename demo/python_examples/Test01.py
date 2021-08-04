@@ -1,4 +1,7 @@
-from chasecorebnd import *
+import sys
+from pychase import *
+
+infile=sys.argv[1]
 
 #         Variable * state = _stateVariables.find(*cit)->second;
 #         auto id_now = new Identifier(state);
@@ -77,4 +80,9 @@ sys1.addDeclaration(state)
 sys1.addContract(c)
 print(sys1.getString())
 
+parser = LTLSpecsBuilder()
+parser.parseSpecificationFile(infile)
+parsed = parser.getSystem()
+
+print(parsed.getString())
 

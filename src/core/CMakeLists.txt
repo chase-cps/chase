@@ -5,7 +5,7 @@
 
 set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
 
-find_package(PythonLibs REQUIRED)
+
 
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
@@ -106,40 +106,34 @@ include(GNUInstallDirs)
 set(LIB_INSTALL_DIR chase/lib  CACHE STRING ¨¨)
 set(INCLUDE_INSTALL_DIR chase  CACHE STRING ¨¨)
 
-pybind11_add_module(
-        chasecorebnd MODULE 
-        ${PROJECT_SOURCE_DIR}/src/core/bindings/bindings.cc
-)
-    
-target_link_libraries(chasecorebnd PRIVATE chasecore)
+
+
+
 
 install(
         DIRECTORY ${PROJECT_SOURCE_DIR}/src/core/include
         DESTINATION ${INCLUDE_INSTALL_DIR}
        )
 
-install( 
+install(
         TARGETS chasecore
         EXPORT chaseTargets
         DESTINATION ${LIB_INSTALL_DIR}
 )
 
-install(
-        TARGETS chasecorebnd
-        EXPORT chaseBndTargets
-        DESTINATION ${LIB_INSTALL_DIR}/pylib)
 
-install(
-        EXPORT chaseTargets
-        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
-        FILE chaseTargets.cmake # Not sure if this is still needed
-)
 
-install(
-        EXPORT chaseBndTargets
-        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
-        FILE chaseBndTargets.cmake # Not sure if this is still needed
-)
+#install(
+#        EXPORT chaseTargets
+#        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
+#        FILE chaseTargets.cmake # Not sure if this is still needed
+#)
+#
+#install(
+#        EXPORT chaseBndTargets
+#        DESTINATION ${LIB_INSTALL_DIR}/cmake/chase
+#        FILE chaseBndTargets.cmake # Not sure if this is still needed
+#)
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file( 

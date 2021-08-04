@@ -1,4 +1,4 @@
-from chasecorebnd import *
+from pychase import *
 
 x1 = Variable(Integer(), Name('x1'), generic)
 x2 = Variable(Integer(), Name('x2'), generic)
