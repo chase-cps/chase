@@ -6,7 +6,7 @@
 
 #include "main.hh"
 
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 using namespace chase;
 
 int main( int argc, char * argv[] )
@@ -16,7 +16,7 @@ int main( int argc, char * argv[] )
     if(parameters == nullptr) return -1;
 
     // Start parsing the input file.
-    SpecBuilder builder;
+    DSLSpecsBuilder builder;
     builder.parseSpecificationFile(parameters->fileIn);
     Contract * c = builder.getProblem()->getContract();
 
@@ -48,7 +48,7 @@ int main( int argc, char * argv[] )
 
 
 
-void patternsOnNetworks::printHelp()
+void DSLFrontend::printHelp()
 {
     std::cerr << "[USAGE]\n" <<
               "patternsToNetworks -i input_file [-o output_file] [-b backend] [-V]"
@@ -63,7 +63,7 @@ void patternsOnNetworks::printHelp()
               "\t-V : activate the verbose mode." << std::endl;
 }
 
-Params * patternsOnNetworks::parseCmdLine( int argc, char * argv[] ) {
+Params * DSLFrontend::parseCmdLine(int argc, char * argv[] ) {
     auto *parameters = new Params();
 
     opterr = 0;

@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "DSLParser/ProblemDefinitions.hh"
+#include "ProblemDefinitions.hh"
 #include "utilities/Factory.hh"
 #include "Chase.hh"
 
@@ -15,7 +15,7 @@
 
 
 
-namespace patternsOnNetworks {
+namespace DSLFrontend {
 
 
 

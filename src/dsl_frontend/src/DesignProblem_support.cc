@@ -6,11 +6,11 @@
  */
 
 
-#include "DSLParser/DesignProblem.hh"
+#include "DesignProblem.hh"
 #include "utilities/GraphUtilities.hh"
 
 using namespace chase;
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 
 LogicFormula * DesignProblem::_activatePath( std::vector<unsigned>& path)
 {

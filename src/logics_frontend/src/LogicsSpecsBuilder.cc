@@ -6,7 +6,7 @@
  */
 
 
-#include "LTLSpecsBuilder.hh"
+#include "LogicsSpecsBuilder.hh"
 
 #include "utilities/Factory.hh"
 
@@ -14,30 +14,30 @@ using namespace chase;
 using namespace chase;
 using namespace antlr4;
 
-LTLSpecsBuilder::LTLSpecsBuilder() :
+LogicsSpecsBuilder::LogicsSpecsBuilder() :
     _system(nullptr),
     _currContract(nullptr)
 {
 }
 
-LTLSpecsBuilder::~LTLSpecsBuilder() = default;
+LogicsSpecsBuilder::~LogicsSpecsBuilder() = default;
 
 
 
-System *LTLSpecsBuilder::getSystem() const {
+System *LogicsSpecsBuilder::getSystem() const {
     return _system;
 }
 
-System *LTLSpecsBuilder::parseSpecificationFile(std::string infile)
+System *LogicsSpecsBuilder::parseSpecificationFile(std::string infile)
 {
     ANTLRFileStream input( infile );
-    LTLContractsLexer lexer( &input );
+    LogicsContractsLexer lexer( &input );
     CommonTokenStream tokens( &lexer );
 
-    LTLContractsParser parser( &tokens );
+    LogicsContractsParser parser( &tokens );
 
     parser.setBuildParseTree(true);
-    LTLContractsParser::SystemSpecContext * tree = parser.systemSpec();
+    LogicsContractsParser::SystemSpecContext * tree = parser.systemSpec();
 
     visitSystemSpec(tree);
 
@@ -45,8 +45,8 @@ System *LTLSpecsBuilder::parseSpecificationFile(std::string infile)
 }
 
 antlrcpp::Any
-LTLSpecsBuilder::visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) {
-    LTLContractsParser::NameContext * n_ctx = ctx->name();
+LogicsSpecsBuilder::visitSystemSpec(LogicsContractsParser::SystemSpecContext *ctx) {
+    LogicsContractsParser::NameContext * n_ctx = ctx->name();
     if( n_ctx != nullptr )
     {
         std::string name = n_ctx->ID()->getText();
@@ -57,11 +57,11 @@ LTLSpecsBuilder::visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) {
         _system = new System();
     }
 
-    return LTLContractsBaseVisitor::visitSystemSpec(ctx);
+    return LogicsContractsBaseVisitor::visitSystemSpec(ctx);
 }
 
 antlrcpp::Any
-LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
+LogicsSpecsBuilder::visitDeclaration(LogicsContractsParser::DeclarationContext *ctx) {
     std::string name = ctx->ID()->getText();
 
     DataDeclaration * dec = nullptr;
@@ -72,7 +72,7 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
         if (tctx->booleanKW() != nullptr)
             type = new chase::Boolean();
         else if (tctx->integer() != nullptr) {
-            LTLContractsParser::IntegerContext *ictx = tctx->integer();
+            LogicsContractsParser::IntegerContext *ictx = tctx->integer();
             int lb = 0;
             int ub = 16;
             if (ictx->range() != nullptr) {
@@ -125,7 +125,7 @@ LTLSpecsBuilder::visitDeclaration(LTLContractsParser::DeclarationContext *ctx) {
 }
 
 Expression *
-LTLSpecsBuilder::createRelation(LTLContractsParser::RelationContext *ctx)
+LogicsSpecsBuilder::createRelation(LogicsContractsParser::RelationContext *ctx)
 {
     std::string rel_op = ctx->relation_op()->getText();
     Operator op = op_neq;
@@ -142,7 +142,7 @@ LTLSpecsBuilder::createRelation(LTLContractsParser::RelationContext *ctx)
                           createValue(ctx->rvalue()->value()));
 }
 
-Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
+Value *LogicsSpecsBuilder::createValue(LogicsContractsParser::ValueContext *ctx)
 {
     // The value is terminal.
     if(ctx->children.size() == 1)
@@ -180,7 +180,7 @@ Value *LTLSpecsBuilder::createValue(LTLContractsParser::ValueContext *ctx)
     return nullptr;
 }
 
-Identifier *LTLSpecsBuilder::createIdentifier(std::string name, bool primed)
+Identifier *LogicsSpecsBuilder::createIdentifier(std::string name, bool primed)
 {
     auto dd = findDeclaration(name);
     if( dd != nullptr )
@@ -191,7 +191,7 @@ Identifier *LTLSpecsBuilder::createIdentifier(std::string name, bool primed)
 }
 
 antlrcpp::Any
-LTLSpecsBuilder::visitContract(LTLContractsParser::ContractContext *ctx)
+LogicsSpecsBuilder::visitContract(LogicsContractsParser::ContractContext *ctx)
 {
     _currContract = new Contract(ctx->ID()->getText());
     _system->addContract(_currContract);
@@ -211,7 +211,7 @@ LTLSpecsBuilder::visitContract(LTLContractsParser::ContractContext *ctx)
 
 
 antlrcpp::Any
-LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
+LogicsSpecsBuilder::visitAssumptions(LogicsContractsParser::AssumptionsContext *ctx)
 {
     size_t i = 0;
     auto vec = new std::vector< LogicFormula * >();
@@ -230,7 +230,7 @@ LTLSpecsBuilder::visitAssumptions(LTLContractsParser::AssumptionsContext *ctx)
 
 
 antlrcpp::Any
-LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
+LogicsSpecsBuilder::visitGuarantees(LogicsContractsParser::GuaranteesContext *ctx) {
     size_t i = 0;
     auto vec = new std::vector< LogicFormula * >();
     vec->push_back(createFormula(ctx->single_formula(i)->formula()));
@@ -251,7 +251,7 @@ LTLSpecsBuilder::visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) {
 
 
 LogicFormula *
-LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
+LogicsSpecsBuilder::createFormula(LogicsContractsParser::FormulaContext *ctx)
 {
     if(ctx->unary_logic_op())
     {
@@ -315,13 +315,13 @@ LTLSpecsBuilder::createFormula(LTLContractsParser::FormulaContext *ctx)
     return nullptr;
 }
 
-BooleanConstant *LTLSpecsBuilder::createLogicConstant(
-        LTLContractsParser::Logic_constantContext *ctx)
+BooleanConstant *LogicsSpecsBuilder::createLogicConstant(
+        LogicsContractsParser::Logic_constantContext *ctx)
 {
     return new BooleanConstant(ctx->trueKW() != nullptr);
 }
 
-Proposition *LTLSpecsBuilder::createProposition(std::string name, bool primed)
+Proposition *LogicsSpecsBuilder::createProposition(std::string name, bool primed)
 {
     auto v = dynamic_cast<Variable *>(findDeclaration(name));
     if( v == nullptr) {
@@ -340,7 +340,7 @@ Proposition *LTLSpecsBuilder::createProposition(std::string name, bool primed)
     return prop;
 }
 
-DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
+DataDeclaration *LogicsSpecsBuilder::findDeclaration(std::string name) {
     if( _currContract != nullptr )
     {
         // search declaration inside contract.
@@ -365,16 +365,16 @@ DataDeclaration *LTLSpecsBuilder::findDeclaration(std::string name) {
     return nullptr;
 }
 
-Proposition *LTLSpecsBuilder::createPropositionFromRelation(
-        LTLContractsParser::RelationContext * ctx )
+Proposition *LogicsSpecsBuilder::createPropositionFromRelation(
+        LogicsContractsParser::RelationContext * ctx )
 {
     Expression * exp = createRelation(ctx);
     auto proposition = new Proposition(exp);
     return proposition;
 }
 
-Interval *LTLSpecsBuilder::createInterval(LTLContractsParser::IntervalContext *ctx) {
-    LTLContractsParser::PairContext * pairContext;
+Interval *LogicsSpecsBuilder::createInterval(LogicsContractsParser::IntervalContext *ctx) {
+    LogicsContractsParser::PairContext * pairContext;
     bool leftOpen, rightOpen = false;
 
     if( ctx->interval_closed() != nullptr )
@@ -409,7 +409,7 @@ Interval *LTLSpecsBuilder::createInterval(LTLContractsParser::IntervalContext *c
     return new Interval(v1, v2, leftOpen, rightOpen);
 }
 
-NumericValue *LTLSpecsBuilder::createNumericValue(std::string s) {
+NumericValue *LogicsSpecsBuilder::createNumericValue(std::string s) {
     bool real = false;
     bool error = false;
     for(size_t i = 0; i < s.length(); ++i)

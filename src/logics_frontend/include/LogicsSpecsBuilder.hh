@@ -9,23 +9,23 @@
 #pragma once
 
 #include "Chase.hh"
-#include "parser/LTLContractsLexer.h"
-#include "parser/LTLContractsBaseVisitor.h"
-#include "parser/LTLContractsVisitor.h"
-#include "parser/LTLContractsParser.h"
+#include "parser/LogicsContractsLexer.h"
+#include "parser/LogicsContractsBaseVisitor.h"
+#include "parser/LogicsContractsVisitor.h"
+#include "parser/LogicsContractsParser.h"
 
 using namespace chase;
 
 namespace chase {
 
     /// @brief Main class of the specification builder for the LTL contracts.
-    class LTLSpecsBuilder : public LTLContractsBaseVisitor {
+    class LogicsSpecsBuilder : public LogicsContractsBaseVisitor {
     public:
         /// @brief Constructor.
-        LTLSpecsBuilder();
+        LogicsSpecsBuilder();
 
         /// @brief Destructor.
-        ~LTLSpecsBuilder();
+        ~LogicsSpecsBuilder();
 
         /// @brief Function to access the System object being built.
         /// @return A pointer to the system built by the parser.
@@ -38,30 +38,30 @@ namespace chase {
 
         /// @cond
         antlrcpp::Any
-        visitSystemSpec(LTLContractsParser::SystemSpecContext *ctx) override;
+        visitSystemSpec(LogicsContractsParser::SystemSpecContext *ctx) override;
         antlrcpp::Any
-        visitDeclaration(LTLContractsParser::DeclarationContext *ctx) override;
+        visitDeclaration(LogicsContractsParser::DeclarationContext *ctx) override;
 
         antlrcpp::Any
-        visitContract(LTLContractsParser::ContractContext *ctx) override;
+        visitContract(LogicsContractsParser::ContractContext *ctx) override;
 
         antlrcpp::Any
-        visitAssumptions(LTLContractsParser::AssumptionsContext *ctx) override;
+        visitAssumptions(LogicsContractsParser::AssumptionsContext *ctx) override;
 
         antlrcpp::Any
-        visitGuarantees(LTLContractsParser::GuaranteesContext *ctx) override;
+        visitGuarantees(LogicsContractsParser::GuaranteesContext *ctx) override;
 
 
         /// @endcond
 
         Expression *
-        createRelation(LTLContractsParser::RelationContext *ctx) ;
+        createRelation(LogicsContractsParser::RelationContext *ctx) ;
 
         /// @brief Function parsing and building a value.
         /// @param ctx A pointer to a ANTLR4 ValueContext parsed.
         /// @return Pointer to a new CHASE Value object representing the parsed
         /// ValueContext.
-        Value * createValue(LTLContractsParser::ValueContext * ctx);
+        Value * createValue(LogicsContractsParser::ValueContext * ctx);
 
         /// @brief Function parsing and building a Identified.
         /// @param name A name (string) being parsed.
@@ -70,20 +70,20 @@ namespace chase {
         Identifier * createIdentifier(std::string name, bool primed = false);
 
         LogicFormula *
-        createFormula(LTLContractsParser::FormulaContext * ctx);
+        createFormula(LogicsContractsParser::FormulaContext * ctx);
 
         BooleanConstant *
-        createLogicConstant(LTLContractsParser::Logic_constantContext * ctx);
+        createLogicConstant(LogicsContractsParser::Logic_constantContext * ctx);
 
         Proposition * createProposition(std::string name, bool primed = false);
 
         DataDeclaration * findDeclaration(std::string name);
 
         Proposition * createPropositionFromRelation(
-                LTLContractsParser::RelationContext * ctx);
+                LogicsContractsParser::RelationContext * ctx);
 
         Interval * createInterval(
-                LTLContractsParser::IntervalContext * ctx);
+                LogicsContractsParser::IntervalContext * ctx);
 
         NumericValue * createNumericValue(std::string s);
 

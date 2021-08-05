@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/chase/grammar\LTLContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -9,7 +9,7 @@
 
 
 
-class  LTLContractsLexer : public antlr4::Lexer {
+class  LogicsContractsLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
@@ -22,8 +22,8 @@ public:
     ENDST = 47
   };
 
-  explicit LTLContractsLexer(antlr4::CharStream *input);
-  ~LTLContractsLexer();
+  explicit LogicsContractsLexer(antlr4::CharStream *input);
+  ~LogicsContractsLexer();
 
   virtual std::string getGrammarFileName() const override;
   virtual const std::vector<std::string>& getRuleNames() const override;

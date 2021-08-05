@@ -4,14 +4,14 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
-#include "DSLParser/SpecBuilder.hh"
+#include "DSLSpecsBuilder.hh"
 
 
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 using namespace chase;
 using namespace antlr4;
 
-SpecBuilder::SpecBuilder() :
+DSLSpecsBuilder::DSLSpecsBuilder() :
     _inConnections(false),
     _inSwitched(false),
     _inUnswitched(false),
@@ -22,15 +22,20 @@ SpecBuilder::SpecBuilder() :
     _problem = new DesignProblem();
 }
 
-SpecBuilder::~SpecBuilder() {
+DSLSpecsBuilder::~DSLSpecsBuilder() {
     delete _problem;
 }
 
-DesignProblem *SpecBuilder::getProblem() {
+DesignProblem *DSLSpecsBuilder::getProblem() {
     return _problem;
 }
 
-DesignProblem *SpecBuilder::parseSpecificationFile(std::string infile) {
+Contract * DSLSpecsBuilder::getContract() {
+    if(_problem != nullptr) return _problem->getContract();
+    else return nullptr;
+}
+
+DesignProblem *DSLSpecsBuilder::parseSpecificationFile(std::string infile) {
     ANTLRFileStream input( infile );
     ChaseLexer lexer( &input );
     CommonTokenStream tokens( &lexer );
@@ -41,12 +46,11 @@ DesignProblem *SpecBuilder::parseSpecificationFile(std::string infile) {
     auto walker = new tree::ParseTreeWalker();
     walker->walk(this, tree);
 
-
     return _problem;
 }
 
 
-void SpecBuilder::enterType(ChaseParser::TypeContext *context) {
+void DSLSpecsBuilder::enterType(ChaseParser::TypeContext *context) {
     std::string name = _getNameFromContext(context->nam);
 
     component_type type;
@@ -82,7 +86,7 @@ void SpecBuilder::enterType(ChaseParser::TypeContext *context) {
     _problem->domain_specific_types.insert(p);
 }
 
-void SpecBuilder::enterComponent(ChaseParser::ComponentContext *context) {
+void DSLSpecsBuilder::enterComponent(ChaseParser::ComponentContext *context) {
     // Retrieve the name of the group of components.
     std::string declaration = _getNameFromContext( context->nam );
 
@@ -134,7 +138,7 @@ void SpecBuilder::enterComponent(ChaseParser::ComponentContext *context) {
     _problem->components_groups.insert(p);
 }
 
-void SpecBuilder::enterAbbrev(ChaseParser::AbbrevContext *context) {
+void DSLSpecsBuilder::enterAbbrev(ChaseParser::AbbrevContext *context) {
     if( context->abbr == nullptr ) return;
 
     std::string abbrev = context->abbr->getText();
@@ -154,21 +158,21 @@ void SpecBuilder::enterAbbrev(ChaseParser::AbbrevContext *context) {
             std::pair<std::string, std::string>(abbrev, name));
 }
 
-void SpecBuilder::enterConnections(ChaseParser::ConnectionsContext * )
+void DSLSpecsBuilder::enterConnections(ChaseParser::ConnectionsContext * )
 {
     _inConnections = true;
     _inSwitched = false;
     _inUnswitched = false;
 }
 
-void SpecBuilder::exitConnections(ChaseParser::ConnectionsContext * )
+void DSLSpecsBuilder::exitConnections(ChaseParser::ConnectionsContext * )
 {
     _inConnections = false;
     _inSwitched = false;
     _inUnswitched = false;
 }
 
-void SpecBuilder::enterSwitched(ChaseParser::SwitchedContext * context )
+void DSLSpecsBuilder::enterSwitched(ChaseParser::SwitchedContext * context )
 {
     _inSwitched = true;
     _inUnswitched = false;
@@ -190,14 +194,14 @@ void SpecBuilder::enterSwitched(ChaseParser::SwitchedContext * context )
         messageError("Wrong switch type: " + sw);
 }
 
-void SpecBuilder::enterUnswitched(ChaseParser::UnswitchedContext * )
+void DSLSpecsBuilder::enterUnswitched(ChaseParser::UnswitchedContext * )
 {
     _inSwitched = false;
     _inUnswitched = true;
 }
 
 
-void SpecBuilder::enterConn(ChaseParser::ConnContext * context ) {
+void DSLSpecsBuilder::enterConn(ChaseParser::ConnContext * context ) {
     if( ! _inConnections )
         messageError(
                 "Wrong format: connection declared out of connections section.");
@@ -210,7 +214,7 @@ void SpecBuilder::enterConn(ChaseParser::ConnContext * context ) {
                 "Wrong format of connection declaration.");
 }
 
-void SpecBuilder::_enterSwitchedConn(ChaseParser::ConnContext *ctx)
+void DSLSpecsBuilder::_enterSwitchedConn(ChaseParser::ConnContext *ctx)
 {
     std::string from = _getNameFromContext(ctx->from);
     std::string to = _getNameFromContext(ctx->to);
@@ -229,7 +233,7 @@ void SpecBuilder::_enterSwitchedConn(ChaseParser::ConnContext *ctx)
     _problem->switched_connections.insert(connection);
 }
 
-void SpecBuilder::_enterUnswitchedConn(ChaseParser::ConnContext *ctx)
+void DSLSpecsBuilder::_enterUnswitchedConn(ChaseParser::ConnContext *ctx)
 {
     std::string from = _getNameFromContext(ctx->from);
     std::string to = _getNameFromContext(ctx->to);
@@ -247,7 +251,7 @@ void SpecBuilder::_enterUnswitchedConn(ChaseParser::ConnContext *ctx)
     _problem->unswitched_connections.insert(connection);
 }
 
-void SpecBuilder::_enterSpecificConn(ChaseParser::ConnContext *ctx)
+void DSLSpecsBuilder::_enterSpecificConn(ChaseParser::ConnContext *ctx)
 {
     std::string from = _getNameFromContext(ctx->from);
     std::string to = _getNameFromContext(ctx->to);
@@ -282,23 +286,23 @@ void SpecBuilder::_enterSpecificConn(ChaseParser::ConnContext *ctx)
                     component_sw->name, component_sw));
 }
 
-void SpecBuilder::enterRequirements(ChaseParser::RequirementsContext * ) {
+void DSLSpecsBuilder::enterRequirements(ChaseParser::RequirementsContext * ) {
     _requirements = true;
 }
 
-void SpecBuilder::exitRequirements(ChaseParser::RequirementsContext * ) {
+void DSLSpecsBuilder::exitRequirements(ChaseParser::RequirementsContext * ) {
     _requirements = false;
 }
 
-void SpecBuilder::enterAssumptions(ChaseParser::AssumptionsContext * ) {
+void DSLSpecsBuilder::enterAssumptions(ChaseParser::AssumptionsContext * ) {
     _assumptions = true;
 }
 
-void SpecBuilder::exitAssumptions(ChaseParser::AssumptionsContext * ) {
+void DSLSpecsBuilder::exitAssumptions(ChaseParser::AssumptionsContext * ) {
     _assumptions = false;
 }
 
-void SpecBuilder::enterReq(ChaseParser::ReqContext *context) {
+void DSLSpecsBuilder::enterReq(ChaseParser::ReqContext *context) {
     std::string req = context->pred->getText();
     auto function = new SpecFunction(req);
     _currentFunction = function;
@@ -307,7 +311,7 @@ void SpecBuilder::enterReq(ChaseParser::ReqContext *context) {
     if(_requirements) _problem->requirements.insert(function);
 }
 
-void SpecBuilder::enterParam(ChaseParser::ParamContext *context) {
+void DSLSpecsBuilder::enterParam(ChaseParser::ParamContext *context) {
     if( context->num != nullptr )
         _currentFunction->parameters.push_back(context->num->getText());
     if( context->nam != nullptr )

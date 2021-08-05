@@ -2,7 +2,7 @@
  * Grammar to specify A/G Contracts using LTL.
  */
 
-grammar LTLContracts;
+grammar LogicsContracts;
 
 WS: [ \t\r\n]+ -> skip;
 

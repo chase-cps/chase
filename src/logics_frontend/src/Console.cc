@@ -12,7 +12,7 @@
 using namespace chase;
 using namespace chase;
 
-chase::Console::Console(System *system, std::string &outDir) :
+chase::Console::Console(System *system, std::string outDir) :
     _system(system), _outDir(outDir)
 {
     simplify(_system);

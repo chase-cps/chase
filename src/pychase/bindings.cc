@@ -5,12 +5,13 @@
 #include "utilities/Factory.hh"
 #include "utilities/simplify.hh"
 
-#include "LTLSpecsBuilder.hh"
+#include "LogicsSpecsBuilder.hh"
+#include "DSLSpecsBuilder.hh"
+#include "Console.hh"
 
-
+#include "backends.hh"
 
 namespace py = pybind11;
-using namespace chase;
 using namespace chase;
 
 template <typename... Args>
@@ -683,7 +684,7 @@ PYBIND11_MODULE(pychase, m) {
     /**
     * COMPONENT BINDINGS
     */ 
-    py::class_<Component, std::unique_ptr<Component, 
+    py::class_<Component, std::unique_ptr<Component,
         py::nodelete>, ChaseObject>(m, "Component")
         .def(py::init<ComponentDefinition *, std::string &>(),
             py::arg("definition").none(false),
@@ -970,16 +971,76 @@ PYBIND11_MODULE(pychase, m) {
             &SlugsPrinter::visitBinaryTemporalOperation,
             py::arg("o").none(false));
 
+        /*
+         * BACKEND BINDING - VERIFICATION
+         */
+        py::class_<NuSMVPrinter, std::unique_ptr<NuSMVPrinter,
+        py::nodelete>, GuideVisitor>(m, "NuSMVPrinter")
+            .def(py::init<std::string &>())
+            .def("print", &NuSMVPrinter::print,
+                py::arg("contract").none(false))
+            .def("printDeclarations", &NuSMVPrinter::printDeclarations)
+            .def("printAssumptions", &NuSMVPrinter::printAssumptions)
+            .def("printGuarantees", &NuSMVPrinter::printGuarantees)
+            .def("visitIntegerValue", &NuSMVPrinter::visitIntegerValue,
+                py::arg("o").none(false))
+            .def("visitExpression", &NuSMVPrinter::visitExpression,
+                py::arg("o").none(false))
+            .def("visitIdentifier",
+                &NuSMVPrinter::visitIdentifier,
+                    py::arg("o").none(false))
+            .def("visitProposition",
+                &NuSMVPrinter::visitProposition,
+                    py::arg("o").none(false))
+            .def("visitBooleanConstant",
+                &NuSMVPrinter::visitBooleanConstant,
+                    py::arg("o").none(false))
+            .def("visitBinaryBooleanOperation",
+                &NuSMVPrinter::visitBinaryBooleanOperation,
+                    py::arg("o").none(false))
+            .def("visitUnaryBooleanOperation",
+                &NuSMVPrinter::visitUnaryBooleanOperation,
+                    py::arg("o").none(false))
+            .def("visitUnaryTemporalOperation",
+                &NuSMVPrinter::visitUnaryTemporalOperation,
+                    py::arg("o").none(false))
+            .def("visitBinaryTemporalOperation",
+                &NuSMVPrinter::visitBinaryTemporalOperation,
+                    py::arg("o").none(false));
 
         /*
-         * Front-ends
+         * FRONT-ENDS
          */
-        py::class_<LTLSpecsBuilder,
-        std::unique_ptr<LTLSpecsBuilder,
-        py::nodelete> >(m, "LTLSpecsBuilder")
+        py::class_<LogicsSpecsBuilder,
+        std::unique_ptr<LogicsSpecsBuilder,
+        py::nodelete> >(m, "LogicsSpecsBuilder")
         .def(py::init<>())
-        .def("getSystem", &LTLSpecsBuilder::getSystem)
-        .def("parseSpecificationFile", &LTLSpecsBuilder::parseSpecificationFile,
+        .def("getSystem", &LogicsSpecsBuilder::getSystem)
+        .def("parseSpecificationFile", &LogicsSpecsBuilder::parseSpecificationFile,
              py::arg("infile").none(false));
+
+        /// Necessary to make the DSL frontend work.
+        py::class_<DSLFrontend::DesignProblem,
+        std::unique_ptr<DSLFrontend::DesignProblem,
+        py::nodelete> >(m, "DesignProblem");
+
+        py::class_<DSLFrontend::DSLSpecsBuilder,
+        std::unique_ptr<DSLFrontend::DSLSpecsBuilder,
+        py::nodelete> >(m, "DSLSpecsBuilder")
+            .def(py::init<>())
+            .def("getContract", &DSLFrontend::DSLSpecsBuilder::getContract)
+            .def("parseSpecificationFile", &DSLFrontend::DSLSpecsBuilder::parseSpecificationFile,
+             py::arg("infile").none(false));
+
+        /*
+         * LOGICS CONSOLE
+         */
+        py::class_<Console,
+        std::unique_ptr<Console,
+        py::nodelete> >(m, "Console")
+            .def(py::init<System *, std::string>())
+            .def("run", &Console::run,
+                 py::arg("cmd").none(false));
+
 }
 

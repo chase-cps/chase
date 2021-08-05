@@ -1,22 +1,8 @@
 import sys
 from pychase import *
 
-infile=sys.argv[1]
-
-#         Variable * state = _stateVariables.find(*cit)->second;
-#         auto id_now = new Identifier(state);
-#         auto id_next = new Identifier(state);
-#         auto p_now = new Proposition(id_now);
-#         auto p_next = new Proposition(id_next);
-#         auto np_now = new UnaryBooleanFormula(op_not, p_now);
-#         auto np_next = new UnaryBooleanFormula(op_not, p_next);
-
-#         auto formula = new UnaryTemporalFormula(
-#                 op_globally,
-#                 new BinaryBooleanFormula(
-#                         op_implies,
-#                         np_now,
-#                         new UnaryTemporalFormula(op_next, np_next)));
+logics_file=sys.argv[1]
+dsl_file=sys.argv[2]
 
 b= Boolean()
 
@@ -80,9 +66,23 @@ sys1.addDeclaration(state)
 sys1.addContract(c)
 print(sys1.getString())
 
-parser = LTLSpecsBuilder()
-parser.parseSpecificationFile(infile)
-parsed = parser.getSystem()
+parser_logics = LogicsSpecsBuilder()
+parser_logics.parseSpecificationFile(logics_file)
+logics_problem = parser_logics.getSystem()
 
-print(parsed.getString())
+console = Console(logics_problem, "outdir")
+console.run("help")
+console.run("show")
 
+print(logics_problem.getString())
+
+parser_dsl = DSLSpecsBuilder()
+parser_dsl.parseSpecificationFile(dsl_file)
+dsl_problem = parser_dsl.getContract()
+print(dsl_problem.getString())
+
+gr1p = GR1CPrinter()
+gr1p.print(dsl_problem, "out.spc")
+
+print
+print("Test completed.")

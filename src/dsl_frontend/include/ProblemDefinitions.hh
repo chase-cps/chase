@@ -13,7 +13,7 @@
 #include <set>
 #include <utility>
 
-namespace patternsOnNetworks {
+namespace DSLFrontend {
 
     /// @brief Enumeration of the available components types.
     /// @todo Complete the documentation by explaining for each type what is

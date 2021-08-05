@@ -11,11 +11,11 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "DSLParser/SpecBuilder.hh"
+#include "DSLSpecsBuilder.hh"
 #include "backends/GR1CPrinter.hh"
 #include "backends/SlugsPrinter.hh"
 
-namespace patternsOnNetworks
+namespace DSLFrontend
 {
 
     /// @brief Structure saving all the input console parameters.

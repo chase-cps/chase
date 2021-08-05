@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/chase/grammar\LTLContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -9,7 +9,7 @@
 
 
 
-class  LTLContractsParser : public antlr4::Parser {
+class  LogicsContractsParser : public antlr4::Parser {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
@@ -37,8 +37,8 @@ public:
     RuleDeclaration = 43, RuleContract = 44, RuleName = 45, RuleSystemSpec = 46
   };
 
-  explicit LTLContractsParser(antlr4::TokenStream *input);
-  ~LTLContractsParser();
+  explicit LogicsContractsParser(antlr4::TokenStream *input);
+  ~LogicsContractsParser();
 
   virtual std::string getGrammarFileName() const override;
   virtual const antlr4::atn::ATN& getATN() const override { return _atn; };

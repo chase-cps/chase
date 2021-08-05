@@ -1,74 +1,74 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/chase/grammar\LTLContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 
-#include "LTLContractsVisitor.h"
+#include "LogicsContractsVisitor.h"
 
-#include "LTLContractsParser.h"
+#include "LogicsContractsParser.h"
 
 
 using namespace antlrcpp;
 using namespace antlr4;
 
-LTLContractsParser::LTLContractsParser(TokenStream *input) : Parser(input) {
+LogicsContractsParser::LogicsContractsParser(TokenStream *input) : Parser(input) {
   _interpreter = new atn::ParserATNSimulator(this, _atn, _decisionToDFA, _sharedContextCache);
 }
 
-LTLContractsParser::~LTLContractsParser() {
+LogicsContractsParser::~LogicsContractsParser() {
   delete _interpreter;
 }
 
-std::string LTLContractsParser::getGrammarFileName() const {
-  return "LTLContracts.g4";
+std::string LogicsContractsParser::getGrammarFileName() const {
+  return "LogicsContracts.g4";
 }
 
-const std::vector<std::string>& LTLContractsParser::getRuleNames() const {
+const std::vector<std::string>& LogicsContractsParser::getRuleNames() const {
   return _ruleNames;
 }
 
-dfa::Vocabulary& LTLContractsParser::getVocabulary() const {
+dfa::Vocabulary& LogicsContractsParser::getVocabulary() const {
   return _vocabulary;
 }
 
 
 //----------------- Bin_logic_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Bin_logic_opContext::Bin_logic_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Bin_logic_opContext::Bin_logic_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_logic_opContext::AND() {
-  return getToken(LTLContractsParser::AND, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_logic_opContext::AND() {
+  return getToken(LogicsContractsParser::AND, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_logic_opContext::OR() {
-  return getToken(LTLContractsParser::OR, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_logic_opContext::OR() {
+  return getToken(LogicsContractsParser::OR, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_logic_opContext::IFF() {
-  return getToken(LTLContractsParser::IFF, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_logic_opContext::IFF() {
+  return getToken(LogicsContractsParser::IFF, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_logic_opContext::IMPLIES() {
-  return getToken(LTLContractsParser::IMPLIES, 0);
-}
-
-
-size_t LTLContractsParser::Bin_logic_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleBin_logic_op;
+tree::TerminalNode* LogicsContractsParser::Bin_logic_opContext::IMPLIES() {
+  return getToken(LogicsContractsParser::IMPLIES, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Bin_logic_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Bin_logic_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleBin_logic_op;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Bin_logic_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitBin_logic_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Bin_logic_opContext* LTLContractsParser::bin_logic_op() {
+LogicsContractsParser::Bin_logic_opContext* LogicsContractsParser::bin_logic_op() {
   Bin_logic_opContext *_localctx = _tracker.createInstance<Bin_logic_opContext>(_ctx, getState());
-  enterRule(_localctx, 0, LTLContractsParser::RuleBin_logic_op);
+  enterRule(_localctx, 0, LogicsContractsParser::RuleBin_logic_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -83,10 +83,10 @@ LTLContractsParser::Bin_logic_opContext* LTLContractsParser::bin_logic_op() {
     setState(94);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::AND)
-      | (1ULL << LTLContractsParser::OR)
-      | (1ULL << LTLContractsParser::IMPLIES)
-      | (1ULL << LTLContractsParser::IFF))) != 0))) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::AND)
+      | (1ULL << LogicsContractsParser::OR)
+      | (1ULL << LogicsContractsParser::IMPLIES)
+      | (1ULL << LogicsContractsParser::IFF))) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -106,30 +106,30 @@ LTLContractsParser::Bin_logic_opContext* LTLContractsParser::bin_logic_op() {
 
 //----------------- Unary_logic_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Unary_logic_opContext::Unary_logic_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Unary_logic_opContext::Unary_logic_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Unary_logic_opContext::NOT() {
-  return getToken(LTLContractsParser::NOT, 0);
+tree::TerminalNode* LogicsContractsParser::Unary_logic_opContext::NOT() {
+  return getToken(LogicsContractsParser::NOT, 0);
 }
 
 
-size_t LTLContractsParser::Unary_logic_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleUnary_logic_op;
+size_t LogicsContractsParser::Unary_logic_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleUnary_logic_op;
 }
 
 
-antlrcpp::Any LTLContractsParser::Unary_logic_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::Unary_logic_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitUnary_logic_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Unary_logic_opContext* LTLContractsParser::unary_logic_op() {
+LogicsContractsParser::Unary_logic_opContext* LogicsContractsParser::unary_logic_op() {
   Unary_logic_opContext *_localctx = _tracker.createInstance<Unary_logic_opContext>(_ctx, getState());
-  enterRule(_localctx, 2, LTLContractsParser::RuleUnary_logic_op);
+  enterRule(_localctx, 2, LogicsContractsParser::RuleUnary_logic_op);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -141,7 +141,7 @@ LTLContractsParser::Unary_logic_opContext* LTLContractsParser::unary_logic_op() 
   try {
     enterOuterAlt(_localctx, 1);
     setState(96);
-    match(LTLContractsParser::NOT);
+    match(LogicsContractsParser::NOT);
    
   }
   catch (RecognitionException &e) {
@@ -155,38 +155,38 @@ LTLContractsParser::Unary_logic_opContext* LTLContractsParser::unary_logic_op() 
 
 //----------------- Unary_temp_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Unary_temp_opContext::Unary_temp_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Unary_temp_opContext::Unary_temp_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Unary_temp_opContext::ALWAYS() {
-  return getToken(LTLContractsParser::ALWAYS, 0);
+tree::TerminalNode* LogicsContractsParser::Unary_temp_opContext::ALWAYS() {
+  return getToken(LogicsContractsParser::ALWAYS, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Unary_temp_opContext::EVENTUALLY() {
-  return getToken(LTLContractsParser::EVENTUALLY, 0);
+tree::TerminalNode* LogicsContractsParser::Unary_temp_opContext::EVENTUALLY() {
+  return getToken(LogicsContractsParser::EVENTUALLY, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Unary_temp_opContext::NEXT() {
-  return getToken(LTLContractsParser::NEXT, 0);
-}
-
-
-size_t LTLContractsParser::Unary_temp_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleUnary_temp_op;
+tree::TerminalNode* LogicsContractsParser::Unary_temp_opContext::NEXT() {
+  return getToken(LogicsContractsParser::NEXT, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Unary_temp_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Unary_temp_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleUnary_temp_op;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Unary_temp_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitUnary_temp_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Unary_temp_opContext* LTLContractsParser::unary_temp_op() {
+LogicsContractsParser::Unary_temp_opContext* LogicsContractsParser::unary_temp_op() {
   Unary_temp_opContext *_localctx = _tracker.createInstance<Unary_temp_opContext>(_ctx, getState());
-  enterRule(_localctx, 4, LTLContractsParser::RuleUnary_temp_op);
+  enterRule(_localctx, 4, LogicsContractsParser::RuleUnary_temp_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -201,9 +201,9 @@ LTLContractsParser::Unary_temp_opContext* LTLContractsParser::unary_temp_op() {
     setState(98);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::ALWAYS)
-      | (1ULL << LTLContractsParser::EVENTUALLY)
-      | (1ULL << LTLContractsParser::NEXT))) != 0))) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::ALWAYS)
+      | (1ULL << LogicsContractsParser::EVENTUALLY)
+      | (1ULL << LogicsContractsParser::NEXT))) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -223,30 +223,30 @@ LTLContractsParser::Unary_temp_opContext* LTLContractsParser::unary_temp_op() {
 
 //----------------- Bin_temp_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Bin_temp_opContext::Bin_temp_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Bin_temp_opContext::Bin_temp_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_temp_opContext::UNTIL() {
-  return getToken(LTLContractsParser::UNTIL, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_temp_opContext::UNTIL() {
+  return getToken(LogicsContractsParser::UNTIL, 0);
 }
 
 
-size_t LTLContractsParser::Bin_temp_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleBin_temp_op;
+size_t LogicsContractsParser::Bin_temp_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleBin_temp_op;
 }
 
 
-antlrcpp::Any LTLContractsParser::Bin_temp_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::Bin_temp_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitBin_temp_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Bin_temp_opContext* LTLContractsParser::bin_temp_op() {
+LogicsContractsParser::Bin_temp_opContext* LogicsContractsParser::bin_temp_op() {
   Bin_temp_opContext *_localctx = _tracker.createInstance<Bin_temp_opContext>(_ctx, getState());
-  enterRule(_localctx, 6, LTLContractsParser::RuleBin_temp_op);
+  enterRule(_localctx, 6, LogicsContractsParser::RuleBin_temp_op);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -258,7 +258,7 @@ LTLContractsParser::Bin_temp_opContext* LTLContractsParser::bin_temp_op() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(100);
-    match(LTLContractsParser::UNTIL);
+    match(LogicsContractsParser::UNTIL);
    
   }
   catch (RecognitionException &e) {
@@ -272,50 +272,50 @@ LTLContractsParser::Bin_temp_opContext* LTLContractsParser::bin_temp_op() {
 
 //----------------- Relation_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Relation_opContext::Relation_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Relation_opContext::Relation_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::EQ() {
-  return getToken(LTLContractsParser::EQ, 0);
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::EQ() {
+  return getToken(LogicsContractsParser::EQ, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::NEQ() {
-  return getToken(LTLContractsParser::NEQ, 0);
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::NEQ() {
+  return getToken(LogicsContractsParser::NEQ, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::LT() {
-  return getToken(LTLContractsParser::LT, 0);
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::LT() {
+  return getToken(LogicsContractsParser::LT, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::LE() {
-  return getToken(LTLContractsParser::LE, 0);
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::LE() {
+  return getToken(LogicsContractsParser::LE, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::GT() {
-  return getToken(LTLContractsParser::GT, 0);
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::GT() {
+  return getToken(LogicsContractsParser::GT, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Relation_opContext::GE() {
-  return getToken(LTLContractsParser::GE, 0);
-}
-
-
-size_t LTLContractsParser::Relation_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleRelation_op;
+tree::TerminalNode* LogicsContractsParser::Relation_opContext::GE() {
+  return getToken(LogicsContractsParser::GE, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Relation_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Relation_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleRelation_op;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Relation_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitRelation_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Relation_opContext* LTLContractsParser::relation_op() {
+LogicsContractsParser::Relation_opContext* LogicsContractsParser::relation_op() {
   Relation_opContext *_localctx = _tracker.createInstance<Relation_opContext>(_ctx, getState());
-  enterRule(_localctx, 8, LTLContractsParser::RuleRelation_op);
+  enterRule(_localctx, 8, LogicsContractsParser::RuleRelation_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -330,12 +330,12 @@ LTLContractsParser::Relation_opContext* LTLContractsParser::relation_op() {
     setState(102);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::EQ)
-      | (1ULL << LTLContractsParser::NEQ)
-      | (1ULL << LTLContractsParser::LT)
-      | (1ULL << LTLContractsParser::LE)
-      | (1ULL << LTLContractsParser::GT)
-      | (1ULL << LTLContractsParser::GE))) != 0))) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::EQ)
+      | (1ULL << LogicsContractsParser::NEQ)
+      | (1ULL << LogicsContractsParser::LT)
+      | (1ULL << LogicsContractsParser::LE)
+      | (1ULL << LogicsContractsParser::GT)
+      | (1ULL << LogicsContractsParser::GE))) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -355,42 +355,42 @@ LTLContractsParser::Relation_opContext* LTLContractsParser::relation_op() {
 
 //----------------- Bin_math_opContext ------------------------------------------------------------------
 
-LTLContractsParser::Bin_math_opContext::Bin_math_opContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Bin_math_opContext::Bin_math_opContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_math_opContext::TIMES() {
-  return getToken(LTLContractsParser::TIMES, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_math_opContext::TIMES() {
+  return getToken(LogicsContractsParser::TIMES, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_math_opContext::DIVIDE() {
-  return getToken(LTLContractsParser::DIVIDE, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_math_opContext::DIVIDE() {
+  return getToken(LogicsContractsParser::DIVIDE, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_math_opContext::PLUS() {
-  return getToken(LTLContractsParser::PLUS, 0);
+tree::TerminalNode* LogicsContractsParser::Bin_math_opContext::PLUS() {
+  return getToken(LogicsContractsParser::PLUS, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Bin_math_opContext::MINUS() {
-  return getToken(LTLContractsParser::MINUS, 0);
-}
-
-
-size_t LTLContractsParser::Bin_math_opContext::getRuleIndex() const {
-  return LTLContractsParser::RuleBin_math_op;
+tree::TerminalNode* LogicsContractsParser::Bin_math_opContext::MINUS() {
+  return getToken(LogicsContractsParser::MINUS, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Bin_math_opContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Bin_math_opContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleBin_math_op;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Bin_math_opContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitBin_math_op(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Bin_math_opContext* LTLContractsParser::bin_math_op() {
+LogicsContractsParser::Bin_math_opContext* LogicsContractsParser::bin_math_op() {
   Bin_math_opContext *_localctx = _tracker.createInstance<Bin_math_opContext>(_ctx, getState());
-  enterRule(_localctx, 10, LTLContractsParser::RuleBin_math_op);
+  enterRule(_localctx, 10, LogicsContractsParser::RuleBin_math_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -405,10 +405,10 @@ LTLContractsParser::Bin_math_opContext* LTLContractsParser::bin_math_op() {
     setState(104);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::PLUS)
-      | (1ULL << LTLContractsParser::MINUS)
-      | (1ULL << LTLContractsParser::TIMES)
-      | (1ULL << LTLContractsParser::DIVIDE))) != 0))) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::PLUS)
+      | (1ULL << LogicsContractsParser::MINUS)
+      | (1ULL << LogicsContractsParser::TIMES)
+      | (1ULL << LogicsContractsParser::DIVIDE))) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -428,30 +428,30 @@ LTLContractsParser::Bin_math_opContext* LTLContractsParser::bin_math_op() {
 
 //----------------- Primed_IDContext ------------------------------------------------------------------
 
-LTLContractsParser::Primed_IDContext::Primed_IDContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Primed_IDContext::Primed_IDContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Primed_IDContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::Primed_IDContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
 
-size_t LTLContractsParser::Primed_IDContext::getRuleIndex() const {
-  return LTLContractsParser::RulePrimed_ID;
+size_t LogicsContractsParser::Primed_IDContext::getRuleIndex() const {
+  return LogicsContractsParser::RulePrimed_ID;
 }
 
 
-antlrcpp::Any LTLContractsParser::Primed_IDContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::Primed_IDContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitPrimed_ID(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Primed_IDContext* LTLContractsParser::primed_ID() {
+LogicsContractsParser::Primed_IDContext* LogicsContractsParser::primed_ID() {
   Primed_IDContext *_localctx = _tracker.createInstance<Primed_IDContext>(_ctx, getState());
-  enterRule(_localctx, 12, LTLContractsParser::RulePrimed_ID);
+  enterRule(_localctx, 12, LogicsContractsParser::RulePrimed_ID);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -463,9 +463,9 @@ LTLContractsParser::Primed_IDContext* LTLContractsParser::primed_ID() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(106);
-    match(LTLContractsParser::ID);
+    match(LogicsContractsParser::ID);
     setState(107);
-    match(LTLContractsParser::T__0);
+    match(LogicsContractsParser::T__0);
    
   }
   catch (RecognitionException &e) {
@@ -479,26 +479,26 @@ LTLContractsParser::Primed_IDContext* LTLContractsParser::primed_ID() {
 
 //----------------- IntegerKWContext ------------------------------------------------------------------
 
-LTLContractsParser::IntegerKWContext::IntegerKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::IntegerKWContext::IntegerKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::IntegerKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleIntegerKW;
+size_t LogicsContractsParser::IntegerKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleIntegerKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::IntegerKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::IntegerKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitIntegerKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::IntegerKWContext* LTLContractsParser::integerKW() {
+LogicsContractsParser::IntegerKWContext* LogicsContractsParser::integerKW() {
   IntegerKWContext *_localctx = _tracker.createInstance<IntegerKWContext>(_ctx, getState());
-  enterRule(_localctx, 14, LTLContractsParser::RuleIntegerKW);
+  enterRule(_localctx, 14, LogicsContractsParser::RuleIntegerKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -510,7 +510,7 @@ LTLContractsParser::IntegerKWContext* LTLContractsParser::integerKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(109);
-    match(LTLContractsParser::T__1);
+    match(LogicsContractsParser::T__1);
    
   }
   catch (RecognitionException &e) {
@@ -524,26 +524,26 @@ LTLContractsParser::IntegerKWContext* LTLContractsParser::integerKW() {
 
 //----------------- BooleanKWContext ------------------------------------------------------------------
 
-LTLContractsParser::BooleanKWContext::BooleanKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::BooleanKWContext::BooleanKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::BooleanKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleBooleanKW;
+size_t LogicsContractsParser::BooleanKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleBooleanKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::BooleanKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::BooleanKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitBooleanKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::BooleanKWContext* LTLContractsParser::booleanKW() {
+LogicsContractsParser::BooleanKWContext* LogicsContractsParser::booleanKW() {
   BooleanKWContext *_localctx = _tracker.createInstance<BooleanKWContext>(_ctx, getState());
-  enterRule(_localctx, 16, LTLContractsParser::RuleBooleanKW);
+  enterRule(_localctx, 16, LogicsContractsParser::RuleBooleanKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -555,7 +555,7 @@ LTLContractsParser::BooleanKWContext* LTLContractsParser::booleanKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(111);
-    match(LTLContractsParser::T__2);
+    match(LogicsContractsParser::T__2);
    
   }
   catch (RecognitionException &e) {
@@ -569,26 +569,26 @@ LTLContractsParser::BooleanKWContext* LTLContractsParser::booleanKW() {
 
 //----------------- VariableKWContext ------------------------------------------------------------------
 
-LTLContractsParser::VariableKWContext::VariableKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::VariableKWContext::VariableKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::VariableKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleVariableKW;
+size_t LogicsContractsParser::VariableKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleVariableKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::VariableKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::VariableKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitVariableKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::VariableKWContext* LTLContractsParser::variableKW() {
+LogicsContractsParser::VariableKWContext* LogicsContractsParser::variableKW() {
   VariableKWContext *_localctx = _tracker.createInstance<VariableKWContext>(_ctx, getState());
-  enterRule(_localctx, 18, LTLContractsParser::RuleVariableKW);
+  enterRule(_localctx, 18, LogicsContractsParser::RuleVariableKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -600,7 +600,7 @@ LTLContractsParser::VariableKWContext* LTLContractsParser::variableKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(113);
-    match(LTLContractsParser::T__3);
+    match(LogicsContractsParser::T__3);
    
   }
   catch (RecognitionException &e) {
@@ -614,26 +614,26 @@ LTLContractsParser::VariableKWContext* LTLContractsParser::variableKW() {
 
 //----------------- InputKWContext ------------------------------------------------------------------
 
-LTLContractsParser::InputKWContext::InputKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::InputKWContext::InputKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::InputKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInputKW;
+size_t LogicsContractsParser::InputKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInputKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::InputKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::InputKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInputKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::InputKWContext* LTLContractsParser::inputKW() {
+LogicsContractsParser::InputKWContext* LogicsContractsParser::inputKW() {
   InputKWContext *_localctx = _tracker.createInstance<InputKWContext>(_ctx, getState());
-  enterRule(_localctx, 20, LTLContractsParser::RuleInputKW);
+  enterRule(_localctx, 20, LogicsContractsParser::RuleInputKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -645,7 +645,7 @@ LTLContractsParser::InputKWContext* LTLContractsParser::inputKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(115);
-    match(LTLContractsParser::T__4);
+    match(LogicsContractsParser::T__4);
    
   }
   catch (RecognitionException &e) {
@@ -659,26 +659,26 @@ LTLContractsParser::InputKWContext* LTLContractsParser::inputKW() {
 
 //----------------- OutputKWContext ------------------------------------------------------------------
 
-LTLContractsParser::OutputKWContext::OutputKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::OutputKWContext::OutputKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::OutputKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleOutputKW;
+size_t LogicsContractsParser::OutputKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleOutputKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::OutputKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::OutputKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitOutputKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::OutputKWContext* LTLContractsParser::outputKW() {
+LogicsContractsParser::OutputKWContext* LogicsContractsParser::outputKW() {
   OutputKWContext *_localctx = _tracker.createInstance<OutputKWContext>(_ctx, getState());
-  enterRule(_localctx, 22, LTLContractsParser::RuleOutputKW);
+  enterRule(_localctx, 22, LogicsContractsParser::RuleOutputKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -690,7 +690,7 @@ LTLContractsParser::OutputKWContext* LTLContractsParser::outputKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(117);
-    match(LTLContractsParser::T__5);
+    match(LogicsContractsParser::T__5);
    
   }
   catch (RecognitionException &e) {
@@ -704,26 +704,26 @@ LTLContractsParser::OutputKWContext* LTLContractsParser::outputKW() {
 
 //----------------- ConstantKWContext ------------------------------------------------------------------
 
-LTLContractsParser::ConstantKWContext::ConstantKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::ConstantKWContext::ConstantKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::ConstantKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleConstantKW;
+size_t LogicsContractsParser::ConstantKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleConstantKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::ConstantKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::ConstantKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitConstantKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::ConstantKWContext* LTLContractsParser::constantKW() {
+LogicsContractsParser::ConstantKWContext* LogicsContractsParser::constantKW() {
   ConstantKWContext *_localctx = _tracker.createInstance<ConstantKWContext>(_ctx, getState());
-  enterRule(_localctx, 24, LTLContractsParser::RuleConstantKW);
+  enterRule(_localctx, 24, LogicsContractsParser::RuleConstantKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -735,7 +735,7 @@ LTLContractsParser::ConstantKWContext* LTLContractsParser::constantKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(119);
-    match(LTLContractsParser::T__6);
+    match(LogicsContractsParser::T__6);
    
   }
   catch (RecognitionException &e) {
@@ -749,26 +749,26 @@ LTLContractsParser::ConstantKWContext* LTLContractsParser::constantKW() {
 
 //----------------- PropositionKwContext ------------------------------------------------------------------
 
-LTLContractsParser::PropositionKwContext::PropositionKwContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::PropositionKwContext::PropositionKwContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::PropositionKwContext::getRuleIndex() const {
-  return LTLContractsParser::RulePropositionKw;
+size_t LogicsContractsParser::PropositionKwContext::getRuleIndex() const {
+  return LogicsContractsParser::RulePropositionKw;
 }
 
 
-antlrcpp::Any LTLContractsParser::PropositionKwContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::PropositionKwContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitPropositionKw(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::PropositionKwContext* LTLContractsParser::propositionKw() {
+LogicsContractsParser::PropositionKwContext* LogicsContractsParser::propositionKw() {
   PropositionKwContext *_localctx = _tracker.createInstance<PropositionKwContext>(_ctx, getState());
-  enterRule(_localctx, 26, LTLContractsParser::RulePropositionKw);
+  enterRule(_localctx, 26, LogicsContractsParser::RulePropositionKw);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -780,7 +780,7 @@ LTLContractsParser::PropositionKwContext* LTLContractsParser::propositionKw() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(121);
-    match(LTLContractsParser::T__7);
+    match(LogicsContractsParser::T__7);
    
   }
   catch (RecognitionException &e) {
@@ -794,26 +794,26 @@ LTLContractsParser::PropositionKwContext* LTLContractsParser::propositionKw() {
 
 //----------------- IsKwContext ------------------------------------------------------------------
 
-LTLContractsParser::IsKwContext::IsKwContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::IsKwContext::IsKwContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::IsKwContext::getRuleIndex() const {
-  return LTLContractsParser::RuleIsKw;
+size_t LogicsContractsParser::IsKwContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleIsKw;
 }
 
 
-antlrcpp::Any LTLContractsParser::IsKwContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::IsKwContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitIsKw(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::IsKwContext* LTLContractsParser::isKw() {
+LogicsContractsParser::IsKwContext* LogicsContractsParser::isKw() {
   IsKwContext *_localctx = _tracker.createInstance<IsKwContext>(_ctx, getState());
-  enterRule(_localctx, 28, LTLContractsParser::RuleIsKw);
+  enterRule(_localctx, 28, LogicsContractsParser::RuleIsKw);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -825,7 +825,7 @@ LTLContractsParser::IsKwContext* LTLContractsParser::isKw() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(123);
-    match(LTLContractsParser::T__8);
+    match(LogicsContractsParser::T__8);
    
   }
   catch (RecognitionException &e) {
@@ -839,26 +839,26 @@ LTLContractsParser::IsKwContext* LTLContractsParser::isKw() {
 
 //----------------- TrueKWContext ------------------------------------------------------------------
 
-LTLContractsParser::TrueKWContext::TrueKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::TrueKWContext::TrueKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::TrueKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleTrueKW;
+size_t LogicsContractsParser::TrueKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleTrueKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::TrueKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::TrueKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitTrueKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::TrueKWContext* LTLContractsParser::trueKW() {
+LogicsContractsParser::TrueKWContext* LogicsContractsParser::trueKW() {
   TrueKWContext *_localctx = _tracker.createInstance<TrueKWContext>(_ctx, getState());
-  enterRule(_localctx, 30, LTLContractsParser::RuleTrueKW);
+  enterRule(_localctx, 30, LogicsContractsParser::RuleTrueKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -870,7 +870,7 @@ LTLContractsParser::TrueKWContext* LTLContractsParser::trueKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(125);
-    match(LTLContractsParser::T__9);
+    match(LogicsContractsParser::T__9);
    
   }
   catch (RecognitionException &e) {
@@ -884,26 +884,26 @@ LTLContractsParser::TrueKWContext* LTLContractsParser::trueKW() {
 
 //----------------- FalseKWContext ------------------------------------------------------------------
 
-LTLContractsParser::FalseKWContext::FalseKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::FalseKWContext::FalseKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::FalseKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleFalseKW;
+size_t LogicsContractsParser::FalseKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleFalseKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::FalseKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::FalseKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitFalseKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::FalseKWContext* LTLContractsParser::falseKW() {
+LogicsContractsParser::FalseKWContext* LogicsContractsParser::falseKW() {
   FalseKWContext *_localctx = _tracker.createInstance<FalseKWContext>(_ctx, getState());
-  enterRule(_localctx, 32, LTLContractsParser::RuleFalseKW);
+  enterRule(_localctx, 32, LogicsContractsParser::RuleFalseKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -915,7 +915,7 @@ LTLContractsParser::FalseKWContext* LTLContractsParser::falseKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(127);
-    match(LTLContractsParser::T__10);
+    match(LogicsContractsParser::T__10);
    
   }
   catch (RecognitionException &e) {
@@ -929,26 +929,26 @@ LTLContractsParser::FalseKWContext* LTLContractsParser::falseKW() {
 
 //----------------- ContractKWContext ------------------------------------------------------------------
 
-LTLContractsParser::ContractKWContext::ContractKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::ContractKWContext::ContractKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::ContractKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleContractKW;
+size_t LogicsContractsParser::ContractKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleContractKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::ContractKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::ContractKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitContractKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::ContractKWContext* LTLContractsParser::contractKW() {
+LogicsContractsParser::ContractKWContext* LogicsContractsParser::contractKW() {
   ContractKWContext *_localctx = _tracker.createInstance<ContractKWContext>(_ctx, getState());
-  enterRule(_localctx, 34, LTLContractsParser::RuleContractKW);
+  enterRule(_localctx, 34, LogicsContractsParser::RuleContractKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -960,7 +960,7 @@ LTLContractsParser::ContractKWContext* LTLContractsParser::contractKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(129);
-    match(LTLContractsParser::T__11);
+    match(LogicsContractsParser::T__11);
    
   }
   catch (RecognitionException &e) {
@@ -974,26 +974,26 @@ LTLContractsParser::ContractKWContext* LTLContractsParser::contractKW() {
 
 //----------------- AssumptionsKWContext ------------------------------------------------------------------
 
-LTLContractsParser::AssumptionsKWContext::AssumptionsKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::AssumptionsKWContext::AssumptionsKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::AssumptionsKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleAssumptionsKW;
+size_t LogicsContractsParser::AssumptionsKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleAssumptionsKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::AssumptionsKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::AssumptionsKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitAssumptionsKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::AssumptionsKWContext* LTLContractsParser::assumptionsKW() {
+LogicsContractsParser::AssumptionsKWContext* LogicsContractsParser::assumptionsKW() {
   AssumptionsKWContext *_localctx = _tracker.createInstance<AssumptionsKWContext>(_ctx, getState());
-  enterRule(_localctx, 36, LTLContractsParser::RuleAssumptionsKW);
+  enterRule(_localctx, 36, LogicsContractsParser::RuleAssumptionsKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1005,7 +1005,7 @@ LTLContractsParser::AssumptionsKWContext* LTLContractsParser::assumptionsKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(131);
-    match(LTLContractsParser::T__12);
+    match(LogicsContractsParser::T__12);
    
   }
   catch (RecognitionException &e) {
@@ -1019,26 +1019,26 @@ LTLContractsParser::AssumptionsKWContext* LTLContractsParser::assumptionsKW() {
 
 //----------------- GuaranteesKWContext ------------------------------------------------------------------
 
-LTLContractsParser::GuaranteesKWContext::GuaranteesKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::GuaranteesKWContext::GuaranteesKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::GuaranteesKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleGuaranteesKW;
+size_t LogicsContractsParser::GuaranteesKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleGuaranteesKW;
 }
 
 
-antlrcpp::Any LTLContractsParser::GuaranteesKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::GuaranteesKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitGuaranteesKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::GuaranteesKWContext* LTLContractsParser::guaranteesKW() {
+LogicsContractsParser::GuaranteesKWContext* LogicsContractsParser::guaranteesKW() {
   GuaranteesKWContext *_localctx = _tracker.createInstance<GuaranteesKWContext>(_ctx, getState());
-  enterRule(_localctx, 38, LTLContractsParser::RuleGuaranteesKW);
+  enterRule(_localctx, 38, LogicsContractsParser::RuleGuaranteesKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1050,7 +1050,7 @@ LTLContractsParser::GuaranteesKWContext* LTLContractsParser::guaranteesKW() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(133);
-    match(LTLContractsParser::T__13);
+    match(LogicsContractsParser::T__13);
    
   }
   catch (RecognitionException &e) {
@@ -1064,26 +1064,26 @@ LTLContractsParser::GuaranteesKWContext* LTLContractsParser::guaranteesKW() {
 
 //----------------- NameKwContext ------------------------------------------------------------------
 
-LTLContractsParser::NameKwContext::NameKwContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::NameKwContext::NameKwContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
 
-size_t LTLContractsParser::NameKwContext::getRuleIndex() const {
-  return LTLContractsParser::RuleNameKw;
+size_t LogicsContractsParser::NameKwContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleNameKw;
 }
 
 
-antlrcpp::Any LTLContractsParser::NameKwContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::NameKwContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitNameKw(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::NameKwContext* LTLContractsParser::nameKw() {
+LogicsContractsParser::NameKwContext* LogicsContractsParser::nameKw() {
   NameKwContext *_localctx = _tracker.createInstance<NameKwContext>(_ctx, getState());
-  enterRule(_localctx, 40, LTLContractsParser::RuleNameKw);
+  enterRule(_localctx, 40, LogicsContractsParser::RuleNameKw);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1095,7 +1095,7 @@ LTLContractsParser::NameKwContext* LTLContractsParser::nameKw() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(135);
-    match(LTLContractsParser::T__14);
+    match(LogicsContractsParser::T__14);
    
   }
   catch (RecognitionException &e) {
@@ -1109,34 +1109,34 @@ LTLContractsParser::NameKwContext* LTLContractsParser::nameKw() {
 
 //----------------- CausalityContext ------------------------------------------------------------------
 
-LTLContractsParser::CausalityContext::CausalityContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::CausalityContext::CausalityContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::InputKWContext* LTLContractsParser::CausalityContext::inputKW() {
-  return getRuleContext<LTLContractsParser::InputKWContext>(0);
+LogicsContractsParser::InputKWContext* LogicsContractsParser::CausalityContext::inputKW() {
+  return getRuleContext<LogicsContractsParser::InputKWContext>(0);
 }
 
-LTLContractsParser::OutputKWContext* LTLContractsParser::CausalityContext::outputKW() {
-  return getRuleContext<LTLContractsParser::OutputKWContext>(0);
-}
-
-
-size_t LTLContractsParser::CausalityContext::getRuleIndex() const {
-  return LTLContractsParser::RuleCausality;
+LogicsContractsParser::OutputKWContext* LogicsContractsParser::CausalityContext::outputKW() {
+  return getRuleContext<LogicsContractsParser::OutputKWContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::CausalityContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::CausalityContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleCausality;
+}
+
+
+antlrcpp::Any LogicsContractsParser::CausalityContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitCausality(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::CausalityContext* LTLContractsParser::causality() {
+LogicsContractsParser::CausalityContext* LogicsContractsParser::causality() {
   CausalityContext *_localctx = _tracker.createInstance<CausalityContext>(_ctx, getState());
-  enterRule(_localctx, 42, LTLContractsParser::RuleCausality);
+  enterRule(_localctx, 42, LogicsContractsParser::RuleCausality);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1149,14 +1149,14 @@ LTLContractsParser::CausalityContext* LTLContractsParser::causality() {
     setState(139);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
-      case LTLContractsParser::T__4: {
+      case LogicsContractsParser::T__4: {
         enterOuterAlt(_localctx, 1);
         setState(137);
         inputKW();
         break;
       }
 
-      case LTLContractsParser::T__5: {
+      case LogicsContractsParser::T__5: {
         enterOuterAlt(_localctx, 2);
         setState(138);
         outputKW();
@@ -1179,34 +1179,34 @@ LTLContractsParser::CausalityContext* LTLContractsParser::causality() {
 
 //----------------- Logic_constantContext ------------------------------------------------------------------
 
-LTLContractsParser::Logic_constantContext::Logic_constantContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Logic_constantContext::Logic_constantContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::TrueKWContext* LTLContractsParser::Logic_constantContext::trueKW() {
-  return getRuleContext<LTLContractsParser::TrueKWContext>(0);
+LogicsContractsParser::TrueKWContext* LogicsContractsParser::Logic_constantContext::trueKW() {
+  return getRuleContext<LogicsContractsParser::TrueKWContext>(0);
 }
 
-LTLContractsParser::FalseKWContext* LTLContractsParser::Logic_constantContext::falseKW() {
-  return getRuleContext<LTLContractsParser::FalseKWContext>(0);
-}
-
-
-size_t LTLContractsParser::Logic_constantContext::getRuleIndex() const {
-  return LTLContractsParser::RuleLogic_constant;
+LogicsContractsParser::FalseKWContext* LogicsContractsParser::Logic_constantContext::falseKW() {
+  return getRuleContext<LogicsContractsParser::FalseKWContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Logic_constantContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Logic_constantContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleLogic_constant;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Logic_constantContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitLogic_constant(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Logic_constantContext* LTLContractsParser::logic_constant() {
+LogicsContractsParser::Logic_constantContext* LogicsContractsParser::logic_constant() {
   Logic_constantContext *_localctx = _tracker.createInstance<Logic_constantContext>(_ctx, getState());
-  enterRule(_localctx, 44, LTLContractsParser::RuleLogic_constant);
+  enterRule(_localctx, 44, LogicsContractsParser::RuleLogic_constant);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1219,14 +1219,14 @@ LTLContractsParser::Logic_constantContext* LTLContractsParser::logic_constant() 
     setState(143);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
-      case LTLContractsParser::T__9: {
+      case LogicsContractsParser::T__9: {
         enterOuterAlt(_localctx, 1);
         setState(141);
         trueKW();
         break;
       }
 
-      case LTLContractsParser::T__10: {
+      case LogicsContractsParser::T__10: {
         enterOuterAlt(_localctx, 2);
         setState(142);
         falseKW();
@@ -1249,46 +1249,46 @@ LTLContractsParser::Logic_constantContext* LTLContractsParser::logic_constant() 
 
 //----------------- RangeContext ------------------------------------------------------------------
 
-LTLContractsParser::RangeContext::RangeContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::RangeContext::RangeContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::RangeContext::LBRACKET() {
-  return getToken(LTLContractsParser::LBRACKET, 0);
+tree::TerminalNode* LogicsContractsParser::RangeContext::LBRACKET() {
+  return getToken(LogicsContractsParser::LBRACKET, 0);
 }
 
-std::vector<tree::TerminalNode *> LTLContractsParser::RangeContext::NUMBER() {
-  return getTokens(LTLContractsParser::NUMBER);
+std::vector<tree::TerminalNode *> LogicsContractsParser::RangeContext::NUMBER() {
+  return getTokens(LogicsContractsParser::NUMBER);
 }
 
-tree::TerminalNode* LTLContractsParser::RangeContext::NUMBER(size_t i) {
-  return getToken(LTLContractsParser::NUMBER, i);
+tree::TerminalNode* LogicsContractsParser::RangeContext::NUMBER(size_t i) {
+  return getToken(LogicsContractsParser::NUMBER, i);
 }
 
-tree::TerminalNode* LTLContractsParser::RangeContext::COLON() {
-  return getToken(LTLContractsParser::COLON, 0);
+tree::TerminalNode* LogicsContractsParser::RangeContext::COLON() {
+  return getToken(LogicsContractsParser::COLON, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::RangeContext::RBRACKET() {
-  return getToken(LTLContractsParser::RBRACKET, 0);
-}
-
-
-size_t LTLContractsParser::RangeContext::getRuleIndex() const {
-  return LTLContractsParser::RuleRange;
+tree::TerminalNode* LogicsContractsParser::RangeContext::RBRACKET() {
+  return getToken(LogicsContractsParser::RBRACKET, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::RangeContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::RangeContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleRange;
+}
+
+
+antlrcpp::Any LogicsContractsParser::RangeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitRange(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::RangeContext* LTLContractsParser::range() {
+LogicsContractsParser::RangeContext* LogicsContractsParser::range() {
   RangeContext *_localctx = _tracker.createInstance<RangeContext>(_ctx, getState());
-  enterRule(_localctx, 46, LTLContractsParser::RuleRange);
+  enterRule(_localctx, 46, LogicsContractsParser::RuleRange);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1300,15 +1300,15 @@ LTLContractsParser::RangeContext* LTLContractsParser::range() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(145);
-    match(LTLContractsParser::LBRACKET);
+    match(LogicsContractsParser::LBRACKET);
     setState(146);
-    match(LTLContractsParser::NUMBER);
+    match(LogicsContractsParser::NUMBER);
     setState(147);
-    match(LTLContractsParser::COLON);
+    match(LogicsContractsParser::COLON);
     setState(148);
-    match(LTLContractsParser::NUMBER);
+    match(LogicsContractsParser::NUMBER);
     setState(149);
-    match(LTLContractsParser::RBRACKET);
+    match(LogicsContractsParser::RBRACKET);
    
   }
   catch (RecognitionException &e) {
@@ -1322,34 +1322,34 @@ LTLContractsParser::RangeContext* LTLContractsParser::range() {
 
 //----------------- IntegerContext ------------------------------------------------------------------
 
-LTLContractsParser::IntegerContext::IntegerContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::IntegerContext::IntegerContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::IntegerKWContext* LTLContractsParser::IntegerContext::integerKW() {
-  return getRuleContext<LTLContractsParser::IntegerKWContext>(0);
+LogicsContractsParser::IntegerKWContext* LogicsContractsParser::IntegerContext::integerKW() {
+  return getRuleContext<LogicsContractsParser::IntegerKWContext>(0);
 }
 
-LTLContractsParser::RangeContext* LTLContractsParser::IntegerContext::range() {
-  return getRuleContext<LTLContractsParser::RangeContext>(0);
-}
-
-
-size_t LTLContractsParser::IntegerContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInteger;
+LogicsContractsParser::RangeContext* LogicsContractsParser::IntegerContext::range() {
+  return getRuleContext<LogicsContractsParser::RangeContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::IntegerContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::IntegerContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInteger;
+}
+
+
+antlrcpp::Any LogicsContractsParser::IntegerContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInteger(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::IntegerContext* LTLContractsParser::integer() {
+LogicsContractsParser::IntegerContext* LogicsContractsParser::integer() {
   IntegerContext *_localctx = _tracker.createInstance<IntegerContext>(_ctx, getState());
-  enterRule(_localctx, 48, LTLContractsParser::RuleInteger);
+  enterRule(_localctx, 48, LogicsContractsParser::RuleInteger);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1367,7 +1367,7 @@ LTLContractsParser::IntegerContext* LTLContractsParser::integer() {
     _errHandler->sync(this);
 
     _la = _input->LA(1);
-    if (_la == LTLContractsParser::LBRACKET) {
+    if (_la == LogicsContractsParser::LBRACKET) {
       setState(152);
       range();
     }
@@ -1384,34 +1384,34 @@ LTLContractsParser::IntegerContext* LTLContractsParser::integer() {
 
 //----------------- TypeKWContext ------------------------------------------------------------------
 
-LTLContractsParser::TypeKWContext::TypeKWContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::TypeKWContext::TypeKWContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::IntegerContext* LTLContractsParser::TypeKWContext::integer() {
-  return getRuleContext<LTLContractsParser::IntegerContext>(0);
+LogicsContractsParser::IntegerContext* LogicsContractsParser::TypeKWContext::integer() {
+  return getRuleContext<LogicsContractsParser::IntegerContext>(0);
 }
 
-LTLContractsParser::BooleanKWContext* LTLContractsParser::TypeKWContext::booleanKW() {
-  return getRuleContext<LTLContractsParser::BooleanKWContext>(0);
-}
-
-
-size_t LTLContractsParser::TypeKWContext::getRuleIndex() const {
-  return LTLContractsParser::RuleTypeKW;
+LogicsContractsParser::BooleanKWContext* LogicsContractsParser::TypeKWContext::booleanKW() {
+  return getRuleContext<LogicsContractsParser::BooleanKWContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::TypeKWContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::TypeKWContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleTypeKW;
+}
+
+
+antlrcpp::Any LogicsContractsParser::TypeKWContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitTypeKW(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::TypeKWContext* LTLContractsParser::typeKW() {
+LogicsContractsParser::TypeKWContext* LogicsContractsParser::typeKW() {
   TypeKWContext *_localctx = _tracker.createInstance<TypeKWContext>(_ctx, getState());
-  enterRule(_localctx, 50, LTLContractsParser::RuleTypeKW);
+  enterRule(_localctx, 50, LogicsContractsParser::RuleTypeKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1424,14 +1424,14 @@ LTLContractsParser::TypeKWContext* LTLContractsParser::typeKW() {
     setState(157);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
-      case LTLContractsParser::T__1: {
+      case LogicsContractsParser::T__1: {
         enterOuterAlt(_localctx, 1);
         setState(155);
         integer();
         break;
       }
 
-      case LTLContractsParser::T__2: {
+      case LogicsContractsParser::T__2: {
         enterOuterAlt(_localctx, 2);
         setState(156);
         booleanKW();
@@ -1454,30 +1454,30 @@ LTLContractsParser::TypeKWContext* LTLContractsParser::typeKW() {
 
 //----------------- LvalueContext ------------------------------------------------------------------
 
-LTLContractsParser::LvalueContext::LvalueContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::LvalueContext::LvalueContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::ValueContext* LTLContractsParser::LvalueContext::value() {
-  return getRuleContext<LTLContractsParser::ValueContext>(0);
+LogicsContractsParser::ValueContext* LogicsContractsParser::LvalueContext::value() {
+  return getRuleContext<LogicsContractsParser::ValueContext>(0);
 }
 
 
-size_t LTLContractsParser::LvalueContext::getRuleIndex() const {
-  return LTLContractsParser::RuleLvalue;
+size_t LogicsContractsParser::LvalueContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleLvalue;
 }
 
 
-antlrcpp::Any LTLContractsParser::LvalueContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::LvalueContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitLvalue(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::LvalueContext* LTLContractsParser::lvalue() {
+LogicsContractsParser::LvalueContext* LogicsContractsParser::lvalue() {
   LvalueContext *_localctx = _tracker.createInstance<LvalueContext>(_ctx, getState());
-  enterRule(_localctx, 52, LTLContractsParser::RuleLvalue);
+  enterRule(_localctx, 52, LogicsContractsParser::RuleLvalue);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1503,30 +1503,30 @@ LTLContractsParser::LvalueContext* LTLContractsParser::lvalue() {
 
 //----------------- RvalueContext ------------------------------------------------------------------
 
-LTLContractsParser::RvalueContext::RvalueContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::RvalueContext::RvalueContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::ValueContext* LTLContractsParser::RvalueContext::value() {
-  return getRuleContext<LTLContractsParser::ValueContext>(0);
+LogicsContractsParser::ValueContext* LogicsContractsParser::RvalueContext::value() {
+  return getRuleContext<LogicsContractsParser::ValueContext>(0);
 }
 
 
-size_t LTLContractsParser::RvalueContext::getRuleIndex() const {
-  return LTLContractsParser::RuleRvalue;
+size_t LogicsContractsParser::RvalueContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleRvalue;
 }
 
 
-antlrcpp::Any LTLContractsParser::RvalueContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+antlrcpp::Any LogicsContractsParser::RvalueContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitRvalue(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::RvalueContext* LTLContractsParser::rvalue() {
+LogicsContractsParser::RvalueContext* LogicsContractsParser::rvalue() {
   RvalueContext *_localctx = _tracker.createInstance<RvalueContext>(_ctx, getState());
-  enterRule(_localctx, 54, LTLContractsParser::RuleRvalue);
+  enterRule(_localctx, 54, LogicsContractsParser::RuleRvalue);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1552,38 +1552,38 @@ LTLContractsParser::RvalueContext* LTLContractsParser::rvalue() {
 
 //----------------- RelationContext ------------------------------------------------------------------
 
-LTLContractsParser::RelationContext::RelationContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::RelationContext::RelationContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::LvalueContext* LTLContractsParser::RelationContext::lvalue() {
-  return getRuleContext<LTLContractsParser::LvalueContext>(0);
+LogicsContractsParser::LvalueContext* LogicsContractsParser::RelationContext::lvalue() {
+  return getRuleContext<LogicsContractsParser::LvalueContext>(0);
 }
 
-LTLContractsParser::Relation_opContext* LTLContractsParser::RelationContext::relation_op() {
-  return getRuleContext<LTLContractsParser::Relation_opContext>(0);
+LogicsContractsParser::Relation_opContext* LogicsContractsParser::RelationContext::relation_op() {
+  return getRuleContext<LogicsContractsParser::Relation_opContext>(0);
 }
 
-LTLContractsParser::RvalueContext* LTLContractsParser::RelationContext::rvalue() {
-  return getRuleContext<LTLContractsParser::RvalueContext>(0);
-}
-
-
-size_t LTLContractsParser::RelationContext::getRuleIndex() const {
-  return LTLContractsParser::RuleRelation;
+LogicsContractsParser::RvalueContext* LogicsContractsParser::RelationContext::rvalue() {
+  return getRuleContext<LogicsContractsParser::RvalueContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::RelationContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::RelationContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleRelation;
+}
+
+
+antlrcpp::Any LogicsContractsParser::RelationContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitRelation(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::RelationContext* LTLContractsParser::relation() {
+LogicsContractsParser::RelationContext* LogicsContractsParser::relation() {
   RelationContext *_localctx = _tracker.createInstance<RelationContext>(_ctx, getState());
-  enterRule(_localctx, 56, LTLContractsParser::RuleRelation);
+  enterRule(_localctx, 56, LogicsContractsParser::RuleRelation);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1613,76 +1613,76 @@ LTLContractsParser::RelationContext* LTLContractsParser::relation() {
 
 //----------------- ValueContext ------------------------------------------------------------------
 
-LTLContractsParser::ValueContext::ValueContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::ValueContext::ValueContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::Primed_IDContext* LTLContractsParser::ValueContext::primed_ID() {
-  return getRuleContext<LTLContractsParser::Primed_IDContext>(0);
+LogicsContractsParser::Primed_IDContext* LogicsContractsParser::ValueContext::primed_ID() {
+  return getRuleContext<LogicsContractsParser::Primed_IDContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::ValueContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::ValueContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
-LTLContractsParser::Minus_IDContext* LTLContractsParser::ValueContext::minus_ID() {
-  return getRuleContext<LTLContractsParser::Minus_IDContext>(0);
+LogicsContractsParser::Minus_IDContext* LogicsContractsParser::ValueContext::minus_ID() {
+  return getRuleContext<LogicsContractsParser::Minus_IDContext>(0);
 }
 
-LTLContractsParser::Minus_numberContext* LTLContractsParser::ValueContext::minus_number() {
-  return getRuleContext<LTLContractsParser::Minus_numberContext>(0);
+LogicsContractsParser::Minus_numberContext* LogicsContractsParser::ValueContext::minus_number() {
+  return getRuleContext<LogicsContractsParser::Minus_numberContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::ValueContext::NUMBER() {
-  return getToken(LTLContractsParser::NUMBER, 0);
+tree::TerminalNode* LogicsContractsParser::ValueContext::NUMBER() {
+  return getToken(LogicsContractsParser::NUMBER, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::ValueContext::LBRACKET() {
-  return getToken(LTLContractsParser::LBRACKET, 0);
+tree::TerminalNode* LogicsContractsParser::ValueContext::LBRACKET() {
+  return getToken(LogicsContractsParser::LBRACKET, 0);
 }
 
-std::vector<LTLContractsParser::ValueContext *> LTLContractsParser::ValueContext::value() {
-  return getRuleContexts<LTLContractsParser::ValueContext>();
+std::vector<LogicsContractsParser::ValueContext *> LogicsContractsParser::ValueContext::value() {
+  return getRuleContexts<LogicsContractsParser::ValueContext>();
 }
 
-LTLContractsParser::ValueContext* LTLContractsParser::ValueContext::value(size_t i) {
-  return getRuleContext<LTLContractsParser::ValueContext>(i);
+LogicsContractsParser::ValueContext* LogicsContractsParser::ValueContext::value(size_t i) {
+  return getRuleContext<LogicsContractsParser::ValueContext>(i);
 }
 
-tree::TerminalNode* LTLContractsParser::ValueContext::RBRACKET() {
-  return getToken(LTLContractsParser::RBRACKET, 0);
+tree::TerminalNode* LogicsContractsParser::ValueContext::RBRACKET() {
+  return getToken(LogicsContractsParser::RBRACKET, 0);
 }
 
-LTLContractsParser::Bin_math_opContext* LTLContractsParser::ValueContext::bin_math_op() {
-  return getRuleContext<LTLContractsParser::Bin_math_opContext>(0);
-}
-
-
-size_t LTLContractsParser::ValueContext::getRuleIndex() const {
-  return LTLContractsParser::RuleValue;
+LogicsContractsParser::Bin_math_opContext* LogicsContractsParser::ValueContext::bin_math_op() {
+  return getRuleContext<LogicsContractsParser::Bin_math_opContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::ValueContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::ValueContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleValue;
+}
+
+
+antlrcpp::Any LogicsContractsParser::ValueContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitValue(this);
   else
     return visitor->visitChildren(this);
 }
 
 
-LTLContractsParser::ValueContext* LTLContractsParser::value() {
+LogicsContractsParser::ValueContext* LogicsContractsParser::value() {
    return value(0);
 }
 
-LTLContractsParser::ValueContext* LTLContractsParser::value(int precedence) {
+LogicsContractsParser::ValueContext* LogicsContractsParser::value(int precedence) {
   ParserRuleContext *parentContext = _ctx;
   size_t parentState = getState();
-  LTLContractsParser::ValueContext *_localctx = _tracker.createInstance<ValueContext>(_ctx, parentState);
-  LTLContractsParser::ValueContext *previousContext = _localctx;
+  LogicsContractsParser::ValueContext *_localctx = _tracker.createInstance<ValueContext>(_ctx, parentState);
+  LogicsContractsParser::ValueContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
   size_t startState = 58;
-  enterRecursionRule(_localctx, 58, LTLContractsParser::RuleValue, precedence);
+  enterRecursionRule(_localctx, 58, LogicsContractsParser::RuleValue, precedence);
 
     
 
@@ -1707,7 +1707,7 @@ LTLContractsParser::ValueContext* LTLContractsParser::value(int precedence) {
 
     case 2: {
       setState(169);
-      match(LTLContractsParser::ID);
+      match(LogicsContractsParser::ID);
       break;
     }
 
@@ -1725,17 +1725,17 @@ LTLContractsParser::ValueContext* LTLContractsParser::value(int precedence) {
 
     case 5: {
       setState(172);
-      match(LTLContractsParser::NUMBER);
+      match(LogicsContractsParser::NUMBER);
       break;
     }
 
     case 6: {
       setState(173);
-      match(LTLContractsParser::LBRACKET);
+      match(LogicsContractsParser::LBRACKET);
       setState(174);
       value(0);
       setState(175);
-      match(LTLContractsParser::RBRACKET);
+      match(LogicsContractsParser::RBRACKET);
       break;
     }
 
@@ -1776,38 +1776,38 @@ LTLContractsParser::ValueContext* LTLContractsParser::value(int precedence) {
 
 //----------------- PairContext ------------------------------------------------------------------
 
-LTLContractsParser::PairContext::PairContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::PairContext::PairContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<LTLContractsParser::ValueContext *> LTLContractsParser::PairContext::value() {
-  return getRuleContexts<LTLContractsParser::ValueContext>();
+std::vector<LogicsContractsParser::ValueContext *> LogicsContractsParser::PairContext::value() {
+  return getRuleContexts<LogicsContractsParser::ValueContext>();
 }
 
-LTLContractsParser::ValueContext* LTLContractsParser::PairContext::value(size_t i) {
-  return getRuleContext<LTLContractsParser::ValueContext>(i);
+LogicsContractsParser::ValueContext* LogicsContractsParser::PairContext::value(size_t i) {
+  return getRuleContext<LogicsContractsParser::ValueContext>(i);
 }
 
-tree::TerminalNode* LTLContractsParser::PairContext::COMMA() {
-  return getToken(LTLContractsParser::COMMA, 0);
-}
-
-
-size_t LTLContractsParser::PairContext::getRuleIndex() const {
-  return LTLContractsParser::RulePair;
+tree::TerminalNode* LogicsContractsParser::PairContext::COMMA() {
+  return getToken(LogicsContractsParser::COMMA, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::PairContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::PairContext::getRuleIndex() const {
+  return LogicsContractsParser::RulePair;
+}
+
+
+antlrcpp::Any LogicsContractsParser::PairContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitPair(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::PairContext* LTLContractsParser::pair() {
+LogicsContractsParser::PairContext* LogicsContractsParser::pair() {
   PairContext *_localctx = _tracker.createInstance<PairContext>(_ctx, getState());
-  enterRule(_localctx, 60, LTLContractsParser::RulePair);
+  enterRule(_localctx, 60, LogicsContractsParser::RulePair);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1821,7 +1821,7 @@ LTLContractsParser::PairContext* LTLContractsParser::pair() {
     setState(188);
     value(0);
     setState(189);
-    match(LTLContractsParser::COMMA);
+    match(LogicsContractsParser::COMMA);
     setState(190);
     value(0);
    
@@ -1837,38 +1837,38 @@ LTLContractsParser::PairContext* LTLContractsParser::pair() {
 
 //----------------- Interval_leftopenContext ------------------------------------------------------------------
 
-LTLContractsParser::Interval_leftopenContext::Interval_leftopenContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Interval_leftopenContext::Interval_leftopenContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<tree::TerminalNode *> LTLContractsParser::Interval_leftopenContext::RSQUARE() {
-  return getTokens(LTLContractsParser::RSQUARE);
+std::vector<tree::TerminalNode *> LogicsContractsParser::Interval_leftopenContext::RSQUARE() {
+  return getTokens(LogicsContractsParser::RSQUARE);
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_leftopenContext::RSQUARE(size_t i) {
-  return getToken(LTLContractsParser::RSQUARE, i);
+tree::TerminalNode* LogicsContractsParser::Interval_leftopenContext::RSQUARE(size_t i) {
+  return getToken(LogicsContractsParser::RSQUARE, i);
 }
 
-LTLContractsParser::PairContext* LTLContractsParser::Interval_leftopenContext::pair() {
-  return getRuleContext<LTLContractsParser::PairContext>(0);
-}
-
-
-size_t LTLContractsParser::Interval_leftopenContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInterval_leftopen;
+LogicsContractsParser::PairContext* LogicsContractsParser::Interval_leftopenContext::pair() {
+  return getRuleContext<LogicsContractsParser::PairContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Interval_leftopenContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Interval_leftopenContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInterval_leftopen;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Interval_leftopenContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInterval_leftopen(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Interval_leftopenContext* LTLContractsParser::interval_leftopen() {
+LogicsContractsParser::Interval_leftopenContext* LogicsContractsParser::interval_leftopen() {
   Interval_leftopenContext *_localctx = _tracker.createInstance<Interval_leftopenContext>(_ctx, getState());
-  enterRule(_localctx, 62, LTLContractsParser::RuleInterval_leftopen);
+  enterRule(_localctx, 62, LogicsContractsParser::RuleInterval_leftopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1880,11 +1880,11 @@ LTLContractsParser::Interval_leftopenContext* LTLContractsParser::interval_lefto
   try {
     enterOuterAlt(_localctx, 1);
     setState(192);
-    match(LTLContractsParser::RSQUARE);
+    match(LogicsContractsParser::RSQUARE);
     setState(193);
     pair();
     setState(194);
-    match(LTLContractsParser::RSQUARE);
+    match(LogicsContractsParser::RSQUARE);
    
   }
   catch (RecognitionException &e) {
@@ -1898,38 +1898,38 @@ LTLContractsParser::Interval_leftopenContext* LTLContractsParser::interval_lefto
 
 //----------------- Interval_rightopenContext ------------------------------------------------------------------
 
-LTLContractsParser::Interval_rightopenContext::Interval_rightopenContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Interval_rightopenContext::Interval_rightopenContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<tree::TerminalNode *> LTLContractsParser::Interval_rightopenContext::LSQUARE() {
-  return getTokens(LTLContractsParser::LSQUARE);
+std::vector<tree::TerminalNode *> LogicsContractsParser::Interval_rightopenContext::LSQUARE() {
+  return getTokens(LogicsContractsParser::LSQUARE);
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_rightopenContext::LSQUARE(size_t i) {
-  return getToken(LTLContractsParser::LSQUARE, i);
+tree::TerminalNode* LogicsContractsParser::Interval_rightopenContext::LSQUARE(size_t i) {
+  return getToken(LogicsContractsParser::LSQUARE, i);
 }
 
-LTLContractsParser::PairContext* LTLContractsParser::Interval_rightopenContext::pair() {
-  return getRuleContext<LTLContractsParser::PairContext>(0);
-}
-
-
-size_t LTLContractsParser::Interval_rightopenContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInterval_rightopen;
+LogicsContractsParser::PairContext* LogicsContractsParser::Interval_rightopenContext::pair() {
+  return getRuleContext<LogicsContractsParser::PairContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Interval_rightopenContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Interval_rightopenContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInterval_rightopen;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Interval_rightopenContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInterval_rightopen(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Interval_rightopenContext* LTLContractsParser::interval_rightopen() {
+LogicsContractsParser::Interval_rightopenContext* LogicsContractsParser::interval_rightopen() {
   Interval_rightopenContext *_localctx = _tracker.createInstance<Interval_rightopenContext>(_ctx, getState());
-  enterRule(_localctx, 64, LTLContractsParser::RuleInterval_rightopen);
+  enterRule(_localctx, 64, LogicsContractsParser::RuleInterval_rightopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1941,11 +1941,11 @@ LTLContractsParser::Interval_rightopenContext* LTLContractsParser::interval_righ
   try {
     enterOuterAlt(_localctx, 1);
     setState(196);
-    match(LTLContractsParser::LSQUARE);
+    match(LogicsContractsParser::LSQUARE);
     setState(197);
     pair();
     setState(198);
-    match(LTLContractsParser::LSQUARE);
+    match(LogicsContractsParser::LSQUARE);
    
   }
   catch (RecognitionException &e) {
@@ -1959,38 +1959,38 @@ LTLContractsParser::Interval_rightopenContext* LTLContractsParser::interval_righ
 
 //----------------- Interval_fullopenContext ------------------------------------------------------------------
 
-LTLContractsParser::Interval_fullopenContext::Interval_fullopenContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Interval_fullopenContext::Interval_fullopenContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_fullopenContext::RSQUARE() {
-  return getToken(LTLContractsParser::RSQUARE, 0);
+tree::TerminalNode* LogicsContractsParser::Interval_fullopenContext::RSQUARE() {
+  return getToken(LogicsContractsParser::RSQUARE, 0);
 }
 
-LTLContractsParser::PairContext* LTLContractsParser::Interval_fullopenContext::pair() {
-  return getRuleContext<LTLContractsParser::PairContext>(0);
+LogicsContractsParser::PairContext* LogicsContractsParser::Interval_fullopenContext::pair() {
+  return getRuleContext<LogicsContractsParser::PairContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_fullopenContext::LSQUARE() {
-  return getToken(LTLContractsParser::LSQUARE, 0);
-}
-
-
-size_t LTLContractsParser::Interval_fullopenContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInterval_fullopen;
+tree::TerminalNode* LogicsContractsParser::Interval_fullopenContext::LSQUARE() {
+  return getToken(LogicsContractsParser::LSQUARE, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Interval_fullopenContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Interval_fullopenContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInterval_fullopen;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Interval_fullopenContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInterval_fullopen(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Interval_fullopenContext* LTLContractsParser::interval_fullopen() {
+LogicsContractsParser::Interval_fullopenContext* LogicsContractsParser::interval_fullopen() {
   Interval_fullopenContext *_localctx = _tracker.createInstance<Interval_fullopenContext>(_ctx, getState());
-  enterRule(_localctx, 66, LTLContractsParser::RuleInterval_fullopen);
+  enterRule(_localctx, 66, LogicsContractsParser::RuleInterval_fullopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2002,11 +2002,11 @@ LTLContractsParser::Interval_fullopenContext* LTLContractsParser::interval_fullo
   try {
     enterOuterAlt(_localctx, 1);
     setState(200);
-    match(LTLContractsParser::RSQUARE);
+    match(LogicsContractsParser::RSQUARE);
     setState(201);
     pair();
     setState(202);
-    match(LTLContractsParser::LSQUARE);
+    match(LogicsContractsParser::LSQUARE);
    
   }
   catch (RecognitionException &e) {
@@ -2020,38 +2020,38 @@ LTLContractsParser::Interval_fullopenContext* LTLContractsParser::interval_fullo
 
 //----------------- Interval_closedContext ------------------------------------------------------------------
 
-LTLContractsParser::Interval_closedContext::Interval_closedContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Interval_closedContext::Interval_closedContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_closedContext::LSQUARE() {
-  return getToken(LTLContractsParser::LSQUARE, 0);
+tree::TerminalNode* LogicsContractsParser::Interval_closedContext::LSQUARE() {
+  return getToken(LogicsContractsParser::LSQUARE, 0);
 }
 
-LTLContractsParser::PairContext* LTLContractsParser::Interval_closedContext::pair() {
-  return getRuleContext<LTLContractsParser::PairContext>(0);
+LogicsContractsParser::PairContext* LogicsContractsParser::Interval_closedContext::pair() {
+  return getRuleContext<LogicsContractsParser::PairContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::Interval_closedContext::RSQUARE() {
-  return getToken(LTLContractsParser::RSQUARE, 0);
-}
-
-
-size_t LTLContractsParser::Interval_closedContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInterval_closed;
+tree::TerminalNode* LogicsContractsParser::Interval_closedContext::RSQUARE() {
+  return getToken(LogicsContractsParser::RSQUARE, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Interval_closedContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Interval_closedContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInterval_closed;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Interval_closedContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInterval_closed(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Interval_closedContext* LTLContractsParser::interval_closed() {
+LogicsContractsParser::Interval_closedContext* LogicsContractsParser::interval_closed() {
   Interval_closedContext *_localctx = _tracker.createInstance<Interval_closedContext>(_ctx, getState());
-  enterRule(_localctx, 68, LTLContractsParser::RuleInterval_closed);
+  enterRule(_localctx, 68, LogicsContractsParser::RuleInterval_closed);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2063,11 +2063,11 @@ LTLContractsParser::Interval_closedContext* LTLContractsParser::interval_closed(
   try {
     enterOuterAlt(_localctx, 1);
     setState(204);
-    match(LTLContractsParser::LSQUARE);
+    match(LogicsContractsParser::LSQUARE);
     setState(205);
     pair();
     setState(206);
-    match(LTLContractsParser::RSQUARE);
+    match(LogicsContractsParser::RSQUARE);
    
   }
   catch (RecognitionException &e) {
@@ -2081,42 +2081,42 @@ LTLContractsParser::Interval_closedContext* LTLContractsParser::interval_closed(
 
 //----------------- IntervalContext ------------------------------------------------------------------
 
-LTLContractsParser::IntervalContext::IntervalContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::IntervalContext::IntervalContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::Interval_closedContext* LTLContractsParser::IntervalContext::interval_closed() {
-  return getRuleContext<LTLContractsParser::Interval_closedContext>(0);
+LogicsContractsParser::Interval_closedContext* LogicsContractsParser::IntervalContext::interval_closed() {
+  return getRuleContext<LogicsContractsParser::Interval_closedContext>(0);
 }
 
-LTLContractsParser::Interval_fullopenContext* LTLContractsParser::IntervalContext::interval_fullopen() {
-  return getRuleContext<LTLContractsParser::Interval_fullopenContext>(0);
+LogicsContractsParser::Interval_fullopenContext* LogicsContractsParser::IntervalContext::interval_fullopen() {
+  return getRuleContext<LogicsContractsParser::Interval_fullopenContext>(0);
 }
 
-LTLContractsParser::Interval_leftopenContext* LTLContractsParser::IntervalContext::interval_leftopen() {
-  return getRuleContext<LTLContractsParser::Interval_leftopenContext>(0);
+LogicsContractsParser::Interval_leftopenContext* LogicsContractsParser::IntervalContext::interval_leftopen() {
+  return getRuleContext<LogicsContractsParser::Interval_leftopenContext>(0);
 }
 
-LTLContractsParser::Interval_rightopenContext* LTLContractsParser::IntervalContext::interval_rightopen() {
-  return getRuleContext<LTLContractsParser::Interval_rightopenContext>(0);
-}
-
-
-size_t LTLContractsParser::IntervalContext::getRuleIndex() const {
-  return LTLContractsParser::RuleInterval;
+LogicsContractsParser::Interval_rightopenContext* LogicsContractsParser::IntervalContext::interval_rightopen() {
+  return getRuleContext<LogicsContractsParser::Interval_rightopenContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::IntervalContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::IntervalContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleInterval;
+}
+
+
+antlrcpp::Any LogicsContractsParser::IntervalContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitInterval(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::IntervalContext* LTLContractsParser::interval() {
+LogicsContractsParser::IntervalContext* LogicsContractsParser::interval() {
   IntervalContext *_localctx = _tracker.createInstance<IntervalContext>(_ctx, getState());
-  enterRule(_localctx, 70, LTLContractsParser::RuleInterval);
+  enterRule(_localctx, 70, LogicsContractsParser::RuleInterval);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2173,76 +2173,76 @@ LTLContractsParser::IntervalContext* LTLContractsParser::interval() {
 
 //----------------- FormulaContext ------------------------------------------------------------------
 
-LTLContractsParser::FormulaContext::FormulaContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::FormulaContext::FormulaContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::FormulaContext::LBRACKET() {
-  return getToken(LTLContractsParser::LBRACKET, 0);
+tree::TerminalNode* LogicsContractsParser::FormulaContext::LBRACKET() {
+  return getToken(LogicsContractsParser::LBRACKET, 0);
 }
 
-std::vector<LTLContractsParser::FormulaContext *> LTLContractsParser::FormulaContext::formula() {
-  return getRuleContexts<LTLContractsParser::FormulaContext>();
+std::vector<LogicsContractsParser::FormulaContext *> LogicsContractsParser::FormulaContext::formula() {
+  return getRuleContexts<LogicsContractsParser::FormulaContext>();
 }
 
-LTLContractsParser::FormulaContext* LTLContractsParser::FormulaContext::formula(size_t i) {
-  return getRuleContext<LTLContractsParser::FormulaContext>(i);
+LogicsContractsParser::FormulaContext* LogicsContractsParser::FormulaContext::formula(size_t i) {
+  return getRuleContext<LogicsContractsParser::FormulaContext>(i);
 }
 
-tree::TerminalNode* LTLContractsParser::FormulaContext::RBRACKET() {
-  return getToken(LTLContractsParser::RBRACKET, 0);
+tree::TerminalNode* LogicsContractsParser::FormulaContext::RBRACKET() {
+  return getToken(LogicsContractsParser::RBRACKET, 0);
 }
 
-LTLContractsParser::Unary_logic_opContext* LTLContractsParser::FormulaContext::unary_logic_op() {
-  return getRuleContext<LTLContractsParser::Unary_logic_opContext>(0);
+LogicsContractsParser::Unary_logic_opContext* LogicsContractsParser::FormulaContext::unary_logic_op() {
+  return getRuleContext<LogicsContractsParser::Unary_logic_opContext>(0);
 }
 
-LTLContractsParser::Unary_temp_opContext* LTLContractsParser::FormulaContext::unary_temp_op() {
-  return getRuleContext<LTLContractsParser::Unary_temp_opContext>(0);
+LogicsContractsParser::Unary_temp_opContext* LogicsContractsParser::FormulaContext::unary_temp_op() {
+  return getRuleContext<LogicsContractsParser::Unary_temp_opContext>(0);
 }
 
-LTLContractsParser::IntervalContext* LTLContractsParser::FormulaContext::interval() {
-  return getRuleContext<LTLContractsParser::IntervalContext>(0);
+LogicsContractsParser::IntervalContext* LogicsContractsParser::FormulaContext::interval() {
+  return getRuleContext<LogicsContractsParser::IntervalContext>(0);
 }
 
-LTLContractsParser::AtomContext* LTLContractsParser::FormulaContext::atom() {
-  return getRuleContext<LTLContractsParser::AtomContext>(0);
+LogicsContractsParser::AtomContext* LogicsContractsParser::FormulaContext::atom() {
+  return getRuleContext<LogicsContractsParser::AtomContext>(0);
 }
 
-LTLContractsParser::Bin_logic_opContext* LTLContractsParser::FormulaContext::bin_logic_op() {
-  return getRuleContext<LTLContractsParser::Bin_logic_opContext>(0);
+LogicsContractsParser::Bin_logic_opContext* LogicsContractsParser::FormulaContext::bin_logic_op() {
+  return getRuleContext<LogicsContractsParser::Bin_logic_opContext>(0);
 }
 
-LTLContractsParser::Bin_temp_opContext* LTLContractsParser::FormulaContext::bin_temp_op() {
-  return getRuleContext<LTLContractsParser::Bin_temp_opContext>(0);
-}
-
-
-size_t LTLContractsParser::FormulaContext::getRuleIndex() const {
-  return LTLContractsParser::RuleFormula;
+LogicsContractsParser::Bin_temp_opContext* LogicsContractsParser::FormulaContext::bin_temp_op() {
+  return getRuleContext<LogicsContractsParser::Bin_temp_opContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::FormulaContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::FormulaContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleFormula;
+}
+
+
+antlrcpp::Any LogicsContractsParser::FormulaContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitFormula(this);
   else
     return visitor->visitChildren(this);
 }
 
 
-LTLContractsParser::FormulaContext* LTLContractsParser::formula() {
+LogicsContractsParser::FormulaContext* LogicsContractsParser::formula() {
    return formula(0);
 }
 
-LTLContractsParser::FormulaContext* LTLContractsParser::formula(int precedence) {
+LogicsContractsParser::FormulaContext* LogicsContractsParser::formula(int precedence) {
   ParserRuleContext *parentContext = _ctx;
   size_t parentState = getState();
-  LTLContractsParser::FormulaContext *_localctx = _tracker.createInstance<FormulaContext>(_ctx, parentState);
-  LTLContractsParser::FormulaContext *previousContext = _localctx;
+  LogicsContractsParser::FormulaContext *_localctx = _tracker.createInstance<FormulaContext>(_ctx, parentState);
+  LogicsContractsParser::FormulaContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
   size_t startState = 72;
-  enterRecursionRule(_localctx, 72, LTLContractsParser::RuleFormula, precedence);
+  enterRecursionRule(_localctx, 72, LogicsContractsParser::RuleFormula, precedence);
 
     size_t _la = 0;
 
@@ -2261,11 +2261,11 @@ LTLContractsParser::FormulaContext* LTLContractsParser::formula(int precedence) 
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
     case 1: {
       setState(215);
-      match(LTLContractsParser::LBRACKET);
+      match(LogicsContractsParser::LBRACKET);
       setState(216);
       formula(0);
       setState(217);
-      match(LTLContractsParser::RBRACKET);
+      match(LogicsContractsParser::RBRACKET);
       break;
     }
 
@@ -2284,9 +2284,9 @@ LTLContractsParser::FormulaContext* LTLContractsParser::formula(int precedence) 
       _errHandler->sync(this);
 
       _la = _input->LA(1);
-      if (_la == LTLContractsParser::LSQUARE
+      if (_la == LogicsContractsParser::LSQUARE
 
-      || _la == LTLContractsParser::RSQUARE) {
+      || _la == LogicsContractsParser::RSQUARE) {
         setState(223);
         interval();
       }
@@ -2341,9 +2341,9 @@ LTLContractsParser::FormulaContext* LTLContractsParser::formula(int precedence) 
           _errHandler->sync(this);
 
           _la = _input->LA(1);
-          if (_la == LTLContractsParser::LSQUARE
+          if (_la == LogicsContractsParser::LSQUARE
 
-          || _la == LTLContractsParser::RSQUARE) {
+          || _la == LogicsContractsParser::RSQUARE) {
             setState(237);
             interval();
           }
@@ -2371,34 +2371,34 @@ LTLContractsParser::FormulaContext* LTLContractsParser::formula(int precedence) 
 
 //----------------- Minus_numberContext ------------------------------------------------------------------
 
-LTLContractsParser::Minus_numberContext::Minus_numberContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Minus_numberContext::Minus_numberContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Minus_numberContext::MINUS() {
-  return getToken(LTLContractsParser::MINUS, 0);
+tree::TerminalNode* LogicsContractsParser::Minus_numberContext::MINUS() {
+  return getToken(LogicsContractsParser::MINUS, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Minus_numberContext::NUMBER() {
-  return getToken(LTLContractsParser::NUMBER, 0);
-}
-
-
-size_t LTLContractsParser::Minus_numberContext::getRuleIndex() const {
-  return LTLContractsParser::RuleMinus_number;
+tree::TerminalNode* LogicsContractsParser::Minus_numberContext::NUMBER() {
+  return getToken(LogicsContractsParser::NUMBER, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Minus_numberContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Minus_numberContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleMinus_number;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Minus_numberContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitMinus_number(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Minus_numberContext* LTLContractsParser::minus_number() {
+LogicsContractsParser::Minus_numberContext* LogicsContractsParser::minus_number() {
   Minus_numberContext *_localctx = _tracker.createInstance<Minus_numberContext>(_ctx, getState());
-  enterRule(_localctx, 74, LTLContractsParser::RuleMinus_number);
+  enterRule(_localctx, 74, LogicsContractsParser::RuleMinus_number);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2410,9 +2410,9 @@ LTLContractsParser::Minus_numberContext* LTLContractsParser::minus_number() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(247);
-    match(LTLContractsParser::MINUS);
+    match(LogicsContractsParser::MINUS);
     setState(248);
-    match(LTLContractsParser::NUMBER);
+    match(LogicsContractsParser::NUMBER);
    
   }
   catch (RecognitionException &e) {
@@ -2426,34 +2426,34 @@ LTLContractsParser::Minus_numberContext* LTLContractsParser::minus_number() {
 
 //----------------- Minus_IDContext ------------------------------------------------------------------
 
-LTLContractsParser::Minus_IDContext::Minus_IDContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Minus_IDContext::Minus_IDContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* LTLContractsParser::Minus_IDContext::MINUS() {
-  return getToken(LTLContractsParser::MINUS, 0);
+tree::TerminalNode* LogicsContractsParser::Minus_IDContext::MINUS() {
+  return getToken(LogicsContractsParser::MINUS, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::Minus_IDContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
-}
-
-
-size_t LTLContractsParser::Minus_IDContext::getRuleIndex() const {
-  return LTLContractsParser::RuleMinus_ID;
+tree::TerminalNode* LogicsContractsParser::Minus_IDContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Minus_IDContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Minus_IDContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleMinus_ID;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Minus_IDContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitMinus_ID(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Minus_IDContext* LTLContractsParser::minus_ID() {
+LogicsContractsParser::Minus_IDContext* LogicsContractsParser::minus_ID() {
   Minus_IDContext *_localctx = _tracker.createInstance<Minus_IDContext>(_ctx, getState());
-  enterRule(_localctx, 76, LTLContractsParser::RuleMinus_ID);
+  enterRule(_localctx, 76, LogicsContractsParser::RuleMinus_ID);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2465,9 +2465,9 @@ LTLContractsParser::Minus_IDContext* LTLContractsParser::minus_ID() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(250);
-    match(LTLContractsParser::MINUS);
+    match(LogicsContractsParser::MINUS);
     setState(251);
-    match(LTLContractsParser::ID);
+    match(LogicsContractsParser::ID);
    
   }
   catch (RecognitionException &e) {
@@ -2481,42 +2481,42 @@ LTLContractsParser::Minus_IDContext* LTLContractsParser::minus_ID() {
 
 //----------------- AtomContext ------------------------------------------------------------------
 
-LTLContractsParser::AtomContext::AtomContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::AtomContext::AtomContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::Logic_constantContext* LTLContractsParser::AtomContext::logic_constant() {
-  return getRuleContext<LTLContractsParser::Logic_constantContext>(0);
+LogicsContractsParser::Logic_constantContext* LogicsContractsParser::AtomContext::logic_constant() {
+  return getRuleContext<LogicsContractsParser::Logic_constantContext>(0);
 }
 
-LTLContractsParser::RelationContext* LTLContractsParser::AtomContext::relation() {
-  return getRuleContext<LTLContractsParser::RelationContext>(0);
+LogicsContractsParser::RelationContext* LogicsContractsParser::AtomContext::relation() {
+  return getRuleContext<LogicsContractsParser::RelationContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::AtomContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::AtomContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
-LTLContractsParser::Primed_IDContext* LTLContractsParser::AtomContext::primed_ID() {
-  return getRuleContext<LTLContractsParser::Primed_IDContext>(0);
-}
-
-
-size_t LTLContractsParser::AtomContext::getRuleIndex() const {
-  return LTLContractsParser::RuleAtom;
+LogicsContractsParser::Primed_IDContext* LogicsContractsParser::AtomContext::primed_ID() {
+  return getRuleContext<LogicsContractsParser::Primed_IDContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::AtomContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::AtomContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleAtom;
+}
+
+
+antlrcpp::Any LogicsContractsParser::AtomContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitAtom(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::AtomContext* LTLContractsParser::atom() {
+LogicsContractsParser::AtomContext* LogicsContractsParser::atom() {
   AtomContext *_localctx = _tracker.createInstance<AtomContext>(_ctx, getState());
-  enterRule(_localctx, 78, LTLContractsParser::RuleAtom);
+  enterRule(_localctx, 78, LogicsContractsParser::RuleAtom);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2546,7 +2546,7 @@ LTLContractsParser::AtomContext* LTLContractsParser::atom() {
     case 3: {
       enterOuterAlt(_localctx, 3);
       setState(255);
-      match(LTLContractsParser::ID);
+      match(LogicsContractsParser::ID);
       break;
     }
 
@@ -2573,34 +2573,34 @@ LTLContractsParser::AtomContext* LTLContractsParser::atom() {
 
 //----------------- Single_formulaContext ------------------------------------------------------------------
 
-LTLContractsParser::Single_formulaContext::Single_formulaContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::Single_formulaContext::Single_formulaContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::FormulaContext* LTLContractsParser::Single_formulaContext::formula() {
-  return getRuleContext<LTLContractsParser::FormulaContext>(0);
+LogicsContractsParser::FormulaContext* LogicsContractsParser::Single_formulaContext::formula() {
+  return getRuleContext<LogicsContractsParser::FormulaContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::Single_formulaContext::ENDST() {
-  return getToken(LTLContractsParser::ENDST, 0);
-}
-
-
-size_t LTLContractsParser::Single_formulaContext::getRuleIndex() const {
-  return LTLContractsParser::RuleSingle_formula;
+tree::TerminalNode* LogicsContractsParser::Single_formulaContext::ENDST() {
+  return getToken(LogicsContractsParser::ENDST, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::Single_formulaContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::Single_formulaContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleSingle_formula;
+}
+
+
+antlrcpp::Any LogicsContractsParser::Single_formulaContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitSingle_formula(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::Single_formulaContext* LTLContractsParser::single_formula() {
+LogicsContractsParser::Single_formulaContext* LogicsContractsParser::single_formula() {
   Single_formulaContext *_localctx = _tracker.createInstance<Single_formulaContext>(_ctx, getState());
-  enterRule(_localctx, 80, LTLContractsParser::RuleSingle_formula);
+  enterRule(_localctx, 80, LogicsContractsParser::RuleSingle_formula);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2614,7 +2614,7 @@ LTLContractsParser::Single_formulaContext* LTLContractsParser::single_formula() 
     setState(259);
     formula(0);
     setState(260);
-    match(LTLContractsParser::ENDST);
+    match(LogicsContractsParser::ENDST);
    
   }
   catch (RecognitionException &e) {
@@ -2628,42 +2628,42 @@ LTLContractsParser::Single_formulaContext* LTLContractsParser::single_formula() 
 
 //----------------- AssumptionsContext ------------------------------------------------------------------
 
-LTLContractsParser::AssumptionsContext::AssumptionsContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::AssumptionsContext::AssumptionsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::AssumptionsKWContext* LTLContractsParser::AssumptionsContext::assumptionsKW() {
-  return getRuleContext<LTLContractsParser::AssumptionsKWContext>(0);
+LogicsContractsParser::AssumptionsKWContext* LogicsContractsParser::AssumptionsContext::assumptionsKW() {
+  return getRuleContext<LogicsContractsParser::AssumptionsKWContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::AssumptionsContext::COLON() {
-  return getToken(LTLContractsParser::COLON, 0);
+tree::TerminalNode* LogicsContractsParser::AssumptionsContext::COLON() {
+  return getToken(LogicsContractsParser::COLON, 0);
 }
 
-std::vector<LTLContractsParser::Single_formulaContext *> LTLContractsParser::AssumptionsContext::single_formula() {
-  return getRuleContexts<LTLContractsParser::Single_formulaContext>();
+std::vector<LogicsContractsParser::Single_formulaContext *> LogicsContractsParser::AssumptionsContext::single_formula() {
+  return getRuleContexts<LogicsContractsParser::Single_formulaContext>();
 }
 
-LTLContractsParser::Single_formulaContext* LTLContractsParser::AssumptionsContext::single_formula(size_t i) {
-  return getRuleContext<LTLContractsParser::Single_formulaContext>(i);
-}
-
-
-size_t LTLContractsParser::AssumptionsContext::getRuleIndex() const {
-  return LTLContractsParser::RuleAssumptions;
+LogicsContractsParser::Single_formulaContext* LogicsContractsParser::AssumptionsContext::single_formula(size_t i) {
+  return getRuleContext<LogicsContractsParser::Single_formulaContext>(i);
 }
 
 
-antlrcpp::Any LTLContractsParser::AssumptionsContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::AssumptionsContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleAssumptions;
+}
+
+
+antlrcpp::Any LogicsContractsParser::AssumptionsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitAssumptions(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::AssumptionsContext* LTLContractsParser::assumptions() {
+LogicsContractsParser::AssumptionsContext* LogicsContractsParser::assumptions() {
   AssumptionsContext *_localctx = _tracker.createInstance<AssumptionsContext>(_ctx, getState());
-  enterRule(_localctx, 82, LTLContractsParser::RuleAssumptions);
+  enterRule(_localctx, 82, LogicsContractsParser::RuleAssumptions);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2678,7 +2678,7 @@ LTLContractsParser::AssumptionsContext* LTLContractsParser::assumptions() {
     setState(262);
     assumptionsKW();
     setState(263);
-    match(LTLContractsParser::COLON);
+    match(LogicsContractsParser::COLON);
     setState(265); 
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -2689,16 +2689,16 @@ LTLContractsParser::AssumptionsContext* LTLContractsParser::assumptions() {
       _errHandler->sync(this);
       _la = _input->LA(1);
     } while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__9)
-      | (1ULL << LTLContractsParser::T__10)
-      | (1ULL << LTLContractsParser::NOT)
-      | (1ULL << LTLContractsParser::ALWAYS)
-      | (1ULL << LTLContractsParser::EVENTUALLY)
-      | (1ULL << LTLContractsParser::NEXT)
-      | (1ULL << LTLContractsParser::MINUS)
-      | (1ULL << LTLContractsParser::LBRACKET)
-      | (1ULL << LTLContractsParser::ID)
-      | (1ULL << LTLContractsParser::NUMBER))) != 0));
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::T__9)
+      | (1ULL << LogicsContractsParser::T__10)
+      | (1ULL << LogicsContractsParser::NOT)
+      | (1ULL << LogicsContractsParser::ALWAYS)
+      | (1ULL << LogicsContractsParser::EVENTUALLY)
+      | (1ULL << LogicsContractsParser::NEXT)
+      | (1ULL << LogicsContractsParser::MINUS)
+      | (1ULL << LogicsContractsParser::LBRACKET)
+      | (1ULL << LogicsContractsParser::ID)
+      | (1ULL << LogicsContractsParser::NUMBER))) != 0));
    
   }
   catch (RecognitionException &e) {
@@ -2712,42 +2712,42 @@ LTLContractsParser::AssumptionsContext* LTLContractsParser::assumptions() {
 
 //----------------- GuaranteesContext ------------------------------------------------------------------
 
-LTLContractsParser::GuaranteesContext::GuaranteesContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::GuaranteesContext::GuaranteesContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::GuaranteesKWContext* LTLContractsParser::GuaranteesContext::guaranteesKW() {
-  return getRuleContext<LTLContractsParser::GuaranteesKWContext>(0);
+LogicsContractsParser::GuaranteesKWContext* LogicsContractsParser::GuaranteesContext::guaranteesKW() {
+  return getRuleContext<LogicsContractsParser::GuaranteesKWContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::GuaranteesContext::COLON() {
-  return getToken(LTLContractsParser::COLON, 0);
+tree::TerminalNode* LogicsContractsParser::GuaranteesContext::COLON() {
+  return getToken(LogicsContractsParser::COLON, 0);
 }
 
-std::vector<LTLContractsParser::Single_formulaContext *> LTLContractsParser::GuaranteesContext::single_formula() {
-  return getRuleContexts<LTLContractsParser::Single_formulaContext>();
+std::vector<LogicsContractsParser::Single_formulaContext *> LogicsContractsParser::GuaranteesContext::single_formula() {
+  return getRuleContexts<LogicsContractsParser::Single_formulaContext>();
 }
 
-LTLContractsParser::Single_formulaContext* LTLContractsParser::GuaranteesContext::single_formula(size_t i) {
-  return getRuleContext<LTLContractsParser::Single_formulaContext>(i);
-}
-
-
-size_t LTLContractsParser::GuaranteesContext::getRuleIndex() const {
-  return LTLContractsParser::RuleGuarantees;
+LogicsContractsParser::Single_formulaContext* LogicsContractsParser::GuaranteesContext::single_formula(size_t i) {
+  return getRuleContext<LogicsContractsParser::Single_formulaContext>(i);
 }
 
 
-antlrcpp::Any LTLContractsParser::GuaranteesContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::GuaranteesContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleGuarantees;
+}
+
+
+antlrcpp::Any LogicsContractsParser::GuaranteesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitGuarantees(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::GuaranteesContext* LTLContractsParser::guarantees() {
+LogicsContractsParser::GuaranteesContext* LogicsContractsParser::guarantees() {
   GuaranteesContext *_localctx = _tracker.createInstance<GuaranteesContext>(_ctx, getState());
-  enterRule(_localctx, 84, LTLContractsParser::RuleGuarantees);
+  enterRule(_localctx, 84, LogicsContractsParser::RuleGuarantees);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2762,7 +2762,7 @@ LTLContractsParser::GuaranteesContext* LTLContractsParser::guarantees() {
     setState(269);
     guaranteesKW();
     setState(270);
-    match(LTLContractsParser::COLON);
+    match(LogicsContractsParser::COLON);
     setState(272); 
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -2773,16 +2773,16 @@ LTLContractsParser::GuaranteesContext* LTLContractsParser::guarantees() {
       _errHandler->sync(this);
       _la = _input->LA(1);
     } while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__9)
-      | (1ULL << LTLContractsParser::T__10)
-      | (1ULL << LTLContractsParser::NOT)
-      | (1ULL << LTLContractsParser::ALWAYS)
-      | (1ULL << LTLContractsParser::EVENTUALLY)
-      | (1ULL << LTLContractsParser::NEXT)
-      | (1ULL << LTLContractsParser::MINUS)
-      | (1ULL << LTLContractsParser::LBRACKET)
-      | (1ULL << LTLContractsParser::ID)
-      | (1ULL << LTLContractsParser::NUMBER))) != 0));
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::T__9)
+      | (1ULL << LogicsContractsParser::T__10)
+      | (1ULL << LogicsContractsParser::NOT)
+      | (1ULL << LogicsContractsParser::ALWAYS)
+      | (1ULL << LogicsContractsParser::EVENTUALLY)
+      | (1ULL << LogicsContractsParser::NEXT)
+      | (1ULL << LogicsContractsParser::MINUS)
+      | (1ULL << LogicsContractsParser::LBRACKET)
+      | (1ULL << LogicsContractsParser::ID)
+      | (1ULL << LogicsContractsParser::NUMBER))) != 0));
    
   }
   catch (RecognitionException &e) {
@@ -2796,66 +2796,66 @@ LTLContractsParser::GuaranteesContext* LTLContractsParser::guarantees() {
 
 //----------------- DeclarationContext ------------------------------------------------------------------
 
-LTLContractsParser::DeclarationContext::DeclarationContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::DeclarationContext::DeclarationContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::TypeKWContext* LTLContractsParser::DeclarationContext::typeKW() {
-  return getRuleContext<LTLContractsParser::TypeKWContext>(0);
+LogicsContractsParser::TypeKWContext* LogicsContractsParser::DeclarationContext::typeKW() {
+  return getRuleContext<LogicsContractsParser::TypeKWContext>(0);
 }
 
-LTLContractsParser::VariableKWContext* LTLContractsParser::DeclarationContext::variableKW() {
-  return getRuleContext<LTLContractsParser::VariableKWContext>(0);
+LogicsContractsParser::VariableKWContext* LogicsContractsParser::DeclarationContext::variableKW() {
+  return getRuleContext<LogicsContractsParser::VariableKWContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::DeclarationContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::DeclarationContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::DeclarationContext::ENDST() {
-  return getToken(LTLContractsParser::ENDST, 0);
+tree::TerminalNode* LogicsContractsParser::DeclarationContext::ENDST() {
+  return getToken(LogicsContractsParser::ENDST, 0);
 }
 
-LTLContractsParser::CausalityContext* LTLContractsParser::DeclarationContext::causality() {
-  return getRuleContext<LTLContractsParser::CausalityContext>(0);
+LogicsContractsParser::CausalityContext* LogicsContractsParser::DeclarationContext::causality() {
+  return getRuleContext<LogicsContractsParser::CausalityContext>(0);
 }
 
-LTLContractsParser::ConstantKWContext* LTLContractsParser::DeclarationContext::constantKW() {
-  return getRuleContext<LTLContractsParser::ConstantKWContext>(0);
+LogicsContractsParser::ConstantKWContext* LogicsContractsParser::DeclarationContext::constantKW() {
+  return getRuleContext<LogicsContractsParser::ConstantKWContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::DeclarationContext::NUMBER() {
-  return getToken(LTLContractsParser::NUMBER, 0);
+tree::TerminalNode* LogicsContractsParser::DeclarationContext::NUMBER() {
+  return getToken(LogicsContractsParser::NUMBER, 0);
 }
 
-LTLContractsParser::PropositionKwContext* LTLContractsParser::DeclarationContext::propositionKw() {
-  return getRuleContext<LTLContractsParser::PropositionKwContext>(0);
+LogicsContractsParser::PropositionKwContext* LogicsContractsParser::DeclarationContext::propositionKw() {
+  return getRuleContext<LogicsContractsParser::PropositionKwContext>(0);
 }
 
-LTLContractsParser::IsKwContext* LTLContractsParser::DeclarationContext::isKw() {
-  return getRuleContext<LTLContractsParser::IsKwContext>(0);
+LogicsContractsParser::IsKwContext* LogicsContractsParser::DeclarationContext::isKw() {
+  return getRuleContext<LogicsContractsParser::IsKwContext>(0);
 }
 
-LTLContractsParser::RelationContext* LTLContractsParser::DeclarationContext::relation() {
-  return getRuleContext<LTLContractsParser::RelationContext>(0);
-}
-
-
-size_t LTLContractsParser::DeclarationContext::getRuleIndex() const {
-  return LTLContractsParser::RuleDeclaration;
+LogicsContractsParser::RelationContext* LogicsContractsParser::DeclarationContext::relation() {
+  return getRuleContext<LogicsContractsParser::RelationContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::DeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::DeclarationContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleDeclaration;
+}
+
+
+antlrcpp::Any LogicsContractsParser::DeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitDeclaration(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
+LogicsContractsParser::DeclarationContext* LogicsContractsParser::declaration() {
   DeclarationContext *_localctx = _tracker.createInstance<DeclarationContext>(_ctx, getState());
-  enterRule(_localctx, 86, LTLContractsParser::RuleDeclaration);
+  enterRule(_localctx, 86, LogicsContractsParser::RuleDeclaration);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2875,9 +2875,9 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
       _errHandler->sync(this);
 
       _la = _input->LA(1);
-      if (_la == LTLContractsParser::T__4
+      if (_la == LogicsContractsParser::T__4
 
-      || _la == LTLContractsParser::T__5) {
+      || _la == LogicsContractsParser::T__5) {
         setState(276);
         causality();
       }
@@ -2886,9 +2886,9 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
       setState(280);
       variableKW();
       setState(281);
-      match(LTLContractsParser::ID);
+      match(LogicsContractsParser::ID);
       setState(282);
-      match(LTLContractsParser::ENDST);
+      match(LogicsContractsParser::ENDST);
       break;
     }
 
@@ -2899,11 +2899,11 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
       setState(285);
       constantKW();
       setState(286);
-      match(LTLContractsParser::ID);
+      match(LogicsContractsParser::ID);
       setState(287);
-      match(LTLContractsParser::NUMBER);
+      match(LogicsContractsParser::NUMBER);
       setState(288);
-      match(LTLContractsParser::ENDST);
+      match(LogicsContractsParser::ENDST);
       break;
     }
 
@@ -2912,19 +2912,19 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
       setState(290);
       propositionKw();
       setState(291);
-      match(LTLContractsParser::ID);
+      match(LogicsContractsParser::ID);
       setState(295);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
-      if (_la == LTLContractsParser::T__8) {
+      if (_la == LogicsContractsParser::T__8) {
         setState(292);
         isKw();
         setState(293);
         relation();
       }
       setState(297);
-      match(LTLContractsParser::ENDST);
+      match(LogicsContractsParser::ENDST);
       break;
     }
 
@@ -2944,54 +2944,54 @@ LTLContractsParser::DeclarationContext* LTLContractsParser::declaration() {
 
 //----------------- ContractContext ------------------------------------------------------------------
 
-LTLContractsParser::ContractContext::ContractContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::ContractContext::ContractContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::ContractKWContext* LTLContractsParser::ContractContext::contractKW() {
-  return getRuleContext<LTLContractsParser::ContractKWContext>(0);
+LogicsContractsParser::ContractKWContext* LogicsContractsParser::ContractContext::contractKW() {
+  return getRuleContext<LogicsContractsParser::ContractKWContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::ContractContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::ContractContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::ContractContext::COLON() {
-  return getToken(LTLContractsParser::COLON, 0);
+tree::TerminalNode* LogicsContractsParser::ContractContext::COLON() {
+  return getToken(LogicsContractsParser::COLON, 0);
 }
 
-std::vector<LTLContractsParser::DeclarationContext *> LTLContractsParser::ContractContext::declaration() {
-  return getRuleContexts<LTLContractsParser::DeclarationContext>();
+std::vector<LogicsContractsParser::DeclarationContext *> LogicsContractsParser::ContractContext::declaration() {
+  return getRuleContexts<LogicsContractsParser::DeclarationContext>();
 }
 
-LTLContractsParser::DeclarationContext* LTLContractsParser::ContractContext::declaration(size_t i) {
-  return getRuleContext<LTLContractsParser::DeclarationContext>(i);
+LogicsContractsParser::DeclarationContext* LogicsContractsParser::ContractContext::declaration(size_t i) {
+  return getRuleContext<LogicsContractsParser::DeclarationContext>(i);
 }
 
-LTLContractsParser::AssumptionsContext* LTLContractsParser::ContractContext::assumptions() {
-  return getRuleContext<LTLContractsParser::AssumptionsContext>(0);
+LogicsContractsParser::AssumptionsContext* LogicsContractsParser::ContractContext::assumptions() {
+  return getRuleContext<LogicsContractsParser::AssumptionsContext>(0);
 }
 
-LTLContractsParser::GuaranteesContext* LTLContractsParser::ContractContext::guarantees() {
-  return getRuleContext<LTLContractsParser::GuaranteesContext>(0);
-}
-
-
-size_t LTLContractsParser::ContractContext::getRuleIndex() const {
-  return LTLContractsParser::RuleContract;
+LogicsContractsParser::GuaranteesContext* LogicsContractsParser::ContractContext::guarantees() {
+  return getRuleContext<LogicsContractsParser::GuaranteesContext>(0);
 }
 
 
-antlrcpp::Any LTLContractsParser::ContractContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::ContractContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleContract;
+}
+
+
+antlrcpp::Any LogicsContractsParser::ContractContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitContract(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::ContractContext* LTLContractsParser::contract() {
+LogicsContractsParser::ContractContext* LogicsContractsParser::contract() {
   ContractContext *_localctx = _tracker.createInstance<ContractContext>(_ctx, getState());
-  enterRule(_localctx, 88, LTLContractsParser::RuleContract);
+  enterRule(_localctx, 88, LogicsContractsParser::RuleContract);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -3006,18 +3006,18 @@ LTLContractsParser::ContractContext* LTLContractsParser::contract() {
     setState(301);
     contractKW();
     setState(302);
-    match(LTLContractsParser::ID);
+    match(LogicsContractsParser::ID);
     setState(303);
-    match(LTLContractsParser::COLON);
+    match(LogicsContractsParser::COLON);
     setState(307);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__1)
-      | (1ULL << LTLContractsParser::T__2)
-      | (1ULL << LTLContractsParser::T__4)
-      | (1ULL << LTLContractsParser::T__5)
-      | (1ULL << LTLContractsParser::T__7))) != 0)) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::T__1)
+      | (1ULL << LogicsContractsParser::T__2)
+      | (1ULL << LogicsContractsParser::T__4)
+      | (1ULL << LogicsContractsParser::T__5)
+      | (1ULL << LogicsContractsParser::T__7))) != 0)) {
       setState(304);
       declaration();
       setState(309);
@@ -3028,7 +3028,7 @@ LTLContractsParser::ContractContext* LTLContractsParser::contract() {
     _errHandler->sync(this);
 
     _la = _input->LA(1);
-    if (_la == LTLContractsParser::T__12) {
+    if (_la == LogicsContractsParser::T__12) {
       setState(310);
       assumptions();
     }
@@ -3036,7 +3036,7 @@ LTLContractsParser::ContractContext* LTLContractsParser::contract() {
     _errHandler->sync(this);
 
     _la = _input->LA(1);
-    if (_la == LTLContractsParser::T__13) {
+    if (_la == LogicsContractsParser::T__13) {
       setState(313);
       guarantees();
     }
@@ -3053,42 +3053,42 @@ LTLContractsParser::ContractContext* LTLContractsParser::contract() {
 
 //----------------- NameContext ------------------------------------------------------------------
 
-LTLContractsParser::NameContext::NameContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::NameContext::NameContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::NameKwContext* LTLContractsParser::NameContext::nameKw() {
-  return getRuleContext<LTLContractsParser::NameKwContext>(0);
+LogicsContractsParser::NameKwContext* LogicsContractsParser::NameContext::nameKw() {
+  return getRuleContext<LogicsContractsParser::NameKwContext>(0);
 }
 
-tree::TerminalNode* LTLContractsParser::NameContext::COLON() {
-  return getToken(LTLContractsParser::COLON, 0);
+tree::TerminalNode* LogicsContractsParser::NameContext::COLON() {
+  return getToken(LogicsContractsParser::COLON, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::NameContext::ID() {
-  return getToken(LTLContractsParser::ID, 0);
+tree::TerminalNode* LogicsContractsParser::NameContext::ID() {
+  return getToken(LogicsContractsParser::ID, 0);
 }
 
-tree::TerminalNode* LTLContractsParser::NameContext::ENDST() {
-  return getToken(LTLContractsParser::ENDST, 0);
-}
-
-
-size_t LTLContractsParser::NameContext::getRuleIndex() const {
-  return LTLContractsParser::RuleName;
+tree::TerminalNode* LogicsContractsParser::NameContext::ENDST() {
+  return getToken(LogicsContractsParser::ENDST, 0);
 }
 
 
-antlrcpp::Any LTLContractsParser::NameContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::NameContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleName;
+}
+
+
+antlrcpp::Any LogicsContractsParser::NameContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitName(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::NameContext* LTLContractsParser::name() {
+LogicsContractsParser::NameContext* LogicsContractsParser::name() {
   NameContext *_localctx = _tracker.createInstance<NameContext>(_ctx, getState());
-  enterRule(_localctx, 90, LTLContractsParser::RuleName);
+  enterRule(_localctx, 90, LogicsContractsParser::RuleName);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3102,11 +3102,11 @@ LTLContractsParser::NameContext* LTLContractsParser::name() {
     setState(316);
     nameKw();
     setState(317);
-    match(LTLContractsParser::COLON);
+    match(LogicsContractsParser::COLON);
     setState(318);
-    match(LTLContractsParser::ID);
+    match(LogicsContractsParser::ID);
     setState(319);
-    match(LTLContractsParser::ENDST);
+    match(LogicsContractsParser::ENDST);
    
   }
   catch (RecognitionException &e) {
@@ -3120,46 +3120,46 @@ LTLContractsParser::NameContext* LTLContractsParser::name() {
 
 //----------------- SystemSpecContext ------------------------------------------------------------------
 
-LTLContractsParser::SystemSpecContext::SystemSpecContext(ParserRuleContext *parent, size_t invokingState)
+LogicsContractsParser::SystemSpecContext::SystemSpecContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-LTLContractsParser::NameContext* LTLContractsParser::SystemSpecContext::name() {
-  return getRuleContext<LTLContractsParser::NameContext>(0);
+LogicsContractsParser::NameContext* LogicsContractsParser::SystemSpecContext::name() {
+  return getRuleContext<LogicsContractsParser::NameContext>(0);
 }
 
-std::vector<LTLContractsParser::DeclarationContext *> LTLContractsParser::SystemSpecContext::declaration() {
-  return getRuleContexts<LTLContractsParser::DeclarationContext>();
+std::vector<LogicsContractsParser::DeclarationContext *> LogicsContractsParser::SystemSpecContext::declaration() {
+  return getRuleContexts<LogicsContractsParser::DeclarationContext>();
 }
 
-LTLContractsParser::DeclarationContext* LTLContractsParser::SystemSpecContext::declaration(size_t i) {
-  return getRuleContext<LTLContractsParser::DeclarationContext>(i);
+LogicsContractsParser::DeclarationContext* LogicsContractsParser::SystemSpecContext::declaration(size_t i) {
+  return getRuleContext<LogicsContractsParser::DeclarationContext>(i);
 }
 
-std::vector<LTLContractsParser::ContractContext *> LTLContractsParser::SystemSpecContext::contract() {
-  return getRuleContexts<LTLContractsParser::ContractContext>();
+std::vector<LogicsContractsParser::ContractContext *> LogicsContractsParser::SystemSpecContext::contract() {
+  return getRuleContexts<LogicsContractsParser::ContractContext>();
 }
 
-LTLContractsParser::ContractContext* LTLContractsParser::SystemSpecContext::contract(size_t i) {
-  return getRuleContext<LTLContractsParser::ContractContext>(i);
-}
-
-
-size_t LTLContractsParser::SystemSpecContext::getRuleIndex() const {
-  return LTLContractsParser::RuleSystemSpec;
+LogicsContractsParser::ContractContext* LogicsContractsParser::SystemSpecContext::contract(size_t i) {
+  return getRuleContext<LogicsContractsParser::ContractContext>(i);
 }
 
 
-antlrcpp::Any LTLContractsParser::SystemSpecContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<LTLContractsVisitor*>(visitor))
+size_t LogicsContractsParser::SystemSpecContext::getRuleIndex() const {
+  return LogicsContractsParser::RuleSystemSpec;
+}
+
+
+antlrcpp::Any LogicsContractsParser::SystemSpecContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<LogicsContractsVisitor*>(visitor))
     return parserVisitor->visitSystemSpec(this);
   else
     return visitor->visitChildren(this);
 }
 
-LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
+LogicsContractsParser::SystemSpecContext* LogicsContractsParser::systemSpec() {
   SystemSpecContext *_localctx = _tracker.createInstance<SystemSpecContext>(_ctx, getState());
-  enterRule(_localctx, 92, LTLContractsParser::RuleSystemSpec);
+  enterRule(_localctx, 92, LogicsContractsParser::RuleSystemSpec);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -3175,7 +3175,7 @@ LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
     _errHandler->sync(this);
 
     _la = _input->LA(1);
-    if (_la == LTLContractsParser::T__14) {
+    if (_la == LogicsContractsParser::T__14) {
       setState(321);
       name();
     }
@@ -3183,11 +3183,11 @@ LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << LTLContractsParser::T__1)
-      | (1ULL << LTLContractsParser::T__2)
-      | (1ULL << LTLContractsParser::T__4)
-      | (1ULL << LTLContractsParser::T__5)
-      | (1ULL << LTLContractsParser::T__7))) != 0)) {
+      ((1ULL << _la) & ((1ULL << LogicsContractsParser::T__1)
+      | (1ULL << LogicsContractsParser::T__2)
+      | (1ULL << LogicsContractsParser::T__4)
+      | (1ULL << LogicsContractsParser::T__5)
+      | (1ULL << LogicsContractsParser::T__7))) != 0)) {
       setState(324);
       declaration();
       setState(329);
@@ -3203,7 +3203,7 @@ LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
       setState(333); 
       _errHandler->sync(this);
       _la = _input->LA(1);
-    } while (_la == LTLContractsParser::T__11);
+    } while (_la == LogicsContractsParser::T__11);
    
   }
   catch (RecognitionException &e) {
@@ -3215,7 +3215,7 @@ LTLContractsParser::SystemSpecContext* LTLContractsParser::systemSpec() {
   return _localctx;
 }
 
-bool LTLContractsParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicateIndex) {
+bool LogicsContractsParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicateIndex) {
   switch (ruleIndex) {
     case 29: return valueSempred(dynamic_cast<ValueContext *>(context), predicateIndex);
     case 36: return formulaSempred(dynamic_cast<FormulaContext *>(context), predicateIndex);
@@ -3226,7 +3226,7 @@ bool LTLContractsParser::sempred(RuleContext *context, size_t ruleIndex, size_t 
   return true;
 }
 
-bool LTLContractsParser::valueSempred(ValueContext *_localctx, size_t predicateIndex) {
+bool LogicsContractsParser::valueSempred(ValueContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
     case 0: return precpred(_ctx, 7);
 
@@ -3236,7 +3236,7 @@ bool LTLContractsParser::valueSempred(ValueContext *_localctx, size_t predicateI
   return true;
 }
 
-bool LTLContractsParser::formulaSempred(FormulaContext *_localctx, size_t predicateIndex) {
+bool LogicsContractsParser::formulaSempred(FormulaContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
     case 1: return precpred(_ctx, 4);
     case 2: return precpred(_ctx, 2);
@@ -3248,14 +3248,14 @@ bool LTLContractsParser::formulaSempred(FormulaContext *_localctx, size_t predic
 }
 
 // Static vars and initialization.
-std::vector<dfa::DFA> LTLContractsParser::_decisionToDFA;
-atn::PredictionContextCache LTLContractsParser::_sharedContextCache;
+std::vector<dfa::DFA> LogicsContractsParser::_decisionToDFA;
+atn::PredictionContextCache LogicsContractsParser::_sharedContextCache;
 
 // We own the ATN which in turn owns the ATN states.
-atn::ATN LTLContractsParser::_atn;
-std::vector<uint16_t> LTLContractsParser::_serializedATN;
+atn::ATN LogicsContractsParser::_atn;
+std::vector<uint16_t> LogicsContractsParser::_serializedATN;
 
-std::vector<std::string> LTLContractsParser::_ruleNames = {
+std::vector<std::string> LogicsContractsParser::_ruleNames = {
   "bin_logic_op", "unary_logic_op", "unary_temp_op", "bin_temp_op", "relation_op", 
   "bin_math_op", "primed_ID", "integerKW", "booleanKW", "variableKW", "inputKW", 
   "outputKW", "constantKW", "propositionKw", "isKw", "trueKW", "falseKW", 
@@ -3267,7 +3267,7 @@ std::vector<std::string> LTLContractsParser::_ruleNames = {
   "contract", "name", "systemSpec"
 };
 
-std::vector<std::string> LTLContractsParser::_literalNames = {
+std::vector<std::string> LogicsContractsParser::_literalNames = {
   "", "'''", "'integer'", "'boolean'", "'variable'", "'input'", "'output'", 
   "'constant'", "'proposition'", "'is'", "'true'", "'false'", "'CONTRACT'", 
   "'Assumptions'", "'Guarantees'", "'NAME'", "", "", "", "", "", "'->'", 
@@ -3276,7 +3276,7 @@ std::vector<std::string> LTLContractsParser::_literalNames = {
   "','", "'.'", "", "", "", "';'"
 };
 
-std::vector<std::string> LTLContractsParser::_symbolicNames = {
+std::vector<std::string> LogicsContractsParser::_symbolicNames = {
   "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "WS", 
   "LINE_COMMENT", "AND", "OR", "NOT", "IMPLIES", "IFF", "COLON", "ALWAYS", 
   "EVENTUALLY", "NEXT", "UNTIL", "EQ", "NEQ", "LT", "LE", "GT", "GE", "PLUS", 
@@ -3284,11 +3284,11 @@ std::vector<std::string> LTLContractsParser::_symbolicNames = {
   "COMMA", "DOT", "ID", "DECIMAL", "NUMBER", "ENDST"
 };
 
-dfa::Vocabulary LTLContractsParser::_vocabulary(_literalNames, _symbolicNames);
+dfa::Vocabulary LogicsContractsParser::_vocabulary(_literalNames, _symbolicNames);
 
-std::vector<std::string> LTLContractsParser::_tokenNames;
+std::vector<std::string> LogicsContractsParser::_tokenNames;
 
-LTLContractsParser::Initializer::Initializer() {
+LogicsContractsParser::Initializer::Initializer() {
 	for (size_t i = 0; i < _symbolicNames.size(); ++i) {
 		std::string name = _vocabulary.getLiteralName(i);
 		if (name.empty()) {
@@ -3531,4 +3531,4 @@ LTLContractsParser::Initializer::Initializer() {
   }
 }
 
-LTLContractsParser::Initializer LTLContractsParser::_init;
+LogicsContractsParser::Initializer LogicsContractsParser::_init;

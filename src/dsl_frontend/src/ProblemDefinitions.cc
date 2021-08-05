@@ -7,9 +7,9 @@
 
 #include <utility>
 
-#include "DSLParser/ProblemDefinitions.hh"
+#include "ProblemDefinitions.hh"
 
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 
 Connection::Connection(Component *source, Component *target) :
     _source(source),

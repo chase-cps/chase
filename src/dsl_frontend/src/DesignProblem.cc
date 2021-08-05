@@ -6,10 +6,10 @@
  */
 #include <algorithm>
 #include <cmath>
-#include "DSLParser/DesignProblem.hh"
+#include "DesignProblem.hh"
 
 using namespace chase;
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 
 DesignProblem::DesignProblem() :
     _contract(nullptr),

@@ -13,7 +13,7 @@ int main( int argc, char * argv[] )
 {
     auto params = parseCmdLine(argc, argv);
 
-    LTLSpecsBuilder builder;
+    LogicsSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);
 
     System * system = builder.getSystem();

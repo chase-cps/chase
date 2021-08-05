@@ -9,7 +9,7 @@
 
 #include "Chase.hh"
 
-#include "LTLSpecsBuilder.hh"
+#include "LogicsSpecsBuilder.hh"
 #include "Console.hh"
 
 #include <unistd.h>

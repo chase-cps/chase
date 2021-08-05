@@ -34,7 +34,7 @@ file(STRINGS "VERSION" ANTLR_VERSION)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-##### Disabled as the variables are inherited by the Chase main 
+##### Disabled as the variables are inherited by the Chase main
 #set(CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS} -Wall ${MY_CXX_WARNING_FLAGS}")
 #set(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g ${MY_CXX_WARNING_FLAGS}")
 #set(CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL} -Os -DNDEBUG ${MY_CXX_WARNING_FLAGS}")

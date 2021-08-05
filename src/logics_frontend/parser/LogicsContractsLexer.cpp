@@ -1,50 +1,50 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/chase/grammar\LTLContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 
-#include "LTLContractsLexer.h"
+#include "LogicsContractsLexer.h"
 
 
 using namespace antlr4;
 
 
-LTLContractsLexer::LTLContractsLexer(CharStream *input) : Lexer(input) {
+LogicsContractsLexer::LogicsContractsLexer(CharStream *input) : Lexer(input) {
   _interpreter = new atn::LexerATNSimulator(this, _atn, _decisionToDFA, _sharedContextCache);
 }
 
-LTLContractsLexer::~LTLContractsLexer() {
+LogicsContractsLexer::~LogicsContractsLexer() {
   delete _interpreter;
 }
 
-std::string LTLContractsLexer::getGrammarFileName() const {
-  return "LTLContracts.g4";
+std::string LogicsContractsLexer::getGrammarFileName() const {
+  return "LogicsContracts.g4";
 }
 
-const std::vector<std::string>& LTLContractsLexer::getRuleNames() const {
+const std::vector<std::string>& LogicsContractsLexer::getRuleNames() const {
   return _ruleNames;
 }
 
-const std::vector<std::string>& LTLContractsLexer::getChannelNames() const {
+const std::vector<std::string>& LogicsContractsLexer::getChannelNames() const {
   return _channelNames;
 }
 
-const std::vector<std::string>& LTLContractsLexer::getModeNames() const {
+const std::vector<std::string>& LogicsContractsLexer::getModeNames() const {
   return _modeNames;
 }
 
-const std::vector<std::string>& LTLContractsLexer::getTokenNames() const {
+const std::vector<std::string>& LogicsContractsLexer::getTokenNames() const {
   return _tokenNames;
 }
 
-dfa::Vocabulary& LTLContractsLexer::getVocabulary() const {
+dfa::Vocabulary& LogicsContractsLexer::getVocabulary() const {
   return _vocabulary;
 }
 
-const std::vector<uint16_t> LTLContractsLexer::getSerializedATN() const {
+const std::vector<uint16_t> LogicsContractsLexer::getSerializedATN() const {
   return _serializedATN;
 }
 
-const atn::ATN& LTLContractsLexer::getATN() const {
+const atn::ATN& LogicsContractsLexer::getATN() const {
   return _atn;
 }
 
@@ -52,14 +52,14 @@ const atn::ATN& LTLContractsLexer::getATN() const {
 
 
 // Static vars and initialization.
-std::vector<dfa::DFA> LTLContractsLexer::_decisionToDFA;
-atn::PredictionContextCache LTLContractsLexer::_sharedContextCache;
+std::vector<dfa::DFA> LogicsContractsLexer::_decisionToDFA;
+atn::PredictionContextCache LogicsContractsLexer::_sharedContextCache;
 
 // We own the ATN which in turn owns the ATN states.
-atn::ATN LTLContractsLexer::_atn;
-std::vector<uint16_t> LTLContractsLexer::_serializedATN;
+atn::ATN LogicsContractsLexer::_atn;
+std::vector<uint16_t> LogicsContractsLexer::_serializedATN;
 
-std::vector<std::string> LTLContractsLexer::_ruleNames = {
+std::vector<std::string> LogicsContractsLexer::_ruleNames = {
   "T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
   "T__9", "T__10", "T__11", "T__12", "T__13", "T__14", "WS", "LINE_COMMENT", 
   "DIGIT", "LETTER", "ALPHANUM", "AND", "OR", "NOT", "IMPLIES", "IFF", "COLON", 
@@ -68,15 +68,15 @@ std::vector<std::string> LTLContractsLexer::_ruleNames = {
   "RSQUARE", "COMMA", "DOT", "ID", "DECIMAL", "NUMBER", "ENDST"
 };
 
-std::vector<std::string> LTLContractsLexer::_channelNames = {
+std::vector<std::string> LogicsContractsLexer::_channelNames = {
   "DEFAULT_TOKEN_CHANNEL", "HIDDEN"
 };
 
-std::vector<std::string> LTLContractsLexer::_modeNames = {
+std::vector<std::string> LogicsContractsLexer::_modeNames = {
   "DEFAULT_MODE"
 };
 
-std::vector<std::string> LTLContractsLexer::_literalNames = {
+std::vector<std::string> LogicsContractsLexer::_literalNames = {
   "", "'''", "'integer'", "'boolean'", "'variable'", "'input'", "'output'", 
   "'constant'", "'proposition'", "'is'", "'true'", "'false'", "'CONTRACT'", 
   "'Assumptions'", "'Guarantees'", "'NAME'", "", "", "", "", "", "'->'", 
@@ -85,7 +85,7 @@ std::vector<std::string> LTLContractsLexer::_literalNames = {
   "','", "'.'", "", "", "", "';'"
 };
 
-std::vector<std::string> LTLContractsLexer::_symbolicNames = {
+std::vector<std::string> LogicsContractsLexer::_symbolicNames = {
   "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "WS", 
   "LINE_COMMENT", "AND", "OR", "NOT", "IMPLIES", "IFF", "COLON", "ALWAYS", 
   "EVENTUALLY", "NEXT", "UNTIL", "EQ", "NEQ", "LT", "LE", "GT", "GE", "PLUS", 
@@ -93,11 +93,11 @@ std::vector<std::string> LTLContractsLexer::_symbolicNames = {
   "COMMA", "DOT", "ID", "DECIMAL", "NUMBER", "ENDST"
 };
 
-dfa::Vocabulary LTLContractsLexer::_vocabulary(_literalNames, _symbolicNames);
+dfa::Vocabulary LogicsContractsLexer::_vocabulary(_literalNames, _symbolicNames);
 
-std::vector<std::string> LTLContractsLexer::_tokenNames;
+std::vector<std::string> LogicsContractsLexer::_tokenNames;
 
-LTLContractsLexer::Initializer::Initializer() {
+LogicsContractsLexer::Initializer::Initializer() {
   // This code could be in a static initializer lambda, but VS doesn't allow access to private class members from there.
 	for (size_t i = 0; i < _symbolicNames.size(); ++i) {
 		std::string name = _vocabulary.getLiteralName(i);
@@ -351,4 +351,4 @@ LTLContractsLexer::Initializer::Initializer() {
   }
 }
 
-LTLContractsLexer::Initializer LTLContractsLexer::_init;
+LogicsContractsLexer::Initializer LogicsContractsLexer::_init;

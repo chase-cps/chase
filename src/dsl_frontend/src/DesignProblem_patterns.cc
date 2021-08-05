@@ -6,14 +6,14 @@
  */
 
 
-#include "DSLParser/DesignProblem.hh"
+#include "DesignProblem.hh"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
 #include "utilities/GraphUtilities.hh"
 
 using namespace chase;
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 
 void DesignProblem::_noRecovery(SpecFunction *spec)
 {

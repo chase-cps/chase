@@ -5,13 +5,13 @@
  *
  */
 
-#include "DSLParser/SpecBuilder.hh"
+#include "DSLSpecsBuilder.hh"
 
-using namespace patternsOnNetworks;
+using namespace DSLFrontend;
 using namespace antlr4;
 
 std::string
-SpecBuilder::_getNameFromContext(ChaseParser::NameContext *context) {
+DSLSpecsBuilder::_getNameFromContext(ChaseParser::NameContext *context) {
     std::string ret;
 
 
@@ -31,7 +31,7 @@ SpecBuilder::_getNameFromContext(ChaseParser::NameContext *context) {
 }
 
 std::string
-SpecBuilder::_getNameFromContext(Ref<ChaseParser::NameContext> context)
+DSLSpecsBuilder::_getNameFromContext(Ref<ChaseParser::NameContext> context)
 {
     std::string ret = _getNameFromContext(context.get() );
     if( context->num != nullptr )
@@ -43,7 +43,7 @@ SpecBuilder::_getNameFromContext(Ref<ChaseParser::NameContext> context)
     return ret;
 }
 
-component_type SpecBuilder::_resolveType(std::string t) {
+component_type DSLSpecsBuilder::_resolveType(std::string t) {
     if(t == "Generic") return ct_generic;
     if(t == "Source") return ct_source;
     if(t == "Bus") return ct_bus;
@@ -53,7 +53,7 @@ component_type SpecBuilder::_resolveType(std::string t) {
     else return ct_error;
 }
 
-Component *SpecBuilder::_getComponent(std::string str)
+Component *DSLSpecsBuilder::_getComponent(std::string str)
 {
     auto by_abbrev = _problem->abbreviations.find(str);
     if( by_abbrev != _problem->abbreviations.end() )
