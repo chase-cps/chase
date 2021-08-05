@@ -7,13 +7,15 @@ The framework requires the following third party software in order to be built
 and executed:
 
 - GCC or Clang toolchain for C++:
-	- tested with *g++-5* and *clang++-3.8*
-	- any compiler supporting C++-11 can be used
+    - tested with *g++-9.3*
+    - any compiler supporting C++-11 should be able to compile CHASE
 - GNU Make
 - Python 3
 - [gr1c][GR1C]: a collection of tools for GR(1) synthesis,  used to check
     realizability of GR(1) specifications and synthesize discrete control
     strategies from them.
+- [slugs][SLUGS]: a stand-alone reactive synthesis tool for generalized 
+reactivity(1) synthesis.
 - [ANTLR 4 (ANother Tool for Language Recognition) C++ Runtime library][ANTLR]:
     ANTLR4 is a parser generator for reading, processing, executing, or
     translating structured text or binary files. Its C++ Runtime library is used
@@ -24,8 +26,8 @@ and executed:
 The framework mostly relies on the C++11 Standard and  should be portable to any
 architecture and operating system supporting it. However, due to external
 dependencies, CHASE has been tested on:
-- Linux Ubuntu 18.04+
-- Windows 10 Anniversary Edition, using [*Bash on Ubuntu on Windows*][WSL] 
+- Linux Ubuntu 20.04+
+- Windows 10 , using [*Bash on Ubuntu on Windows*][WSL] 
 
 # Installation
 

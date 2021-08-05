@@ -2,9 +2,10 @@
 
 # Tools
 
-After building the sources, some tools are available. This document describe the different tools.
+After building the sources, some tools are available. 
+This document describe the different tools.
 
-## patternsOnNetwork
+## dsl_parser
 
 
 The tool takes as input a problem specification expressed using the CHASE Specification Language and analyzes its 
@@ -18,7 +19,7 @@ More information about the language will be soon available in a language guide.
 
 >**Usage**
 >
-> `patternsOnNetwork -i input_file.txt [ -o output_file.py] [-V]`
+> `dsl_parser -i input_file.txt [ -o output_file.py] [-V]`
 
 > To print the help:
 >
@@ -33,15 +34,15 @@ More information about the language will be soon available in a language guide.
 
 To execute (in verbose mode) the `chase` on a simple example, go to the main directory of Chase and type
 
-`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -o out.structuredSlugs -V`
+`$> ./bin/dsl_parser -i demo/DATE_2018/2_04_03.txt -o out.structuredSlugs -V`
 
 It will generate a  _structured slugs_ file. The same can be obtained by using the following command:
 
-`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -b slugs -o out.structuredSlugs -V`
+`$> ./bin/dsl_parser -i demo/DATE_2018/2_04_03.txt -b slugs -o out.structuredSlugs -V`
 
 Meanwhile, the following command:
 
-`$> ./bin/patternsOnNetwork -i demo/DATE_2018/2_04_03.txt -b gr1c -o out.spc -V`
+`$> ./bin/dsl_parser -i demo/DATE_2018/2_04_03.txt -b gr1c -o out.spc -V`
 
 will generate a _GR1C_ specification.
 
