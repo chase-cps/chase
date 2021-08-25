@@ -89,6 +89,7 @@ ENDST: ';';
 
 integerKW:      'integer';
 booleanKW:      'boolean';
+realKW:         'real';
 variableKW:     'variable';
 inputKW:        'input';
 outputKW:       'output';
@@ -108,7 +109,8 @@ logic_constant: trueKW | falseKW;
 
 range: LBRACKET NUMBER COLON NUMBER RBRACKET;
 integer : integerKW range?;
-typeKW: integer | booleanKW;
+real    : realKW range?;
+typeKW: integer | real | booleanKW;
 
 /**
   GRAMMAR RULES

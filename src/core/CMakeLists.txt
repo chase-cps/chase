@@ -69,6 +69,7 @@ set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/LogicNotNormalizationVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/GroupTemporalOperatorsVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/VarsCausalityVisitor.cc
+        ${SRC_CHASELIB_PATH}/utilities/LogicIdentificationVisitor.cc
         ${SRC_CHASELIB_PATH}/utilities/simplify.cc
 )
 
@@ -79,6 +80,7 @@ set(chase_library_backends
         ${SRC_CHASELIB_PATH}/backends/SlugsPrinter_visit.cc
         ${SRC_CHASELIB_PATH}/backends/NuSMVPrinter.cc
         ${SRC_CHASELIB_PATH}/backends/NuSMVPrinter_visit.cc
+        ${SRC_CHASELIB_PATH}/backends/PySTLPrinter.cc
 )
 
 set(chase_library

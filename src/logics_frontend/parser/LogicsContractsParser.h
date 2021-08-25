@@ -14,27 +14,28 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
-    IMPLIES = 21, IFF = 22, COLON = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
-    UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
-    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, LSQUARE = 40, 
-    RSQUARE = 41, COMMA = 42, DOT = 43, ID = 44, DECIMAL = 45, NUMBER = 46, 
-    ENDST = 47
+    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
+    NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
+    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
+    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, LBRACKET = 39, 
+    RBRACKET = 40, LSQUARE = 41, RSQUARE = 42, COMMA = 43, DOT = 44, ID = 45, 
+    DECIMAL = 46, NUMBER = 47, ENDST = 48
   };
 
   enum {
     RuleBin_logic_op = 0, RuleUnary_logic_op = 1, RuleUnary_temp_op = 2, 
     RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RulePrimed_ID = 6, 
-    RuleIntegerKW = 7, RuleBooleanKW = 8, RuleVariableKW = 9, RuleInputKW = 10, 
-    RuleOutputKW = 11, RuleConstantKW = 12, RulePropositionKw = 13, RuleIsKw = 14, 
-    RuleTrueKW = 15, RuleFalseKW = 16, RuleContractKW = 17, RuleAssumptionsKW = 18, 
-    RuleGuaranteesKW = 19, RuleNameKw = 20, RuleCausality = 21, RuleLogic_constant = 22, 
-    RuleRange = 23, RuleInteger = 24, RuleTypeKW = 25, RuleLvalue = 26, 
-    RuleRvalue = 27, RuleRelation = 28, RuleValue = 29, RulePair = 30, RuleInterval_leftopen = 31, 
-    RuleInterval_rightopen = 32, RuleInterval_fullopen = 33, RuleInterval_closed = 34, 
-    RuleInterval = 35, RuleFormula = 36, RuleMinus_number = 37, RuleMinus_ID = 38, 
-    RuleAtom = 39, RuleSingle_formula = 40, RuleAssumptions = 41, RuleGuarantees = 42, 
-    RuleDeclaration = 43, RuleContract = 44, RuleName = 45, RuleSystemSpec = 46
+    RuleIntegerKW = 7, RuleBooleanKW = 8, RuleRealKW = 9, RuleVariableKW = 10, 
+    RuleInputKW = 11, RuleOutputKW = 12, RuleConstantKW = 13, RulePropositionKw = 14, 
+    RuleIsKw = 15, RuleTrueKW = 16, RuleFalseKW = 17, RuleContractKW = 18, 
+    RuleAssumptionsKW = 19, RuleGuaranteesKW = 20, RuleNameKw = 21, RuleCausality = 22, 
+    RuleLogic_constant = 23, RuleRange = 24, RuleInteger = 25, RuleReal = 26, 
+    RuleTypeKW = 27, RuleLvalue = 28, RuleRvalue = 29, RuleRelation = 30, 
+    RuleValue = 31, RulePair = 32, RuleInterval_leftopen = 33, RuleInterval_rightopen = 34, 
+    RuleInterval_fullopen = 35, RuleInterval_closed = 36, RuleInterval = 37, 
+    RuleFormula = 38, RuleMinus_number = 39, RuleMinus_ID = 40, RuleAtom = 41, 
+    RuleSingle_formula = 42, RuleAssumptions = 43, RuleGuarantees = 44, 
+    RuleDeclaration = 45, RuleContract = 46, RuleName = 47, RuleSystemSpec = 48
   };
 
   explicit LogicsContractsParser(antlr4::TokenStream *input);
@@ -56,6 +57,7 @@ public:
   class Primed_IDContext;
   class IntegerKWContext;
   class BooleanKWContext;
+  class RealKWContext;
   class VariableKWContext;
   class InputKWContext;
   class OutputKWContext;
@@ -72,6 +74,7 @@ public:
   class Logic_constantContext;
   class RangeContext;
   class IntegerContext;
+  class RealContext;
   class TypeKWContext;
   class LvalueContext;
   class RvalueContext;
@@ -222,6 +225,18 @@ public:
   };
 
   BooleanKWContext* booleanKW();
+
+  class  RealKWContext : public antlr4::ParserRuleContext {
+  public:
+    RealKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  RealKWContext* realKW();
 
   class  VariableKWContext : public antlr4::ParserRuleContext {
   public:
@@ -426,11 +441,26 @@ public:
 
   IntegerContext* integer();
 
+  class  RealContext : public antlr4::ParserRuleContext {
+  public:
+    RealContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    RealKWContext *realKW();
+    RangeContext *range();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  RealContext* real();
+
   class  TypeKWContext : public antlr4::ParserRuleContext {
   public:
     TypeKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     IntegerContext *integer();
+    RealContext *real();
     BooleanKWContext *booleanKW();
 
 

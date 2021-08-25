@@ -14,12 +14,12 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, WS = 16, LINE_COMMENT = 17, AND = 18, OR = 19, NOT = 20, 
-    IMPLIES = 21, IFF = 22, COLON = 23, ALWAYS = 24, EVENTUALLY = 25, NEXT = 26, 
-    UNTIL = 27, EQ = 28, NEQ = 29, LT = 30, LE = 31, GT = 32, GE = 33, PLUS = 34, 
-    MINUS = 35, TIMES = 36, DIVIDE = 37, LBRACKET = 38, RBRACKET = 39, LSQUARE = 40, 
-    RSQUARE = 41, COMMA = 42, DOT = 43, ID = 44, DECIMAL = 45, NUMBER = 46, 
-    ENDST = 47
+    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
+    NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
+    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
+    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, LBRACKET = 39, 
+    RBRACKET = 40, LSQUARE = 41, RSQUARE = 42, COMMA = 43, DOT = 44, ID = 45, 
+    DECIMAL = 46, NUMBER = 47, ENDST = 48
   };
 
   explicit LogicsContractsLexer(antlr4::CharStream *input);

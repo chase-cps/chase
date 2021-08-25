@@ -51,6 +51,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitRealKW(LogicsContractsParser::RealKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitVariableKW(LogicsContractsParser::VariableKWContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -112,6 +116,10 @@ public:
   }
 
   virtual antlrcpp::Any visitInteger(LogicsContractsParser::IntegerContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitReal(LogicsContractsParser::RealContext *ctx) override {
     return visitChildren(ctx);
   }
 

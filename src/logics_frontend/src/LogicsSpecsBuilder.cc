@@ -69,9 +69,9 @@ LogicsSpecsBuilder::visitDeclaration(LogicsContractsParser::DeclarationContext *
 
     auto tctx = ctx->typeKW();
     if( tctx != nullptr) {
-        if (tctx->booleanKW() != nullptr)
+        if (tctx->booleanKW() != nullptr){
             type = new chase::Boolean();
-        else if (tctx->integer() != nullptr) {
+        } else if (tctx->integer() != nullptr) {
             LogicsContractsParser::IntegerContext *ictx = tctx->integer();
             int lb = 0;
             int ub = 16;
@@ -80,7 +80,17 @@ LogicsSpecsBuilder::visitDeclaration(LogicsContractsParser::DeclarationContext *
                 ub = std::stoi(ictx->range()->NUMBER(1)->getText());
             }
             type = new chase::Integer(lb, ub);
-        } else
+        } else if(tctx->real() != nullptr){
+            LogicsContractsParser::RealContext * rctx = tctx->real();
+            double lb = -infinity;
+            double ub = infinity;
+            if(rctx->range() != nullptr) {
+                lb = std::stod(rctx->range()->NUMBER(0)->getText());
+                ub = std::stod(rctx->range()->NUMBER(1)->getText());
+            }
+            type = new chase::Real(lb, ub);
+       }
+        else
             messageError("Wrong type: " + ctx->typeKW()->getText());
     }
 

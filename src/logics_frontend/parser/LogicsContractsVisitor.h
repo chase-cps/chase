@@ -37,6 +37,8 @@ public:
 
     virtual antlrcpp::Any visitBooleanKW(LogicsContractsParser::BooleanKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitRealKW(LogicsContractsParser::RealKWContext *context) = 0;
+
     virtual antlrcpp::Any visitVariableKW(LogicsContractsParser::VariableKWContext *context) = 0;
 
     virtual antlrcpp::Any visitInputKW(LogicsContractsParser::InputKWContext *context) = 0;
@@ -68,6 +70,8 @@ public:
     virtual antlrcpp::Any visitRange(LogicsContractsParser::RangeContext *context) = 0;
 
     virtual antlrcpp::Any visitInteger(LogicsContractsParser::IntegerContext *context) = 0;
+
+    virtual antlrcpp::Any visitReal(LogicsContractsParser::RealContext *context) = 0;
 
     virtual antlrcpp::Any visitTypeKW(LogicsContractsParser::TypeKWContext *context) = 0;
 

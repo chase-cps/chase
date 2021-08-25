@@ -10,6 +10,7 @@
 #include "utilities/simplify.hh"
 #include "utilities/Factory.hh"
 #include "utilities/ClonedDeclarationVisitor.hh"
+#include "backends/PySTLPrinter.hh"
 
 using namespace chase;
 using namespace chase;
@@ -248,6 +249,32 @@ int Console::_execShow(std::vector<std::string> &tokens)
                 if(cit->getName()->getString() == name)
                 {
                     found = true;
+                    auto m = _used_logics.find(cit);
+                    if(m != _used_logics.end())
+                    {
+                        auto t = m->second;
+                        switch(t){
+                            case no_logics:
+                                ret += "NO LOGICS\n";
+                                break;
+                            case propositional:
+                                ret += "PROPOSITIONAL LOGICS\n";
+                                break;
+                            case linear_temporal:
+                                ret += "LINEAR TEMPORAL LOGICS\n";
+                                break;
+                            case metric_temporal:
+                                ret += "METRIC TEMPORAL LOGICS\n";
+                                break;
+                            case signal_temporal:
+                                ret += "SIGNAL TEMPORAL LOGICS\n";
+                                break;
+                            default:
+                                ret += "NO LOGICS";
+                                break;
+                        }
+                    }
+
                     ret += cit->getString();
                     ret += "\n\n";
                     break;
@@ -344,6 +371,35 @@ int Console::_computeQuotient(std::vector<std::string> &tokens) {
 
     auto r = Contract::quotient(c1, c2, m, res_name, synth);
     _system->addContract(r);
+    return 1;
+}
+
+int Console::_stlContract(std::vector< std::string >& tokens)
+{
+    std::string fileOut = _outDir + "output.py";
+    if(tokens.size() > 2)
+        fileOut = _outDir + std::string(tokens[2]);
+    if(tokens.size() < 2)
+        messageWarning("Wrong command. Usage: stl contract file");
+
+
+    if(fileOut.find(".py") == std::string::npos)
+        fileOut += ".py";
+
+    std::string contract_name = tokens[1];
+    chase::Contract * contract = nullptr;
+    for (auto c : _system->getContractsSet())
+    {
+        if( c->getName()->getString() == contract_name)
+        {
+            contract = c;
+            break;
+        }
+    }
+
+    PySTLPrinter printer(fileOut);
+    printer.print(contract);
+
     return 1;
 }
 

@@ -11,8 +11,6 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wextra -pedantic -ggdb -fPIC")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3  -fPIC")
 
-
-
 add_subdirectory(third_party)
 
 project (CHASE VERSION 1.0.0)

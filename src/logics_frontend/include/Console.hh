@@ -35,6 +35,9 @@ namespace chase
         /// @return 1 if the command has been executed properly. 0 otherwise.
         int _execCommand( std::string cmd );
 
+
+        int _stlContract(std::vector< std::string >& tokens);
+
         /// @brief Method executing the conjunction command.
         /// @param tokens Tokens of the command.
         /// @return 1 if the command has been executed properly, 0 otherwise.
@@ -102,5 +105,10 @@ namespace chase
 
         /// @brief Procedure printing the help of the console.
         void _printHelp(std::string cmd = std::string(""));
+
+        /// @brief Map storing the types of logics being used.
+        std::map< Contract *, logics_type > _used_logics;
+
+
     };
 }

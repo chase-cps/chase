@@ -120,13 +120,18 @@ int chase::GuideVisitor::visitModalFormula(chase::ModalFormula &o)
 int chase::GuideVisitor::visitUnaryTemporalOperation(
         chase::UnaryTemporalFormula &o)
 {
-    return continueVisit(o.getFormula());
+    int rv = 0;
+    if(o.getInterval() != nullptr) rv |= visitInterval(* o.getInterval());
+    rv |= continueVisit(o.getFormula());
+    return rv;
 }
 
 int chase::GuideVisitor::visitBinaryTemporalOperation(
         chase::BinaryTemporalFormula &o)
 {
-    int rv = continueVisit(o.getFormula1());
+    int rv = 0;
+    if(o.getInterval() != nullptr) rv |= visitInterval(* o.getInterval());
+    rv = continueVisit(o.getFormula1());
     rv |= continueVisit(o.getFormula2());
     return rv;
 }

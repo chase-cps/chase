@@ -20,6 +20,18 @@ chase::Console::Console(System *system, std::string outDir) :
 
 int Console::run(std::string cmd)
 {
+    // Identify the type of contracts in the specification.
+
+    LogicIdentificationVisitor logicIdVisit;
+    for(auto & cit :  _system->getContractsSet())
+    {
+        auto t = logicIdVisit.identifyContractType(cit);
+        auto it = _used_logics.find(cit);
+        if (it != _used_logics.end()) { it->second = t; }
+        else
+            _used_logics.insert(std::pair<Contract *, logics_type>(cit, t));
+    }
+
     if(cmd.empty()) {
         std::cout << std::endl << "$> ";
         std::getline(std::cin, cmd);
@@ -70,6 +82,8 @@ int Console::_execCommand(std::string cmd)
         return _computeQuotient(tokens);
     else if(tokens[0] == "show")
         return _execShow(tokens);
+    else if(tokens[0] == "stl")
+        return _stlContract(tokens);
     return 1;
 }
 
