@@ -1,8 +1,9 @@
 #!/bin/bash
-
-
-
-~/third_party/sources/slugs/tools/StructuredSlugsParser/compiler.py $1.structuredSlugs > $1.slugsin
-slugs --explicitStrategy --jsonOutput $1.slugsin > $1.json
+if [ -z ${var+SLUGSDIR} ]; 
+    then 
+        python3 $SLUGSDIR/slugs/tools/StructuredSlugsParser/compiler.py $1.structuredSlugs > $1.slugsin
+        slugs --explicitStrategy --jsonOutput $1.slugsin > $1.json
+    else echo "SLUGSDIR not set - impossible to find slugs";
+fi
 
 

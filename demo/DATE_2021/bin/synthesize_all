@@ -1,14 +1,16 @@
 #!/bin/bash
 
+if [ -z ${var+SLUGSDIR} ]; 
+    then
+        python3 $SLUGSDIR/tools/StructuredSlugsParser/compiler.py $1.structuredSlugs > $1.slugsin
+        slugs --explicitStrategy --jsonOutput $1.slugsin > $1.json
 
+        gr1c -t dot -o $1.dot $1.spc
+        dot -Tjpg -o $1.jpg $1.dot
 
-~/third_party/sources/slugs/tools/StructuredSlugsParser/compiler.py $1.structuredSlugs > $1.slugsin
-slugs --explicitStrategy --jsonOutput $1.slugsin > $1.json
-
-gr1c -t dot -o $1.dot $1.spc
-dot -Tjpg -o $1.jpg $1.dot
-
-echo "Press enter to open see Mealy Machine"
-read
-xdg-open $1.jpg
+        echo "Press enter to open see Mealy Machine"
+        read
+        xdg-open $1.jpg;
+    else echo "SLUGSDIR not set - impossible to find slugs";
+fi
 
