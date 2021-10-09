@@ -166,3 +166,9 @@ int NuSMVPrinter::visitIntegerValue(IntegerValue &value) {
     _fout << value.getString();
     return 1;
 }
+
+int NuSMVPrinter::visitBooleanConstant(BooleanConstant &constant) {
+    if(constant.getValue()) _fout << "TRUE";
+    else _fout << "FALSE";
+    return 1;
+}

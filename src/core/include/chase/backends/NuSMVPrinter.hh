@@ -42,6 +42,7 @@ namespace chase {
         int visitBooleanValue(BooleanValue &value) override;
         int visitIdentifier(Identifier &identifier) override;
         int visitVariable(Variable &variable) override;
+        int visitBooleanConstant(BooleanConstant &constant) override;
         int visitProposition(Proposition &proposition) override;
         int visitBinaryBooleanOperation(BinaryBooleanFormula &formula) override;
         int visitUnaryBooleanOperation(UnaryBooleanFormula &formula) override;
