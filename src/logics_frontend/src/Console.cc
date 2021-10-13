@@ -42,7 +42,9 @@ int Console::run(std::string cmd)
     else {
         int rv = _execCommand(cmd);
         if( rv == 0 )
-            std::cout << "Wrong command" << std::endl;
+            std::cout << "Wrong command:\n\t" << cmd
+            << "\n\tHINT:\tType help to see instructions.\n" <<
+            std::endl;
     }
     simplify(_system);
     return 1;
@@ -84,7 +86,7 @@ int Console::_execCommand(std::string cmd)
         return _execShow(tokens);
     else if(tokens[0] == "stl")
         return _stlContract(tokens);
-    return 1;
+    return 0;
 }
 
 void Console::_createProjectionMap(
