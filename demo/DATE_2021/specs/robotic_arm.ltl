@@ -1,5 +1,21 @@
 NAME: ICE_Robotic_Arm;
 
+
+CONTRACT Target:
+    output boolean variable rpick;
+    output boolean variable rplace;
+    input boolean variable picked;
+    input boolean variable placed;
+
+    Assumptions:
+        ~picked & ~placed;
+        []<>(picked);
+        []<>(placed);
+    Guarantees:
+        []((!picked & !placed) -> X(rpick));
+        []((picked & !placed) -> X(rplace));
+
+
 CONTRACT Mission:
     output boolean variable rpick;
     output boolean variable rplace;

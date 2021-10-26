@@ -65,8 +65,13 @@ int Console::_execCommand(std::string cmd)
         {
             cmd = tokens[1];
             _printHelp(cmd);
+            return 1;
         }
-        else _printHelp();
+        else
+        {
+            _printHelp();
+            return 1;
+        }
     }
     else if(tokens[0] == "saturate")
         return _execSaturation(tokens);

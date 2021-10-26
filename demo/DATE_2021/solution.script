@@ -1,0 +1,10 @@
+refinement Target Mission TM.smv;
+refinement Mission Target MT.smv;
+compose Mission Coordinator Top;
+verify Top top;
+compose Move Turn MT;
+compose MT Pick MTP;
+compose MTP Place Bottom;
+compose Top Bottom System;
+verify System system;
+synthesize Coordinator coordinator gr1c;
