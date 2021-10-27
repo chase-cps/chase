@@ -104,7 +104,6 @@ Contract * Contract::composition(
                             reinterpret_cast< Variable * >(originals[vit]);
                     if(original->getCausality() == output && var->getCausality() == input)
                     {
-                        std::cout << "replace: " << var->getName()->getString() << std::endl;
                         var->setCausality(output);
                     }
                 }
