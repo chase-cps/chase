@@ -27,11 +27,11 @@ namespace chase {
             /// @brief Main function for visit.
             /// @param v The visitor being used.
             /// @return the return value of the visit.
-            int accept_visitor( BaseVisitor &v );
+            int accept_visitor( BaseVisitor &v ) override;
 
             /// @brief Function printing the type.
             /// @return the type as a string.
-            std::string getString();
+            std::string getString() override;
 
 
             /// @brief Clone method.

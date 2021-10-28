@@ -33,7 +33,7 @@ namespace chase {
 
             /// @brief Returns the type variant attribute.
             /// @return The type variant.
-            [[nodiscard]] TypeVariant getTypeVariant() const;
+            TypeVariant getTypeVariant() const;
 
             /// @brief Set the type variant attribute.
             /// @param tv The Type variant to be set.

@@ -23,7 +23,7 @@ namespace chase
         std::map< Variable *, bool > used_in_guarantees;
 
         /// @brief Constructor.
-        VarsCausalityVisitor( Contract * contract );
+        VarsCausalityVisitor( Contract * contract = nullptr );
         /// @brief Destructor.
         virtual ~VarsCausalityVisitor();
 

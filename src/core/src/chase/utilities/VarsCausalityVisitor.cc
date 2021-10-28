@@ -8,22 +8,24 @@
 #include "utilities/VarsCausalityVisitor.hh"
 #include "representation.hh"
 
-chase::VarsCausalityVisitor::VarsCausalityVisitor( Contract * contract = nullptr ) :
+using namespace chase;
+
+VarsCausalityVisitor::VarsCausalityVisitor( Contract * contract ) :
     _contract(contract),
     _inAssumptions(false),
     _inGuarantees(false)
 {
 }
 
-chase::VarsCausalityVisitor::~VarsCausalityVisitor() = default;
+VarsCausalityVisitor::~VarsCausalityVisitor() = default;
 
-int chase::VarsCausalityVisitor::visitVariable(chase::Variable &variable) {
+int VarsCausalityVisitor::visitVariable(Variable &variable) {
     std::pair< Variable*, bool > p( &variable, false);
     used_in_assumptions.insert(p);
     return GuideVisitor::visitVariable(variable);
 }
 
-int chase::VarsCausalityVisitor::visitContract(chase::Contract & contract) {
+int VarsCausalityVisitor::visitContract(Contract & contract) {
     int rv = 0;
     for(auto & declaration : contract.declarations)
         rv |= declaration->accept_visitor(*this);
@@ -43,15 +45,15 @@ int chase::VarsCausalityVisitor::visitContract(chase::Contract & contract) {
     return rv;
 }
 
-chase::Contract *chase::VarsCausalityVisitor::getContract() const {
+Contract *VarsCausalityVisitor::getContract() const {
     return _contract;
 }
 
-void chase::VarsCausalityVisitor::setContract(chase::Contract *contract) {
+void VarsCausalityVisitor::setContract(Contract *contract) {
     _contract = contract;
 }
 
-int chase::VarsCausalityVisitor::visitIdentifier(chase::Identifier &identifier) {
+int VarsCausalityVisitor::visitIdentifier(Identifier &identifier) {
     auto d = identifier.getDeclaration();
     if(d->IsA() == variable_node)
     {
@@ -72,7 +74,7 @@ int chase::VarsCausalityVisitor::visitIdentifier(chase::Identifier &identifier) 
     return GuideVisitor::visitIdentifier(identifier);
 }
 
-void chase::VarsCausalityVisitor::_fixVarsCausality() {
+void VarsCausalityVisitor::_fixVarsCausality() {
     for( auto & dec : _contract->declarations )
     {
         if(dec->IsA() == variable_node)
