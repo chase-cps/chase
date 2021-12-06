@@ -1,6 +1,7 @@
 # Contract-based Heterogeneous Analysis and System Exploration (CHASE)
 ## Software Description
 ### Purpose and Function
+
 CHASE is a framework for requirement capture, formalization, and validation 
 for cyber-physical systems.
 
