@@ -23,5 +23,3 @@ venv/*
 demo/Timing/template_0_synthesizable.structuredslugs
 .idea/CHASE.iml
 output.smv
-third_party/antlr4_runtime/*
-third_party/pybind11
