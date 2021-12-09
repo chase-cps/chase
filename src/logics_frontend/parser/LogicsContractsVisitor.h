@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -30,8 +30,6 @@ public:
     virtual antlrcpp::Any visitRelation_op(LogicsContractsParser::Relation_opContext *context) = 0;
 
     virtual antlrcpp::Any visitBin_math_op(LogicsContractsParser::Bin_math_opContext *context) = 0;
-
-    virtual antlrcpp::Any visitPrimed_ID(LogicsContractsParser::Primed_IDContext *context) = 0;
 
     virtual antlrcpp::Any visitIntegerKW(LogicsContractsParser::IntegerKWContext *context) = 0;
 
@@ -78,6 +76,8 @@ public:
     virtual antlrcpp::Any visitLvalue(LogicsContractsParser::LvalueContext *context) = 0;
 
     virtual antlrcpp::Any visitRvalue(LogicsContractsParser::RvalueContext *context) = 0;
+
+    virtual antlrcpp::Any visitPrimed_ID(LogicsContractsParser::Primed_IDContext *context) = 0;
 
     virtual antlrcpp::Any visitRelation(LogicsContractsParser::RelationContext *context) = 0;
 

@@ -1,14 +1,18 @@
 NAME : test_1;
-
+/*
+* Prova
+Prova
+*/
 CONTRACT C1:
-    input integer (0 : 3) variable x;
+    input integer (0 : 3)
+        variable x;
     input integer (0 : 3) variable y;
     output integer (0 : 7) variable z;
 
     Assumptions:
-        [](y != 0);
+        G(y != 0);
     Guarantees:
-        [](z = x' / y);
+        G(z = x' / y);
 
 CONTRACT C2:
     input integer (0 : 7) variable u;
@@ -17,7 +21,7 @@ CONTRACT C2:
     Assumptions:
         true;
     Guarantees:
-        [](x > u);
+        G(x > u);
 
 CONTRACT C2_primed:
     input integer (0 : 7) variable v;
@@ -26,4 +30,4 @@ CONTRACT C2_primed:
     Assumptions:
         true;
     Guarantees:
-        [](y = 0-v);
+        G(y = 0-v);

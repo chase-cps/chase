@@ -32,15 +32,14 @@ unary_logic_op: NOT;
 * Temporal Operators
 **/
 
-ALWAYS:     '[]';
-EVENTUALLY: '<>';
+ALWAYS:     'G';
+EVENTUALLY: 'F';
 NEXT:       'X';
 UNTIL:      'U';
-
-
+RELEASE:    'R';
 
 unary_temp_op: ALWAYS | EVENTUALLY | NEXT;
-bin_temp_op: UNTIL;
+bin_temp_op: UNTIL | RELEASE;
 
 /*
 * Relation operators
@@ -78,8 +77,6 @@ DOT:    '.';
 ID: LETTER ALPHANUM*;
 DECIMAL: DOT DIGIT+;
 NUMBER: MINUS? DIGIT+ DECIMAL?;
-
-primed_ID : ID'\'';
 
 ENDST: ';';
 
@@ -119,6 +116,8 @@ typeKW: integer | real | booleanKW;
 lvalue: value;
 rvalue: value;
 
+primed_ID : ID'\'';
+
 relation:
     lvalue relation_op rvalue;
 
@@ -157,7 +156,6 @@ formula:
 
 minus_number: MINUS NUMBER;
 minus_ID: MINUS ID;
-
 
 
 atom:

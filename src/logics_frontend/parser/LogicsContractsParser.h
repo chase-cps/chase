@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -14,24 +14,24 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
-    NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
-    NEXT = 27, UNTIL = 28, EQ = 29, NEQ = 30, LT = 31, LE = 32, GT = 33, 
-    GE = 34, PLUS = 35, MINUS = 36, TIMES = 37, DIVIDE = 38, LBRACKET = 39, 
-    RBRACKET = 40, LSQUARE = 41, RSQUARE = 42, COMMA = 43, DOT = 44, ID = 45, 
-    DECIMAL = 46, NUMBER = 47, ENDST = 48
+    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, MULTILINE_COMMENT = 19, 
+    AND = 20, OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, COLON = 25, ALWAYS = 26, 
+    EVENTUALLY = 27, NEXT = 28, UNTIL = 29, RELEASE = 30, EQ = 31, NEQ = 32, 
+    LT = 33, LE = 34, GT = 35, GE = 36, PLUS = 37, MINUS = 38, TIMES = 39, 
+    DIVIDE = 40, LBRACKET = 41, RBRACKET = 42, LSQUARE = 43, RSQUARE = 44, 
+    COMMA = 45, DOT = 46, ID = 47, DECIMAL = 48, NUMBER = 49, ENDST = 50
   };
 
   enum {
     RuleBin_logic_op = 0, RuleUnary_logic_op = 1, RuleUnary_temp_op = 2, 
-    RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RulePrimed_ID = 6, 
-    RuleIntegerKW = 7, RuleBooleanKW = 8, RuleRealKW = 9, RuleVariableKW = 10, 
-    RuleInputKW = 11, RuleOutputKW = 12, RuleConstantKW = 13, RulePropositionKw = 14, 
-    RuleIsKw = 15, RuleTrueKW = 16, RuleFalseKW = 17, RuleContractKW = 18, 
-    RuleAssumptionsKW = 19, RuleGuaranteesKW = 20, RuleNameKw = 21, RuleCausality = 22, 
-    RuleLogic_constant = 23, RuleRange = 24, RuleInteger = 25, RuleReal = 26, 
-    RuleTypeKW = 27, RuleLvalue = 28, RuleRvalue = 29, RuleRelation = 30, 
-    RuleValue = 31, RulePair = 32, RuleInterval_leftopen = 33, RuleInterval_rightopen = 34, 
+    RuleBin_temp_op = 3, RuleRelation_op = 4, RuleBin_math_op = 5, RuleIntegerKW = 6, 
+    RuleBooleanKW = 7, RuleRealKW = 8, RuleVariableKW = 9, RuleInputKW = 10, 
+    RuleOutputKW = 11, RuleConstantKW = 12, RulePropositionKw = 13, RuleIsKw = 14, 
+    RuleTrueKW = 15, RuleFalseKW = 16, RuleContractKW = 17, RuleAssumptionsKW = 18, 
+    RuleGuaranteesKW = 19, RuleNameKw = 20, RuleCausality = 21, RuleLogic_constant = 22, 
+    RuleRange = 23, RuleInteger = 24, RuleReal = 25, RuleTypeKW = 26, RuleLvalue = 27, 
+    RuleRvalue = 28, RulePrimed_ID = 29, RuleRelation = 30, RuleValue = 31, 
+    RulePair = 32, RuleInterval_leftopen = 33, RuleInterval_rightopen = 34, 
     RuleInterval_fullopen = 35, RuleInterval_closed = 36, RuleInterval = 37, 
     RuleFormula = 38, RuleMinus_number = 39, RuleMinus_ID = 40, RuleAtom = 41, 
     RuleSingle_formula = 42, RuleAssumptions = 43, RuleGuarantees = 44, 
@@ -54,7 +54,6 @@ public:
   class Bin_temp_opContext;
   class Relation_opContext;
   class Bin_math_opContext;
-  class Primed_IDContext;
   class IntegerKWContext;
   class BooleanKWContext;
   class RealKWContext;
@@ -78,6 +77,7 @@ public:
   class TypeKWContext;
   class LvalueContext;
   class RvalueContext;
+  class Primed_IDContext;
   class RelationContext;
   class ValueContext;
   class PairContext;
@@ -147,6 +147,7 @@ public:
     Bin_temp_opContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *UNTIL();
+    antlr4::tree::TerminalNode *RELEASE();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -188,19 +189,6 @@ public:
   };
 
   Bin_math_opContext* bin_math_op();
-
-  class  Primed_IDContext : public antlr4::ParserRuleContext {
-  public:
-    Primed_IDContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *ID();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  Primed_IDContext* primed_ID();
 
   class  IntegerKWContext : public antlr4::ParserRuleContext {
   public:
@@ -495,6 +483,19 @@ public:
   };
 
   RvalueContext* rvalue();
+
+  class  Primed_IDContext : public antlr4::ParserRuleContext {
+  public:
+    Primed_IDContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ID();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Primed_IDContext* primed_ID();
 
   class  RelationContext : public antlr4::ParserRuleContext {
   public:

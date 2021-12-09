@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/CoCoDeLang_parser/grammar\CoCoDeLang.g4 by ANTLR 4.9.2
 
 #pragma once
 
@@ -9,21 +9,23 @@
 
 
 
-class  LogicsContractsLexer : public antlr4::Lexer {
+class  CoCoDeLangLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, MULTILINE_COMMENT = 19, 
-    AND = 20, OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, COLON = 25, ALWAYS = 26, 
-    EVENTUALLY = 27, NEXT = 28, UNTIL = 29, RELEASE = 30, EQ = 31, NEQ = 32, 
-    LT = 33, LE = 34, GT = 35, GE = 36, PLUS = 37, MINUS = 38, TIMES = 39, 
-    DIVIDE = 40, LBRACKET = 41, RBRACKET = 42, LSQUARE = 43, RSQUARE = 44, 
-    COMMA = 45, DOT = 46, ID = 47, DECIMAL = 48, NUMBER = 49, ENDST = 50
+    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
+    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
+    T__26 = 27, ID = 28, INTEGER = 29, DECIMAL = 30, WS = 31, LINE_COMMENT = 32, 
+    MULTILINE_COMMENT = 33, AND = 34, OR = 35, NOT = 36, IMPLIES = 37, IFF = 38, 
+    COLON = 39, ALWAYS = 40, EVENTUALLY = 41, NEXT = 42, UNTIL = 43, RELEASE = 44, 
+    EQ = 45, NEQ = 46, LT = 47, LE = 48, GT = 49, GE = 50, PLUS = 51, MINUS = 52, 
+    TIMES = 53, DIVIDE = 54, LROUND = 55, RROUND = 56, LSQUARE = 57, RSQUARE = 58, 
+    LCURLY = 59, RCURLY = 60, COMMA = 61, DOT = 62, ENDST = 63
   };
 
-  explicit LogicsContractsLexer(antlr4::CharStream *input);
-  ~LogicsContractsLexer();
+  explicit CoCoDeLangLexer(antlr4::CharStream *input);
+  ~CoCoDeLangLexer();
 
   virtual std::string getGrammarFileName() const override;
   virtual const std::vector<std::string>& getRuleNames() const override;

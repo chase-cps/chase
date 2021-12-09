@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/software/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
 
 #pragma once
 
@@ -36,10 +36,6 @@ public:
   }
 
   virtual antlrcpp::Any visitBin_math_op(LogicsContractsParser::Bin_math_opContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitPrimed_ID(LogicsContractsParser::Primed_IDContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -132,6 +128,10 @@ public:
   }
 
   virtual antlrcpp::Any visitRvalue(LogicsContractsParser::RvalueContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPrimed_ID(LogicsContractsParser::Primed_IDContext *ctx) override {
     return visitChildren(ctx);
   }
 
