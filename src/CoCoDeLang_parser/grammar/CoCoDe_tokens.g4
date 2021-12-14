@@ -9,6 +9,8 @@ WS: [ \t\r\n]+ -> skip;
 LINE_COMMENT: '//'  ~[\\\r\n]* '\r'? '\n' -> skip;
 MULTILINE_COMMENT: '/*' .*? '*/' -> skip;
 
+SEMICOLON : ';';
+
 fragment DIGIT: [0-9];
 fragment LETTER: [a-zA-Z];
 

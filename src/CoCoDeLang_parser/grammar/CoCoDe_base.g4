@@ -47,6 +47,7 @@ controlledKW:   'controlled';
 uncontrolledKW: 'uncontrolled';
 
 isKW:           'is';
+inKW:           'in';
 stochasticKW :     'stochastic';
 distributionKW  :   'distribution';
 

@@ -1,7 +1,7 @@
 # @author Michele Lora
 
 ###############################################################################
-# CMake file for the CHASE tool managing patterns over networks.
+# CMake file for the CHASE tool managing LTL specifications.
 # @author Michele Lora
 ###############################################################################
 
@@ -20,8 +20,7 @@ set(Logics_PARSER_SRCS
         ${Logics_PARSER_SRC_DIR}/LogicsContractsBaseVisitor.cpp
         ${Logics_PARSER_SRC_DIR}/LogicsContractsLexer.cpp
         ${Logics_PARSER_SRC_DIR}/LogicsContractsVisitor.cpp
-        ${Logics_PARSER_SRC_DIR}/LogicsContractsParser.cpp
-        )
+        ${Logics_PARSER_SRC_DIR}/LogicsContractsParser.cpp)
 
 set(Logics_TOOL_SRCS
         ${Logics_SRC_DIR}/src/main.cc

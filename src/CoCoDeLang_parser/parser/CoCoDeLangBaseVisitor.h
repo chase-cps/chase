@@ -27,6 +27,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitFrequency_entry(CoCoDeLangParser::Frequency_entryContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitFrequency_table(CoCoDeLangParser::Frequency_tableContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitDistribution_features(CoCoDeLangParser::Distribution_featuresContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -60,6 +68,14 @@ public:
   }
 
   virtual antlrcpp::Any visitConstant(CoCoDeLangParser::ConstantContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDeclaration(CoCoDeLangParser::DeclarationContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDeclarations(CoCoDeLangParser::DeclarationsContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -135,6 +151,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitInKW(CoCoDeLangParser::InKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitStochasticKW(CoCoDeLangParser::StochasticKWContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -179,6 +199,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitDiscreteKW(CoCoDeLangParser::DiscreteKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitContinuousKW(CoCoDeLangParser::ContinuousKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitGaussianKW(CoCoDeLangParser::GaussianKWContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -192,6 +220,10 @@ public:
   }
 
   virtual antlrcpp::Any visitHomogeneousKW(CoCoDeLangParser::HomogeneousKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitFrequenciesKW(CoCoDeLangParser::FrequenciesKWContext *ctx) override {
     return visitChildren(ctx);
   }
 

@@ -33,16 +33,14 @@ distribution_features   :
     frequenciesKW COLON frequency_table;
 
 // The distribution may be either discrete or continous.
-// It depends on the type: integer, real, boolean.
 distribution_definition :
     distribution_type COMMA distribution_features;
-    // THIS MUST BE COMPLETED!!!!
 
 distribution_declaration    :
     distributionKW ID;
 
 distribution    :
-    distribution_declaration isKW distribution_definition;
+    distribution_declaration isKW distribution_definition SEMICOLON;
 
 distribution_instance : ID | distribution_definition;
 
@@ -55,9 +53,10 @@ controllability :
 
 variable    :
     controllability variableKW ID isKW COLON
-        basetype (domain)?
+        basetype (inKW domain)?
         (COMMA stochasticKW COLON distribution_instance)?
-        (COMMA parametricKW COLON domain);
+        (COMMA parametricKW COLON domain)
+        SEMICOLON;
 
 /*
 * Constants.
@@ -67,4 +66,10 @@ constant_definition :
 ;
 
 constant    :
-    constantKW basetype ID COLON constant_definition;
+    constantKW basetype ID COLON constant_definition SEMICOLON;
+
+declaration :
+    constant | variable | distribution;
+
+declarations :
+    declaration*;

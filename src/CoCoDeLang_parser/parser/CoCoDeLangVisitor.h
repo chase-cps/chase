@@ -25,6 +25,10 @@ public:
 
     virtual antlrcpp::Any visitDistribution_type(CoCoDeLangParser::Distribution_typeContext *context) = 0;
 
+    virtual antlrcpp::Any visitFrequency_entry(CoCoDeLangParser::Frequency_entryContext *context) = 0;
+
+    virtual antlrcpp::Any visitFrequency_table(CoCoDeLangParser::Frequency_tableContext *context) = 0;
+
     virtual antlrcpp::Any visitDistribution_features(CoCoDeLangParser::Distribution_featuresContext *context) = 0;
 
     virtual antlrcpp::Any visitDistribution_definition(CoCoDeLangParser::Distribution_definitionContext *context) = 0;
@@ -42,6 +46,10 @@ public:
     virtual antlrcpp::Any visitConstant_definition(CoCoDeLangParser::Constant_definitionContext *context) = 0;
 
     virtual antlrcpp::Any visitConstant(CoCoDeLangParser::ConstantContext *context) = 0;
+
+    virtual antlrcpp::Any visitDeclaration(CoCoDeLangParser::DeclarationContext *context) = 0;
+
+    virtual antlrcpp::Any visitDeclarations(CoCoDeLangParser::DeclarationsContext *context) = 0;
 
     virtual antlrcpp::Any visitBin_logic_op(CoCoDeLangParser::Bin_logic_opContext *context) = 0;
 
@@ -79,6 +87,8 @@ public:
 
     virtual antlrcpp::Any visitIsKW(CoCoDeLangParser::IsKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitInKW(CoCoDeLangParser::InKWContext *context) = 0;
+
     virtual antlrcpp::Any visitStochasticKW(CoCoDeLangParser::StochasticKWContext *context) = 0;
 
     virtual antlrcpp::Any visitDistributionKW(CoCoDeLangParser::DistributionKWContext *context) = 0;
@@ -101,6 +111,10 @@ public:
 
     virtual antlrcpp::Any visitSystemKW(CoCoDeLangParser::SystemKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitDiscreteKW(CoCoDeLangParser::DiscreteKWContext *context) = 0;
+
+    virtual antlrcpp::Any visitContinuousKW(CoCoDeLangParser::ContinuousKWContext *context) = 0;
+
     virtual antlrcpp::Any visitGaussianKW(CoCoDeLangParser::GaussianKWContext *context) = 0;
 
     virtual antlrcpp::Any visitMuKW(CoCoDeLangParser::MuKWContext *context) = 0;
@@ -108,6 +122,8 @@ public:
     virtual antlrcpp::Any visitSigmaKW(CoCoDeLangParser::SigmaKWContext *context) = 0;
 
     virtual antlrcpp::Any visitHomogeneousKW(CoCoDeLangParser::HomogeneousKWContext *context) = 0;
+
+    virtual antlrcpp::Any visitFrequenciesKW(CoCoDeLangParser::FrequenciesKWContext *context) = 0;
 
     virtual antlrcpp::Any visitPrimed_ID(CoCoDeLangParser::Primed_IDContext *context) = 0;
 

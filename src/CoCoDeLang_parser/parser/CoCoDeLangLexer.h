@@ -16,12 +16,13 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, ID = 28, INTEGER = 29, DECIMAL = 30, WS = 31, LINE_COMMENT = 32, 
-    MULTILINE_COMMENT = 33, AND = 34, OR = 35, NOT = 36, IMPLIES = 37, IFF = 38, 
-    COLON = 39, ALWAYS = 40, EVENTUALLY = 41, NEXT = 42, UNTIL = 43, RELEASE = 44, 
-    EQ = 45, NEQ = 46, LT = 47, LE = 48, GT = 49, GE = 50, PLUS = 51, MINUS = 52, 
-    TIMES = 53, DIVIDE = 54, LROUND = 55, RROUND = 56, LSQUARE = 57, RSQUARE = 58, 
-    LCURLY = 59, RCURLY = 60, COMMA = 61, DOT = 62, ENDST = 63
+    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, ID = 32, 
+    INTEGER = 33, DECIMAL = 34, WS = 35, LINE_COMMENT = 36, MULTILINE_COMMENT = 37, 
+    SEMICOLON = 38, AND = 39, OR = 40, NOT = 41, IMPLIES = 42, IFF = 43, 
+    COLON = 44, ALWAYS = 45, EVENTUALLY = 46, NEXT = 47, UNTIL = 48, RELEASE = 49, 
+    EQ = 50, NEQ = 51, LT = 52, LE = 53, GT = 54, GE = 55, PLUS = 56, MINUS = 57, 
+    TIMES = 58, DIVIDE = 59, LROUND = 60, RROUND = 61, LSQUARE = 62, RSQUARE = 63, 
+    LCURLY = 64, RCURLY = 65, COMMA = 66, DOT = 67, ENDST = 68
   };
 
   explicit CoCoDeLangLexer(antlr4::CharStream *input);
