@@ -1,5 +1,5 @@
 
-// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.1
+// Generated from //wsl$/Ubuntu-20.04/home/lora/chase/repo/src/logics_frontend/grammar\LogicsContracts.g4 by ANTLR 4.9.2
 
 #pragma once
 
@@ -14,12 +14,12 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, MULTILINE_COMMENT = 19, 
-    AND = 20, OR = 21, NOT = 22, IMPLIES = 23, IFF = 24, COLON = 25, ALWAYS = 26, 
-    EVENTUALLY = 27, NEXT = 28, UNTIL = 29, RELEASE = 30, EQ = 31, NEQ = 32, 
-    LT = 33, LE = 34, GT = 35, GE = 36, PLUS = 37, MINUS = 38, TIMES = 39, 
-    DIVIDE = 40, LBRACKET = 41, RBRACKET = 42, LSQUARE = 43, RSQUARE = 44, 
-    COMMA = 45, DOT = 46, ID = 47, DECIMAL = 48, NUMBER = 49, ENDST = 50
+    T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
+    NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
+    NEXT = 27, UNTIL = 28, RELEASE = 29, EQ = 30, NEQ = 31, LT = 32, LE = 33, 
+    GT = 34, GE = 35, PLUS = 36, MINUS = 37, TIMES = 38, DIVIDE = 39, LBRACKET = 40, 
+    RBRACKET = 41, LSQUARE = 42, RSQUARE = 43, COMMA = 44, DOT = 45, ID = 46, 
+    DECIMAL = 47, NUMBER = 48, ENDST = 49
   };
 
   explicit LogicsContractsLexer(antlr4::CharStream *input);

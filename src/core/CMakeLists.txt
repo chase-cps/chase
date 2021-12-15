@@ -9,6 +9,7 @@ set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
 
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
+        ${SRC_CHASELIB_PATH}/representation/Scope.cc
         ${SRC_CHASELIB_PATH}/representation/System.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
         ${SRC_CHASELIB_PATH}/representation/Contract.cc

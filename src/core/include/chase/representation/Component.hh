@@ -13,13 +13,14 @@
 #include "representation/ComponentDefinition.hh"
 #include "representation/Name.hh"
 #include "representation/Value.hh"
+#include "representation/Scope.hh"
 #include "utilities.hh"
 
 namespace chase {
 
     /// @brief Class representing a component instance. The component definition
     /// is represented by object of the ComponentInstance class.
-    class Component : public ChaseObject {
+    class Component : public Scope {
     public:
 
         /// @brief Constructor.
@@ -54,6 +55,7 @@ namespace chase {
         /// ComponentDefinition; the key of the inner map identifies the name
         /// of the parameter; the value of the inner map is the value to
         /// assign at the parameter.
+        /// \todo Check whether this managing of parameters is correct.
         std::map<
                 std::string,
                 std::map< std::string, chase::Value * > > _params;

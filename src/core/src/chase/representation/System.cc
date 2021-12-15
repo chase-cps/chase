@@ -23,7 +23,7 @@ System::~System() = default;
 
 void System::addDeclaration(Declaration *declaration)
 {
-    _declarations.insert(declaration);
+    declarations.push_back(declaration);
     declaration->setParent(this);
 }
 
@@ -33,8 +33,8 @@ void System::addContract(Contract *contract)
     contract->setParent(this);
 }
 
-std::set<Declaration *> &System::getDeclarationsSet() {
-    return _declarations;
+std::list<Declaration *> &System::getDeclarationsSet() {
+    return declarations;
 }
 
 std::set<Contract *> &System::getContractsSet() {
@@ -52,7 +52,7 @@ std::string System::getString() {
     std::string ret("SYSTEM:\t" + _name->getString() + "\n");
 
     ret += "DECLARATIONS:\n";
-    for(auto it = _declarations.begin(); it != _declarations.end(); ++it)
+    for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
         ret += (*it)->getString();
         ret += "\n";
@@ -75,7 +75,7 @@ System *System::clone()
 
     std::map< Declaration *, Declaration * > declaration_map;
 
-    for(auto it = _declarations.begin(); it != _declarations.end(); ++it)
+    for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
         Declaration * current = *it;
         auto dec = current->clone();

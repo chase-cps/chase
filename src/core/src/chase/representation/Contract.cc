@@ -67,7 +67,7 @@ void Contract::setName(Name * name) {
     _name = name;
 }
 
-void Contract::addDeclaration(DataDeclaration *declaration) {
+void Contract::addDeclaration(Declaration *declaration) {
     declarations.push_back(declaration);
     declaration->setParent(this);
 }
@@ -96,9 +96,9 @@ Contract *Contract::clone() {
     // Declarations.
     for(auto it = declarations.begin(); it != declarations.end(); ++it)
     {
-        DataDeclaration * current = *it;
+        Declaration * current = *it;
         auto dec = current->clone();
-        std::pair< DataDeclaration *, DataDeclaration * > p(current, dec);
+        std::pair< Declaration *, Declaration * > p(current, dec);
         ret->addDeclaration(dec);
         declaration_map.insert(p);
     }

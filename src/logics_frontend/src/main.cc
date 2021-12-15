@@ -7,7 +7,6 @@
 #include "main.hh"
 
 using namespace chase;
-using namespace chase;
 
 int main( int argc, char * argv[] )
 {

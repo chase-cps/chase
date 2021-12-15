@@ -1,7 +1,7 @@
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
  * @date        1/23/2020
- *              This project is released under the 3-Clause BSD License.
+ *              This project is released under the 3-qClause BSD License.
  *
  */
 
@@ -235,6 +235,7 @@ LogicsSpecsBuilder::visitAssumptions(LogicsContractsParser::AssumptionsContext *
     }
 
     _currContract->addAssumptions(logic, LargeAnd(*vec));
+    std::cout << _currContract->getString() << std::endl;
     return antlrcpp::Any();
 }
 

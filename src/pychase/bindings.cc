@@ -24,6 +24,8 @@ PYBIND11_MODULE(pychase, m) {
         py::nodelete>>
         (m, "ChaseObject");
 
+
+
     py::class_<Name, std::unique_ptr<Name, 
         py::nodelete>, ChaseObject>
         (m, "Name")
@@ -141,8 +143,6 @@ PYBIND11_MODULE(pychase, m) {
         ChaseObject>(m, "Value");
     py::class_<NumericValue, std::unique_ptr<NumericValue, 
         py::nodelete>, Value>(m, "NumericValue");
-
-
 
 
     //  Identifier Binding

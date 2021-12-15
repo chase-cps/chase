@@ -10,6 +10,7 @@
 #include "representation/ChaseObject.hh"
 #include "Chase.hh"
 #include "Specification.hh"
+#include "Scope.hh"
 
 #include <list>
 #include <map>
@@ -23,11 +24,8 @@ namespace chase {
     typedef std::map<std::string, std::string> names_projection_map;
 
     /// @brief Class to represent contracts.
-    class Contract : public ChaseObject {
+    class Contract : public Scope {
     public:
-
-        /// @brief List of declarations.
-        std::list< DataDeclaration * > declarations;
 
         /// @brief List of assumptions.
         std::map< semantic_domain, Specification * > assumptions;
@@ -52,7 +50,7 @@ namespace chase {
         /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
-        void addDeclaration(DataDeclaration *declaration );
+        void addDeclaration(Declaration *declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.

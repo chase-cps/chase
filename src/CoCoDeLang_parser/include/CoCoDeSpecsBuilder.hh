@@ -26,6 +26,24 @@ namespace chase {
         /// @brief Destructor.
         ~CoCoDeSpecsBuilder() override;
 
+        /// @brief Main parsing function.
+        /// @param infile The specification file to be parsed.
+        /// @return A pointer to the System object constructed by the parser.
+        System * parseSpecificationFile( std::string infile );
+
+        /// @cond
+        antlrcpp::Any visitConstant(
+                CoCoDeLangParser::ConstantContext *ctx) override;
+        antlrcpp::Any visitVariable(
+                CoCoDeLangParser::VariableContext *ctx) override;
+        antlrcpp::Any visitDistribution(
+                CoCoDeLangParser::DistributionContext *ctx) override;
+
+        /// @endcond
+
+        static
+        chase::Type * analyzeBaseType(CoCoDeLangParser::BasetypeContext *ctx);
+
     protected:
 
     };

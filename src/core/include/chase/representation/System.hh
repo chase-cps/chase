@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "representation/ChaseObject.hh"
+#include "representation/Scope.hh"
 #include "representation/Declaration.hh"
 #include "representation/Contract.hh"
 #include "representation/Component.hh"
@@ -18,7 +18,7 @@
 namespace chase {
 
     /// @brief Class representing a System composed by multiple contracts.
-    class System : public ChaseObject {
+    class System : public Scope {
     public:
 
         /// @brief Constructor.
@@ -46,7 +46,7 @@ namespace chase {
         /// only to access the declaration set for reading it. Use the
         /// safe method addDeclaration for add a new declaration.
         /// @return a reference to the set of declarations.
-        std::set< Declaration * >& getDeclarationsSet();
+        std::list< Declaration * >& getDeclarationsSet();
 
         /// @brief Method to access the contracts set. It should be used
         /// only to access the contracts set for reading it. Use the
@@ -82,9 +82,6 @@ namespace chase {
         void setName(Name * name);
 
     protected:
-
-        /// Set of global declarations of the system.
-        std::set< Declaration * > _declarations;
 
         /// Set of contracts describing the system's requirements.
         std::set< Contract * > _contracts;

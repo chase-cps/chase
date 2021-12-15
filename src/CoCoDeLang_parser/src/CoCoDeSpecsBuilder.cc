@@ -8,8 +8,25 @@
 #include "CoCoDeSpecsBuilder.hh"
 
 using namespace chase;
+using namespace antlr4;
 
 CoCoDeSpecsBuilder::CoCoDeSpecsBuilder() {
 }
 
-CoCoDeSpecsBuilder::~CoCoDeSpecsBuilder() = default
+System * CoCoDeSpecsBuilder::parseSpecificationFile(std::string infile)
+{
+    ANTLRFileStream input(infile);
+    CoCoDeLangLexer lexer(&input);
+    CommonTokenStream tokens(&lexer);
+
+    CoCoDeLangParser parser(&tokens);
+
+    parser.setBuildParseTree(true);
+    CoCoDeLangParser::DeclarationsContext * tree = parser.declarations();
+
+    CoCoDeLangBaseVisitor::visitDeclarations(tree);
+
+}
+
+
+CoCoDeSpecsBuilder::~CoCoDeSpecsBuilder() = default;

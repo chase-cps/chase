@@ -12,18 +12,18 @@ CONTRACT Mission:
 
     Assumptions:
         ~picked & ~placed;
-        []<>(picked);
-        []<>(placed);
+        G F(picked));
+        G F(placed);
     Guarantees:
-        []((!picked & !placed) -> X(rpick));
-        []((!picked & !placed) -> X(xtarget=0));
-        []((!picked & !placed) -> X(ytarget=0));
-        []((!picked & !placed) -> X(desired_angle=0));
+        G((!picked & !placed) -> X(rpick));
+        G((!picked & !placed) -> X(xtarget=0));
+        G((!picked & !placed) -> X(ytarget=0));
+        G((!picked & !placed) -> X(desired_angle=0));
 
-        []((picked & !placed) -> X(rplace));
-        []((picked & !placed) -> X(xtarget=1));
-        []((picked & !placed) -> X(ytarget=1));
-        []((picked & !placed) -> X(desired_angle=7));
+        G((picked & !placed) -> X(rplace));
+        G((picked & !placed) -> X(xtarget=1));
+        G((picked & !placed) -> X(ytarget=1));
+        G((picked & !placed) -> X(desired_angle=7));
 
 CONTRACT Coordinator:
     input boolean variable rpick;
@@ -49,20 +49,20 @@ CONTRACT Coordinator:
         !pdone;
         !grip;
 
-        []<>(pdone & adone);
+        G F(pdone & adone);
 
-        []((!picked & !placed) -> X(rpick));
-        []((picked & !placed) -> X(rplace));
-        [](!rpick | !rplace);
+        G((!picked & !placed) -> X(rpick));
+        G((picked & !placed) -> X(rplace));
+        G(!rpick | !rplace);
 
     Guarantees:
         !cmd_pick;
         !cmd_place;
-        [](!pdone -> (!cmd_pick & ! cmd_place));
-        [](!adone -> (!cmd_pick & !cmd_place));
+        G(!pdone -> (!cmd_pick & ! cmd_place));
+        G(!adone -> (!cmd_pick & !cmd_place));
 
-        []((adone & pdone & rpick & ~grip) -> (cmd_pick));
-        []((adone & pdone & rplace & grip) -> (cmd_place));
+        G((adone & pdone & rpick & ~grip) -> (cmd_pick));
+        G((adone & pdone & rplace & grip) -> (cmd_place));
 
 CONTRACT Move:
     input integer (0:4) variable xpos;
@@ -87,21 +87,21 @@ CONTRACT Move:
         ypos = 0;
         xtarget = 0;
         ytarget = 0;
-        [](command = 0 -> (xpos' = xpos & ypos' = ypos));
-        [](command = 1 -> (xpos' = xpos + 1 & ypos' = ypos));
-        [](command = 2 -> (xpos = xpos' + 1 & ypos' = ypos));
-        [](command = 3 -> (ypos' = ypos + 1 & xpos' = xpos));
-        [](command = 4 -> (ypos = ypos + 1 & xpos' = xpos));
+        G(command = 0 -> (xpos' = xpos & ypos' = ypos));
+        G(command = 1 -> (xpos' = xpos + 1 & ypos' = ypos));
+        G(command = 2 -> (xpos = xpos' + 1 & ypos' = ypos));
+        G(command = 3 -> (ypos' = ypos + 1 & xpos' = xpos));
+        G(command = 4 -> (ypos = ypos + 1 & xpos' = xpos));
 
     Guarantees:
         command = 0;
-        [](xpos = 0 -> command != 2);
-        [](xpos = 4 -> command != 1);
-        [](ypos = 0 -> command != 4);
-        [](ypos = 4 -> command != 3);
-        []((xpos = xtarget & ypos = ytarget) -> pdone);
-        []((xpos != xtarget | ypos != ytarget) -> !pdone);
-        []<>(xpos = xtarget & ypos = ytarget);
+        G(xpos = 0 -> command != 2);
+        G(xpos = 4 -> command != 1);
+        G(ypos = 0 -> command != 4);
+        G(ypos = 4 -> command != 3);
+        G((xpos = xtarget & ypos = ytarget) -> pdone);
+        G((xpos != xtarget | ypos != ytarget) -> !pdone);
+        G F(xpos = xtarget & ypos = ytarget);
 
 
 
@@ -114,15 +114,15 @@ CONTRACT Turn:
     output integer (0:2) variable command;
 
     Assumptions:
-        [](command = 1 -> angle' = angle + 1);
-        [](command = 2 -> angle = angle' + 1);
-        [](command = 0 -> angle' = angle);
+        G(command = 1 -> angle' = angle + 1);
+        G(command = 2 -> angle = angle' + 1);
+        G(command = 0 -> angle' = angle);
 
     Guarantees:
         command = 0;
-        []((angle = desired_angle) -> adone);
-        []((angle != desired_angle) -> !adone);
-        []<>(angle = desired_angle);
+        G((angle = desired_angle) -> adone);
+        G((angle != desired_angle) -> !adone);
+        G F(angle = desired_angle);
 
 CONTRACT Pick:
     input boolean variable cmd_pick;
@@ -135,13 +135,13 @@ CONTRACT Pick:
 
     Guarantees:
         ~picked /\ ~pick_requested /\ ~grip;
-        [](~pick_requested -> ~picked);
-        [](pick_requested -> X(pick_requested));
-        [](picked -> X(picked));
-        [](cmd_pick -> X(pick_requested));
-        [](pick_requested -> X(picked));
-        [](~picked -> ~grip);
-        [](picked -> grip);
+        G(~pick_requested -> ~picked);
+        G(pick_requested -> X(pick_requested));
+        G(picked -> X(picked));
+        G(cmd_pick -> X(pick_requested));
+        G(pick_requested -> X(picked));
+        G(~picked -> ~grip);
+        G(picked -> grip);
         
 CONTRACT Place:
     input boolean variable cmd_place;
@@ -153,8 +153,8 @@ CONTRACT Place:
 
     Guarantees:
         ~placed /\ ~place_requested;
-        [](~place_requested -> ~placed);
-        [](place_requested -> X(place_requested));
-        [](placed -> X(placed));
-        [](cmd_place -> X(place_requested));
-        [](place_requested -> X(placed));
+        G(~place_requested -> ~placed);
+        G(place_requested -> X(place_requested));
+        G(placed -> X(placed));
+        G(cmd_place -> X(place_requested));
+        G(place_requested -> X(placed));

@@ -38,6 +38,7 @@ add_dependencies(cocode_frontend antlr4_static)
 add_library(chase_cocode_parser_library
         ${COCODE_PARSER_SRCS}
         ${COCODE_SRC_DIR}/src/CoCoDeSpecsBuilder.cc
+        ${COCODE_SRC_DIR}/src/CoCoDeSpecsBuilder_declarations.cc
         )
 
 ############## SUPPRESS THIRD PARTIES WARNINGS #################################
