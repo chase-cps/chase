@@ -20,6 +20,7 @@ namespace chase {
     class Boolean;
     class Value;
     class Range;
+    class Matrix;
     class NumericValue;
     class IntegerValue;
     class RealValue;

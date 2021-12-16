@@ -76,6 +76,10 @@ int BaseVisitor::visitInterval(Interval &) {
     return 0;
 }
 
+int BaseVisitor::visitMatrix(Matrix &) {
+    return 0;
+}
+
 
 
 

@@ -11,6 +11,17 @@ using namespace chase;
 
 int main(int argc, char *argv[])
 {
+
+    std::vector< Value* > v = {new IntegerValue(4),
+                               new IntegerValue(4),
+                               new IntegerValue(4),
+                               new IntegerValue(4)};
+
+    auto * matrix = new Matrix(2, 2, v);
+
+    std::cout << matrix->getString() << std::endl;
+    std::cout << matrix->getType()->getString() << std::endl;
+
     auto params = parseCmdLine(argc, argv);
 
     CoCoDeSpecsBuilder builder;

@@ -50,6 +50,7 @@ namespace chase {
         enumeration_node,
         type_node,
         value_node,
+        matrix_node,
         variable_node,
         parameter_node,
         proposition_node,

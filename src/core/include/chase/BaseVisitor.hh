@@ -48,6 +48,7 @@ namespace chase{
             virtual int visitIdentifier(Identifier &);
 
             virtual int visitInterval(Interval & );
+            virtual int visitMatrix(Matrix & );
 
             // Types
             virtual int visitInteger( Integer & );

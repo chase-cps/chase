@@ -47,6 +47,7 @@ namespace chase {
         int visitIdentifier(Identifier & ) override;
 
         int visitInterval(Interval &interval) override;
+        int visitMatrix(Matrix &matrix) override;
 
         // Types
         int visitInteger( Integer & ) override;

@@ -395,6 +395,14 @@ int chase::GuideVisitor::visitInterval(chase::Interval &o ) {
     return rv;
 }
 
+int chase::GuideVisitor::visitMatrix(chase::Matrix &matrix) {
+    int rv = 1;
+    for(size_t i = 1; i <= matrix.getRows(); ++i)
+        for(size_t j = 1; j <= matrix.getColumns(); ++j)
+            rv |= matrix.at(i,j)->accept_visitor(*this);
+    return rv;
+}
+
 
 
 

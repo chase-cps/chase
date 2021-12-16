@@ -39,7 +39,7 @@
 #include "representation/Interval.hh"
 
 #include "representation/Contract.hh"
-
+#include "representation/Matrix.hh"
 
 #include "representation/Name.hh"
 

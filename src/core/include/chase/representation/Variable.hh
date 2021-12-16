@@ -51,6 +51,8 @@ namespace chase {
             /// @param causality The causality_t to be set.
             void setCausality(causality_t causality);
 
+
+
             /// @brief Main function for the visit.
             /// @param v The visitor visiting the variable.
             /// @return The return value of the visitor.

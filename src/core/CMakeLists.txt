@@ -59,7 +59,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
 
         ${SRC_CHASELIB_PATH}/utilities/Factory_baseFunctions.cc
-        )
+        ${SRC_CHASELIB_PATH}/representation/Matrix.cc)
 
 set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/IOUtils.cc
