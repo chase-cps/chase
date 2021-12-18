@@ -65,6 +65,8 @@ namespace chase {
 
         int visitComponentDefinition(ComponentDefinition & ) override;
 
+        int visitDistribution(Distribution & ) override;
+
         // Boolean Formulas
         int visitProposition( Proposition & ) override;
         int visitBooleanConstant( BooleanConstant & ) override;

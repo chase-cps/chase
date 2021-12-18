@@ -42,6 +42,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/Variable.cc
         ${SRC_CHASELIB_PATH}/representation/Constant.cc
         ${SRC_CHASELIB_PATH}/representation/Parameter.cc
+        ${SRC_CHASELIB_PATH}/representation/Function.cc
         ${SRC_CHASELIB_PATH}/representation/ComponentDefinition.cc
 
         ${SRC_CHASELIB_PATH}/representation/Operators.cc
@@ -59,7 +60,9 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/GraphEdge.cc
 
         ${SRC_CHASELIB_PATH}/utilities/Factory_baseFunctions.cc
-        ${SRC_CHASELIB_PATH}/representation/Matrix.cc)
+        ${SRC_CHASELIB_PATH}/representation/Matrix.cc
+        ${SRC_CHASELIB_PATH}/representation/Distribution.cc
+        )
 
 set(chase_library_utilities
         ${SRC_CHASELIB_PATH}/utilities/IOUtils.cc
@@ -92,7 +95,7 @@ set(chase_library
         ${SRC_CHASELIB_PATH}/GuideVisitor.cc
         src/chase/representation/Contract_algebra.cc
         src/chase/representation/Component.cc
-        )
+        src/chase/representation/Distribution.cc include/chase/representation/Distribution.hh)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/include

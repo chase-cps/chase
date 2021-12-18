@@ -9,15 +9,12 @@ import CoCoDe_base;
 basetype    :
     integerKW | realKW | booleanKW | complexKW;
 
-domain  :
-    interval | list;
-
 /*
 * Distributions.
 */
 
 distribution_type   :
-    discreteKW (domain)? | continuousKW (domain)?;
+    integerKW (interval)? | realKW (interval)?;
 
 frequency_entry :
     value COLON number
@@ -30,7 +27,7 @@ frequency_table :
 distribution_features   :
     gaussianKW LROUND (muKW EQ)? value COMMA (sigmaKW EQ)? value RROUND |
     homogeneousKW |
-    frequenciesKW COLON frequency_table;
+    customKW LROUND (frequenciesKW EQ)? matrix RROUND;
 
 // The distribution may be either discrete or continous.
 distribution_definition :
@@ -40,7 +37,7 @@ distribution_declaration    :
     distributionKW ID;
 
 distribution    :
-    distribution_declaration isKW distribution_definition SEMICOLON;
+    distribution_declaration isKW distribution_definition ENDST;
 
 distribution_instance : ID | distribution_definition;
 
@@ -53,10 +50,10 @@ controllability :
 
 variable    :
     controllability variableKW ID isKW COLON
-        basetype (inKW domain)?
+        basetype (inKW interval)?
         (COMMA stochasticKW COLON distribution_instance)?
-        (COMMA parametricKW COLON domain)
-        SEMICOLON;
+        (COMMA parametricKW)?
+        ENDST;
 
 /*
 * Constants.
@@ -66,7 +63,7 @@ constant_definition :
 ;
 
 constant    :
-    constantKW basetype ID COLON constant_definition SEMICOLON;
+    constantKW basetype ID COLON constant_definition ENDST;
 
 declaration :
     constant | variable | distribution;

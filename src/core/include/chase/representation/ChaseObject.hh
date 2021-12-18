@@ -53,6 +53,7 @@ namespace chase {
         matrix_node,
         variable_node,
         parameter_node,
+        distribution_node,
         proposition_node,
         unaryBooleanOperation_node,
         binaryBooleanOperation_node,

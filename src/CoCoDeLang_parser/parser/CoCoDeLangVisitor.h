@@ -21,8 +21,6 @@ public:
    */
     virtual antlrcpp::Any visitBasetype(CoCoDeLangParser::BasetypeContext *context) = 0;
 
-    virtual antlrcpp::Any visitDomain(CoCoDeLangParser::DomainContext *context) = 0;
-
     virtual antlrcpp::Any visitDistribution_type(CoCoDeLangParser::Distribution_typeContext *context) = 0;
 
     virtual antlrcpp::Any visitFrequency_entry(CoCoDeLangParser::Frequency_entryContext *context) = 0;
@@ -117,6 +115,8 @@ public:
 
     virtual antlrcpp::Any visitGaussianKW(CoCoDeLangParser::GaussianKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitCustomKW(CoCoDeLangParser::CustomKWContext *context) = 0;
+
     virtual antlrcpp::Any visitMuKW(CoCoDeLangParser::MuKWContext *context) = 0;
 
     virtual antlrcpp::Any visitSigmaKW(CoCoDeLangParser::SigmaKWContext *context) = 0;
@@ -128,6 +128,8 @@ public:
     virtual antlrcpp::Any visitPrimed_ID(CoCoDeLangParser::Primed_IDContext *context) = 0;
 
     virtual antlrcpp::Any visitMinus_ID(CoCoDeLangParser::Minus_IDContext *context) = 0;
+
+    virtual antlrcpp::Any visitFunction(CoCoDeLangParser::FunctionContext *context) = 0;
 
     virtual antlrcpp::Any visitValue(CoCoDeLangParser::ValueContext *context) = 0;
 
@@ -144,6 +146,10 @@ public:
     virtual antlrcpp::Any visitInterval(CoCoDeLangParser::IntervalContext *context) = 0;
 
     virtual antlrcpp::Any visitList(CoCoDeLangParser::ListContext *context) = 0;
+
+    virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *context) = 0;
+
+    virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *context) = 0;
 
 
 };

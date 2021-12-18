@@ -35,6 +35,8 @@ namespace chase {
     class Variable;
     class Constant;
     class ComponentDefinition;
+    class Distribution;
+    class Function;
     class Parameter;
     class Proposition;
     class BooleanConstant;

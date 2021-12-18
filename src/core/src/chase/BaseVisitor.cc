@@ -80,6 +80,14 @@ int BaseVisitor::visitMatrix(Matrix &) {
     return 0;
 }
 
+int BaseVisitor::visitDistribution(Distribution &) {
+    return 0;
+}
+
+int BaseVisitor::visitFunction(Function &) {
+    return 0;
+}
+
 
 
 

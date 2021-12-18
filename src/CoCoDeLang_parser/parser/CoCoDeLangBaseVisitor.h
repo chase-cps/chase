@@ -19,10 +19,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitDomain(CoCoDeLangParser::DomainContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual antlrcpp::Any visitDistribution_type(CoCoDeLangParser::Distribution_typeContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -211,6 +207,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitCustomKW(CoCoDeLangParser::CustomKWContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitMuKW(CoCoDeLangParser::MuKWContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -232,6 +232,10 @@ public:
   }
 
   virtual antlrcpp::Any visitMinus_ID(CoCoDeLangParser::Minus_IDContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitFunction(CoCoDeLangParser::FunctionContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -264,6 +268,14 @@ public:
   }
 
   virtual antlrcpp::Any visitList(CoCoDeLangParser::ListContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *ctx) override {
     return visitChildren(ctx);
   }
 

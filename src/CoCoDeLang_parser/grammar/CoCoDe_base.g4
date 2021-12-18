@@ -70,6 +70,7 @@ systemKW: 'System';
 discreteKW      : 'discrete';
 continuousKW    : 'continuous';
 gaussianKW  : 'gaussian';
+customKW    : 'custom';
 muKW    : 'mu';
 sigmaKW : 'sigma';
 homogeneousKW   : 'homogeneous';
@@ -81,9 +82,13 @@ primed_ID   : ID'\'';
 
 minus_ID    : MINUS ID;
 
+function : ID;
+
 value:
     value bin_math_op value | primed_ID |
-    ID | minus_ID | number | LROUND value RROUND | trueKW | falseKW;
+    ID | minus_ID | number | LROUND value RROUND |
+    function LROUND value (COMMA value)* RROUND |
+    trueKW | falseKW;
 
 // intervals.
 pair  :     value COMMA value;
@@ -101,5 +106,9 @@ interval    :
 
 // Lists of values.
 list    :   LCURLY value (COMMA value)* RCURLY;
+
+// Matrix
+matrix_line : value (COMMA value)*;
+matrix      : LSQUARE (matrix_line ENDST)* matrix_line RSQUARE;
 
 

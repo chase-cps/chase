@@ -16,34 +16,35 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, ID = 32, 
-    INTEGER = 33, DECIMAL = 34, WS = 35, LINE_COMMENT = 36, MULTILINE_COMMENT = 37, 
-    SEMICOLON = 38, AND = 39, OR = 40, NOT = 41, IMPLIES = 42, IFF = 43, 
-    COLON = 44, ALWAYS = 45, EVENTUALLY = 46, NEXT = 47, UNTIL = 48, RELEASE = 49, 
-    EQ = 50, NEQ = 51, LT = 52, LE = 53, GT = 54, GE = 55, PLUS = 56, MINUS = 57, 
-    TIMES = 58, DIVIDE = 59, LROUND = 60, RROUND = 61, LSQUARE = 62, RSQUARE = 63, 
-    LCURLY = 64, RCURLY = 65, COMMA = 66, DOT = 67, ENDST = 68
+    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, T__31 = 32, 
+    ID = 33, INTEGER = 34, DECIMAL = 35, WS = 36, LINE_COMMENT = 37, MULTILINE_COMMENT = 38, 
+    AND = 39, OR = 40, NOT = 41, IMPLIES = 42, IFF = 43, COLON = 44, ALWAYS = 45, 
+    EVENTUALLY = 46, NEXT = 47, UNTIL = 48, RELEASE = 49, EQ = 50, NEQ = 51, 
+    LT = 52, LE = 53, GT = 54, GE = 55, PLUS = 56, MINUS = 57, TIMES = 58, 
+    DIVIDE = 59, LROUND = 60, RROUND = 61, LSQUARE = 62, RSQUARE = 63, LCURLY = 64, 
+    RCURLY = 65, COMMA = 66, DOT = 67, ENDST = 68
   };
 
   enum {
-    RuleBasetype = 0, RuleDomain = 1, RuleDistribution_type = 2, RuleFrequency_entry = 3, 
-    RuleFrequency_table = 4, RuleDistribution_features = 5, RuleDistribution_definition = 6, 
-    RuleDistribution_declaration = 7, RuleDistribution = 8, RuleDistribution_instance = 9, 
-    RuleControllability = 10, RuleVariable = 11, RuleConstant_definition = 12, 
-    RuleConstant = 13, RuleDeclaration = 14, RuleDeclarations = 15, RuleBin_logic_op = 16, 
-    RuleUnary_logic_op = 17, RuleUnary_temp_op = 18, RuleBin_temp_op = 19, 
-    RuleRelation_op = 20, RuleBin_math_op = 21, RuleNumber = 22, RuleIntegerKW = 23, 
-    RuleBooleanKW = 24, RuleRealKW = 25, RuleComplexKW = 26, RuleContractKW = 27, 
-    RuleVariableKW = 28, RuleConstantKW = 29, RuleParametricKW = 30, RuleControlledKW = 31, 
-    RuleUncontrolledKW = 32, RuleIsKW = 33, RuleInKW = 34, RuleStochasticKW = 35, 
-    RuleDistributionKW = 36, RuleComponentKW = 37, RuleInputKW = 38, RuleOutputKW = 39, 
-    RulePropositionKW = 40, RuleTrueKW = 41, RuleFalseKW = 42, RuleAssumptionsKW = 43, 
-    RuleGuaranteesKW = 44, RuleSystemKW = 45, RuleDiscreteKW = 46, RuleContinuousKW = 47, 
-    RuleGaussianKW = 48, RuleMuKW = 49, RuleSigmaKW = 50, RuleHomogeneousKW = 51, 
-    RuleFrequenciesKW = 52, RulePrimed_ID = 53, RuleMinus_ID = 54, RuleValue = 55, 
-    RulePair = 56, RuleInterval_leftopen = 57, RuleInterval_rightopen = 58, 
-    RuleInterval_fullopen = 59, RuleInterval_closed = 60, RuleInterval = 61, 
-    RuleList = 62
+    RuleBasetype = 0, RuleDistribution_type = 1, RuleFrequency_entry = 2, 
+    RuleFrequency_table = 3, RuleDistribution_features = 4, RuleDistribution_definition = 5, 
+    RuleDistribution_declaration = 6, RuleDistribution = 7, RuleDistribution_instance = 8, 
+    RuleControllability = 9, RuleVariable = 10, RuleConstant_definition = 11, 
+    RuleConstant = 12, RuleDeclaration = 13, RuleDeclarations = 14, RuleBin_logic_op = 15, 
+    RuleUnary_logic_op = 16, RuleUnary_temp_op = 17, RuleBin_temp_op = 18, 
+    RuleRelation_op = 19, RuleBin_math_op = 20, RuleNumber = 21, RuleIntegerKW = 22, 
+    RuleBooleanKW = 23, RuleRealKW = 24, RuleComplexKW = 25, RuleContractKW = 26, 
+    RuleVariableKW = 27, RuleConstantKW = 28, RuleParametricKW = 29, RuleControlledKW = 30, 
+    RuleUncontrolledKW = 31, RuleIsKW = 32, RuleInKW = 33, RuleStochasticKW = 34, 
+    RuleDistributionKW = 35, RuleComponentKW = 36, RuleInputKW = 37, RuleOutputKW = 38, 
+    RulePropositionKW = 39, RuleTrueKW = 40, RuleFalseKW = 41, RuleAssumptionsKW = 42, 
+    RuleGuaranteesKW = 43, RuleSystemKW = 44, RuleDiscreteKW = 45, RuleContinuousKW = 46, 
+    RuleGaussianKW = 47, RuleCustomKW = 48, RuleMuKW = 49, RuleSigmaKW = 50, 
+    RuleHomogeneousKW = 51, RuleFrequenciesKW = 52, RulePrimed_ID = 53, 
+    RuleMinus_ID = 54, RuleFunction = 55, RuleValue = 56, RulePair = 57, 
+    RuleInterval_leftopen = 58, RuleInterval_rightopen = 59, RuleInterval_fullopen = 60, 
+    RuleInterval_closed = 61, RuleInterval = 62, RuleList = 63, RuleMatrix_line = 64, 
+    RuleMatrix = 65
   };
 
   explicit CoCoDeLangParser(antlr4::TokenStream *input);
@@ -57,7 +58,6 @@ public:
 
 
   class BasetypeContext;
-  class DomainContext;
   class Distribution_typeContext;
   class Frequency_entryContext;
   class Frequency_tableContext;
@@ -105,12 +105,14 @@ public:
   class DiscreteKWContext;
   class ContinuousKWContext;
   class GaussianKWContext;
+  class CustomKWContext;
   class MuKWContext;
   class SigmaKWContext;
   class HomogeneousKWContext;
   class FrequenciesKWContext;
   class Primed_IDContext;
   class Minus_IDContext;
+  class FunctionContext;
   class ValueContext;
   class PairContext;
   class Interval_leftopenContext;
@@ -118,7 +120,9 @@ public:
   class Interval_fullopenContext;
   class Interval_closedContext;
   class IntervalContext;
-  class ListContext; 
+  class ListContext;
+  class Matrix_lineContext;
+  class MatrixContext; 
 
   class  BasetypeContext : public antlr4::ParserRuleContext {
   public:
@@ -136,27 +140,13 @@ public:
 
   BasetypeContext* basetype();
 
-  class  DomainContext : public antlr4::ParserRuleContext {
-  public:
-    DomainContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    IntervalContext *interval();
-    ListContext *list();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  DomainContext* domain();
-
   class  Distribution_typeContext : public antlr4::ParserRuleContext {
   public:
     Distribution_typeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    DiscreteKWContext *discreteKW();
-    DomainContext *domain();
-    ContinuousKWContext *continuousKW();
+    IntegerKWContext *integerKW();
+    IntervalContext *interval();
+    RealKWContext *realKW();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -211,9 +201,9 @@ public:
     antlr4::tree::TerminalNode* EQ(size_t i);
     SigmaKWContext *sigmaKW();
     HomogeneousKWContext *homogeneousKW();
+    CustomKWContext *customKW();
+    MatrixContext *matrix();
     FrequenciesKWContext *frequenciesKW();
-    antlr4::tree::TerminalNode *COLON();
-    Frequency_tableContext *frequency_table();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -258,7 +248,7 @@ public:
     Distribution_declarationContext *distribution_declaration();
     IsKWContext *isKW();
     Distribution_definitionContext *distribution_definition();
-    antlr4::tree::TerminalNode *SEMICOLON();
+    antlr4::tree::TerminalNode *ENDST();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -306,15 +296,15 @@ public:
     std::vector<antlr4::tree::TerminalNode *> COLON();
     antlr4::tree::TerminalNode* COLON(size_t i);
     BasetypeContext *basetype();
-    antlr4::tree::TerminalNode *SEMICOLON();
+    antlr4::tree::TerminalNode *ENDST();
+    InKWContext *inKW();
+    std::vector<IntervalContext *> interval();
+    IntervalContext* interval(size_t i);
     std::vector<antlr4::tree::TerminalNode *> COMMA();
     antlr4::tree::TerminalNode* COMMA(size_t i);
-    ParametricKWContext *parametricKW();
-    std::vector<DomainContext *> domain();
-    DomainContext* domain(size_t i);
-    InKWContext *inKW();
     StochasticKWContext *stochasticKW();
     Distribution_instanceContext *distribution_instance();
+    ParametricKWContext *parametricKW();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -347,7 +337,7 @@ public:
     antlr4::tree::TerminalNode *ID();
     antlr4::tree::TerminalNode *COLON();
     Constant_definitionContext *constant_definition();
-    antlr4::tree::TerminalNode *SEMICOLON();
+    antlr4::tree::TerminalNode *ENDST();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -804,6 +794,18 @@ public:
 
   GaussianKWContext* gaussianKW();
 
+  class  CustomKWContext : public antlr4::ParserRuleContext {
+  public:
+    CustomKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  CustomKWContext* customKW();
+
   class  MuKWContext : public antlr4::ParserRuleContext {
   public:
     MuKWContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -879,6 +881,19 @@ public:
 
   Minus_IDContext* minus_ID();
 
+  class  FunctionContext : public antlr4::ParserRuleContext {
+  public:
+    FunctionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ID();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  FunctionContext* function();
+
   class  ValueContext : public antlr4::ParserRuleContext {
   public:
     ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -891,6 +906,9 @@ public:
     std::vector<ValueContext *> value();
     ValueContext* value(size_t i);
     antlr4::tree::TerminalNode *RROUND();
+    FunctionContext *function();
+    std::vector<antlr4::tree::TerminalNode *> COMMA();
+    antlr4::tree::TerminalNode* COMMA(size_t i);
     TrueKWContext *trueKW();
     FalseKWContext *falseKW();
     Bin_math_opContext *bin_math_op();
@@ -1010,6 +1028,40 @@ public:
   };
 
   ListContext* list();
+
+  class  Matrix_lineContext : public antlr4::ParserRuleContext {
+  public:
+    Matrix_lineContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> COMMA();
+    antlr4::tree::TerminalNode* COMMA(size_t i);
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Matrix_lineContext* matrix_line();
+
+  class  MatrixContext : public antlr4::ParserRuleContext {
+  public:
+    MatrixContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *LSQUARE();
+    std::vector<Matrix_lineContext *> matrix_line();
+    Matrix_lineContext* matrix_line(size_t i);
+    antlr4::tree::TerminalNode *RSQUARE();
+    std::vector<antlr4::tree::TerminalNode *> ENDST();
+    antlr4::tree::TerminalNode* ENDST(size_t i);
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  MatrixContext* matrix();
 
 
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
