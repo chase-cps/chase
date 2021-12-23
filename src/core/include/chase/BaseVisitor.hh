@@ -74,6 +74,7 @@ namespace chase{
             virtual int visitBinaryBooleanOperation(BinaryBooleanFormula & );
             virtual int visitUnaryBooleanOperation(UnaryBooleanFormula & );
             virtual int visitLargeBooleanFormula(LargeBooleanFormula & );
+            virtual int visitQuantifiedFormula(QuantifiedFormula &);
 
             // Modal Formulas
             virtual int visitModalFormula(ModalFormula & );

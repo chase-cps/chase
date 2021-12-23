@@ -47,10 +47,6 @@ namespace chase {
         /// @param name The contract name.
         void setName(Name *name);
 
-        /// @brief Function to safely add a declaration to the contract.
-        /// The function takes care of managing the parent link to the contract.
-        /// @param declaration A pointer to the declaration to add.
-        void addDeclaration(Declaration *declaration );
         /// @brief Function to safely add the assumptions for a given semantic
         /// domain. It takes care of managing the parent link to the contract.
         /// @param domain The semantic domain.

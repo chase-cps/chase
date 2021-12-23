@@ -74,6 +74,8 @@ namespace chase {
         int visitUnaryBooleanOperation(UnaryBooleanFormula & ) override;
         int visitLargeBooleanFormula(LargeBooleanFormula & ) override;
 
+        int visitQuantifiedFormula(QuantifiedFormula & ) override;
+
         // Modal Formulas
         int visitModalFormula(ModalFormula & ) override;
         int visitUnaryTemporalOperation(UnaryTemporalFormula & ) override;

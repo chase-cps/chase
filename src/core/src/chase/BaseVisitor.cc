@@ -88,6 +88,10 @@ int BaseVisitor::visitFunction(Function &) {
     return 0;
 }
 
+int BaseVisitor::visitQuantifiedFormula(QuantifiedFormula &) {
+    return 0;
+}
+
 
 
 

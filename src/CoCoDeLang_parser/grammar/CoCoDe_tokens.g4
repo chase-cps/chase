@@ -59,6 +59,8 @@ PLUS:   '+';
 MINUS:  '-';
 TIMES:  '*';
 DIVIDE: '/';
+POWER:  '^';
+MOD:    '%';
 
 LROUND: '(';
 RROUND: ')';

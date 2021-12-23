@@ -67,11 +67,6 @@ void Contract::setName(Name * name) {
     _name = name;
 }
 
-void Contract::addDeclaration(Declaration *declaration) {
-    declarations.push_back(declaration);
-    declaration->setParent(this);
-}
-
 void Contract::addAssumptions(semantic_domain domain, Specification *spec) {
     std::pair< semantic_domain, Specification * > a(domain, spec);
     assumptions.insert(a);

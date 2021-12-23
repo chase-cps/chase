@@ -13,7 +13,7 @@ relation_op:
     EQ | NEQ | LT | LE | GT | GE;
 
 bin_math_op:
-    TIMES | DIVIDE | PLUS | MINUS;
+    TIMES | DIVIDE | PLUS | MINUS | POWER | MOD;
 
 ID:
     LETTER ALPHANUM*;
@@ -31,10 +31,10 @@ number:
 */
 
 // Types
-integerKW:      'integer';
-booleanKW:      'boolean';
-realKW:         'real';
-complexKW:      'complex';
+integerKW:      'Integer';
+booleanKW:      'Boolean';
+realKW:         'Real';
+complexKW:      'Complex';
 
 // Declarations - Contracts.
 contractKW:     'Contract';
@@ -84,10 +84,15 @@ minus_ID    : MINUS ID;
 
 function : ID;
 
+// Matrix
+matrix_line : value (COMMA value)*;
+matrix      : LSQUARE (matrix_line ENDST)* matrix_line RSQUARE;
+
 value:
     value bin_math_op value | primed_ID |
     ID | minus_ID | number | LROUND value RROUND |
     function LROUND value (COMMA value)* RROUND |
+    matrix |
     trueKW | falseKW;
 
 // intervals.
@@ -107,8 +112,6 @@ interval    :
 // Lists of values.
 list    :   LCURLY value (COMMA value)* RCURLY;
 
-// Matrix
-matrix_line : value (COMMA value)*;
-matrix      : LSQUARE (matrix_line ENDST)* matrix_line RSQUARE;
+
 
 

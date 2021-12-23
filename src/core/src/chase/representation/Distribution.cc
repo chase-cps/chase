@@ -10,13 +10,20 @@
 
 using namespace chase;
 
-Distribution::Distribution(Type * type, Name * name) :
-        DataDeclaration(type, name)
+Distribution::Distribution(
+        distribution_type dtype, Name * name, Type * type) :
+        DataDeclaration(type, name),
+        _distribution_type(dtype)
 {
     _node_type = distribution_node;
+    _name->setParent(this);
+    _type->setParent(this);
 }
 
 Distribution::~Distribution() {
+    delete(_name);
+    delete(_type);
+    parameters.clear();
 }
 
 distribution_type Distribution::getDistributionType() const {
@@ -35,33 +42,18 @@ std::string Distribution::getString()
 {
     std::string ret("distribution ");
     ret += _name->getString() + std::string(" is \n");
-    ret += "\t" + _type->getString() + ",\n";
-    ret += "\t";
-    // The print is based on the type of distribution.
-    switch(_distribution_type) {
-        case custom:
-            ret += "\tcustom (\n";
-            break;
-        case gaussian:
-            ret += "\tgaussian (\n";
-            break;
-        case homogeneous:
-            ret += "\tgaussian (\n";
-            break;
-        default:
-            messageError("Not recognized type of distribution");
-            break;
-    }
+
+    ret += "\t" + distribution_type_names[_distribution_type];
     for(auto it: parameters)
         ret += "\t" + it.first + " = " + it.second->getString();
-    ret += "\t)\n";
+    ret += "\t),\n";
+    ret += "\t" + _type->getString() + "\n";
     return ret;
 }
 
 Distribution * Distribution::clone() {
     auto distribution = new Distribution(
-            _type->clone(), _name->clone());
-    distribution->setDistributionType(_distribution_type);
+            _distribution_type, _name->clone(), _type->clone());
     for(auto it :   parameters)
         distribution->parameters.insert(
                 std::pair<std::string, chase::Value*>(

@@ -53,6 +53,7 @@
 #include "representation/BinaryBooleanFormula.hh"
 #include "representation/UnaryBooleanFormula.hh"
 #include "representation/LargeBooleanFormula.hh"
+#include "representation/QuantifiedFormula.hh"
 
 #include "representation/ModalFormula.hh"
 #include "representation/UnaryTemporalFormula.hh"

@@ -403,11 +403,21 @@ int chase::GuideVisitor::visitMatrix(chase::Matrix &matrix) {
     return rv;
 }
 
-int chase::GuideVisitor::visitDistribution(chase::Distribution &) {
-    /// @todo implement the visit based on the future evolution of this class.
-    /// In particular, the visit may depend on the type of distribution.
-    /// Notice: implementation of the GuideVisitor may not be needed.
+int chase::GuideVisitor::visitDistribution(chase::Distribution &distribution) {
+    int rv = distribution.getName()->accept_visitor(*this);
+    rv |= distribution.getType()->accept_visitor(*this);
+    for(auto it: distribution.parameters)
+    {
+        it.second->accept_visitor(*this);
+    }
     return 1;
+}
+
+int chase::GuideVisitor::visitQuantifiedFormula(
+        chase::QuantifiedFormula &qf) {
+    int rv = qf.getVariable()->accept_visitor(*this);
+    rv |= qf.getFormula()->accept_visitor(*this);
+    return rv;
 }
 
 

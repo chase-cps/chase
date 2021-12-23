@@ -29,8 +29,9 @@ Matrix::Matrix(
     }
 
     for (size_t it = 0; it < M.size(); ++it) {
-        elements[it] = M[it]->clone();
+        elements[it] = M[it];
         _evaluateType(elements[it]);
+        elements[it]->setParent(this);
     }
 }
 
@@ -66,8 +67,9 @@ Value *Matrix::at(unsigned int i, unsigned int j, Value *value) {
                             "Invalid type for scalar value:\n\t"
                             + t->getString());
             }
-            elements[index] = value->clone();
+            elements[index] = value;
             _evaluateType(elements[index]);
+            elements[index]->setParent(this);
         }
         return elements[index];
     } else return nullptr;

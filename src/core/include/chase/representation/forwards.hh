@@ -45,6 +45,7 @@ namespace chase {
     class ModalFormula;
     class UnaryTemporalFormula;
     class BinaryTemporalFormula;
+    class QuantifiedFormula;
     class Contract;
     class Edge;
     class Vertex;

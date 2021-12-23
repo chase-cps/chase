@@ -55,6 +55,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/UnaryTemporalFormula.cc
         ${SRC_CHASELIB_PATH}/representation/BinaryTemporalFormula.cc
         ${SRC_CHASELIB_PATH}/representation/LargeBooleanFormula.cc
+        ${SRC_CHASELIB_PATH}/representation/QuantifiedFormula.cc
         ${SRC_CHASELIB_PATH}/representation/Graph.cc
         ${SRC_CHASELIB_PATH}/representation/GraphVertex.cc
         ${SRC_CHASELIB_PATH}/representation/GraphEdge.cc

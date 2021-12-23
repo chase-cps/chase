@@ -62,6 +62,7 @@ namespace chase {
         large_boolean_formula_node,
         unaryTemporalOperation_node,
         binaryTemporalOperation_node,
+        quantified_formula_node,
         graph_edge_node,
         graph_vertex_node,
         graph_node

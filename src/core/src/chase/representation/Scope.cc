@@ -8,3 +8,8 @@
 #include "chase/representation/Scope.hh"
 
 using namespace chase;
+
+void Scope::addDeclaration(Declaration *declaration) {
+    declarations.push_back(declaration);
+    declaration->setParent(this);
+}

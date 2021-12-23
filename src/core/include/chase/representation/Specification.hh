@@ -16,6 +16,7 @@ namespace chase {
     enum semantic_domain
     {
         logic,
+        constraints,
         graph
     };
 

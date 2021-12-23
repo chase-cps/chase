@@ -7,6 +7,8 @@
 
 #pragma once
 #include "representation/DataDeclaration.hh"
+#include "representation/Real.hh"
+
 #include <set>
 
 namespace chase {
@@ -16,6 +18,12 @@ namespace chase {
         custom,
         gaussian,
         homogeneous
+    };
+
+    static const std::string distribution_type_names[] = {
+            std::string("custom"),
+            std::string("gaussian"),
+            std::string("homogeneous")
     };
 
     ///@brief Class to represent statistical distributions.
@@ -30,7 +38,10 @@ namespace chase {
         std::map< std::string, chase::Value * > parameters;
 
         /// @brief Constructor.
-        Distribution(Type * type = nullptr, Name * name = nullptr);
+        Distribution(
+                distribution_type dtype,
+                Name * name = new Name("anonymous_distribution"),
+                Type * type = new Real());
 
         /// @brief Destructor.
         ~Distribution();
