@@ -13,7 +13,9 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/System.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
         ${SRC_CHASELIB_PATH}/representation/Contract.cc
+
         ${SRC_CHASELIB_PATH}/representation/Contract_algebra.cc
+        ${SRC_CHASELIB_PATH}/representation/Library.cc
 
         ${SRC_CHASELIB_PATH}/representation/Type.cc
         ${SRC_CHASELIB_PATH}/representation/SimpleType.cc
@@ -35,6 +37,7 @@ set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/Expression.cc
 
         ${SRC_CHASELIB_PATH}/representation/Interval.cc
+        ${SRC_CHASELIB_PATH}/representation/FunctionCall.cc
 
         ${SRC_CHASELIB_PATH}/representation/Name.cc
         ${SRC_CHASELIB_PATH}/representation/Declaration.cc

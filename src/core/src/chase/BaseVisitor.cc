@@ -92,6 +92,14 @@ int BaseVisitor::visitQuantifiedFormula(QuantifiedFormula &) {
     return 0;
 }
 
+int BaseVisitor::visitLibrary(Library &) {
+    return 0;
+}
+
+int BaseVisitor::visitFunctionCall(FunctionCall &) {
+    return 0;
+}
+
 
 
 

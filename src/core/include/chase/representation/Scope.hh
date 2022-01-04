@@ -16,7 +16,7 @@ namespace chase {
     /// contract, component, etc.
     /// \todo Bind it in the Python interface. Remember, also the sub-classes
     /// must be checked.
-    class Scope : public ChaseObject {
+    class Scope : public Declaration {
     public:
         /// @brief List of declarations.
         std::list< Declaration * > declarations;
@@ -25,6 +25,11 @@ namespace chase {
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
         void addDeclaration(Declaration * declaration);
+
+        Scope(Name *n);
+        Scope(std::string name);
+
+        Scope();
 
     protected:
 

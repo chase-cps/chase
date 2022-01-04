@@ -52,4 +52,6 @@ namespace chase {
     class Graph;
     class LargeBooleanFormula;
     class Component;
+    class Library;
+    class FunctionCall;
 }

@@ -39,8 +39,6 @@ namespace chase {
         antlrcpp::Any visitDistribution(
                 CoCoDeLangParser::DistributionContext *ctx) override;
 
-
-
         /// @endcond
 
         static

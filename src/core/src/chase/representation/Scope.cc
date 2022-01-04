@@ -13,3 +13,14 @@ void Scope::addDeclaration(Declaration *declaration) {
     declarations.push_back(declaration);
     declaration->setParent(this);
 }
+
+Scope::Scope(Name *n) :
+    Declaration(n) {
+}
+
+Scope::Scope(std::string name) :
+    Declaration(name) {
+}
+
+Scope::Scope() {}
+

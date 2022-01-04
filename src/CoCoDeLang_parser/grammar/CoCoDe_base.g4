@@ -76,6 +76,8 @@ sigmaKW : 'sigma';
 homogeneousKW   : 'homogeneous';
 frequenciesKW   : 'frequencies';
 
+DesignKW        : 'Design';
+
 // Values.
 
 primed_ID   : ID'\'';

@@ -61,5 +61,5 @@
 
 #include "representation/Graph.hh"
 
-
+#include "representation/Library.hh"
 #include "representation/System.hh"

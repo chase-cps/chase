@@ -65,7 +65,11 @@ namespace chase {
         quantified_formula_node,
         graph_edge_node,
         graph_vertex_node,
-        graph_node
+        graph_node,
+        library_node,
+        functionaCall_node,
+        relation_node,
+        constraint_node
     };
 
     /// @brief Base abstract class for all the objects in the abstract syntax tree.

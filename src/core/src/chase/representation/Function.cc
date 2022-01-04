@@ -28,9 +28,9 @@ std::string Function::getString() {
 
 Function *Function::clone() {
     auto ret = new Function(_type->clone(), _name->clone(), _arity);
-    for(auto it = 0; it < parameters.size(); ++it)
+    for(size_t it = 0; it < parameters.size(); ++it)
         ret->parameters[it] = parameters[it];
-    for(auto it = 0; it < _domain.size(); ++it)
+    for(size_t it = 0; it < _domain.size(); ++it)
         ret->setDomainOfParameter(it, _domain[it]->clone());
     return ret;
 }

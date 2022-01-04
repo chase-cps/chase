@@ -12,7 +12,7 @@
 using namespace chase;
 
 ComponentDefinition::ComponentDefinition() :
-    Declaration()
+    Scope()
 {
     _node_type = componentDefinition_node;
 }
@@ -23,13 +23,13 @@ ComponentDefinition::~ComponentDefinition()
 }
 
 ComponentDefinition::ComponentDefinition(Name *name) :
-    Declaration(name)
+    Scope(name)
 {
     _node_type = componentDefinition_node;
 }
 
 ComponentDefinition::ComponentDefinition(std::string name) :
-    Declaration(name)
+    Scope(name)
 {
     _node_type = componentDefinition_node;
 }

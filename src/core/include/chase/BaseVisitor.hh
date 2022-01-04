@@ -57,6 +57,7 @@ namespace chase{
             virtual int visitCustomType( CustomType & );
             virtual int visitEnumeration( Enumeration & );
             virtual int visitString( String & );
+            virtual int visitFunctionCall(FunctionCall & );
 
             // Declarations
             virtual int visitName( Name & );
@@ -84,6 +85,7 @@ namespace chase{
 
             // Interfaces
             virtual int visitContract(Contract & );
+            virtual int visitLibrary(Library & );
 
             virtual int visitSystem( System & );
 

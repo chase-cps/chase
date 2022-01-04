@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Declaration.hh"
+#include "Scope.hh"
 #include <map>
 #include <set>
 
@@ -19,7 +20,7 @@ namespace chase {
     class Component;
 
     /// @brief Class representing the definition of a component.
-    class ComponentDefinition : public Declaration {
+    class ComponentDefinition : public Scope {
     public:
 
         /// @brief Set of views of the component.
@@ -35,14 +36,14 @@ namespace chase {
 
         /// @brief Constructor.
         /// @param name The name of the component definition.
-        ComponentDefinition(Name *name);
+        explicit ComponentDefinition(Name *name);
 
         /// @brief Constructor.
         /// @param name The name of the component definition (string).
-        ComponentDefinition(std::string name);
+        explicit ComponentDefinition(std::string name);
 
         /// @brief Destructor.
-        ~ComponentDefinition();
+        ~ComponentDefinition() override;
 
         /// @brief Function to accept a visitor.
         /// @param v The visitor to be accepted.

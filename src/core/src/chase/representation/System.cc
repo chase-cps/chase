@@ -14,7 +14,7 @@
 using namespace chase;
 
 System::System( std::string name ) :
-    _name(new Name(name))
+    Scope(new Name(name))
 {
     _name->setParent(this);
 }
