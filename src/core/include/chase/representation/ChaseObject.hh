@@ -24,6 +24,7 @@ namespace chase {
     enum nodeType
     {
         object_node,
+        design_problem_node,
         specification_node,
         contract_node,
         boolean_node,

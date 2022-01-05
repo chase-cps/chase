@@ -21,7 +21,7 @@ namespace DSLFrontend {
 
     /// @brief The main class to represent the design problem built by parsing
     /// the specification file.
-    class DesignProblem {
+    class Problem {
     public:
 
         /// @brief Set of the domain specific types used in the design domain.
@@ -55,10 +55,10 @@ namespace DSLFrontend {
         std::set< SpecFunction * > requirements;
 
         /// @brief Constructor.
-        DesignProblem();
+        Problem();
 
         /// @brief Destructor.
-        ~DesignProblem();
+        ~Problem();
 
         /// @brief Function returning the contract.
         /// @return The contract.

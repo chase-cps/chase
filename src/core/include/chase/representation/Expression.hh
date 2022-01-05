@@ -80,6 +80,8 @@ namespace chase {
         protected:
 
             /// @brief Operator.
+            /// @todo Operators shound be divided in operational operators, and
+            /// relational operators to enable relation definition.
             Operator _op;
 
             /// @brief First operand.

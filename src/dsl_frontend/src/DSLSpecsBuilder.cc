@@ -19,14 +19,14 @@ DSLSpecsBuilder::DSLSpecsBuilder() :
     _assumptions(false),
     _requirements(false)
 {
-    _problem = new DesignProblem();
+    _problem = new Problem();
 }
 
 DSLSpecsBuilder::~DSLSpecsBuilder() {
     delete _problem;
 }
 
-DesignProblem *DSLSpecsBuilder::getProblem() {
+Problem *DSLSpecsBuilder::getProblem() {
     return _problem;
 }
 
@@ -35,7 +35,7 @@ Contract * DSLSpecsBuilder::getContract() {
     else return nullptr;
 }
 
-DesignProblem *DSLSpecsBuilder::parseSpecificationFile(std::string infile) {
+Problem *DSLSpecsBuilder::parseSpecificationFile(std::string infile) {
     ANTLRFileStream input( infile );
     ChaseLexer lexer( &input );
     CommonTokenStream tokens( &lexer );

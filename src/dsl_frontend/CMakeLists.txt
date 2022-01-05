@@ -22,7 +22,7 @@ set(pon_tool_srcs
         ${PON_SRC}/DSLParser/ChaseListener.cpp
         ${PON_SRC}/DSLParser/ChaseParser.cpp
 
-        ${PON_SRC}/DesignProblem.cc
+        ${PON_SRC}/Problem.cc
 
         ${PON_SRC}/DSLSpecsBuilder.cc
         ${PON_SRC}/SpecBuilder_support.cc

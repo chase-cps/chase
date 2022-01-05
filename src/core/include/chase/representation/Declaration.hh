@@ -35,7 +35,7 @@ namespace chase {
             /// @return The Name of the declaration. 
             Name * getName();
 
-            /// @brief Setter for the Name of the declaration.
+        virtual /// @brief Setter for the Name of the declaration.
             /// @param name The Name to be setted.
             void setName( Name * name );
 

@@ -43,62 +43,33 @@ int BaseVisitor::visitUnaryBooleanOperation(UnaryBooleanFormula &){return 0;}
 int BaseVisitor::visitBinaryBooleanOperation(BinaryBooleanFormula &){return 0;}
 int BaseVisitor::visitBooleanConstant(BooleanConstant &) {return 0;}
 int BaseVisitor::visitModalFormula(ModalFormula &) {return 0;}
-
 int BaseVisitor::visitBinaryTemporalOperation(BinaryTemporalFormula &) {
     return 0;
 }
-
 int BaseVisitor::visitUnaryTemporalOperation(UnaryTemporalFormula &) {
     return 0;
 }
-
 int BaseVisitor::visitContract(Contract &) {return 0;}
 int BaseVisitor::visitEdge(Edge &) {return 0;}
 int BaseVisitor::visitVertex(Vertex &) {return 0;}
 int BaseVisitor::visitGraph(Graph &){return 0;}
-
 int BaseVisitor::visitLargeBooleanFormula(LargeBooleanFormula &) {return 0;}
 int BaseVisitor::visitComponentDefinition(ComponentDefinition &) {return 0;}
-
 int BaseVisitor::visitParameter(Parameter &) {return 0;}
-
 int BaseVisitor::visitComponent(Component &) {return 0;}
+int BaseVisitor::visitStringValue(StringValue &) {return 0;}
+int BaseVisitor::visitString(String &) {return 0;}
+int BaseVisitor::visitInterval(Interval &) {return 0;}
+int BaseVisitor::visitMatrix(Matrix &) {return 0;}
+int BaseVisitor::visitDistribution(Distribution &) {return 0;}
+int BaseVisitor::visitFunction(Function &) {return 0;}
+int BaseVisitor::visitQuantifiedFormula(QuantifiedFormula &) {return 0;}
+int BaseVisitor::visitLibrary(Library &) {return 0;}
+int BaseVisitor::visitFunctionCall(FunctionCall &) {return 0;}
+int BaseVisitor::visitDesignProblem(DesignProblem &) {return 0;}
 
-int BaseVisitor::visitStringValue(StringValue &) {
-    return 0;
-}
+int BaseVisitor::visitConstraint(Constraint &) {return 0;}
 
-int BaseVisitor::visitString(String &) {
-    return 0;
-}
-
-int BaseVisitor::visitInterval(Interval &) {
-    return 0;
-}
-
-int BaseVisitor::visitMatrix(Matrix &) {
-    return 0;
-}
-
-int BaseVisitor::visitDistribution(Distribution &) {
-    return 0;
-}
-
-int BaseVisitor::visitFunction(Function &) {
-    return 0;
-}
-
-int BaseVisitor::visitQuantifiedFormula(QuantifiedFormula &) {
-    return 0;
-}
-
-int BaseVisitor::visitLibrary(Library &) {
-    return 0;
-}
-
-int BaseVisitor::visitFunctionCall(FunctionCall &) {
-    return 0;
-}
 
 
 

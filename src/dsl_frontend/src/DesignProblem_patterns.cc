@@ -6,7 +6,7 @@
  */
 
 
-#include "DesignProblem.hh"
+#include "Problem.hh"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -15,7 +15,7 @@
 using namespace chase;
 using namespace DSLFrontend;
 
-void DesignProblem::_noRecovery(SpecFunction *spec)
+void Problem::_noRecovery(SpecFunction *spec)
 {
     std::set< std::string > comps =
             _findComponents( spec->parameters[0]);
@@ -43,7 +43,7 @@ void DesignProblem::_noRecovery(SpecFunction *spec)
     }
 }
 
-void DesignProblem::_maxFailures(SpecFunction *spec)
+void Problem::_maxFailures(SpecFunction *spec)
 {
     std::set<std::string> comps =
             _findComponents(spec->parameters[0]);
@@ -96,7 +96,7 @@ void DesignProblem::_maxFailures(SpecFunction *spec)
 
 }
 
-void DesignProblem::_initialState(SpecFunction *spec) {
+void Problem::_initialState(SpecFunction *spec) {
     std::set<std::string> comps =
             _findComponents(spec->parameters[0]);
 
@@ -112,7 +112,7 @@ void DesignProblem::_initialState(SpecFunction *spec) {
     }
 }
 
-void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
+void Problem::_switchTime(SpecFunction *spec, bool onoff)
 {
     // Find the number of steps to be generated.
     chase_time timing(
@@ -254,7 +254,7 @@ void DesignProblem::_switchTime(SpecFunction *spec, bool onoff)
     }
 }
 
-void DesignProblem::_neverConnect(SpecFunction *spec)
+void Problem::_neverConnect(SpecFunction *spec)
 {
     std::set<std::string> sources =
             _findComponents(spec->parameters[0]);
@@ -361,7 +361,7 @@ void DesignProblem::_neverConnect(SpecFunction *spec)
     delete subgraph;
 }
 
-void DesignProblem::_preferActiveConnection(SpecFunction *spec)
+void Problem::_preferActiveConnection(SpecFunction *spec)
 {
     std::set<std::string> sources =
             _findComponents(spec->parameters[1]);
@@ -423,7 +423,7 @@ void DesignProblem::_preferActiveConnection(SpecFunction *spec)
     _gr1_sys_safety.insert(formula);
 }
 
-void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
+void Problem::_mustDisconnectFailed(SpecFunction *spec)
 {
     chase_time timing(
             std::strtoul(spec->parameters[1].c_str(), nullptr, 0),
@@ -579,7 +579,7 @@ void DesignProblem::_mustDisconnectFailed(SpecFunction *spec)
     }
 }
 
-void DesignProblem::_neverDisconnect(SpecFunction *spec)
+void Problem::_neverDisconnect(SpecFunction *spec)
 {
     // Find the number of steps to be generated.
     chase_time timing(
@@ -713,7 +713,7 @@ void DesignProblem::_neverDisconnect(SpecFunction *spec)
     }
 }
 
-void DesignProblem::_keepConnectionStable(SpecFunction *spec)
+void Problem::_keepConnectionStable(SpecFunction *spec)
 {
     std::set<std::string> sources =
             _findComponents(spec->parameters[0]);

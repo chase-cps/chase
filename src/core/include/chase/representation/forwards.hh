@@ -13,6 +13,7 @@
 namespace chase {
     
     class ChaseObject;
+    class DesignProblem;
     class System;
     class Integer;
     class Real;
@@ -54,4 +55,5 @@ namespace chase {
     class Component;
     class Library;
     class FunctionCall;
+    class Constraint;
 }

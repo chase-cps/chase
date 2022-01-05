@@ -6,13 +6,13 @@
  */
 
 
-#include "DesignProblem.hh"
+#include "Problem.hh"
 #include "utilities/GraphUtilities.hh"
 
 using namespace chase;
 using namespace DSLFrontend;
 
-LogicFormula * DesignProblem::_activatePath( std::vector<unsigned>& path)
+LogicFormula * Problem::_activatePath(std::vector<unsigned>& path)
 {
     if( path.size() < 1 )
         messageError("Empty path.");
@@ -51,7 +51,7 @@ LogicFormula * DesignProblem::_activatePath( std::vector<unsigned>& path)
     return ret;
 }
 
-LogicFormula * DesignProblem::_pathDoesExist(std::vector<unsigned> &path)
+LogicFormula * Problem::_pathDoesExist(std::vector<unsigned> &path)
 {
     if( path.size() < 1 )
         messageError("Empty path.");

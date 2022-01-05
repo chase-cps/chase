@@ -9,6 +9,8 @@ set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
 
 set(chase_library_representation
         ${SRC_CHASELIB_PATH}/representation/ChaseObject.cc
+        ${SRC_CHASELIB_PATH}/representation/DesignProblem.cc
+
         ${SRC_CHASELIB_PATH}/representation/Scope.cc
         ${SRC_CHASELIB_PATH}/representation/System.cc
         ${SRC_CHASELIB_PATH}/representation/Specification.cc
@@ -50,6 +52,7 @@ set(chase_library_representation
 
         ${SRC_CHASELIB_PATH}/representation/Operators.cc
 
+        ${SRC_CHASELIB_PATH}/representation/Constraint.cc
         ${SRC_CHASELIB_PATH}/representation/Proposition.cc
         ${SRC_CHASELIB_PATH}/representation/UnaryBooleanFormula.cc
         ${SRC_CHASELIB_PATH}/representation/BinaryBooleanFormula.cc

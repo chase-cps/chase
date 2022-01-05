@@ -38,6 +38,7 @@ namespace chase{
 
             /// Visit functions
             //
+            virtual int visitDesignProblem(DesignProblem & );
             //  Values
             virtual int visitRange( Range & );
             virtual int visitIntegerValue( IntegerValue & );
@@ -82,6 +83,8 @@ namespace chase{
             virtual int visitUnaryTemporalOperation(UnaryTemporalFormula & );
             virtual int visitBinaryTemporalOperation(
                     BinaryTemporalFormula & );
+
+            virtual int visitConstraint(Constraint & );
 
             // Interfaces
             virtual int visitContract(Contract & );

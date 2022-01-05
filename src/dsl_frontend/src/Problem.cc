@@ -6,27 +6,27 @@
  */
 #include <algorithm>
 #include <cmath>
-#include "DesignProblem.hh"
+#include "Problem.hh"
 
 using namespace chase;
 using namespace DSLFrontend;
 
-DesignProblem::DesignProblem() :
+Problem::Problem() :
     _contract(nullptr),
     _precision(),
     _architecture(nullptr)
 {
 }
 
-DesignProblem::~DesignProblem() = default;
+Problem::~Problem() = default;
 
-Contract * DesignProblem::getContract()
+Contract * Problem::getContract()
 {
     if( _contract ) return _contract;
     else return _generateContract();
 }
 
-Contract * DesignProblem::_generateContract()
+Contract * Problem::_generateContract()
 {
     _contract = new Contract();
 
@@ -94,7 +94,7 @@ Contract * DesignProblem::_generateContract()
     return _contract;
 }
 
-void DesignProblem::_createArchitecture() {
+void Problem::_createArchitecture() {
     unsigned int nodes = components.size();
     _architecture = new Graph(nodes, false, new Name("architecture"));
 
@@ -162,13 +162,13 @@ void DesignProblem::_createArchitecture() {
 
 }
 
-void DesignProblem::_pruneComponentsVariables()
+void Problem::_pruneComponentsVariables()
 {
     _findNonVariableComponents();
     _findNonControllableComponents();
 }
 
-void DesignProblem::_findNonVariableComponents()
+void Problem::_findNonVariableComponents()
 {
     std::set< SpecFunction * >::iterator ait;
 
@@ -188,7 +188,7 @@ void DesignProblem::_findNonVariableComponents()
     }
 }
 
-void DesignProblem::_findNonControllableComponents()
+void Problem::_findNonControllableComponents()
 {
     std::set< SpecFunction * >::iterator ait;
 
@@ -208,7 +208,7 @@ void DesignProblem::_findNonControllableComponents()
     }
 }
 
-std::set< std::string > DesignProblem::_findComponents( std::string s ) {
+std::set< std::string > Problem::_findComponents(std::string s ) {
     std::set<std::string> ret;
 
     // Check if the string refers to a single component.
@@ -262,7 +262,7 @@ std::set< std::string > DesignProblem::_findComponents( std::string s ) {
     return ret;
 }
 
-void DesignProblem::_generateComponentsVariables()
+void Problem::_generateComponentsVariables()
 {
     std::map< std::string, Component * >::iterator cit;
     for( cit = components.begin(); cit != components.end(); ++cit )
@@ -312,7 +312,7 @@ void DesignProblem::_generateComponentsVariables()
 }
 
 chase::chase_time *
-DesignProblem::_compute_precision(std::vector<chase_time *> * timings) {
+Problem::_compute_precision(std::vector<chase_time *> * timings) {
 
     // Create the set to compute the GCD.
     std::set< unsigned int > normalized;
@@ -368,7 +368,7 @@ DesignProblem::_compute_precision(std::vector<chase_time *> * timings) {
     return new chase_time(GCD, static_cast<chase_time_unit >(unit));
 }
 
-void DesignProblem::_retrieveTimingPrecision()
+void Problem::_retrieveTimingPrecision()
 {
     std::vector< chase_time * > timings;
     std::set< SpecFunction * >::iterator spec_it;
@@ -420,7 +420,7 @@ void DesignProblem::_retrieveTimingPrecision()
     _precision = _compute_precision( & timings );
 }
 
-void DesignProblem::_analyzeAssumptions()
+void Problem::_analyzeAssumptions()
 {
     std::set< SpecFunction * >::iterator it;
     for(it = assumptions.begin(); it != assumptions.end(); ++it) {
@@ -440,7 +440,7 @@ void DesignProblem::_analyzeAssumptions()
     }
 }
 
-void DesignProblem::_completeCommandState()
+void Problem::_completeCommandState()
 {
     for( auto cit = components.begin(); cit != components.end(); ++cit)
     {
@@ -481,7 +481,7 @@ void DesignProblem::_completeCommandState()
     }
 }
 
-void DesignProblem::_analyzeRequirements() {
+void Problem::_analyzeRequirements() {
     std::set< SpecFunction * >::iterator it;
     for(it = requirements.begin(); it != requirements.end(); ++it) {
         SpecFunction *spec = *it;
@@ -498,7 +498,7 @@ void DesignProblem::_analyzeRequirements() {
     }
 }
 
-unsigned int DesignProblem::_compute_steps(chase::chase_time &timing) {
+unsigned int Problem::_compute_steps(chase::chase_time &timing) {
     unsigned int resolution = _precision->amount;
     resolution *= pow(10, _precision->unit * 3);
 

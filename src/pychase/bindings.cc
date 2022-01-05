@@ -1020,8 +1020,8 @@ PYBIND11_MODULE(pychase, m) {
              py::arg("infile").none(false));
 
         /// Necessary to make the DSL frontend work.
-        py::class_<DSLFrontend::DesignProblem,
-        std::unique_ptr<DSLFrontend::DesignProblem,
+        py::class_<DSLFrontend::Problem,
+        std::unique_ptr<DSLFrontend::Problem,
         py::nodelete> >(m, "DesignProblem");
 
         py::class_<DSLFrontend::DSLSpecsBuilder,

@@ -26,36 +26,29 @@ int Contract::accept_visitor(chase::BaseVisitor &v) {
 std::string Contract::getString() {
     std::string ret("Contract:\n");
     ret += _name->getString();
-
     ret += "\nDeclarations:\n";
 
-    for(auto dit = declarations.begin(); dit != declarations.end(); ++dit )
+    for(auto d : declarations)
     {
-        Declaration * d = *dit;
         ret += d->getString();
         ret += "\n";
     }
 
     ret += "Assumptions:\n";
-    std::map< semantic_domain, Specification * >::iterator sit;
-    for(sit = assumptions.begin(); sit != assumptions.end(); ++sit)
+    for(auto sit: assumptions)
     {
-
-        Specification * s = (*sit).second;
-        ret += s->getString();
+        ret += sit.second->getString();
         ret += "\n";
     }
 
     ret += "Guarantees:\n";
-    for(sit = guarantees.begin(); sit != guarantees.end(); ++sit)
+    for(auto sit: guarantees)
     {
-        Specification * s = (*sit).second;
-        ret += s->getString();
+        ret += sit.second->getString();
         ret += "\n";
     }
 
     ret += "=======================";
-
     return ret;
 }
 
@@ -63,17 +56,20 @@ Name * Contract::getName() const {
     return _name;
 }
 
-void Contract::setName(Name * name) {
+void Contract::setName(Name * name)
+{
     _name = name;
 }
 
-void Contract::addAssumptions(semantic_domain domain, Specification *spec) {
+void Contract::addAssumptions(semantic_domain domain, Specification *spec)
+{
     std::pair< semantic_domain, Specification * > a(domain, spec);
     assumptions.insert(a);
     spec->setParent(this);
 }
 
-void Contract::addGuarantees(semantic_domain domain, Specification *spec) {
+void Contract::addGuarantees(semantic_domain domain, Specification *spec)
+{
     std::pair< semantic_domain, Specification * > g(domain, spec);
     guarantees.insert(g);
     spec->setParent(this);
@@ -89,27 +85,26 @@ Contract *Contract::clone() {
     std::map< Declaration *, Declaration * > declaration_map;
 
     // Declarations.
-    for(auto it = declarations.begin(); it != declarations.end(); ++it)
+    for(auto it : declarations )
     {
-        Declaration * current = *it;
-        auto dec = current->clone();
-        std::pair< Declaration *, Declaration * > p(current, dec);
+        auto dec = it->clone();
+        std::pair< Declaration *, Declaration * > p(it, dec);
         ret->addDeclaration(dec);
         declaration_map.insert(p);
     }
 
     // Assumptions.
-    for(auto it = assumptions.begin(); it != assumptions.end(); ++it)
+    for(auto & assumption : assumptions)
     {
-        auto spec = (*it).second->clone();
-        ret->addAssumptions((*it).first, spec);
+        auto spec = assumption.second->clone();
+        ret->addAssumptions(assumption.first, spec);
     }
 
     // Guarantees.
-    for(auto it = guarantees.begin(); it != guarantees.end(); ++it)
+    for(auto & guarantee : guarantees)
     {
-        auto spec = (*it).second->clone();
-        ret->addGuarantees((*it).first, spec);
+        auto spec = guarantee.second->clone();
+        ret->addGuarantees(guarantee.first, spec);
     }
 
     ClonedDeclarationVisitor c(declaration_map);
