@@ -8,5 +8,4 @@
 add_subdirectory(core)
 add_subdirectory(dsl_frontend)
 add_subdirectory(logics_frontend)
-add_subdirectory(CoCoDeLang_parser)
 add_subdirectory(pychase)
