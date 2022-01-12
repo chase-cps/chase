@@ -32,6 +32,7 @@ namespace chase {
         System * parseSpecificationFile( std::string infile );
 
         /// @cond
+        //------------------- Declarations.
         antlrcpp::Any visitConstant(
                 CoCoDeLangParser::ConstantContext *ctx) override;
         antlrcpp::Any visitVariable(
@@ -39,6 +40,8 @@ namespace chase {
         antlrcpp::Any visitDistribution(
                 CoCoDeLangParser::DistributionContext *ctx) override;
 
+        //------------------- Design Problem
+        antlrcpp::Any visitDesign(CoCoDeLangParser::DesignContext *ctx) override;
         /// @endcond
 
         static

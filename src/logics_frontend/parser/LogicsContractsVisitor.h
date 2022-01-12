@@ -73,6 +73,8 @@ public:
 
     virtual antlrcpp::Any visitTypeKW(LogicsContractsParser::TypeKWContext *context) = 0;
 
+    virtual antlrcpp::Any visitValue(LogicsContractsParser::ValueContext *context) = 0;
+
     virtual antlrcpp::Any visitLvalue(LogicsContractsParser::LvalueContext *context) = 0;
 
     virtual antlrcpp::Any visitRvalue(LogicsContractsParser::RvalueContext *context) = 0;
@@ -80,8 +82,6 @@ public:
     virtual antlrcpp::Any visitPrimed_ID(LogicsContractsParser::Primed_IDContext *context) = 0;
 
     virtual antlrcpp::Any visitRelation(LogicsContractsParser::RelationContext *context) = 0;
-
-    virtual antlrcpp::Any visitValue(LogicsContractsParser::ValueContext *context) = 0;
 
     virtual antlrcpp::Any visitPair(LogicsContractsParser::PairContext *context) = 0;
 

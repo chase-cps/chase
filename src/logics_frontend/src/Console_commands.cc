@@ -239,7 +239,7 @@ int Console::_execShow(std::vector<std::string> &tokens)
 {
     std::string ret("");
     if(tokens.size() == 1)
-        ret = _system->getString();
+        _system->getString();
     else {
         for (size_t it = 1; it < tokens.size(); ++it) {
             std::string name = tokens[it];
@@ -252,8 +252,9 @@ int Console::_execShow(std::vector<std::string> &tokens)
                     auto m = _used_logics.find(cit);
                     if(m != _used_logics.end())
                     {
-                        auto t = m->second;
-                        switch(t){
+                        auto t= m->second;
+                        switch(t)
+                        {
                             case no_logics:
                                 ret += "NO LOGICS\n";
                                 break;

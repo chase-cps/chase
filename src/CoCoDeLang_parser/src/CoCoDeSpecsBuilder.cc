@@ -25,8 +25,14 @@ System * CoCoDeSpecsBuilder::parseSpecificationFile(std::string infile)
     CoCoDeLangParser::DeclarationsContext * tree = parser.declarations();
 
     CoCoDeLangBaseVisitor::visitDeclarations(tree);
-
 }
 
 
 CoCoDeSpecsBuilder::~CoCoDeSpecsBuilder() = default;
+
+antlrcpp::Any CoCoDeSpecsBuilder::visitDesign(
+        CoCoDeLangParser::DesignContext *ctx)
+{
+    auto problem = new DesignProblem();
+    return CoCoDeLangBaseVisitor::visitDesign(ctx);
+}

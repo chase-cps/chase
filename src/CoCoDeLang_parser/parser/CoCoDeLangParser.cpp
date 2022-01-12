@@ -31,6 +31,194 @@ dfa::Vocabulary& CoCoDeLangParser::getVocabulary() const {
 }
 
 
+//----------------- Design_headerContext ------------------------------------------------------------------
+
+CoCoDeLangParser::Design_headerContext::Design_headerContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* CoCoDeLangParser::Design_headerContext::DesignKW() {
+  return getToken(CoCoDeLangParser::DesignKW, 0);
+}
+
+CoCoDeLangParser::IsKWContext* CoCoDeLangParser::Design_headerContext::isKW() {
+  return getRuleContext<CoCoDeLangParser::IsKWContext>(0);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Design_headerContext::ID() {
+  return getToken(CoCoDeLangParser::ID, 0);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Design_headerContext::COLON() {
+  return getToken(CoCoDeLangParser::COLON, 0);
+}
+
+
+size_t CoCoDeLangParser::Design_headerContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleDesign_header;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::Design_headerContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
+    return parserVisitor->visitDesign_header(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+CoCoDeLangParser::Design_headerContext* CoCoDeLangParser::design_header() {
+  Design_headerContext *_localctx = _tracker.createInstance<Design_headerContext>(_ctx, getState());
+  enterRule(_localctx, 0, CoCoDeLangParser::RuleDesign_header);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(138);
+    match(CoCoDeLangParser::DesignKW);
+    setState(139);
+    isKW();
+    setState(140);
+    match(CoCoDeLangParser::ID);
+    setState(141);
+    match(CoCoDeLangParser::COLON);
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Design_body_elementContext ------------------------------------------------------------------
+
+CoCoDeLangParser::Design_body_elementContext::Design_body_elementContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+CoCoDeLangParser::DeclarationContext* CoCoDeLangParser::Design_body_elementContext::declaration() {
+  return getRuleContext<CoCoDeLangParser::DeclarationContext>(0);
+}
+
+
+size_t CoCoDeLangParser::Design_body_elementContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleDesign_body_element;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::Design_body_elementContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
+    return parserVisitor->visitDesign_body_element(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+CoCoDeLangParser::Design_body_elementContext* CoCoDeLangParser::design_body_element() {
+  Design_body_elementContext *_localctx = _tracker.createInstance<Design_body_elementContext>(_ctx, getState());
+  enterRule(_localctx, 2, CoCoDeLangParser::RuleDesign_body_element);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(143);
+    declaration();
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- DesignContext ------------------------------------------------------------------
+
+CoCoDeLangParser::DesignContext::DesignContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+CoCoDeLangParser::Design_headerContext* CoCoDeLangParser::DesignContext::design_header() {
+  return getRuleContext<CoCoDeLangParser::Design_headerContext>(0);
+}
+
+std::vector<CoCoDeLangParser::Design_body_elementContext *> CoCoDeLangParser::DesignContext::design_body_element() {
+  return getRuleContexts<CoCoDeLangParser::Design_body_elementContext>();
+}
+
+CoCoDeLangParser::Design_body_elementContext* CoCoDeLangParser::DesignContext::design_body_element(size_t i) {
+  return getRuleContext<CoCoDeLangParser::Design_body_elementContext>(i);
+}
+
+
+size_t CoCoDeLangParser::DesignContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleDesign;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::DesignContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
+    return parserVisitor->visitDesign(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+CoCoDeLangParser::DesignContext* CoCoDeLangParser::design() {
+  DesignContext *_localctx = _tracker.createInstance<DesignContext>(_ctx, getState());
+  enterRule(_localctx, 4, CoCoDeLangParser::RuleDesign);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(145);
+    design_header();
+    setState(149);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while ((((_la & ~ 0x3fULL) == 0) &&
+      ((1ULL << _la) & ((1ULL << CoCoDeLangParser::T__6)
+      | (1ULL << CoCoDeLangParser::T__8)
+      | (1ULL << CoCoDeLangParser::T__9)
+      | (1ULL << CoCoDeLangParser::T__13))) != 0)) {
+      setState(146);
+      design_body_element();
+      setState(151);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
 //----------------- BasetypeContext ------------------------------------------------------------------
 
 CoCoDeLangParser::BasetypeContext::BasetypeContext(ParserRuleContext *parent, size_t invokingState)
@@ -68,7 +256,7 @@ antlrcpp::Any CoCoDeLangParser::BasetypeContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::BasetypeContext* CoCoDeLangParser::basetype() {
   BasetypeContext *_localctx = _tracker.createInstance<BasetypeContext>(_ctx, getState());
-  enterRule(_localctx, 0, CoCoDeLangParser::RuleBasetype);
+  enterRule(_localctx, 6, CoCoDeLangParser::RuleBasetype);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -78,33 +266,33 @@ CoCoDeLangParser::BasetypeContext* CoCoDeLangParser::basetype() {
     exitRule();
   });
   try {
-    setState(136);
+    setState(156);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case CoCoDeLangParser::T__0: {
         enterOuterAlt(_localctx, 1);
-        setState(132);
+        setState(152);
         integerKW();
         break;
       }
 
       case CoCoDeLangParser::T__2: {
         enterOuterAlt(_localctx, 2);
-        setState(133);
+        setState(153);
         realKW();
         break;
       }
 
       case CoCoDeLangParser::T__1: {
         enterOuterAlt(_localctx, 3);
-        setState(134);
+        setState(154);
         booleanKW();
         break;
       }
 
       case CoCoDeLangParser::T__3: {
         enterOuterAlt(_localctx, 4);
-        setState(135);
+        setState(155);
         complexKW();
         break;
       }
@@ -129,16 +317,16 @@ CoCoDeLangParser::Distribution_typeContext::Distribution_typeContext(ParserRuleC
   : ParserRuleContext(parent, invokingState) {
 }
 
-CoCoDeLangParser::IntegerKWContext* CoCoDeLangParser::Distribution_typeContext::integerKW() {
-  return getRuleContext<CoCoDeLangParser::IntegerKWContext>(0);
+CoCoDeLangParser::CustomKWContext* CoCoDeLangParser::Distribution_typeContext::customKW() {
+  return getRuleContext<CoCoDeLangParser::CustomKWContext>(0);
 }
 
-CoCoDeLangParser::IntervalContext* CoCoDeLangParser::Distribution_typeContext::interval() {
-  return getRuleContext<CoCoDeLangParser::IntervalContext>(0);
+CoCoDeLangParser::GaussianKWContext* CoCoDeLangParser::Distribution_typeContext::gaussianKW() {
+  return getRuleContext<CoCoDeLangParser::GaussianKWContext>(0);
 }
 
-CoCoDeLangParser::RealKWContext* CoCoDeLangParser::Distribution_typeContext::realKW() {
-  return getRuleContext<CoCoDeLangParser::RealKWContext>(0);
+CoCoDeLangParser::HomogeneousKWContext* CoCoDeLangParser::Distribution_typeContext::homogeneousKW() {
+  return getRuleContext<CoCoDeLangParser::HomogeneousKWContext>(0);
 }
 
 
@@ -156,8 +344,7 @@ antlrcpp::Any CoCoDeLangParser::Distribution_typeContext::accept(tree::ParseTree
 
 CoCoDeLangParser::Distribution_typeContext* CoCoDeLangParser::distribution_type() {
   Distribution_typeContext *_localctx = _tracker.createInstance<Distribution_typeContext>(_ctx, getState());
-  enterRule(_localctx, 2, CoCoDeLangParser::RuleDistribution_type);
-  size_t _la = 0;
+  enterRule(_localctx, 8, CoCoDeLangParser::RuleDistribution_type);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -167,40 +354,27 @@ CoCoDeLangParser::Distribution_typeContext* CoCoDeLangParser::distribution_type(
     exitRule();
   });
   try {
-    setState(146);
+    setState(161);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
-      case CoCoDeLangParser::T__0: {
+      case CoCoDeLangParser::T__26: {
         enterOuterAlt(_localctx, 1);
-        setState(138);
-        integerKW();
-        setState(140);
-        _errHandler->sync(this);
-
-        _la = _input->LA(1);
-        if (_la == CoCoDeLangParser::LROUND
-
-        || _la == CoCoDeLangParser::LSQUARE) {
-          setState(139);
-          interval();
-        }
+        setState(158);
+        customKW();
         break;
       }
 
-      case CoCoDeLangParser::T__2: {
+      case CoCoDeLangParser::T__25: {
         enterOuterAlt(_localctx, 2);
-        setState(142);
-        realKW();
-        setState(144);
-        _errHandler->sync(this);
+        setState(159);
+        gaussianKW();
+        break;
+      }
 
-        _la = _input->LA(1);
-        if (_la == CoCoDeLangParser::LROUND
-
-        || _la == CoCoDeLangParser::LSQUARE) {
-          setState(143);
-          interval();
-        }
+      case CoCoDeLangParser::T__29: {
+        enterOuterAlt(_localctx, 3);
+        setState(160);
+        homogeneousKW();
         break;
       }
 
@@ -218,40 +392,40 @@ CoCoDeLangParser::Distribution_typeContext* CoCoDeLangParser::distribution_type(
   return _localctx;
 }
 
-//----------------- Frequency_entryContext ------------------------------------------------------------------
+//----------------- Distribution_paramContext ------------------------------------------------------------------
 
-CoCoDeLangParser::Frequency_entryContext::Frequency_entryContext(ParserRuleContext *parent, size_t invokingState)
+CoCoDeLangParser::Distribution_paramContext::Distribution_paramContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-CoCoDeLangParser::ValueContext* CoCoDeLangParser::Frequency_entryContext::value() {
+tree::TerminalNode* CoCoDeLangParser::Distribution_paramContext::ID() {
+  return getToken(CoCoDeLangParser::ID, 0);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Distribution_paramContext::EQ() {
+  return getToken(CoCoDeLangParser::EQ, 0);
+}
+
+CoCoDeLangParser::ValueContext* CoCoDeLangParser::Distribution_paramContext::value() {
   return getRuleContext<CoCoDeLangParser::ValueContext>(0);
 }
 
-tree::TerminalNode* CoCoDeLangParser::Frequency_entryContext::COLON() {
-  return getToken(CoCoDeLangParser::COLON, 0);
-}
 
-CoCoDeLangParser::NumberContext* CoCoDeLangParser::Frequency_entryContext::number() {
-  return getRuleContext<CoCoDeLangParser::NumberContext>(0);
+size_t CoCoDeLangParser::Distribution_paramContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleDistribution_param;
 }
 
 
-size_t CoCoDeLangParser::Frequency_entryContext::getRuleIndex() const {
-  return CoCoDeLangParser::RuleFrequency_entry;
-}
-
-
-antlrcpp::Any CoCoDeLangParser::Frequency_entryContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any CoCoDeLangParser::Distribution_paramContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
-    return parserVisitor->visitFrequency_entry(this);
+    return parserVisitor->visitDistribution_param(this);
   else
     return visitor->visitChildren(this);
 }
 
-CoCoDeLangParser::Frequency_entryContext* CoCoDeLangParser::frequency_entry() {
-  Frequency_entryContext *_localctx = _tracker.createInstance<Frequency_entryContext>(_ctx, getState());
-  enterRule(_localctx, 4, CoCoDeLangParser::RuleFrequency_entry);
+CoCoDeLangParser::Distribution_paramContext* CoCoDeLangParser::distribution_param() {
+  Distribution_paramContext *_localctx = _tracker.createInstance<Distribution_paramContext>(_ctx, getState());
+  enterRule(_localctx, 10, CoCoDeLangParser::RuleDistribution_param);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -262,12 +436,12 @@ CoCoDeLangParser::Frequency_entryContext* CoCoDeLangParser::frequency_entry() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(148);
+    setState(163);
+    match(CoCoDeLangParser::ID);
+    setState(164);
+    match(CoCoDeLangParser::EQ);
+    setState(165);
     value(0);
-    setState(149);
-    match(CoCoDeLangParser::COLON);
-    setState(150);
-    number();
    
   }
   catch (RecognitionException &e) {
@@ -279,44 +453,44 @@ CoCoDeLangParser::Frequency_entryContext* CoCoDeLangParser::frequency_entry() {
   return _localctx;
 }
 
-//----------------- Frequency_tableContext ------------------------------------------------------------------
+//----------------- Distribution_paramsContext ------------------------------------------------------------------
 
-CoCoDeLangParser::Frequency_tableContext::Frequency_tableContext(ParserRuleContext *parent, size_t invokingState)
+CoCoDeLangParser::Distribution_paramsContext::Distribution_paramsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* CoCoDeLangParser::Frequency_tableContext::LSQUARE() {
-  return getToken(CoCoDeLangParser::LSQUARE, 0);
+std::vector<CoCoDeLangParser::Distribution_paramContext *> CoCoDeLangParser::Distribution_paramsContext::distribution_param() {
+  return getRuleContexts<CoCoDeLangParser::Distribution_paramContext>();
 }
 
-tree::TerminalNode* CoCoDeLangParser::Frequency_tableContext::RSQUARE() {
-  return getToken(CoCoDeLangParser::RSQUARE, 0);
+CoCoDeLangParser::Distribution_paramContext* CoCoDeLangParser::Distribution_paramsContext::distribution_param(size_t i) {
+  return getRuleContext<CoCoDeLangParser::Distribution_paramContext>(i);
 }
 
-std::vector<CoCoDeLangParser::Frequency_entryContext *> CoCoDeLangParser::Frequency_tableContext::frequency_entry() {
-  return getRuleContexts<CoCoDeLangParser::Frequency_entryContext>();
+std::vector<tree::TerminalNode *> CoCoDeLangParser::Distribution_paramsContext::COMMA() {
+  return getTokens(CoCoDeLangParser::COMMA);
 }
 
-CoCoDeLangParser::Frequency_entryContext* CoCoDeLangParser::Frequency_tableContext::frequency_entry(size_t i) {
-  return getRuleContext<CoCoDeLangParser::Frequency_entryContext>(i);
-}
-
-
-size_t CoCoDeLangParser::Frequency_tableContext::getRuleIndex() const {
-  return CoCoDeLangParser::RuleFrequency_table;
+tree::TerminalNode* CoCoDeLangParser::Distribution_paramsContext::COMMA(size_t i) {
+  return getToken(CoCoDeLangParser::COMMA, i);
 }
 
 
-antlrcpp::Any CoCoDeLangParser::Frequency_tableContext::accept(tree::ParseTreeVisitor *visitor) {
+size_t CoCoDeLangParser::Distribution_paramsContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleDistribution_params;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::Distribution_paramsContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
-    return parserVisitor->visitFrequency_table(this);
+    return parserVisitor->visitDistribution_params(this);
   else
     return visitor->visitChildren(this);
 }
 
-CoCoDeLangParser::Frequency_tableContext* CoCoDeLangParser::frequency_table() {
-  Frequency_tableContext *_localctx = _tracker.createInstance<Frequency_tableContext>(_ctx, getState());
-  enterRule(_localctx, 6, CoCoDeLangParser::RuleFrequency_table);
+CoCoDeLangParser::Distribution_paramsContext* CoCoDeLangParser::distribution_params() {
+  Distribution_paramsContext *_localctx = _tracker.createInstance<Distribution_paramsContext>(_ctx, getState());
+  enterRule(_localctx, 12, CoCoDeLangParser::RuleDistribution_params);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -328,26 +502,20 @@ CoCoDeLangParser::Frequency_tableContext* CoCoDeLangParser::frequency_table() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(152);
-    match(CoCoDeLangParser::LSQUARE);
-    setState(154); 
+    setState(167);
+    distribution_param();
+    setState(172);
     _errHandler->sync(this);
     _la = _input->LA(1);
-    do {
-      setState(153);
-      frequency_entry();
-      setState(156); 
+    while (_la == CoCoDeLangParser::COMMA) {
+      setState(168);
+      match(CoCoDeLangParser::COMMA);
+      setState(169);
+      distribution_param();
+      setState(174);
       _errHandler->sync(this);
       _la = _input->LA(1);
-    } while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << CoCoDeLangParser::T__18)
-      | (1ULL << CoCoDeLangParser::T__19)
-      | (1ULL << CoCoDeLangParser::ID)
-      | (1ULL << CoCoDeLangParser::INTEGER)
-      | (1ULL << CoCoDeLangParser::MINUS)
-      | (1ULL << CoCoDeLangParser::LROUND))) != 0));
-    setState(158);
-    match(CoCoDeLangParser::RSQUARE);
+    }
    
   }
   catch (RecognitionException &e) {
@@ -359,84 +527,40 @@ CoCoDeLangParser::Frequency_tableContext* CoCoDeLangParser::frequency_table() {
   return _localctx;
 }
 
-//----------------- Distribution_featuresContext ------------------------------------------------------------------
+//----------------- VartypeContext ------------------------------------------------------------------
 
-CoCoDeLangParser::Distribution_featuresContext::Distribution_featuresContext(ParserRuleContext *parent, size_t invokingState)
+CoCoDeLangParser::VartypeContext::VartypeContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-CoCoDeLangParser::GaussianKWContext* CoCoDeLangParser::Distribution_featuresContext::gaussianKW() {
-  return getRuleContext<CoCoDeLangParser::GaussianKWContext>(0);
+CoCoDeLangParser::BasetypeContext* CoCoDeLangParser::VartypeContext::basetype() {
+  return getRuleContext<CoCoDeLangParser::BasetypeContext>(0);
 }
 
-tree::TerminalNode* CoCoDeLangParser::Distribution_featuresContext::LROUND() {
-  return getToken(CoCoDeLangParser::LROUND, 0);
+CoCoDeLangParser::InKWContext* CoCoDeLangParser::VartypeContext::inKW() {
+  return getRuleContext<CoCoDeLangParser::InKWContext>(0);
 }
 
-std::vector<CoCoDeLangParser::ValueContext *> CoCoDeLangParser::Distribution_featuresContext::value() {
-  return getRuleContexts<CoCoDeLangParser::ValueContext>();
-}
-
-CoCoDeLangParser::ValueContext* CoCoDeLangParser::Distribution_featuresContext::value(size_t i) {
-  return getRuleContext<CoCoDeLangParser::ValueContext>(i);
-}
-
-tree::TerminalNode* CoCoDeLangParser::Distribution_featuresContext::COMMA() {
-  return getToken(CoCoDeLangParser::COMMA, 0);
-}
-
-tree::TerminalNode* CoCoDeLangParser::Distribution_featuresContext::RROUND() {
-  return getToken(CoCoDeLangParser::RROUND, 0);
-}
-
-CoCoDeLangParser::MuKWContext* CoCoDeLangParser::Distribution_featuresContext::muKW() {
-  return getRuleContext<CoCoDeLangParser::MuKWContext>(0);
-}
-
-std::vector<tree::TerminalNode *> CoCoDeLangParser::Distribution_featuresContext::EQ() {
-  return getTokens(CoCoDeLangParser::EQ);
-}
-
-tree::TerminalNode* CoCoDeLangParser::Distribution_featuresContext::EQ(size_t i) {
-  return getToken(CoCoDeLangParser::EQ, i);
-}
-
-CoCoDeLangParser::SigmaKWContext* CoCoDeLangParser::Distribution_featuresContext::sigmaKW() {
-  return getRuleContext<CoCoDeLangParser::SigmaKWContext>(0);
-}
-
-CoCoDeLangParser::HomogeneousKWContext* CoCoDeLangParser::Distribution_featuresContext::homogeneousKW() {
-  return getRuleContext<CoCoDeLangParser::HomogeneousKWContext>(0);
-}
-
-CoCoDeLangParser::CustomKWContext* CoCoDeLangParser::Distribution_featuresContext::customKW() {
-  return getRuleContext<CoCoDeLangParser::CustomKWContext>(0);
-}
-
-CoCoDeLangParser::MatrixContext* CoCoDeLangParser::Distribution_featuresContext::matrix() {
-  return getRuleContext<CoCoDeLangParser::MatrixContext>(0);
-}
-
-CoCoDeLangParser::FrequenciesKWContext* CoCoDeLangParser::Distribution_featuresContext::frequenciesKW() {
-  return getRuleContext<CoCoDeLangParser::FrequenciesKWContext>(0);
+CoCoDeLangParser::IntervalContext* CoCoDeLangParser::VartypeContext::interval() {
+  return getRuleContext<CoCoDeLangParser::IntervalContext>(0);
 }
 
 
-size_t CoCoDeLangParser::Distribution_featuresContext::getRuleIndex() const {
-  return CoCoDeLangParser::RuleDistribution_features;
+size_t CoCoDeLangParser::VartypeContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleVartype;
 }
 
 
-antlrcpp::Any CoCoDeLangParser::Distribution_featuresContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any CoCoDeLangParser::VartypeContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
-    return parserVisitor->visitDistribution_features(this);
+    return parserVisitor->visitVartype(this);
   else
     return visitor->visitChildren(this);
 }
 
-CoCoDeLangParser::Distribution_featuresContext* CoCoDeLangParser::distribution_features() {
-  Distribution_featuresContext *_localctx = _tracker.createInstance<Distribution_featuresContext>(_ctx, getState());
-  enterRule(_localctx, 8, CoCoDeLangParser::RuleDistribution_features);
+CoCoDeLangParser::VartypeContext* CoCoDeLangParser::vartype() {
+  VartypeContext *_localctx = _tracker.createInstance<VartypeContext>(_ctx, getState());
+  enterRule(_localctx, 14, CoCoDeLangParser::RuleVartype);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -447,78 +571,18 @@ CoCoDeLangParser::Distribution_featuresContext* CoCoDeLangParser::distribution_f
     exitRule();
   });
   try {
-    setState(188);
+    enterOuterAlt(_localctx, 1);
+    setState(175);
+    basetype();
+    setState(179);
     _errHandler->sync(this);
-    switch (_input->LA(1)) {
-      case CoCoDeLangParser::T__25: {
-        enterOuterAlt(_localctx, 1);
-        setState(160);
-        gaussianKW();
-        setState(161);
-        match(CoCoDeLangParser::LROUND);
-        setState(165);
-        _errHandler->sync(this);
 
-        _la = _input->LA(1);
-        if (_la == CoCoDeLangParser::T__27) {
-          setState(162);
-          muKW();
-          setState(163);
-          match(CoCoDeLangParser::EQ);
-        }
-        setState(167);
-        value(0);
-        setState(168);
-        match(CoCoDeLangParser::COMMA);
-        setState(172);
-        _errHandler->sync(this);
-
-        _la = _input->LA(1);
-        if (_la == CoCoDeLangParser::T__28) {
-          setState(169);
-          sigmaKW();
-          setState(170);
-          match(CoCoDeLangParser::EQ);
-        }
-        setState(174);
-        value(0);
-        setState(175);
-        match(CoCoDeLangParser::RROUND);
-        break;
-      }
-
-      case CoCoDeLangParser::T__29: {
-        enterOuterAlt(_localctx, 2);
-        setState(177);
-        homogeneousKW();
-        break;
-      }
-
-      case CoCoDeLangParser::T__26: {
-        enterOuterAlt(_localctx, 3);
-        setState(178);
-        customKW();
-        setState(179);
-        match(CoCoDeLangParser::LROUND);
-        setState(183);
-        _errHandler->sync(this);
-
-        _la = _input->LA(1);
-        if (_la == CoCoDeLangParser::T__30) {
-          setState(180);
-          frequenciesKW();
-          setState(181);
-          match(CoCoDeLangParser::EQ);
-        }
-        setState(185);
-        matrix();
-        setState(186);
-        match(CoCoDeLangParser::RROUND);
-        break;
-      }
-
-    default:
-      throw NoViableAltException(this);
+    _la = _input->LA(1);
+    if (_la == CoCoDeLangParser::T__11) {
+      setState(176);
+      inKW();
+      setState(177);
+      interval();
     }
    
   }
@@ -541,12 +605,24 @@ CoCoDeLangParser::Distribution_typeContext* CoCoDeLangParser::Distribution_defin
   return getRuleContext<CoCoDeLangParser::Distribution_typeContext>(0);
 }
 
+tree::TerminalNode* CoCoDeLangParser::Distribution_definitionContext::LROUND() {
+  return getToken(CoCoDeLangParser::LROUND, 0);
+}
+
+CoCoDeLangParser::Distribution_paramsContext* CoCoDeLangParser::Distribution_definitionContext::distribution_params() {
+  return getRuleContext<CoCoDeLangParser::Distribution_paramsContext>(0);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Distribution_definitionContext::RROUND() {
+  return getToken(CoCoDeLangParser::RROUND, 0);
+}
+
 tree::TerminalNode* CoCoDeLangParser::Distribution_definitionContext::COMMA() {
   return getToken(CoCoDeLangParser::COMMA, 0);
 }
 
-CoCoDeLangParser::Distribution_featuresContext* CoCoDeLangParser::Distribution_definitionContext::distribution_features() {
-  return getRuleContext<CoCoDeLangParser::Distribution_featuresContext>(0);
+CoCoDeLangParser::VartypeContext* CoCoDeLangParser::Distribution_definitionContext::vartype() {
+  return getRuleContext<CoCoDeLangParser::VartypeContext>(0);
 }
 
 
@@ -564,7 +640,7 @@ antlrcpp::Any CoCoDeLangParser::Distribution_definitionContext::accept(tree::Par
 
 CoCoDeLangParser::Distribution_definitionContext* CoCoDeLangParser::distribution_definition() {
   Distribution_definitionContext *_localctx = _tracker.createInstance<Distribution_definitionContext>(_ctx, getState());
-  enterRule(_localctx, 10, CoCoDeLangParser::RuleDistribution_definition);
+  enterRule(_localctx, 16, CoCoDeLangParser::RuleDistribution_definition);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -575,12 +651,29 @@ CoCoDeLangParser::Distribution_definitionContext* CoCoDeLangParser::distribution
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(190);
+    setState(181);
     distribution_type();
-    setState(191);
-    match(CoCoDeLangParser::COMMA);
-    setState(192);
-    distribution_features();
+    setState(182);
+    match(CoCoDeLangParser::LROUND);
+    setState(183);
+    distribution_params();
+    setState(184);
+    match(CoCoDeLangParser::RROUND);
+    setState(187);
+    _errHandler->sync(this);
+
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 5, _ctx)) {
+    case 1: {
+      setState(185);
+      match(CoCoDeLangParser::COMMA);
+      setState(186);
+      vartype();
+      break;
+    }
+
+    default:
+      break;
+    }
    
   }
   catch (RecognitionException &e) {
@@ -621,7 +714,7 @@ antlrcpp::Any CoCoDeLangParser::Distribution_declarationContext::accept(tree::Pa
 
 CoCoDeLangParser::Distribution_declarationContext* CoCoDeLangParser::distribution_declaration() {
   Distribution_declarationContext *_localctx = _tracker.createInstance<Distribution_declarationContext>(_ctx, getState());
-  enterRule(_localctx, 12, CoCoDeLangParser::RuleDistribution_declaration);
+  enterRule(_localctx, 18, CoCoDeLangParser::RuleDistribution_declaration);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -632,9 +725,9 @@ CoCoDeLangParser::Distribution_declarationContext* CoCoDeLangParser::distributio
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(194);
+    setState(189);
     distributionKW();
-    setState(195);
+    setState(190);
     match(CoCoDeLangParser::ID);
    
   }
@@ -661,6 +754,10 @@ CoCoDeLangParser::IsKWContext* CoCoDeLangParser::DistributionContext::isKW() {
   return getRuleContext<CoCoDeLangParser::IsKWContext>(0);
 }
 
+tree::TerminalNode* CoCoDeLangParser::DistributionContext::COLON() {
+  return getToken(CoCoDeLangParser::COLON, 0);
+}
+
 CoCoDeLangParser::Distribution_definitionContext* CoCoDeLangParser::DistributionContext::distribution_definition() {
   return getRuleContext<CoCoDeLangParser::Distribution_definitionContext>(0);
 }
@@ -684,7 +781,7 @@ antlrcpp::Any CoCoDeLangParser::DistributionContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::DistributionContext* CoCoDeLangParser::distribution() {
   DistributionContext *_localctx = _tracker.createInstance<DistributionContext>(_ctx, getState());
-  enterRule(_localctx, 14, CoCoDeLangParser::RuleDistribution);
+  enterRule(_localctx, 20, CoCoDeLangParser::RuleDistribution);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -695,13 +792,15 @@ CoCoDeLangParser::DistributionContext* CoCoDeLangParser::distribution() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(197);
+    setState(192);
     distribution_declaration();
-    setState(198);
+    setState(193);
     isKW();
-    setState(199);
+    setState(194);
+    match(CoCoDeLangParser::COLON);
+    setState(195);
     distribution_definition();
-    setState(200);
+    setState(196);
     match(CoCoDeLangParser::ENDST);
    
   }
@@ -743,7 +842,7 @@ antlrcpp::Any CoCoDeLangParser::Distribution_instanceContext::accept(tree::Parse
 
 CoCoDeLangParser::Distribution_instanceContext* CoCoDeLangParser::distribution_instance() {
   Distribution_instanceContext *_localctx = _tracker.createInstance<Distribution_instanceContext>(_ctx, getState());
-  enterRule(_localctx, 16, CoCoDeLangParser::RuleDistribution_instance);
+  enterRule(_localctx, 22, CoCoDeLangParser::RuleDistribution_instance);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -753,20 +852,21 @@ CoCoDeLangParser::Distribution_instanceContext* CoCoDeLangParser::distribution_i
     exitRule();
   });
   try {
-    setState(204);
+    setState(200);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case CoCoDeLangParser::ID: {
         enterOuterAlt(_localctx, 1);
-        setState(202);
+        setState(198);
         match(CoCoDeLangParser::ID);
         break;
       }
 
-      case CoCoDeLangParser::T__0:
-      case CoCoDeLangParser::T__2: {
+      case CoCoDeLangParser::T__25:
+      case CoCoDeLangParser::T__26:
+      case CoCoDeLangParser::T__29: {
         enterOuterAlt(_localctx, 2);
-        setState(203);
+        setState(199);
         distribution_definition();
         break;
       }
@@ -814,7 +914,7 @@ antlrcpp::Any CoCoDeLangParser::ControllabilityContext::accept(tree::ParseTreeVi
 
 CoCoDeLangParser::ControllabilityContext* CoCoDeLangParser::controllability() {
   ControllabilityContext *_localctx = _tracker.createInstance<ControllabilityContext>(_ctx, getState());
-  enterRule(_localctx, 18, CoCoDeLangParser::RuleControllability);
+  enterRule(_localctx, 24, CoCoDeLangParser::RuleControllability);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -824,19 +924,19 @@ CoCoDeLangParser::ControllabilityContext* CoCoDeLangParser::controllability() {
     exitRule();
   });
   try {
-    setState(208);
+    setState(204);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case CoCoDeLangParser::T__8: {
         enterOuterAlt(_localctx, 1);
-        setState(206);
+        setState(202);
         controlledKW();
         break;
       }
 
       case CoCoDeLangParser::T__9: {
         enterOuterAlt(_localctx, 2);
-        setState(207);
+        setState(203);
         uncontrolledKW();
         break;
       }
@@ -885,24 +985,12 @@ tree::TerminalNode* CoCoDeLangParser::VariableContext::COLON(size_t i) {
   return getToken(CoCoDeLangParser::COLON, i);
 }
 
-CoCoDeLangParser::BasetypeContext* CoCoDeLangParser::VariableContext::basetype() {
-  return getRuleContext<CoCoDeLangParser::BasetypeContext>(0);
+CoCoDeLangParser::VartypeContext* CoCoDeLangParser::VariableContext::vartype() {
+  return getRuleContext<CoCoDeLangParser::VartypeContext>(0);
 }
 
 tree::TerminalNode* CoCoDeLangParser::VariableContext::ENDST() {
   return getToken(CoCoDeLangParser::ENDST, 0);
-}
-
-CoCoDeLangParser::InKWContext* CoCoDeLangParser::VariableContext::inKW() {
-  return getRuleContext<CoCoDeLangParser::InKWContext>(0);
-}
-
-std::vector<CoCoDeLangParser::IntervalContext *> CoCoDeLangParser::VariableContext::interval() {
-  return getRuleContexts<CoCoDeLangParser::IntervalContext>();
-}
-
-CoCoDeLangParser::IntervalContext* CoCoDeLangParser::VariableContext::interval(size_t i) {
-  return getRuleContext<CoCoDeLangParser::IntervalContext>(i);
 }
 
 std::vector<tree::TerminalNode *> CoCoDeLangParser::VariableContext::COMMA() {
@@ -940,7 +1028,7 @@ antlrcpp::Any CoCoDeLangParser::VariableContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::VariableContext* CoCoDeLangParser::variable() {
   VariableContext *_localctx = _tracker.createInstance<VariableContext>(_ctx, getState());
-  enterRule(_localctx, 20, CoCoDeLangParser::RuleVariable);
+  enterRule(_localctx, 26, CoCoDeLangParser::RuleVariable);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -951,64 +1039,73 @@ CoCoDeLangParser::VariableContext* CoCoDeLangParser::variable() {
     exitRule();
   });
   try {
-    enterOuterAlt(_localctx, 1);
-    setState(210);
-    controllability();
-    setState(211);
-    variableKW();
-    setState(212);
-    match(CoCoDeLangParser::ID);
-    setState(213);
-    isKW();
-    setState(214);
-    match(CoCoDeLangParser::COLON);
-    setState(215);
-    basetype();
-    setState(219);
+    setState(230);
     _errHandler->sync(this);
-
-    _la = _input->LA(1);
-    if (_la == CoCoDeLangParser::T__11) {
-      setState(216);
-      inKW();
-      setState(217);
-      interval();
-    }
-    setState(226);
-    _errHandler->sync(this);
-
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 12, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx)) {
     case 1: {
-      setState(221);
-      match(CoCoDeLangParser::COMMA);
-      setState(222);
-      stochasticKW();
-      setState(223);
+      enterOuterAlt(_localctx, 1);
+      setState(206);
+      controllability();
+      setState(207);
+      variableKW();
+      setState(208);
+      match(CoCoDeLangParser::ID);
+      setState(209);
+      isKW();
+      setState(210);
       match(CoCoDeLangParser::COLON);
-      setState(224);
-      distribution_instance();
+      setState(211);
+      vartype();
+      setState(217);
+      _errHandler->sync(this);
+
+      switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
+      case 1: {
+        setState(212);
+        match(CoCoDeLangParser::COMMA);
+        setState(213);
+        stochasticKW();
+        setState(214);
+        match(CoCoDeLangParser::COLON);
+        setState(215);
+        distribution_instance();
+        break;
+      }
+
+      default:
+        break;
+      }
+      setState(221);
+      _errHandler->sync(this);
+
+      _la = _input->LA(1);
+      if (_la == CoCoDeLangParser::COMMA) {
+        setState(219);
+        match(CoCoDeLangParser::COMMA);
+        setState(220);
+        parametricKW();
+      }
+      setState(223);
+      match(CoCoDeLangParser::ENDST);
+      break;
+    }
+
+    case 2: {
+      enterOuterAlt(_localctx, 2);
+      setState(225);
+      controllability();
+      setState(226);
+      vartype();
+      setState(227);
+      variableKW();
+      setState(228);
+      match(CoCoDeLangParser::ID);
       break;
     }
 
     default:
       break;
     }
-    setState(233);
-    _errHandler->sync(this);
-
-    _la = _input->LA(1);
-    if (_la == CoCoDeLangParser::COMMA) {
-      setState(228);
-      match(CoCoDeLangParser::COMMA);
-      setState(229);
-      parametricKW();
-      setState(230);
-      match(CoCoDeLangParser::COLON);
-      setState(231);
-      interval();
-    }
-    setState(235);
-    match(CoCoDeLangParser::ENDST);
    
   }
   catch (RecognitionException &e) {
@@ -1053,7 +1150,7 @@ antlrcpp::Any CoCoDeLangParser::Constant_definitionContext::accept(tree::ParseTr
 
 CoCoDeLangParser::Constant_definitionContext* CoCoDeLangParser::constant_definition() {
   Constant_definitionContext *_localctx = _tracker.createInstance<Constant_definitionContext>(_ctx, getState());
-  enterRule(_localctx, 22, CoCoDeLangParser::RuleConstant_definition);
+  enterRule(_localctx, 28, CoCoDeLangParser::RuleConstant_definition);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1063,27 +1160,27 @@ CoCoDeLangParser::Constant_definitionContext* CoCoDeLangParser::constant_definit
     exitRule();
   });
   try {
-    setState(240);
+    setState(235);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case CoCoDeLangParser::INTEGER:
       case CoCoDeLangParser::MINUS: {
         enterOuterAlt(_localctx, 1);
-        setState(237);
+        setState(232);
         number();
         break;
       }
 
       case CoCoDeLangParser::T__18: {
         enterOuterAlt(_localctx, 2);
-        setState(238);
+        setState(233);
         trueKW();
         break;
       }
 
       case CoCoDeLangParser::T__19: {
         enterOuterAlt(_localctx, 3);
-        setState(239);
+        setState(234);
         falseKW();
         break;
       }
@@ -1147,7 +1244,7 @@ antlrcpp::Any CoCoDeLangParser::ConstantContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::ConstantContext* CoCoDeLangParser::constant() {
   ConstantContext *_localctx = _tracker.createInstance<ConstantContext>(_ctx, getState());
-  enterRule(_localctx, 24, CoCoDeLangParser::RuleConstant);
+  enterRule(_localctx, 30, CoCoDeLangParser::RuleConstant);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1158,17 +1255,17 @@ CoCoDeLangParser::ConstantContext* CoCoDeLangParser::constant() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(242);
+    setState(237);
     constantKW();
-    setState(243);
+    setState(238);
     basetype();
-    setState(244);
+    setState(239);
     match(CoCoDeLangParser::ID);
-    setState(245);
+    setState(240);
     match(CoCoDeLangParser::COLON);
-    setState(246);
+    setState(241);
     constant_definition();
-    setState(247);
+    setState(242);
     match(CoCoDeLangParser::ENDST);
    
   }
@@ -1214,7 +1311,7 @@ antlrcpp::Any CoCoDeLangParser::DeclarationContext::accept(tree::ParseTreeVisito
 
 CoCoDeLangParser::DeclarationContext* CoCoDeLangParser::declaration() {
   DeclarationContext *_localctx = _tracker.createInstance<DeclarationContext>(_ctx, getState());
-  enterRule(_localctx, 26, CoCoDeLangParser::RuleDeclaration);
+  enterRule(_localctx, 32, CoCoDeLangParser::RuleDeclaration);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1224,12 +1321,12 @@ CoCoDeLangParser::DeclarationContext* CoCoDeLangParser::declaration() {
     exitRule();
   });
   try {
-    setState(252);
+    setState(247);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case CoCoDeLangParser::T__6: {
         enterOuterAlt(_localctx, 1);
-        setState(249);
+        setState(244);
         constant();
         break;
       }
@@ -1237,14 +1334,14 @@ CoCoDeLangParser::DeclarationContext* CoCoDeLangParser::declaration() {
       case CoCoDeLangParser::T__8:
       case CoCoDeLangParser::T__9: {
         enterOuterAlt(_localctx, 2);
-        setState(250);
+        setState(245);
         variable();
         break;
       }
 
       case CoCoDeLangParser::T__13: {
         enterOuterAlt(_localctx, 3);
-        setState(251);
+        setState(246);
         distribution();
         break;
       }
@@ -1292,7 +1389,7 @@ antlrcpp::Any CoCoDeLangParser::DeclarationsContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::DeclarationsContext* CoCoDeLangParser::declarations() {
   DeclarationsContext *_localctx = _tracker.createInstance<DeclarationsContext>(_ctx, getState());
-  enterRule(_localctx, 28, CoCoDeLangParser::RuleDeclarations);
+  enterRule(_localctx, 34, CoCoDeLangParser::RuleDeclarations);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1304,7 +1401,7 @@ CoCoDeLangParser::DeclarationsContext* CoCoDeLangParser::declarations() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(257);
+    setState(252);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
@@ -1312,9 +1409,9 @@ CoCoDeLangParser::DeclarationsContext* CoCoDeLangParser::declarations() {
       | (1ULL << CoCoDeLangParser::T__8)
       | (1ULL << CoCoDeLangParser::T__9)
       | (1ULL << CoCoDeLangParser::T__13))) != 0)) {
-      setState(254);
+      setState(249);
       declaration();
-      setState(259);
+      setState(254);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1366,7 +1463,7 @@ antlrcpp::Any CoCoDeLangParser::Bin_logic_opContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::Bin_logic_opContext* CoCoDeLangParser::bin_logic_op() {
   Bin_logic_opContext *_localctx = _tracker.createInstance<Bin_logic_opContext>(_ctx, getState());
-  enterRule(_localctx, 30, CoCoDeLangParser::RuleBin_logic_op);
+  enterRule(_localctx, 36, CoCoDeLangParser::RuleBin_logic_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1378,7 +1475,7 @@ CoCoDeLangParser::Bin_logic_opContext* CoCoDeLangParser::bin_logic_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(260);
+    setState(255);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & ((1ULL << CoCoDeLangParser::AND)
@@ -1427,7 +1524,7 @@ antlrcpp::Any CoCoDeLangParser::Unary_logic_opContext::accept(tree::ParseTreeVis
 
 CoCoDeLangParser::Unary_logic_opContext* CoCoDeLangParser::unary_logic_op() {
   Unary_logic_opContext *_localctx = _tracker.createInstance<Unary_logic_opContext>(_ctx, getState());
-  enterRule(_localctx, 32, CoCoDeLangParser::RuleUnary_logic_op);
+  enterRule(_localctx, 38, CoCoDeLangParser::RuleUnary_logic_op);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1438,7 +1535,7 @@ CoCoDeLangParser::Unary_logic_opContext* CoCoDeLangParser::unary_logic_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(262);
+    setState(257);
     match(CoCoDeLangParser::NOT);
    
   }
@@ -1484,7 +1581,7 @@ antlrcpp::Any CoCoDeLangParser::Unary_temp_opContext::accept(tree::ParseTreeVisi
 
 CoCoDeLangParser::Unary_temp_opContext* CoCoDeLangParser::unary_temp_op() {
   Unary_temp_opContext *_localctx = _tracker.createInstance<Unary_temp_opContext>(_ctx, getState());
-  enterRule(_localctx, 34, CoCoDeLangParser::RuleUnary_temp_op);
+  enterRule(_localctx, 40, CoCoDeLangParser::RuleUnary_temp_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1496,7 +1593,7 @@ CoCoDeLangParser::Unary_temp_opContext* CoCoDeLangParser::unary_temp_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(264);
+    setState(259);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & ((1ULL << CoCoDeLangParser::ALWAYS)
@@ -1548,7 +1645,7 @@ antlrcpp::Any CoCoDeLangParser::Bin_temp_opContext::accept(tree::ParseTreeVisito
 
 CoCoDeLangParser::Bin_temp_opContext* CoCoDeLangParser::bin_temp_op() {
   Bin_temp_opContext *_localctx = _tracker.createInstance<Bin_temp_opContext>(_ctx, getState());
-  enterRule(_localctx, 36, CoCoDeLangParser::RuleBin_temp_op);
+  enterRule(_localctx, 42, CoCoDeLangParser::RuleBin_temp_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1560,7 +1657,7 @@ CoCoDeLangParser::Bin_temp_opContext* CoCoDeLangParser::bin_temp_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(266);
+    setState(261);
     _la = _input->LA(1);
     if (!(_la == CoCoDeLangParser::UNTIL
 
@@ -1627,7 +1724,7 @@ antlrcpp::Any CoCoDeLangParser::Relation_opContext::accept(tree::ParseTreeVisito
 
 CoCoDeLangParser::Relation_opContext* CoCoDeLangParser::relation_op() {
   Relation_opContext *_localctx = _tracker.createInstance<Relation_opContext>(_ctx, getState());
-  enterRule(_localctx, 38, CoCoDeLangParser::RuleRelation_op);
+  enterRule(_localctx, 44, CoCoDeLangParser::RuleRelation_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1639,7 +1736,7 @@ CoCoDeLangParser::Relation_opContext* CoCoDeLangParser::relation_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(268);
+    setState(263);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & ((1ULL << CoCoDeLangParser::EQ)
@@ -1687,6 +1784,14 @@ tree::TerminalNode* CoCoDeLangParser::Bin_math_opContext::MINUS() {
   return getToken(CoCoDeLangParser::MINUS, 0);
 }
 
+tree::TerminalNode* CoCoDeLangParser::Bin_math_opContext::POWER() {
+  return getToken(CoCoDeLangParser::POWER, 0);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Bin_math_opContext::MOD() {
+  return getToken(CoCoDeLangParser::MOD, 0);
+}
+
 
 size_t CoCoDeLangParser::Bin_math_opContext::getRuleIndex() const {
   return CoCoDeLangParser::RuleBin_math_op;
@@ -1702,7 +1807,7 @@ antlrcpp::Any CoCoDeLangParser::Bin_math_opContext::accept(tree::ParseTreeVisito
 
 CoCoDeLangParser::Bin_math_opContext* CoCoDeLangParser::bin_math_op() {
   Bin_math_opContext *_localctx = _tracker.createInstance<Bin_math_opContext>(_ctx, getState());
-  enterRule(_localctx, 40, CoCoDeLangParser::RuleBin_math_op);
+  enterRule(_localctx, 46, CoCoDeLangParser::RuleBin_math_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1714,13 +1819,15 @@ CoCoDeLangParser::Bin_math_opContext* CoCoDeLangParser::bin_math_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(270);
+    setState(265);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & ((1ULL << CoCoDeLangParser::PLUS)
       | (1ULL << CoCoDeLangParser::MINUS)
       | (1ULL << CoCoDeLangParser::TIMES)
-      | (1ULL << CoCoDeLangParser::DIVIDE))) != 0))) {
+      | (1ULL << CoCoDeLangParser::DIVIDE)
+      | (1ULL << CoCoDeLangParser::POWER)
+      | (1ULL << CoCoDeLangParser::MOD))) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -1771,7 +1878,7 @@ antlrcpp::Any CoCoDeLangParser::NumberContext::accept(tree::ParseTreeVisitor *vi
 
 CoCoDeLangParser::NumberContext* CoCoDeLangParser::number() {
   NumberContext *_localctx = _tracker.createInstance<NumberContext>(_ctx, getState());
-  enterRule(_localctx, 42, CoCoDeLangParser::RuleNumber);
+  enterRule(_localctx, 48, CoCoDeLangParser::RuleNumber);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1783,22 +1890,22 @@ CoCoDeLangParser::NumberContext* CoCoDeLangParser::number() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(273);
+    setState(268);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == CoCoDeLangParser::MINUS) {
-      setState(272);
+      setState(267);
       match(CoCoDeLangParser::MINUS);
     }
-    setState(275);
+    setState(270);
     match(CoCoDeLangParser::INTEGER);
-    setState(277);
+    setState(272);
     _errHandler->sync(this);
 
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 18, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 15, _ctx)) {
     case 1: {
-      setState(276);
+      setState(271);
       match(CoCoDeLangParser::DECIMAL);
       break;
     }
@@ -1838,7 +1945,7 @@ antlrcpp::Any CoCoDeLangParser::IntegerKWContext::accept(tree::ParseTreeVisitor 
 
 CoCoDeLangParser::IntegerKWContext* CoCoDeLangParser::integerKW() {
   IntegerKWContext *_localctx = _tracker.createInstance<IntegerKWContext>(_ctx, getState());
-  enterRule(_localctx, 44, CoCoDeLangParser::RuleIntegerKW);
+  enterRule(_localctx, 50, CoCoDeLangParser::RuleIntegerKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1849,7 +1956,7 @@ CoCoDeLangParser::IntegerKWContext* CoCoDeLangParser::integerKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(279);
+    setState(274);
     match(CoCoDeLangParser::T__0);
    
   }
@@ -1883,7 +1990,7 @@ antlrcpp::Any CoCoDeLangParser::BooleanKWContext::accept(tree::ParseTreeVisitor 
 
 CoCoDeLangParser::BooleanKWContext* CoCoDeLangParser::booleanKW() {
   BooleanKWContext *_localctx = _tracker.createInstance<BooleanKWContext>(_ctx, getState());
-  enterRule(_localctx, 46, CoCoDeLangParser::RuleBooleanKW);
+  enterRule(_localctx, 52, CoCoDeLangParser::RuleBooleanKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1894,7 +2001,7 @@ CoCoDeLangParser::BooleanKWContext* CoCoDeLangParser::booleanKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(281);
+    setState(276);
     match(CoCoDeLangParser::T__1);
    
   }
@@ -1928,7 +2035,7 @@ antlrcpp::Any CoCoDeLangParser::RealKWContext::accept(tree::ParseTreeVisitor *vi
 
 CoCoDeLangParser::RealKWContext* CoCoDeLangParser::realKW() {
   RealKWContext *_localctx = _tracker.createInstance<RealKWContext>(_ctx, getState());
-  enterRule(_localctx, 48, CoCoDeLangParser::RuleRealKW);
+  enterRule(_localctx, 54, CoCoDeLangParser::RuleRealKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1939,7 +2046,7 @@ CoCoDeLangParser::RealKWContext* CoCoDeLangParser::realKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(283);
+    setState(278);
     match(CoCoDeLangParser::T__2);
    
   }
@@ -1973,7 +2080,7 @@ antlrcpp::Any CoCoDeLangParser::ComplexKWContext::accept(tree::ParseTreeVisitor 
 
 CoCoDeLangParser::ComplexKWContext* CoCoDeLangParser::complexKW() {
   ComplexKWContext *_localctx = _tracker.createInstance<ComplexKWContext>(_ctx, getState());
-  enterRule(_localctx, 50, CoCoDeLangParser::RuleComplexKW);
+  enterRule(_localctx, 56, CoCoDeLangParser::RuleComplexKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1984,7 +2091,7 @@ CoCoDeLangParser::ComplexKWContext* CoCoDeLangParser::complexKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(285);
+    setState(280);
     match(CoCoDeLangParser::T__3);
    
   }
@@ -2018,7 +2125,7 @@ antlrcpp::Any CoCoDeLangParser::ContractKWContext::accept(tree::ParseTreeVisitor
 
 CoCoDeLangParser::ContractKWContext* CoCoDeLangParser::contractKW() {
   ContractKWContext *_localctx = _tracker.createInstance<ContractKWContext>(_ctx, getState());
-  enterRule(_localctx, 52, CoCoDeLangParser::RuleContractKW);
+  enterRule(_localctx, 58, CoCoDeLangParser::RuleContractKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2029,7 +2136,7 @@ CoCoDeLangParser::ContractKWContext* CoCoDeLangParser::contractKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(287);
+    setState(282);
     match(CoCoDeLangParser::T__4);
    
   }
@@ -2063,7 +2170,7 @@ antlrcpp::Any CoCoDeLangParser::VariableKWContext::accept(tree::ParseTreeVisitor
 
 CoCoDeLangParser::VariableKWContext* CoCoDeLangParser::variableKW() {
   VariableKWContext *_localctx = _tracker.createInstance<VariableKWContext>(_ctx, getState());
-  enterRule(_localctx, 54, CoCoDeLangParser::RuleVariableKW);
+  enterRule(_localctx, 60, CoCoDeLangParser::RuleVariableKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2074,7 +2181,7 @@ CoCoDeLangParser::VariableKWContext* CoCoDeLangParser::variableKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(289);
+    setState(284);
     match(CoCoDeLangParser::T__5);
    
   }
@@ -2108,7 +2215,7 @@ antlrcpp::Any CoCoDeLangParser::ConstantKWContext::accept(tree::ParseTreeVisitor
 
 CoCoDeLangParser::ConstantKWContext* CoCoDeLangParser::constantKW() {
   ConstantKWContext *_localctx = _tracker.createInstance<ConstantKWContext>(_ctx, getState());
-  enterRule(_localctx, 56, CoCoDeLangParser::RuleConstantKW);
+  enterRule(_localctx, 62, CoCoDeLangParser::RuleConstantKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2119,7 +2226,7 @@ CoCoDeLangParser::ConstantKWContext* CoCoDeLangParser::constantKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(291);
+    setState(286);
     match(CoCoDeLangParser::T__6);
    
   }
@@ -2153,7 +2260,7 @@ antlrcpp::Any CoCoDeLangParser::ParametricKWContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::ParametricKWContext* CoCoDeLangParser::parametricKW() {
   ParametricKWContext *_localctx = _tracker.createInstance<ParametricKWContext>(_ctx, getState());
-  enterRule(_localctx, 58, CoCoDeLangParser::RuleParametricKW);
+  enterRule(_localctx, 64, CoCoDeLangParser::RuleParametricKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2164,7 +2271,7 @@ CoCoDeLangParser::ParametricKWContext* CoCoDeLangParser::parametricKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(293);
+    setState(288);
     match(CoCoDeLangParser::T__7);
    
   }
@@ -2198,7 +2305,7 @@ antlrcpp::Any CoCoDeLangParser::ControlledKWContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::ControlledKWContext* CoCoDeLangParser::controlledKW() {
   ControlledKWContext *_localctx = _tracker.createInstance<ControlledKWContext>(_ctx, getState());
-  enterRule(_localctx, 60, CoCoDeLangParser::RuleControlledKW);
+  enterRule(_localctx, 66, CoCoDeLangParser::RuleControlledKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2209,7 +2316,7 @@ CoCoDeLangParser::ControlledKWContext* CoCoDeLangParser::controlledKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(295);
+    setState(290);
     match(CoCoDeLangParser::T__8);
    
   }
@@ -2243,7 +2350,7 @@ antlrcpp::Any CoCoDeLangParser::UncontrolledKWContext::accept(tree::ParseTreeVis
 
 CoCoDeLangParser::UncontrolledKWContext* CoCoDeLangParser::uncontrolledKW() {
   UncontrolledKWContext *_localctx = _tracker.createInstance<UncontrolledKWContext>(_ctx, getState());
-  enterRule(_localctx, 62, CoCoDeLangParser::RuleUncontrolledKW);
+  enterRule(_localctx, 68, CoCoDeLangParser::RuleUncontrolledKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2254,7 +2361,7 @@ CoCoDeLangParser::UncontrolledKWContext* CoCoDeLangParser::uncontrolledKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(297);
+    setState(292);
     match(CoCoDeLangParser::T__9);
    
   }
@@ -2288,7 +2395,7 @@ antlrcpp::Any CoCoDeLangParser::IsKWContext::accept(tree::ParseTreeVisitor *visi
 
 CoCoDeLangParser::IsKWContext* CoCoDeLangParser::isKW() {
   IsKWContext *_localctx = _tracker.createInstance<IsKWContext>(_ctx, getState());
-  enterRule(_localctx, 64, CoCoDeLangParser::RuleIsKW);
+  enterRule(_localctx, 70, CoCoDeLangParser::RuleIsKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2299,7 +2406,7 @@ CoCoDeLangParser::IsKWContext* CoCoDeLangParser::isKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(299);
+    setState(294);
     match(CoCoDeLangParser::T__10);
    
   }
@@ -2333,7 +2440,7 @@ antlrcpp::Any CoCoDeLangParser::InKWContext::accept(tree::ParseTreeVisitor *visi
 
 CoCoDeLangParser::InKWContext* CoCoDeLangParser::inKW() {
   InKWContext *_localctx = _tracker.createInstance<InKWContext>(_ctx, getState());
-  enterRule(_localctx, 66, CoCoDeLangParser::RuleInKW);
+  enterRule(_localctx, 72, CoCoDeLangParser::RuleInKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2344,7 +2451,7 @@ CoCoDeLangParser::InKWContext* CoCoDeLangParser::inKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(301);
+    setState(296);
     match(CoCoDeLangParser::T__11);
    
   }
@@ -2378,7 +2485,7 @@ antlrcpp::Any CoCoDeLangParser::StochasticKWContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::StochasticKWContext* CoCoDeLangParser::stochasticKW() {
   StochasticKWContext *_localctx = _tracker.createInstance<StochasticKWContext>(_ctx, getState());
-  enterRule(_localctx, 68, CoCoDeLangParser::RuleStochasticKW);
+  enterRule(_localctx, 74, CoCoDeLangParser::RuleStochasticKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2389,7 +2496,7 @@ CoCoDeLangParser::StochasticKWContext* CoCoDeLangParser::stochasticKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(303);
+    setState(298);
     match(CoCoDeLangParser::T__12);
    
   }
@@ -2423,7 +2530,7 @@ antlrcpp::Any CoCoDeLangParser::DistributionKWContext::accept(tree::ParseTreeVis
 
 CoCoDeLangParser::DistributionKWContext* CoCoDeLangParser::distributionKW() {
   DistributionKWContext *_localctx = _tracker.createInstance<DistributionKWContext>(_ctx, getState());
-  enterRule(_localctx, 70, CoCoDeLangParser::RuleDistributionKW);
+  enterRule(_localctx, 76, CoCoDeLangParser::RuleDistributionKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2434,7 +2541,7 @@ CoCoDeLangParser::DistributionKWContext* CoCoDeLangParser::distributionKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(305);
+    setState(300);
     match(CoCoDeLangParser::T__13);
    
   }
@@ -2468,7 +2575,7 @@ antlrcpp::Any CoCoDeLangParser::ComponentKWContext::accept(tree::ParseTreeVisito
 
 CoCoDeLangParser::ComponentKWContext* CoCoDeLangParser::componentKW() {
   ComponentKWContext *_localctx = _tracker.createInstance<ComponentKWContext>(_ctx, getState());
-  enterRule(_localctx, 72, CoCoDeLangParser::RuleComponentKW);
+  enterRule(_localctx, 78, CoCoDeLangParser::RuleComponentKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2479,7 +2586,7 @@ CoCoDeLangParser::ComponentKWContext* CoCoDeLangParser::componentKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(307);
+    setState(302);
     match(CoCoDeLangParser::T__14);
    
   }
@@ -2513,7 +2620,7 @@ antlrcpp::Any CoCoDeLangParser::InputKWContext::accept(tree::ParseTreeVisitor *v
 
 CoCoDeLangParser::InputKWContext* CoCoDeLangParser::inputKW() {
   InputKWContext *_localctx = _tracker.createInstance<InputKWContext>(_ctx, getState());
-  enterRule(_localctx, 74, CoCoDeLangParser::RuleInputKW);
+  enterRule(_localctx, 80, CoCoDeLangParser::RuleInputKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2524,7 +2631,7 @@ CoCoDeLangParser::InputKWContext* CoCoDeLangParser::inputKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(309);
+    setState(304);
     match(CoCoDeLangParser::T__15);
    
   }
@@ -2558,7 +2665,7 @@ antlrcpp::Any CoCoDeLangParser::OutputKWContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::OutputKWContext* CoCoDeLangParser::outputKW() {
   OutputKWContext *_localctx = _tracker.createInstance<OutputKWContext>(_ctx, getState());
-  enterRule(_localctx, 76, CoCoDeLangParser::RuleOutputKW);
+  enterRule(_localctx, 82, CoCoDeLangParser::RuleOutputKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2569,7 +2676,7 @@ CoCoDeLangParser::OutputKWContext* CoCoDeLangParser::outputKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(311);
+    setState(306);
     match(CoCoDeLangParser::T__16);
    
   }
@@ -2603,7 +2710,7 @@ antlrcpp::Any CoCoDeLangParser::PropositionKWContext::accept(tree::ParseTreeVisi
 
 CoCoDeLangParser::PropositionKWContext* CoCoDeLangParser::propositionKW() {
   PropositionKWContext *_localctx = _tracker.createInstance<PropositionKWContext>(_ctx, getState());
-  enterRule(_localctx, 78, CoCoDeLangParser::RulePropositionKW);
+  enterRule(_localctx, 84, CoCoDeLangParser::RulePropositionKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2614,7 +2721,7 @@ CoCoDeLangParser::PropositionKWContext* CoCoDeLangParser::propositionKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(313);
+    setState(308);
     match(CoCoDeLangParser::T__17);
    
   }
@@ -2648,7 +2755,7 @@ antlrcpp::Any CoCoDeLangParser::TrueKWContext::accept(tree::ParseTreeVisitor *vi
 
 CoCoDeLangParser::TrueKWContext* CoCoDeLangParser::trueKW() {
   TrueKWContext *_localctx = _tracker.createInstance<TrueKWContext>(_ctx, getState());
-  enterRule(_localctx, 80, CoCoDeLangParser::RuleTrueKW);
+  enterRule(_localctx, 86, CoCoDeLangParser::RuleTrueKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2659,7 +2766,7 @@ CoCoDeLangParser::TrueKWContext* CoCoDeLangParser::trueKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(315);
+    setState(310);
     match(CoCoDeLangParser::T__18);
    
   }
@@ -2693,7 +2800,7 @@ antlrcpp::Any CoCoDeLangParser::FalseKWContext::accept(tree::ParseTreeVisitor *v
 
 CoCoDeLangParser::FalseKWContext* CoCoDeLangParser::falseKW() {
   FalseKWContext *_localctx = _tracker.createInstance<FalseKWContext>(_ctx, getState());
-  enterRule(_localctx, 82, CoCoDeLangParser::RuleFalseKW);
+  enterRule(_localctx, 88, CoCoDeLangParser::RuleFalseKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2704,7 +2811,7 @@ CoCoDeLangParser::FalseKWContext* CoCoDeLangParser::falseKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(317);
+    setState(312);
     match(CoCoDeLangParser::T__19);
    
   }
@@ -2738,7 +2845,7 @@ antlrcpp::Any CoCoDeLangParser::AssumptionsKWContext::accept(tree::ParseTreeVisi
 
 CoCoDeLangParser::AssumptionsKWContext* CoCoDeLangParser::assumptionsKW() {
   AssumptionsKWContext *_localctx = _tracker.createInstance<AssumptionsKWContext>(_ctx, getState());
-  enterRule(_localctx, 84, CoCoDeLangParser::RuleAssumptionsKW);
+  enterRule(_localctx, 90, CoCoDeLangParser::RuleAssumptionsKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2749,7 +2856,7 @@ CoCoDeLangParser::AssumptionsKWContext* CoCoDeLangParser::assumptionsKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(319);
+    setState(314);
     match(CoCoDeLangParser::T__20);
    
   }
@@ -2783,7 +2890,7 @@ antlrcpp::Any CoCoDeLangParser::GuaranteesKWContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::GuaranteesKWContext* CoCoDeLangParser::guaranteesKW() {
   GuaranteesKWContext *_localctx = _tracker.createInstance<GuaranteesKWContext>(_ctx, getState());
-  enterRule(_localctx, 86, CoCoDeLangParser::RuleGuaranteesKW);
+  enterRule(_localctx, 92, CoCoDeLangParser::RuleGuaranteesKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2794,7 +2901,7 @@ CoCoDeLangParser::GuaranteesKWContext* CoCoDeLangParser::guaranteesKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(321);
+    setState(316);
     match(CoCoDeLangParser::T__21);
    
   }
@@ -2828,7 +2935,7 @@ antlrcpp::Any CoCoDeLangParser::SystemKWContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::SystemKWContext* CoCoDeLangParser::systemKW() {
   SystemKWContext *_localctx = _tracker.createInstance<SystemKWContext>(_ctx, getState());
-  enterRule(_localctx, 88, CoCoDeLangParser::RuleSystemKW);
+  enterRule(_localctx, 94, CoCoDeLangParser::RuleSystemKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2839,7 +2946,7 @@ CoCoDeLangParser::SystemKWContext* CoCoDeLangParser::systemKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(323);
+    setState(318);
     match(CoCoDeLangParser::T__22);
    
   }
@@ -2873,7 +2980,7 @@ antlrcpp::Any CoCoDeLangParser::DiscreteKWContext::accept(tree::ParseTreeVisitor
 
 CoCoDeLangParser::DiscreteKWContext* CoCoDeLangParser::discreteKW() {
   DiscreteKWContext *_localctx = _tracker.createInstance<DiscreteKWContext>(_ctx, getState());
-  enterRule(_localctx, 90, CoCoDeLangParser::RuleDiscreteKW);
+  enterRule(_localctx, 96, CoCoDeLangParser::RuleDiscreteKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2884,7 +2991,7 @@ CoCoDeLangParser::DiscreteKWContext* CoCoDeLangParser::discreteKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(325);
+    setState(320);
     match(CoCoDeLangParser::T__23);
    
   }
@@ -2918,7 +3025,7 @@ antlrcpp::Any CoCoDeLangParser::ContinuousKWContext::accept(tree::ParseTreeVisit
 
 CoCoDeLangParser::ContinuousKWContext* CoCoDeLangParser::continuousKW() {
   ContinuousKWContext *_localctx = _tracker.createInstance<ContinuousKWContext>(_ctx, getState());
-  enterRule(_localctx, 92, CoCoDeLangParser::RuleContinuousKW);
+  enterRule(_localctx, 98, CoCoDeLangParser::RuleContinuousKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2929,7 +3036,7 @@ CoCoDeLangParser::ContinuousKWContext* CoCoDeLangParser::continuousKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(327);
+    setState(322);
     match(CoCoDeLangParser::T__24);
    
   }
@@ -2963,7 +3070,7 @@ antlrcpp::Any CoCoDeLangParser::GaussianKWContext::accept(tree::ParseTreeVisitor
 
 CoCoDeLangParser::GaussianKWContext* CoCoDeLangParser::gaussianKW() {
   GaussianKWContext *_localctx = _tracker.createInstance<GaussianKWContext>(_ctx, getState());
-  enterRule(_localctx, 94, CoCoDeLangParser::RuleGaussianKW);
+  enterRule(_localctx, 100, CoCoDeLangParser::RuleGaussianKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2974,7 +3081,7 @@ CoCoDeLangParser::GaussianKWContext* CoCoDeLangParser::gaussianKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(329);
+    setState(324);
     match(CoCoDeLangParser::T__25);
    
   }
@@ -3008,7 +3115,7 @@ antlrcpp::Any CoCoDeLangParser::CustomKWContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::CustomKWContext* CoCoDeLangParser::customKW() {
   CustomKWContext *_localctx = _tracker.createInstance<CustomKWContext>(_ctx, getState());
-  enterRule(_localctx, 96, CoCoDeLangParser::RuleCustomKW);
+  enterRule(_localctx, 102, CoCoDeLangParser::RuleCustomKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3019,7 +3126,7 @@ CoCoDeLangParser::CustomKWContext* CoCoDeLangParser::customKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(331);
+    setState(326);
     match(CoCoDeLangParser::T__26);
    
   }
@@ -3053,7 +3160,7 @@ antlrcpp::Any CoCoDeLangParser::MuKWContext::accept(tree::ParseTreeVisitor *visi
 
 CoCoDeLangParser::MuKWContext* CoCoDeLangParser::muKW() {
   MuKWContext *_localctx = _tracker.createInstance<MuKWContext>(_ctx, getState());
-  enterRule(_localctx, 98, CoCoDeLangParser::RuleMuKW);
+  enterRule(_localctx, 104, CoCoDeLangParser::RuleMuKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3064,7 +3171,7 @@ CoCoDeLangParser::MuKWContext* CoCoDeLangParser::muKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(333);
+    setState(328);
     match(CoCoDeLangParser::T__27);
    
   }
@@ -3098,7 +3205,7 @@ antlrcpp::Any CoCoDeLangParser::SigmaKWContext::accept(tree::ParseTreeVisitor *v
 
 CoCoDeLangParser::SigmaKWContext* CoCoDeLangParser::sigmaKW() {
   SigmaKWContext *_localctx = _tracker.createInstance<SigmaKWContext>(_ctx, getState());
-  enterRule(_localctx, 100, CoCoDeLangParser::RuleSigmaKW);
+  enterRule(_localctx, 106, CoCoDeLangParser::RuleSigmaKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3109,7 +3216,7 @@ CoCoDeLangParser::SigmaKWContext* CoCoDeLangParser::sigmaKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(335);
+    setState(330);
     match(CoCoDeLangParser::T__28);
    
   }
@@ -3143,7 +3250,7 @@ antlrcpp::Any CoCoDeLangParser::HomogeneousKWContext::accept(tree::ParseTreeVisi
 
 CoCoDeLangParser::HomogeneousKWContext* CoCoDeLangParser::homogeneousKW() {
   HomogeneousKWContext *_localctx = _tracker.createInstance<HomogeneousKWContext>(_ctx, getState());
-  enterRule(_localctx, 102, CoCoDeLangParser::RuleHomogeneousKW);
+  enterRule(_localctx, 108, CoCoDeLangParser::RuleHomogeneousKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3154,7 +3261,7 @@ CoCoDeLangParser::HomogeneousKWContext* CoCoDeLangParser::homogeneousKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(337);
+    setState(332);
     match(CoCoDeLangParser::T__29);
    
   }
@@ -3188,7 +3295,7 @@ antlrcpp::Any CoCoDeLangParser::FrequenciesKWContext::accept(tree::ParseTreeVisi
 
 CoCoDeLangParser::FrequenciesKWContext* CoCoDeLangParser::frequenciesKW() {
   FrequenciesKWContext *_localctx = _tracker.createInstance<FrequenciesKWContext>(_ctx, getState());
-  enterRule(_localctx, 104, CoCoDeLangParser::RuleFrequenciesKW);
+  enterRule(_localctx, 110, CoCoDeLangParser::RuleFrequenciesKW);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3199,7 +3306,7 @@ CoCoDeLangParser::FrequenciesKWContext* CoCoDeLangParser::frequenciesKW() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(339);
+    setState(334);
     match(CoCoDeLangParser::T__30);
    
   }
@@ -3237,7 +3344,7 @@ antlrcpp::Any CoCoDeLangParser::Primed_IDContext::accept(tree::ParseTreeVisitor 
 
 CoCoDeLangParser::Primed_IDContext* CoCoDeLangParser::primed_ID() {
   Primed_IDContext *_localctx = _tracker.createInstance<Primed_IDContext>(_ctx, getState());
-  enterRule(_localctx, 106, CoCoDeLangParser::RulePrimed_ID);
+  enterRule(_localctx, 112, CoCoDeLangParser::RulePrimed_ID);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3248,9 +3355,9 @@ CoCoDeLangParser::Primed_IDContext* CoCoDeLangParser::primed_ID() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(341);
+    setState(336);
     match(CoCoDeLangParser::ID);
-    setState(342);
+    setState(337);
     match(CoCoDeLangParser::T__31);
    
   }
@@ -3292,7 +3399,7 @@ antlrcpp::Any CoCoDeLangParser::Minus_IDContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::Minus_IDContext* CoCoDeLangParser::minus_ID() {
   Minus_IDContext *_localctx = _tracker.createInstance<Minus_IDContext>(_ctx, getState());
-  enterRule(_localctx, 108, CoCoDeLangParser::RuleMinus_ID);
+  enterRule(_localctx, 114, CoCoDeLangParser::RuleMinus_ID);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3303,9 +3410,9 @@ CoCoDeLangParser::Minus_IDContext* CoCoDeLangParser::minus_ID() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(344);
+    setState(339);
     match(CoCoDeLangParser::MINUS);
-    setState(345);
+    setState(340);
     match(CoCoDeLangParser::ID);
    
   }
@@ -3343,7 +3450,7 @@ antlrcpp::Any CoCoDeLangParser::FunctionContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::FunctionContext* CoCoDeLangParser::function() {
   FunctionContext *_localctx = _tracker.createInstance<FunctionContext>(_ctx, getState());
-  enterRule(_localctx, 110, CoCoDeLangParser::RuleFunction);
+  enterRule(_localctx, 116, CoCoDeLangParser::RuleFunction);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3354,8 +3461,170 @@ CoCoDeLangParser::FunctionContext* CoCoDeLangParser::function() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(347);
+    setState(342);
     match(CoCoDeLangParser::ID);
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Matrix_lineContext ------------------------------------------------------------------
+
+CoCoDeLangParser::Matrix_lineContext::Matrix_lineContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<CoCoDeLangParser::ValueContext *> CoCoDeLangParser::Matrix_lineContext::value() {
+  return getRuleContexts<CoCoDeLangParser::ValueContext>();
+}
+
+CoCoDeLangParser::ValueContext* CoCoDeLangParser::Matrix_lineContext::value(size_t i) {
+  return getRuleContext<CoCoDeLangParser::ValueContext>(i);
+}
+
+std::vector<tree::TerminalNode *> CoCoDeLangParser::Matrix_lineContext::COMMA() {
+  return getTokens(CoCoDeLangParser::COMMA);
+}
+
+tree::TerminalNode* CoCoDeLangParser::Matrix_lineContext::COMMA(size_t i) {
+  return getToken(CoCoDeLangParser::COMMA, i);
+}
+
+
+size_t CoCoDeLangParser::Matrix_lineContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleMatrix_line;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::Matrix_lineContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
+    return parserVisitor->visitMatrix_line(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+CoCoDeLangParser::Matrix_lineContext* CoCoDeLangParser::matrix_line() {
+  Matrix_lineContext *_localctx = _tracker.createInstance<Matrix_lineContext>(_ctx, getState());
+  enterRule(_localctx, 118, CoCoDeLangParser::RuleMatrix_line);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(344);
+    value(0);
+    setState(349);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == CoCoDeLangParser::COMMA) {
+      setState(345);
+      match(CoCoDeLangParser::COMMA);
+      setState(346);
+      value(0);
+      setState(351);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- MatrixContext ------------------------------------------------------------------
+
+CoCoDeLangParser::MatrixContext::MatrixContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* CoCoDeLangParser::MatrixContext::LSQUARE() {
+  return getToken(CoCoDeLangParser::LSQUARE, 0);
+}
+
+std::vector<CoCoDeLangParser::Matrix_lineContext *> CoCoDeLangParser::MatrixContext::matrix_line() {
+  return getRuleContexts<CoCoDeLangParser::Matrix_lineContext>();
+}
+
+CoCoDeLangParser::Matrix_lineContext* CoCoDeLangParser::MatrixContext::matrix_line(size_t i) {
+  return getRuleContext<CoCoDeLangParser::Matrix_lineContext>(i);
+}
+
+tree::TerminalNode* CoCoDeLangParser::MatrixContext::RSQUARE() {
+  return getToken(CoCoDeLangParser::RSQUARE, 0);
+}
+
+std::vector<tree::TerminalNode *> CoCoDeLangParser::MatrixContext::ENDST() {
+  return getTokens(CoCoDeLangParser::ENDST);
+}
+
+tree::TerminalNode* CoCoDeLangParser::MatrixContext::ENDST(size_t i) {
+  return getToken(CoCoDeLangParser::ENDST, i);
+}
+
+
+size_t CoCoDeLangParser::MatrixContext::getRuleIndex() const {
+  return CoCoDeLangParser::RuleMatrix;
+}
+
+
+antlrcpp::Any CoCoDeLangParser::MatrixContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
+    return parserVisitor->visitMatrix(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+CoCoDeLangParser::MatrixContext* CoCoDeLangParser::matrix() {
+  MatrixContext *_localctx = _tracker.createInstance<MatrixContext>(_ctx, getState());
+  enterRule(_localctx, 120, CoCoDeLangParser::RuleMatrix);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    size_t alt;
+    enterOuterAlt(_localctx, 1);
+    setState(352);
+    match(CoCoDeLangParser::LSQUARE);
+    setState(358);
+    _errHandler->sync(this);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx);
+    while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
+      if (alt == 1) {
+        setState(353);
+        matrix_line();
+        setState(354);
+        match(CoCoDeLangParser::ENDST); 
+      }
+      setState(360);
+      _errHandler->sync(this);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx);
+    }
+    setState(361);
+    matrix_line();
+    setState(362);
+    match(CoCoDeLangParser::RSQUARE);
    
   }
   catch (RecognitionException &e) {
@@ -3417,6 +3686,10 @@ tree::TerminalNode* CoCoDeLangParser::ValueContext::COMMA(size_t i) {
   return getToken(CoCoDeLangParser::COMMA, i);
 }
 
+CoCoDeLangParser::MatrixContext* CoCoDeLangParser::ValueContext::matrix() {
+  return getRuleContext<CoCoDeLangParser::MatrixContext>(0);
+}
+
 CoCoDeLangParser::TrueKWContext* CoCoDeLangParser::ValueContext::trueKW() {
   return getRuleContext<CoCoDeLangParser::TrueKWContext>(0);
 }
@@ -3453,8 +3726,8 @@ CoCoDeLangParser::ValueContext* CoCoDeLangParser::value(int precedence) {
   CoCoDeLangParser::ValueContext *_localctx = _tracker.createInstance<ValueContext>(_ctx, parentState);
   CoCoDeLangParser::ValueContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 112;
-  enterRecursionRule(_localctx, 112, CoCoDeLangParser::RuleValue, precedence);
+  size_t startState = 122;
+  enterRecursionRule(_localctx, 122, CoCoDeLangParser::RuleValue, precedence);
 
     size_t _la = 0;
 
@@ -3468,75 +3741,81 @@ CoCoDeLangParser::ValueContext* CoCoDeLangParser::value(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(372);
+    setState(388);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 19, _ctx)) {
     case 1: {
-      setState(350);
+      setState(365);
       primed_ID();
       break;
     }
 
     case 2: {
-      setState(351);
+      setState(366);
       match(CoCoDeLangParser::ID);
       break;
     }
 
     case 3: {
-      setState(352);
+      setState(367);
       minus_ID();
       break;
     }
 
     case 4: {
-      setState(353);
+      setState(368);
       number();
       break;
     }
 
     case 5: {
-      setState(354);
+      setState(369);
       match(CoCoDeLangParser::LROUND);
-      setState(355);
+      setState(370);
       value(0);
-      setState(356);
+      setState(371);
       match(CoCoDeLangParser::RROUND);
       break;
     }
 
     case 6: {
-      setState(358);
+      setState(373);
       function();
-      setState(359);
+      setState(374);
       match(CoCoDeLangParser::LROUND);
-      setState(360);
+      setState(375);
       value(0);
-      setState(365);
+      setState(380);
       _errHandler->sync(this);
       _la = _input->LA(1);
       while (_la == CoCoDeLangParser::COMMA) {
-        setState(361);
+        setState(376);
         match(CoCoDeLangParser::COMMA);
-        setState(362);
+        setState(377);
         value(0);
-        setState(367);
+        setState(382);
         _errHandler->sync(this);
         _la = _input->LA(1);
       }
-      setState(368);
+      setState(383);
       match(CoCoDeLangParser::RROUND);
       break;
     }
 
     case 7: {
-      setState(370);
-      trueKW();
+      setState(385);
+      matrix();
       break;
     }
 
     case 8: {
-      setState(371);
+      setState(386);
+      trueKW();
+      break;
+    }
+
+    case 9: {
+      setState(387);
       falseKW();
       break;
     }
@@ -3545,9 +3824,9 @@ CoCoDeLangParser::ValueContext* CoCoDeLangParser::value(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(380);
+    setState(396);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
@@ -3555,17 +3834,17 @@ CoCoDeLangParser::ValueContext* CoCoDeLangParser::value(int precedence) {
         previousContext = _localctx;
         _localctx = _tracker.createInstance<ValueContext>(parentContext, parentState);
         pushNewRecursionContext(_localctx, startState, RuleValue);
-        setState(374);
+        setState(390);
 
-        if (!(precpred(_ctx, 9))) throw FailedPredicateException(this, "precpred(_ctx, 9)");
-        setState(375);
+        if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
+        setState(391);
         bin_math_op();
-        setState(376);
-        value(10); 
+        setState(392);
+        value(11); 
       }
-      setState(382);
+      setState(398);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -3609,7 +3888,7 @@ antlrcpp::Any CoCoDeLangParser::PairContext::accept(tree::ParseTreeVisitor *visi
 
 CoCoDeLangParser::PairContext* CoCoDeLangParser::pair() {
   PairContext *_localctx = _tracker.createInstance<PairContext>(_ctx, getState());
-  enterRule(_localctx, 114, CoCoDeLangParser::RulePair);
+  enterRule(_localctx, 124, CoCoDeLangParser::RulePair);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3620,11 +3899,11 @@ CoCoDeLangParser::PairContext* CoCoDeLangParser::pair() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(383);
+    setState(399);
     value(0);
-    setState(384);
+    setState(400);
     match(CoCoDeLangParser::COMMA);
-    setState(385);
+    setState(401);
     value(0);
    
   }
@@ -3670,7 +3949,7 @@ antlrcpp::Any CoCoDeLangParser::Interval_leftopenContext::accept(tree::ParseTree
 
 CoCoDeLangParser::Interval_leftopenContext* CoCoDeLangParser::interval_leftopen() {
   Interval_leftopenContext *_localctx = _tracker.createInstance<Interval_leftopenContext>(_ctx, getState());
-  enterRule(_localctx, 116, CoCoDeLangParser::RuleInterval_leftopen);
+  enterRule(_localctx, 126, CoCoDeLangParser::RuleInterval_leftopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3681,11 +3960,11 @@ CoCoDeLangParser::Interval_leftopenContext* CoCoDeLangParser::interval_leftopen(
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(387);
+    setState(403);
     match(CoCoDeLangParser::LROUND);
-    setState(388);
+    setState(404);
     pair();
-    setState(389);
+    setState(405);
     match(CoCoDeLangParser::RSQUARE);
    
   }
@@ -3731,7 +4010,7 @@ antlrcpp::Any CoCoDeLangParser::Interval_rightopenContext::accept(tree::ParseTre
 
 CoCoDeLangParser::Interval_rightopenContext* CoCoDeLangParser::interval_rightopen() {
   Interval_rightopenContext *_localctx = _tracker.createInstance<Interval_rightopenContext>(_ctx, getState());
-  enterRule(_localctx, 118, CoCoDeLangParser::RuleInterval_rightopen);
+  enterRule(_localctx, 128, CoCoDeLangParser::RuleInterval_rightopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3742,11 +4021,11 @@ CoCoDeLangParser::Interval_rightopenContext* CoCoDeLangParser::interval_rightope
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(391);
+    setState(407);
     match(CoCoDeLangParser::LSQUARE);
-    setState(392);
+    setState(408);
     pair();
-    setState(393);
+    setState(409);
     match(CoCoDeLangParser::RROUND);
    
   }
@@ -3792,7 +4071,7 @@ antlrcpp::Any CoCoDeLangParser::Interval_fullopenContext::accept(tree::ParseTree
 
 CoCoDeLangParser::Interval_fullopenContext* CoCoDeLangParser::interval_fullopen() {
   Interval_fullopenContext *_localctx = _tracker.createInstance<Interval_fullopenContext>(_ctx, getState());
-  enterRule(_localctx, 120, CoCoDeLangParser::RuleInterval_fullopen);
+  enterRule(_localctx, 130, CoCoDeLangParser::RuleInterval_fullopen);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3803,11 +4082,11 @@ CoCoDeLangParser::Interval_fullopenContext* CoCoDeLangParser::interval_fullopen(
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(395);
+    setState(411);
     match(CoCoDeLangParser::LROUND);
-    setState(396);
+    setState(412);
     pair();
-    setState(397);
+    setState(413);
     match(CoCoDeLangParser::RROUND);
    
   }
@@ -3853,7 +4132,7 @@ antlrcpp::Any CoCoDeLangParser::Interval_closedContext::accept(tree::ParseTreeVi
 
 CoCoDeLangParser::Interval_closedContext* CoCoDeLangParser::interval_closed() {
   Interval_closedContext *_localctx = _tracker.createInstance<Interval_closedContext>(_ctx, getState());
-  enterRule(_localctx, 122, CoCoDeLangParser::RuleInterval_closed);
+  enterRule(_localctx, 132, CoCoDeLangParser::RuleInterval_closed);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3864,11 +4143,11 @@ CoCoDeLangParser::Interval_closedContext* CoCoDeLangParser::interval_closed() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(399);
+    setState(415);
     match(CoCoDeLangParser::LSQUARE);
-    setState(400);
+    setState(416);
     pair();
-    setState(401);
+    setState(417);
     match(CoCoDeLangParser::RSQUARE);
    
   }
@@ -3918,7 +4197,7 @@ antlrcpp::Any CoCoDeLangParser::IntervalContext::accept(tree::ParseTreeVisitor *
 
 CoCoDeLangParser::IntervalContext* CoCoDeLangParser::interval() {
   IntervalContext *_localctx = _tracker.createInstance<IntervalContext>(_ctx, getState());
-  enterRule(_localctx, 124, CoCoDeLangParser::RuleInterval);
+  enterRule(_localctx, 134, CoCoDeLangParser::RuleInterval);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3928,33 +4207,33 @@ CoCoDeLangParser::IntervalContext* CoCoDeLangParser::interval() {
     exitRule();
   });
   try {
-    setState(407);
+    setState(423);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 22, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(403);
+      setState(419);
       interval_closed();
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(404);
+      setState(420);
       interval_fullopen();
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(405);
+      setState(421);
       interval_leftopen();
       break;
     }
 
     case 4: {
       enterOuterAlt(_localctx, 4);
-      setState(406);
+      setState(422);
       interval_rightopen();
       break;
     }
@@ -4018,7 +4297,7 @@ antlrcpp::Any CoCoDeLangParser::ListContext::accept(tree::ParseTreeVisitor *visi
 
 CoCoDeLangParser::ListContext* CoCoDeLangParser::list() {
   ListContext *_localctx = _tracker.createInstance<ListContext>(_ctx, getState());
-  enterRule(_localctx, 126, CoCoDeLangParser::RuleList);
+  enterRule(_localctx, 136, CoCoDeLangParser::RuleList);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -4030,186 +4309,24 @@ CoCoDeLangParser::ListContext* CoCoDeLangParser::list() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(409);
-    match(CoCoDeLangParser::LCURLY);
-    setState(410);
-    value(0);
-    setState(415);
-    _errHandler->sync(this);
-    _la = _input->LA(1);
-    while (_la == CoCoDeLangParser::COMMA) {
-      setState(411);
-      match(CoCoDeLangParser::COMMA);
-      setState(412);
-      value(0);
-      setState(417);
-      _errHandler->sync(this);
-      _la = _input->LA(1);
-    }
-    setState(418);
-    match(CoCoDeLangParser::RCURLY);
-   
-  }
-  catch (RecognitionException &e) {
-    _errHandler->reportError(this, e);
-    _localctx->exception = std::current_exception();
-    _errHandler->recover(this, _localctx->exception);
-  }
-
-  return _localctx;
-}
-
-//----------------- Matrix_lineContext ------------------------------------------------------------------
-
-CoCoDeLangParser::Matrix_lineContext::Matrix_lineContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
-
-std::vector<CoCoDeLangParser::ValueContext *> CoCoDeLangParser::Matrix_lineContext::value() {
-  return getRuleContexts<CoCoDeLangParser::ValueContext>();
-}
-
-CoCoDeLangParser::ValueContext* CoCoDeLangParser::Matrix_lineContext::value(size_t i) {
-  return getRuleContext<CoCoDeLangParser::ValueContext>(i);
-}
-
-std::vector<tree::TerminalNode *> CoCoDeLangParser::Matrix_lineContext::COMMA() {
-  return getTokens(CoCoDeLangParser::COMMA);
-}
-
-tree::TerminalNode* CoCoDeLangParser::Matrix_lineContext::COMMA(size_t i) {
-  return getToken(CoCoDeLangParser::COMMA, i);
-}
-
-
-size_t CoCoDeLangParser::Matrix_lineContext::getRuleIndex() const {
-  return CoCoDeLangParser::RuleMatrix_line;
-}
-
-
-antlrcpp::Any CoCoDeLangParser::Matrix_lineContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
-    return parserVisitor->visitMatrix_line(this);
-  else
-    return visitor->visitChildren(this);
-}
-
-CoCoDeLangParser::Matrix_lineContext* CoCoDeLangParser::matrix_line() {
-  Matrix_lineContext *_localctx = _tracker.createInstance<Matrix_lineContext>(_ctx, getState());
-  enterRule(_localctx, 128, CoCoDeLangParser::RuleMatrix_line);
-  size_t _la = 0;
-
-#if __cplusplus > 201703L
-  auto onExit = finally([=, this] {
-#else
-  auto onExit = finally([=] {
-#endif
-    exitRule();
-  });
-  try {
-    enterOuterAlt(_localctx, 1);
-    setState(420);
-    value(0);
     setState(425);
+    match(CoCoDeLangParser::LCURLY);
+    setState(426);
+    value(0);
+    setState(431);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == CoCoDeLangParser::COMMA) {
-      setState(421);
-      match(CoCoDeLangParser::COMMA);
-      setState(422);
-      value(0);
       setState(427);
+      match(CoCoDeLangParser::COMMA);
+      setState(428);
+      value(0);
+      setState(433);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-   
-  }
-  catch (RecognitionException &e) {
-    _errHandler->reportError(this, e);
-    _localctx->exception = std::current_exception();
-    _errHandler->recover(this, _localctx->exception);
-  }
-
-  return _localctx;
-}
-
-//----------------- MatrixContext ------------------------------------------------------------------
-
-CoCoDeLangParser::MatrixContext::MatrixContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
-
-tree::TerminalNode* CoCoDeLangParser::MatrixContext::LSQUARE() {
-  return getToken(CoCoDeLangParser::LSQUARE, 0);
-}
-
-std::vector<CoCoDeLangParser::Matrix_lineContext *> CoCoDeLangParser::MatrixContext::matrix_line() {
-  return getRuleContexts<CoCoDeLangParser::Matrix_lineContext>();
-}
-
-CoCoDeLangParser::Matrix_lineContext* CoCoDeLangParser::MatrixContext::matrix_line(size_t i) {
-  return getRuleContext<CoCoDeLangParser::Matrix_lineContext>(i);
-}
-
-tree::TerminalNode* CoCoDeLangParser::MatrixContext::RSQUARE() {
-  return getToken(CoCoDeLangParser::RSQUARE, 0);
-}
-
-std::vector<tree::TerminalNode *> CoCoDeLangParser::MatrixContext::ENDST() {
-  return getTokens(CoCoDeLangParser::ENDST);
-}
-
-tree::TerminalNode* CoCoDeLangParser::MatrixContext::ENDST(size_t i) {
-  return getToken(CoCoDeLangParser::ENDST, i);
-}
-
-
-size_t CoCoDeLangParser::MatrixContext::getRuleIndex() const {
-  return CoCoDeLangParser::RuleMatrix;
-}
-
-
-antlrcpp::Any CoCoDeLangParser::MatrixContext::accept(tree::ParseTreeVisitor *visitor) {
-  if (auto parserVisitor = dynamic_cast<CoCoDeLangVisitor*>(visitor))
-    return parserVisitor->visitMatrix(this);
-  else
-    return visitor->visitChildren(this);
-}
-
-CoCoDeLangParser::MatrixContext* CoCoDeLangParser::matrix() {
-  MatrixContext *_localctx = _tracker.createInstance<MatrixContext>(_ctx, getState());
-  enterRule(_localctx, 130, CoCoDeLangParser::RuleMatrix);
-
-#if __cplusplus > 201703L
-  auto onExit = finally([=, this] {
-#else
-  auto onExit = finally([=] {
-#endif
-    exitRule();
-  });
-  try {
-    size_t alt;
-    enterOuterAlt(_localctx, 1);
-    setState(428);
-    match(CoCoDeLangParser::LSQUARE);
     setState(434);
-    _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 25, _ctx);
-    while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
-      if (alt == 1) {
-        setState(429);
-        matrix_line();
-        setState(430);
-        match(CoCoDeLangParser::ENDST); 
-      }
-      setState(436);
-      _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 25, _ctx);
-    }
-    setState(437);
-    matrix_line();
-    setState(438);
-    match(CoCoDeLangParser::RSQUARE);
+    match(CoCoDeLangParser::RCURLY);
    
   }
   catch (RecognitionException &e) {
@@ -4223,7 +4340,7 @@ CoCoDeLangParser::MatrixContext* CoCoDeLangParser::matrix() {
 
 bool CoCoDeLangParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicateIndex) {
   switch (ruleIndex) {
-    case 56: return valueSempred(dynamic_cast<ValueContext *>(context), predicateIndex);
+    case 61: return valueSempred(dynamic_cast<ValueContext *>(context), predicateIndex);
 
   default:
     break;
@@ -4233,7 +4350,7 @@ bool CoCoDeLangParser::sempred(RuleContext *context, size_t ruleIndex, size_t pr
 
 bool CoCoDeLangParser::valueSempred(ValueContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
-    case 0: return precpred(_ctx, 9);
+    case 0: return precpred(_ctx, 10);
 
   default:
     break;
@@ -4250,42 +4367,43 @@ atn::ATN CoCoDeLangParser::_atn;
 std::vector<uint16_t> CoCoDeLangParser::_serializedATN;
 
 std::vector<std::string> CoCoDeLangParser::_ruleNames = {
-  "basetype", "distribution_type", "frequency_entry", "frequency_table", 
-  "distribution_features", "distribution_definition", "distribution_declaration", 
-  "distribution", "distribution_instance", "controllability", "variable", 
-  "constant_definition", "constant", "declaration", "declarations", "bin_logic_op", 
-  "unary_logic_op", "unary_temp_op", "bin_temp_op", "relation_op", "bin_math_op", 
-  "number", "integerKW", "booleanKW", "realKW", "complexKW", "contractKW", 
-  "variableKW", "constantKW", "parametricKW", "controlledKW", "uncontrolledKW", 
-  "isKW", "inKW", "stochasticKW", "distributionKW", "componentKW", "inputKW", 
-  "outputKW", "propositionKW", "trueKW", "falseKW", "assumptionsKW", "guaranteesKW", 
-  "systemKW", "discreteKW", "continuousKW", "gaussianKW", "customKW", "muKW", 
-  "sigmaKW", "homogeneousKW", "frequenciesKW", "primed_ID", "minus_ID", 
-  "function", "value", "pair", "interval_leftopen", "interval_rightopen", 
-  "interval_fullopen", "interval_closed", "interval", "list", "matrix_line", 
-  "matrix"
+  "design_header", "design_body_element", "design", "basetype", "distribution_type", 
+  "distribution_param", "distribution_params", "vartype", "distribution_definition", 
+  "distribution_declaration", "distribution", "distribution_instance", "controllability", 
+  "variable", "constant_definition", "constant", "declaration", "declarations", 
+  "bin_logic_op", "unary_logic_op", "unary_temp_op", "bin_temp_op", "relation_op", 
+  "bin_math_op", "number", "integerKW", "booleanKW", "realKW", "complexKW", 
+  "contractKW", "variableKW", "constantKW", "parametricKW", "controlledKW", 
+  "uncontrolledKW", "isKW", "inKW", "stochasticKW", "distributionKW", "componentKW", 
+  "inputKW", "outputKW", "propositionKW", "trueKW", "falseKW", "assumptionsKW", 
+  "guaranteesKW", "systemKW", "discreteKW", "continuousKW", "gaussianKW", 
+  "customKW", "muKW", "sigmaKW", "homogeneousKW", "frequenciesKW", "primed_ID", 
+  "minus_ID", "function", "matrix_line", "matrix", "value", "pair", "interval_leftopen", 
+  "interval_rightopen", "interval_fullopen", "interval_closed", "interval", 
+  "list"
 };
 
 std::vector<std::string> CoCoDeLangParser::_literalNames = {
-  "", "'integer'", "'boolean'", "'real'", "'complex'", "'Contract'", "'variable'", 
+  "", "'Integer'", "'Boolean'", "'Real'", "'Complex'", "'Contract'", "'variable'", 
   "'constant'", "'parametric'", "'controlled'", "'uncontrolled'", "'is'", 
   "'in'", "'stochastic'", "'distribution'", "'Component'", "'input'", "'output'", 
   "'proposition'", "'true'", "'false'", "'Assumptions'", "'Guarantees'", 
   "'System'", "'discrete'", "'continuous'", "'gaussian'", "'custom'", "'mu'", 
-  "'sigma'", "'homogeneous'", "'frequencies'", "'''", "", "", "", "", "", 
-  "", "", "", "", "'->'", "'<->'", "':'", "'G'", "'F'", "'X'", "'U'", "'R'", 
-  "'='", "'!='", "'<'", "'<='", "'>'", "'>='", "'+'", "'-'", "'*'", "'/'", 
-  "'('", "')'", "'['", "']'", "'{'", "'}'", "','", "'.'", "';'"
+  "'sigma'", "'homogeneous'", "'frequencies'", "'''", "", "", "", "'Design'", 
+  "", "", "", "", "", "", "'->'", "'<->'", "':'", "'G'", "'F'", "'X'", "'U'", 
+  "'R'", "'='", "'!='", "'<'", "'<='", "'>'", "'>='", "'+'", "'-'", "'*'", 
+  "'/'", "'^'", "'%'", "'('", "')'", "'['", "']'", "'{'", "'}'", "','", 
+  "'.'", "';'"
 };
 
 std::vector<std::string> CoCoDeLangParser::_symbolicNames = {
   "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", 
   "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "ID", "INTEGER", 
-  "DECIMAL", "WS", "LINE_COMMENT", "MULTILINE_COMMENT", "AND", "OR", "NOT", 
-  "IMPLIES", "IFF", "COLON", "ALWAYS", "EVENTUALLY", "NEXT", "UNTIL", "RELEASE", 
-  "EQ", "NEQ", "LT", "LE", "GT", "GE", "PLUS", "MINUS", "TIMES", "DIVIDE", 
-  "LROUND", "RROUND", "LSQUARE", "RSQUARE", "LCURLY", "RCURLY", "COMMA", 
-  "DOT", "ENDST"
+  "DECIMAL", "DesignKW", "WS", "LINE_COMMENT", "MULTILINE_COMMENT", "AND", 
+  "OR", "NOT", "IMPLIES", "IFF", "COLON", "ALWAYS", "EVENTUALLY", "NEXT", 
+  "UNTIL", "RELEASE", "EQ", "NEQ", "LT", "LE", "GT", "GE", "PLUS", "MINUS", 
+  "TIMES", "DIVIDE", "POWER", "MOD", "LROUND", "RROUND", "LSQUARE", "RSQUARE", 
+  "LCURLY", "RCURLY", "COMMA", "DOT", "ENDST"
 };
 
 dfa::Vocabulary CoCoDeLangParser::_vocabulary(_literalNames, _symbolicNames);
@@ -4308,7 +4426,7 @@ CoCoDeLangParser::Initializer::Initializer() {
 
   static const uint16_t serializedATNSegment0[] = {
     0x3, 0x608b, 0xa72a, 0x8133, 0xb9ed, 0x417c, 0x3be7, 0x7786, 0x5964, 
-       0x3, 0x46, 0x1bb, 0x4, 0x2, 0x9, 0x2, 0x4, 0x3, 0x9, 0x3, 0x4, 0x4, 
+       0x3, 0x49, 0x1b7, 0x4, 0x2, 0x9, 0x2, 0x4, 0x3, 0x9, 0x3, 0x4, 0x4, 
        0x9, 0x4, 0x4, 0x5, 0x9, 0x5, 0x4, 0x6, 0x9, 0x6, 0x4, 0x7, 0x9, 
        0x7, 0x4, 0x8, 0x9, 0x8, 0x4, 0x9, 0x9, 0x9, 0x4, 0xa, 0x9, 0xa, 
        0x4, 0xb, 0x9, 0xb, 0x4, 0xc, 0x9, 0xc, 0x4, 0xd, 0x9, 0xd, 0x4, 
@@ -4329,276 +4447,271 @@ CoCoDeLangParser::Initializer::Initializer() {
        0x9, 0x38, 0x4, 0x39, 0x9, 0x39, 0x4, 0x3a, 0x9, 0x3a, 0x4, 0x3b, 
        0x9, 0x3b, 0x4, 0x3c, 0x9, 0x3c, 0x4, 0x3d, 0x9, 0x3d, 0x4, 0x3e, 
        0x9, 0x3e, 0x4, 0x3f, 0x9, 0x3f, 0x4, 0x40, 0x9, 0x40, 0x4, 0x41, 
-       0x9, 0x41, 0x4, 0x42, 0x9, 0x42, 0x4, 0x43, 0x9, 0x43, 0x3, 0x2, 
-       0x3, 0x2, 0x3, 0x2, 0x3, 0x2, 0x5, 0x2, 0x8b, 0xa, 0x2, 0x3, 0x3, 
-       0x3, 0x3, 0x5, 0x3, 0x8f, 0xa, 0x3, 0x3, 0x3, 0x3, 0x3, 0x5, 0x3, 
-       0x93, 0xa, 0x3, 0x5, 0x3, 0x95, 0xa, 0x3, 0x3, 0x4, 0x3, 0x4, 0x3, 
-       0x4, 0x3, 0x4, 0x3, 0x5, 0x3, 0x5, 0x6, 0x5, 0x9d, 0xa, 0x5, 0xd, 
-       0x5, 0xe, 0x5, 0x9e, 0x3, 0x5, 0x3, 0x5, 0x3, 0x6, 0x3, 0x6, 0x3, 
-       0x6, 0x3, 0x6, 0x3, 0x6, 0x5, 0x6, 0xa8, 0xa, 0x6, 0x3, 0x6, 0x3, 
-       0x6, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 0x5, 0x6, 0xaf, 0xa, 0x6, 0x3, 
-       0x6, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 
-       0x3, 0x6, 0x3, 0x6, 0x5, 0x6, 0xba, 0xa, 0x6, 0x3, 0x6, 0x3, 0x6, 
-       0x3, 0x6, 0x5, 0x6, 0xbf, 0xa, 0x6, 0x3, 0x7, 0x3, 0x7, 0x3, 0x7, 
-       0x3, 0x7, 0x3, 0x8, 0x3, 0x8, 0x3, 0x8, 0x3, 0x9, 0x3, 0x9, 0x3, 
-       0x9, 0x3, 0x9, 0x3, 0x9, 0x3, 0xa, 0x3, 0xa, 0x5, 0xa, 0xcf, 0xa, 
-       0xa, 0x3, 0xb, 0x3, 0xb, 0x5, 0xb, 0xd3, 0xa, 0xb, 0x3, 0xc, 0x3, 
-       0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 
-       0x3, 0xc, 0x5, 0xc, 0xde, 0xa, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 
-       0x3, 0xc, 0x3, 0xc, 0x5, 0xc, 0xe5, 0xa, 0xc, 0x3, 0xc, 0x3, 0xc, 
-       0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x5, 0xc, 0xec, 0xa, 0xc, 0x3, 0xc, 
-       0x3, 0xc, 0x3, 0xd, 0x3, 0xd, 0x3, 0xd, 0x5, 0xd, 0xf3, 0xa, 0xd, 
-       0x3, 0xe, 0x3, 0xe, 0x3, 0xe, 0x3, 0xe, 0x3, 0xe, 0x3, 0xe, 0x3, 
-       0xe, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x5, 0xf, 0xff, 0xa, 0xf, 0x3, 
-       0x10, 0x7, 0x10, 0x102, 0xa, 0x10, 0xc, 0x10, 0xe, 0x10, 0x105, 0xb, 
-       0x10, 0x3, 0x11, 0x3, 0x11, 0x3, 0x12, 0x3, 0x12, 0x3, 0x13, 0x3, 
-       0x13, 0x3, 0x14, 0x3, 0x14, 0x3, 0x15, 0x3, 0x15, 0x3, 0x16, 0x3, 
-       0x16, 0x3, 0x17, 0x5, 0x17, 0x114, 0xa, 0x17, 0x3, 0x17, 0x3, 0x17, 
-       0x5, 0x17, 0x118, 0xa, 0x17, 0x3, 0x18, 0x3, 0x18, 0x3, 0x19, 0x3, 
-       0x19, 0x3, 0x1a, 0x3, 0x1a, 0x3, 0x1b, 0x3, 0x1b, 0x3, 0x1c, 0x3, 
-       0x1c, 0x3, 0x1d, 0x3, 0x1d, 0x3, 0x1e, 0x3, 0x1e, 0x3, 0x1f, 0x3, 
-       0x1f, 0x3, 0x20, 0x3, 0x20, 0x3, 0x21, 0x3, 0x21, 0x3, 0x22, 0x3, 
-       0x22, 0x3, 0x23, 0x3, 0x23, 0x3, 0x24, 0x3, 0x24, 0x3, 0x25, 0x3, 
-       0x25, 0x3, 0x26, 0x3, 0x26, 0x3, 0x27, 0x3, 0x27, 0x3, 0x28, 0x3, 
-       0x28, 0x3, 0x29, 0x3, 0x29, 0x3, 0x2a, 0x3, 0x2a, 0x3, 0x2b, 0x3, 
-       0x2b, 0x3, 0x2c, 0x3, 0x2c, 0x3, 0x2d, 0x3, 0x2d, 0x3, 0x2e, 0x3, 
-       0x2e, 0x3, 0x2f, 0x3, 0x2f, 0x3, 0x30, 0x3, 0x30, 0x3, 0x31, 0x3, 
-       0x31, 0x3, 0x32, 0x3, 0x32, 0x3, 0x33, 0x3, 0x33, 0x3, 0x34, 0x3, 
-       0x34, 0x3, 0x35, 0x3, 0x35, 0x3, 0x36, 0x3, 0x36, 0x3, 0x37, 0x3, 
-       0x37, 0x3, 0x37, 0x3, 0x38, 0x3, 0x38, 0x3, 0x38, 0x3, 0x39, 0x3, 
-       0x39, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 
-       0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 
-       0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x7, 0x3a, 0x16e, 0xa, 0x3a, 0xc, 0x3a, 
-       0xe, 0x3a, 0x171, 0xb, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 
-       0x3a, 0x5, 0x3a, 0x177, 0xa, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 
-       0x3, 0x3a, 0x7, 0x3a, 0x17d, 0xa, 0x3a, 0xc, 0x3a, 0xe, 0x3a, 0x180, 
-       0xb, 0x3a, 0x3, 0x3b, 0x3, 0x3b, 0x3, 0x3b, 0x3, 0x3b, 0x3, 0x3c, 
-       0x3, 0x3c, 0x3, 0x3c, 0x3, 0x3c, 0x3, 0x3d, 0x3, 0x3d, 0x3, 0x3d, 
-       0x3, 0x3d, 0x3, 0x3e, 0x3, 0x3e, 0x3, 0x3e, 0x3, 0x3e, 0x3, 0x3f, 
-       0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x40, 0x3, 0x40, 0x3, 0x40, 
-       0x3, 0x40, 0x5, 0x40, 0x19a, 0xa, 0x40, 0x3, 0x41, 0x3, 0x41, 0x3, 
-       0x41, 0x3, 0x41, 0x7, 0x41, 0x1a0, 0xa, 0x41, 0xc, 0x41, 0xe, 0x41, 
-       0x1a3, 0xb, 0x41, 0x3, 0x41, 0x3, 0x41, 0x3, 0x42, 0x3, 0x42, 0x3, 
-       0x42, 0x7, 0x42, 0x1aa, 0xa, 0x42, 0xc, 0x42, 0xe, 0x42, 0x1ad, 0xb, 
-       0x42, 0x3, 0x43, 0x3, 0x43, 0x3, 0x43, 0x3, 0x43, 0x7, 0x43, 0x1b3, 
-       0xa, 0x43, 0xc, 0x43, 0xe, 0x43, 0x1b6, 0xb, 0x43, 0x3, 0x43, 0x3, 
-       0x43, 0x3, 0x43, 0x3, 0x43, 0x2, 0x3, 0x72, 0x44, 0x2, 0x4, 0x6, 
-       0x8, 0xa, 0xc, 0xe, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e, 
-       0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 
-       0x36, 0x38, 0x3a, 0x3c, 0x3e, 0x40, 0x42, 0x44, 0x46, 0x48, 0x4a, 
-       0x4c, 0x4e, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5a, 0x5c, 0x5e, 0x60, 
-       0x62, 0x64, 0x66, 0x68, 0x6a, 0x6c, 0x6e, 0x70, 0x72, 0x74, 0x76, 
-       0x78, 0x7a, 0x7c, 0x7e, 0x80, 0x82, 0x84, 0x2, 0x7, 0x4, 0x2, 0x29, 
-       0x2a, 0x2c, 0x2d, 0x3, 0x2, 0x2f, 0x31, 0x3, 0x2, 0x32, 0x33, 0x3, 
-       0x2, 0x34, 0x39, 0x3, 0x2, 0x3a, 0x3d, 0x2, 0x19f, 0x2, 0x8a, 0x3, 
-       0x2, 0x2, 0x2, 0x4, 0x94, 0x3, 0x2, 0x2, 0x2, 0x6, 0x96, 0x3, 0x2, 
-       0x2, 0x2, 0x8, 0x9a, 0x3, 0x2, 0x2, 0x2, 0xa, 0xbe, 0x3, 0x2, 0x2, 
-       0x2, 0xc, 0xc0, 0x3, 0x2, 0x2, 0x2, 0xe, 0xc4, 0x3, 0x2, 0x2, 0x2, 
-       0x10, 0xc7, 0x3, 0x2, 0x2, 0x2, 0x12, 0xce, 0x3, 0x2, 0x2, 0x2, 0x14, 
-       0xd2, 0x3, 0x2, 0x2, 0x2, 0x16, 0xd4, 0x3, 0x2, 0x2, 0x2, 0x18, 0xf2, 
-       0x3, 0x2, 0x2, 0x2, 0x1a, 0xf4, 0x3, 0x2, 0x2, 0x2, 0x1c, 0xfe, 0x3, 
-       0x2, 0x2, 0x2, 0x1e, 0x103, 0x3, 0x2, 0x2, 0x2, 0x20, 0x106, 0x3, 
-       0x2, 0x2, 0x2, 0x22, 0x108, 0x3, 0x2, 0x2, 0x2, 0x24, 0x10a, 0x3, 
-       0x2, 0x2, 0x2, 0x26, 0x10c, 0x3, 0x2, 0x2, 0x2, 0x28, 0x10e, 0x3, 
-       0x2, 0x2, 0x2, 0x2a, 0x110, 0x3, 0x2, 0x2, 0x2, 0x2c, 0x113, 0x3, 
-       0x2, 0x2, 0x2, 0x2e, 0x119, 0x3, 0x2, 0x2, 0x2, 0x30, 0x11b, 0x3, 
-       0x2, 0x2, 0x2, 0x32, 0x11d, 0x3, 0x2, 0x2, 0x2, 0x34, 0x11f, 0x3, 
-       0x2, 0x2, 0x2, 0x36, 0x121, 0x3, 0x2, 0x2, 0x2, 0x38, 0x123, 0x3, 
-       0x2, 0x2, 0x2, 0x3a, 0x125, 0x3, 0x2, 0x2, 0x2, 0x3c, 0x127, 0x3, 
-       0x2, 0x2, 0x2, 0x3e, 0x129, 0x3, 0x2, 0x2, 0x2, 0x40, 0x12b, 0x3, 
-       0x2, 0x2, 0x2, 0x42, 0x12d, 0x3, 0x2, 0x2, 0x2, 0x44, 0x12f, 0x3, 
-       0x2, 0x2, 0x2, 0x46, 0x131, 0x3, 0x2, 0x2, 0x2, 0x48, 0x133, 0x3, 
-       0x2, 0x2, 0x2, 0x4a, 0x135, 0x3, 0x2, 0x2, 0x2, 0x4c, 0x137, 0x3, 
-       0x2, 0x2, 0x2, 0x4e, 0x139, 0x3, 0x2, 0x2, 0x2, 0x50, 0x13b, 0x3, 
-       0x2, 0x2, 0x2, 0x52, 0x13d, 0x3, 0x2, 0x2, 0x2, 0x54, 0x13f, 0x3, 
-       0x2, 0x2, 0x2, 0x56, 0x141, 0x3, 0x2, 0x2, 0x2, 0x58, 0x143, 0x3, 
-       0x2, 0x2, 0x2, 0x5a, 0x145, 0x3, 0x2, 0x2, 0x2, 0x5c, 0x147, 0x3, 
-       0x2, 0x2, 0x2, 0x5e, 0x149, 0x3, 0x2, 0x2, 0x2, 0x60, 0x14b, 0x3, 
-       0x2, 0x2, 0x2, 0x62, 0x14d, 0x3, 0x2, 0x2, 0x2, 0x64, 0x14f, 0x3, 
-       0x2, 0x2, 0x2, 0x66, 0x151, 0x3, 0x2, 0x2, 0x2, 0x68, 0x153, 0x3, 
-       0x2, 0x2, 0x2, 0x6a, 0x155, 0x3, 0x2, 0x2, 0x2, 0x6c, 0x157, 0x3, 
-       0x2, 0x2, 0x2, 0x6e, 0x15a, 0x3, 0x2, 0x2, 0x2, 0x70, 0x15d, 0x3, 
-       0x2, 0x2, 0x2, 0x72, 0x176, 0x3, 0x2, 0x2, 0x2, 0x74, 0x181, 0x3, 
-       0x2, 0x2, 0x2, 0x76, 0x185, 0x3, 0x2, 0x2, 0x2, 0x78, 0x189, 0x3, 
-       0x2, 0x2, 0x2, 0x7a, 0x18d, 0x3, 0x2, 0x2, 0x2, 0x7c, 0x191, 0x3, 
-       0x2, 0x2, 0x2, 0x7e, 0x199, 0x3, 0x2, 0x2, 0x2, 0x80, 0x19b, 0x3, 
-       0x2, 0x2, 0x2, 0x82, 0x1a6, 0x3, 0x2, 0x2, 0x2, 0x84, 0x1ae, 0x3, 
-       0x2, 0x2, 0x2, 0x86, 0x8b, 0x5, 0x2e, 0x18, 0x2, 0x87, 0x8b, 0x5, 
-       0x32, 0x1a, 0x2, 0x88, 0x8b, 0x5, 0x30, 0x19, 0x2, 0x89, 0x8b, 0x5, 
-       0x34, 0x1b, 0x2, 0x8a, 0x86, 0x3, 0x2, 0x2, 0x2, 0x8a, 0x87, 0x3, 
-       0x2, 0x2, 0x2, 0x8a, 0x88, 0x3, 0x2, 0x2, 0x2, 0x8a, 0x89, 0x3, 0x2, 
-       0x2, 0x2, 0x8b, 0x3, 0x3, 0x2, 0x2, 0x2, 0x8c, 0x8e, 0x5, 0x2e, 0x18, 
-       0x2, 0x8d, 0x8f, 0x5, 0x7e, 0x40, 0x2, 0x8e, 0x8d, 0x3, 0x2, 0x2, 
-       0x2, 0x8e, 0x8f, 0x3, 0x2, 0x2, 0x2, 0x8f, 0x95, 0x3, 0x2, 0x2, 0x2, 
-       0x90, 0x92, 0x5, 0x32, 0x1a, 0x2, 0x91, 0x93, 0x5, 0x7e, 0x40, 0x2, 
-       0x92, 0x91, 0x3, 0x2, 0x2, 0x2, 0x92, 0x93, 0x3, 0x2, 0x2, 0x2, 0x93, 
-       0x95, 0x3, 0x2, 0x2, 0x2, 0x94, 0x8c, 0x3, 0x2, 0x2, 0x2, 0x94, 0x90, 
-       0x3, 0x2, 0x2, 0x2, 0x95, 0x5, 0x3, 0x2, 0x2, 0x2, 0x96, 0x97, 0x5, 
-       0x72, 0x3a, 0x2, 0x97, 0x98, 0x7, 0x2e, 0x2, 0x2, 0x98, 0x99, 0x5, 
-       0x2c, 0x17, 0x2, 0x99, 0x7, 0x3, 0x2, 0x2, 0x2, 0x9a, 0x9c, 0x7, 
-       0x40, 0x2, 0x2, 0x9b, 0x9d, 0x5, 0x6, 0x4, 0x2, 0x9c, 0x9b, 0x3, 
-       0x2, 0x2, 0x2, 0x9d, 0x9e, 0x3, 0x2, 0x2, 0x2, 0x9e, 0x9c, 0x3, 0x2, 
-       0x2, 0x2, 0x9e, 0x9f, 0x3, 0x2, 0x2, 0x2, 0x9f, 0xa0, 0x3, 0x2, 0x2, 
-       0x2, 0xa0, 0xa1, 0x7, 0x41, 0x2, 0x2, 0xa1, 0x9, 0x3, 0x2, 0x2, 0x2, 
-       0xa2, 0xa3, 0x5, 0x60, 0x31, 0x2, 0xa3, 0xa7, 0x7, 0x3e, 0x2, 0x2, 
-       0xa4, 0xa5, 0x5, 0x64, 0x33, 0x2, 0xa5, 0xa6, 0x7, 0x34, 0x2, 0x2, 
-       0xa6, 0xa8, 0x3, 0x2, 0x2, 0x2, 0xa7, 0xa4, 0x3, 0x2, 0x2, 0x2, 0xa7, 
-       0xa8, 0x3, 0x2, 0x2, 0x2, 0xa8, 0xa9, 0x3, 0x2, 0x2, 0x2, 0xa9, 0xaa, 
-       0x5, 0x72, 0x3a, 0x2, 0xaa, 0xae, 0x7, 0x44, 0x2, 0x2, 0xab, 0xac, 
-       0x5, 0x66, 0x34, 0x2, 0xac, 0xad, 0x7, 0x34, 0x2, 0x2, 0xad, 0xaf, 
-       0x3, 0x2, 0x2, 0x2, 0xae, 0xab, 0x3, 0x2, 0x2, 0x2, 0xae, 0xaf, 0x3, 
-       0x2, 0x2, 0x2, 0xaf, 0xb0, 0x3, 0x2, 0x2, 0x2, 0xb0, 0xb1, 0x5, 0x72, 
-       0x3a, 0x2, 0xb1, 0xb2, 0x7, 0x3f, 0x2, 0x2, 0xb2, 0xbf, 0x3, 0x2, 
-       0x2, 0x2, 0xb3, 0xbf, 0x5, 0x68, 0x35, 0x2, 0xb4, 0xb5, 0x5, 0x62, 
-       0x32, 0x2, 0xb5, 0xb9, 0x7, 0x3e, 0x2, 0x2, 0xb6, 0xb7, 0x5, 0x6a, 
-       0x36, 0x2, 0xb7, 0xb8, 0x7, 0x34, 0x2, 0x2, 0xb8, 0xba, 0x3, 0x2, 
-       0x2, 0x2, 0xb9, 0xb6, 0x3, 0x2, 0x2, 0x2, 0xb9, 0xba, 0x3, 0x2, 0x2, 
-       0x2, 0xba, 0xbb, 0x3, 0x2, 0x2, 0x2, 0xbb, 0xbc, 0x5, 0x84, 0x43, 
-       0x2, 0xbc, 0xbd, 0x7, 0x3f, 0x2, 0x2, 0xbd, 0xbf, 0x3, 0x2, 0x2, 
-       0x2, 0xbe, 0xa2, 0x3, 0x2, 0x2, 0x2, 0xbe, 0xb3, 0x3, 0x2, 0x2, 0x2, 
-       0xbe, 0xb4, 0x3, 0x2, 0x2, 0x2, 0xbf, 0xb, 0x3, 0x2, 0x2, 0x2, 0xc0, 
-       0xc1, 0x5, 0x4, 0x3, 0x2, 0xc1, 0xc2, 0x7, 0x44, 0x2, 0x2, 0xc2, 
-       0xc3, 0x5, 0xa, 0x6, 0x2, 0xc3, 0xd, 0x3, 0x2, 0x2, 0x2, 0xc4, 0xc5, 
-       0x5, 0x48, 0x25, 0x2, 0xc5, 0xc6, 0x7, 0x23, 0x2, 0x2, 0xc6, 0xf, 
-       0x3, 0x2, 0x2, 0x2, 0xc7, 0xc8, 0x5, 0xe, 0x8, 0x2, 0xc8, 0xc9, 0x5, 
-       0x42, 0x22, 0x2, 0xc9, 0xca, 0x5, 0xc, 0x7, 0x2, 0xca, 0xcb, 0x7, 
-       0x46, 0x2, 0x2, 0xcb, 0x11, 0x3, 0x2, 0x2, 0x2, 0xcc, 0xcf, 0x7, 
-       0x23, 0x2, 0x2, 0xcd, 0xcf, 0x5, 0xc, 0x7, 0x2, 0xce, 0xcc, 0x3, 
-       0x2, 0x2, 0x2, 0xce, 0xcd, 0x3, 0x2, 0x2, 0x2, 0xcf, 0x13, 0x3, 0x2, 
-       0x2, 0x2, 0xd0, 0xd3, 0x5, 0x3e, 0x20, 0x2, 0xd1, 0xd3, 0x5, 0x40, 
-       0x21, 0x2, 0xd2, 0xd0, 0x3, 0x2, 0x2, 0x2, 0xd2, 0xd1, 0x3, 0x2, 
-       0x2, 0x2, 0xd3, 0x15, 0x3, 0x2, 0x2, 0x2, 0xd4, 0xd5, 0x5, 0x14, 
-       0xb, 0x2, 0xd5, 0xd6, 0x5, 0x38, 0x1d, 0x2, 0xd6, 0xd7, 0x7, 0x23, 
-       0x2, 0x2, 0xd7, 0xd8, 0x5, 0x42, 0x22, 0x2, 0xd8, 0xd9, 0x7, 0x2e, 
-       0x2, 0x2, 0xd9, 0xdd, 0x5, 0x2, 0x2, 0x2, 0xda, 0xdb, 0x5, 0x44, 
-       0x23, 0x2, 0xdb, 0xdc, 0x5, 0x7e, 0x40, 0x2, 0xdc, 0xde, 0x3, 0x2, 
-       0x2, 0x2, 0xdd, 0xda, 0x3, 0x2, 0x2, 0x2, 0xdd, 0xde, 0x3, 0x2, 0x2, 
-       0x2, 0xde, 0xe4, 0x3, 0x2, 0x2, 0x2, 0xdf, 0xe0, 0x7, 0x44, 0x2, 
-       0x2, 0xe0, 0xe1, 0x5, 0x46, 0x24, 0x2, 0xe1, 0xe2, 0x7, 0x2e, 0x2, 
-       0x2, 0xe2, 0xe3, 0x5, 0x12, 0xa, 0x2, 0xe3, 0xe5, 0x3, 0x2, 0x2, 
-       0x2, 0xe4, 0xdf, 0x3, 0x2, 0x2, 0x2, 0xe4, 0xe5, 0x3, 0x2, 0x2, 0x2, 
-       0xe5, 0xeb, 0x3, 0x2, 0x2, 0x2, 0xe6, 0xe7, 0x7, 0x44, 0x2, 0x2, 
-       0xe7, 0xe8, 0x5, 0x3c, 0x1f, 0x2, 0xe8, 0xe9, 0x7, 0x2e, 0x2, 0x2, 
-       0xe9, 0xea, 0x5, 0x7e, 0x40, 0x2, 0xea, 0xec, 0x3, 0x2, 0x2, 0x2, 
-       0xeb, 0xe6, 0x3, 0x2, 0x2, 0x2, 0xeb, 0xec, 0x3, 0x2, 0x2, 0x2, 0xec, 
-       0xed, 0x3, 0x2, 0x2, 0x2, 0xed, 0xee, 0x7, 0x46, 0x2, 0x2, 0xee, 
-       0x17, 0x3, 0x2, 0x2, 0x2, 0xef, 0xf3, 0x5, 0x2c, 0x17, 0x2, 0xf0, 
-       0xf3, 0x5, 0x52, 0x2a, 0x2, 0xf1, 0xf3, 0x5, 0x54, 0x2b, 0x2, 0xf2, 
-       0xef, 0x3, 0x2, 0x2, 0x2, 0xf2, 0xf0, 0x3, 0x2, 0x2, 0x2, 0xf2, 0xf1, 
-       0x3, 0x2, 0x2, 0x2, 0xf3, 0x19, 0x3, 0x2, 0x2, 0x2, 0xf4, 0xf5, 0x5, 
-       0x3a, 0x1e, 0x2, 0xf5, 0xf6, 0x5, 0x2, 0x2, 0x2, 0xf6, 0xf7, 0x7, 
-       0x23, 0x2, 0x2, 0xf7, 0xf8, 0x7, 0x2e, 0x2, 0x2, 0xf8, 0xf9, 0x5, 
-       0x18, 0xd, 0x2, 0xf9, 0xfa, 0x7, 0x46, 0x2, 0x2, 0xfa, 0x1b, 0x3, 
-       0x2, 0x2, 0x2, 0xfb, 0xff, 0x5, 0x1a, 0xe, 0x2, 0xfc, 0xff, 0x5, 
-       0x16, 0xc, 0x2, 0xfd, 0xff, 0x5, 0x10, 0x9, 0x2, 0xfe, 0xfb, 0x3, 
-       0x2, 0x2, 0x2, 0xfe, 0xfc, 0x3, 0x2, 0x2, 0x2, 0xfe, 0xfd, 0x3, 0x2, 
-       0x2, 0x2, 0xff, 0x1d, 0x3, 0x2, 0x2, 0x2, 0x100, 0x102, 0x5, 0x1c, 
-       0xf, 0x2, 0x101, 0x100, 0x3, 0x2, 0x2, 0x2, 0x102, 0x105, 0x3, 0x2, 
-       0x2, 0x2, 0x103, 0x101, 0x3, 0x2, 0x2, 0x2, 0x103, 0x104, 0x3, 0x2, 
-       0x2, 0x2, 0x104, 0x1f, 0x3, 0x2, 0x2, 0x2, 0x105, 0x103, 0x3, 0x2, 
-       0x2, 0x2, 0x106, 0x107, 0x9, 0x2, 0x2, 0x2, 0x107, 0x21, 0x3, 0x2, 
-       0x2, 0x2, 0x108, 0x109, 0x7, 0x2b, 0x2, 0x2, 0x109, 0x23, 0x3, 0x2, 
-       0x2, 0x2, 0x10a, 0x10b, 0x9, 0x3, 0x2, 0x2, 0x10b, 0x25, 0x3, 0x2, 
-       0x2, 0x2, 0x10c, 0x10d, 0x9, 0x4, 0x2, 0x2, 0x10d, 0x27, 0x3, 0x2, 
-       0x2, 0x2, 0x10e, 0x10f, 0x9, 0x5, 0x2, 0x2, 0x10f, 0x29, 0x3, 0x2, 
-       0x2, 0x2, 0x110, 0x111, 0x9, 0x6, 0x2, 0x2, 0x111, 0x2b, 0x3, 0x2, 
-       0x2, 0x2, 0x112, 0x114, 0x7, 0x3b, 0x2, 0x2, 0x113, 0x112, 0x3, 0x2, 
-       0x2, 0x2, 0x113, 0x114, 0x3, 0x2, 0x2, 0x2, 0x114, 0x115, 0x3, 0x2, 
-       0x2, 0x2, 0x115, 0x117, 0x7, 0x24, 0x2, 0x2, 0x116, 0x118, 0x7, 0x25, 
-       0x2, 0x2, 0x117, 0x116, 0x3, 0x2, 0x2, 0x2, 0x117, 0x118, 0x3, 0x2, 
-       0x2, 0x2, 0x118, 0x2d, 0x3, 0x2, 0x2, 0x2, 0x119, 0x11a, 0x7, 0x3, 
-       0x2, 0x2, 0x11a, 0x2f, 0x3, 0x2, 0x2, 0x2, 0x11b, 0x11c, 0x7, 0x4, 
-       0x2, 0x2, 0x11c, 0x31, 0x3, 0x2, 0x2, 0x2, 0x11d, 0x11e, 0x7, 0x5, 
-       0x2, 0x2, 0x11e, 0x33, 0x3, 0x2, 0x2, 0x2, 0x11f, 0x120, 0x7, 0x6, 
-       0x2, 0x2, 0x120, 0x35, 0x3, 0x2, 0x2, 0x2, 0x121, 0x122, 0x7, 0x7, 
-       0x2, 0x2, 0x122, 0x37, 0x3, 0x2, 0x2, 0x2, 0x123, 0x124, 0x7, 0x8, 
-       0x2, 0x2, 0x124, 0x39, 0x3, 0x2, 0x2, 0x2, 0x125, 0x126, 0x7, 0x9, 
-       0x2, 0x2, 0x126, 0x3b, 0x3, 0x2, 0x2, 0x2, 0x127, 0x128, 0x7, 0xa, 
-       0x2, 0x2, 0x128, 0x3d, 0x3, 0x2, 0x2, 0x2, 0x129, 0x12a, 0x7, 0xb, 
-       0x2, 0x2, 0x12a, 0x3f, 0x3, 0x2, 0x2, 0x2, 0x12b, 0x12c, 0x7, 0xc, 
-       0x2, 0x2, 0x12c, 0x41, 0x3, 0x2, 0x2, 0x2, 0x12d, 0x12e, 0x7, 0xd, 
-       0x2, 0x2, 0x12e, 0x43, 0x3, 0x2, 0x2, 0x2, 0x12f, 0x130, 0x7, 0xe, 
-       0x2, 0x2, 0x130, 0x45, 0x3, 0x2, 0x2, 0x2, 0x131, 0x132, 0x7, 0xf, 
-       0x2, 0x2, 0x132, 0x47, 0x3, 0x2, 0x2, 0x2, 0x133, 0x134, 0x7, 0x10, 
-       0x2, 0x2, 0x134, 0x49, 0x3, 0x2, 0x2, 0x2, 0x135, 0x136, 0x7, 0x11, 
-       0x2, 0x2, 0x136, 0x4b, 0x3, 0x2, 0x2, 0x2, 0x137, 0x138, 0x7, 0x12, 
-       0x2, 0x2, 0x138, 0x4d, 0x3, 0x2, 0x2, 0x2, 0x139, 0x13a, 0x7, 0x13, 
-       0x2, 0x2, 0x13a, 0x4f, 0x3, 0x2, 0x2, 0x2, 0x13b, 0x13c, 0x7, 0x14, 
-       0x2, 0x2, 0x13c, 0x51, 0x3, 0x2, 0x2, 0x2, 0x13d, 0x13e, 0x7, 0x15, 
-       0x2, 0x2, 0x13e, 0x53, 0x3, 0x2, 0x2, 0x2, 0x13f, 0x140, 0x7, 0x16, 
-       0x2, 0x2, 0x140, 0x55, 0x3, 0x2, 0x2, 0x2, 0x141, 0x142, 0x7, 0x17, 
-       0x2, 0x2, 0x142, 0x57, 0x3, 0x2, 0x2, 0x2, 0x143, 0x144, 0x7, 0x18, 
-       0x2, 0x2, 0x144, 0x59, 0x3, 0x2, 0x2, 0x2, 0x145, 0x146, 0x7, 0x19, 
-       0x2, 0x2, 0x146, 0x5b, 0x3, 0x2, 0x2, 0x2, 0x147, 0x148, 0x7, 0x1a, 
-       0x2, 0x2, 0x148, 0x5d, 0x3, 0x2, 0x2, 0x2, 0x149, 0x14a, 0x7, 0x1b, 
-       0x2, 0x2, 0x14a, 0x5f, 0x3, 0x2, 0x2, 0x2, 0x14b, 0x14c, 0x7, 0x1c, 
-       0x2, 0x2, 0x14c, 0x61, 0x3, 0x2, 0x2, 0x2, 0x14d, 0x14e, 0x7, 0x1d, 
-       0x2, 0x2, 0x14e, 0x63, 0x3, 0x2, 0x2, 0x2, 0x14f, 0x150, 0x7, 0x1e, 
-       0x2, 0x2, 0x150, 0x65, 0x3, 0x2, 0x2, 0x2, 0x151, 0x152, 0x7, 0x1f, 
-       0x2, 0x2, 0x152, 0x67, 0x3, 0x2, 0x2, 0x2, 0x153, 0x154, 0x7, 0x20, 
-       0x2, 0x2, 0x154, 0x69, 0x3, 0x2, 0x2, 0x2, 0x155, 0x156, 0x7, 0x21, 
-       0x2, 0x2, 0x156, 0x6b, 0x3, 0x2, 0x2, 0x2, 0x157, 0x158, 0x7, 0x23, 
-       0x2, 0x2, 0x158, 0x159, 0x7, 0x22, 0x2, 0x2, 0x159, 0x6d, 0x3, 0x2, 
-       0x2, 0x2, 0x15a, 0x15b, 0x7, 0x3b, 0x2, 0x2, 0x15b, 0x15c, 0x7, 0x23, 
-       0x2, 0x2, 0x15c, 0x6f, 0x3, 0x2, 0x2, 0x2, 0x15d, 0x15e, 0x7, 0x23, 
-       0x2, 0x2, 0x15e, 0x71, 0x3, 0x2, 0x2, 0x2, 0x15f, 0x160, 0x8, 0x3a, 
-       0x1, 0x2, 0x160, 0x177, 0x5, 0x6c, 0x37, 0x2, 0x161, 0x177, 0x7, 
-       0x23, 0x2, 0x2, 0x162, 0x177, 0x5, 0x6e, 0x38, 0x2, 0x163, 0x177, 
-       0x5, 0x2c, 0x17, 0x2, 0x164, 0x165, 0x7, 0x3e, 0x2, 0x2, 0x165, 0x166, 
-       0x5, 0x72, 0x3a, 0x2, 0x166, 0x167, 0x7, 0x3f, 0x2, 0x2, 0x167, 0x177, 
-       0x3, 0x2, 0x2, 0x2, 0x168, 0x169, 0x5, 0x70, 0x39, 0x2, 0x169, 0x16a, 
-       0x7, 0x3e, 0x2, 0x2, 0x16a, 0x16f, 0x5, 0x72, 0x3a, 0x2, 0x16b, 0x16c, 
-       0x7, 0x44, 0x2, 0x2, 0x16c, 0x16e, 0x5, 0x72, 0x3a, 0x2, 0x16d, 0x16b, 
-       0x3, 0x2, 0x2, 0x2, 0x16e, 0x171, 0x3, 0x2, 0x2, 0x2, 0x16f, 0x16d, 
-       0x3, 0x2, 0x2, 0x2, 0x16f, 0x170, 0x3, 0x2, 0x2, 0x2, 0x170, 0x172, 
-       0x3, 0x2, 0x2, 0x2, 0x171, 0x16f, 0x3, 0x2, 0x2, 0x2, 0x172, 0x173, 
-       0x7, 0x3f, 0x2, 0x2, 0x173, 0x177, 0x3, 0x2, 0x2, 0x2, 0x174, 0x177, 
-       0x5, 0x52, 0x2a, 0x2, 0x175, 0x177, 0x5, 0x54, 0x2b, 0x2, 0x176, 
-       0x15f, 0x3, 0x2, 0x2, 0x2, 0x176, 0x161, 0x3, 0x2, 0x2, 0x2, 0x176, 
-       0x162, 0x3, 0x2, 0x2, 0x2, 0x176, 0x163, 0x3, 0x2, 0x2, 0x2, 0x176, 
-       0x164, 0x3, 0x2, 0x2, 0x2, 0x176, 0x168, 0x3, 0x2, 0x2, 0x2, 0x176, 
-       0x174, 0x3, 0x2, 0x2, 0x2, 0x176, 0x175, 0x3, 0x2, 0x2, 0x2, 0x177, 
-       0x17e, 0x3, 0x2, 0x2, 0x2, 0x178, 0x179, 0xc, 0xb, 0x2, 0x2, 0x179, 
-       0x17a, 0x5, 0x2a, 0x16, 0x2, 0x17a, 0x17b, 0x5, 0x72, 0x3a, 0xc, 
-       0x17b, 0x17d, 0x3, 0x2, 0x2, 0x2, 0x17c, 0x178, 0x3, 0x2, 0x2, 0x2, 
-       0x17d, 0x180, 0x3, 0x2, 0x2, 0x2, 0x17e, 0x17c, 0x3, 0x2, 0x2, 0x2, 
-       0x17e, 0x17f, 0x3, 0x2, 0x2, 0x2, 0x17f, 0x73, 0x3, 0x2, 0x2, 0x2, 
-       0x180, 0x17e, 0x3, 0x2, 0x2, 0x2, 0x181, 0x182, 0x5, 0x72, 0x3a, 
-       0x2, 0x182, 0x183, 0x7, 0x44, 0x2, 0x2, 0x183, 0x184, 0x5, 0x72, 
-       0x3a, 0x2, 0x184, 0x75, 0x3, 0x2, 0x2, 0x2, 0x185, 0x186, 0x7, 0x3e, 
-       0x2, 0x2, 0x186, 0x187, 0x5, 0x74, 0x3b, 0x2, 0x187, 0x188, 0x7, 
-       0x41, 0x2, 0x2, 0x188, 0x77, 0x3, 0x2, 0x2, 0x2, 0x189, 0x18a, 0x7, 
-       0x40, 0x2, 0x2, 0x18a, 0x18b, 0x5, 0x74, 0x3b, 0x2, 0x18b, 0x18c, 
-       0x7, 0x3f, 0x2, 0x2, 0x18c, 0x79, 0x3, 0x2, 0x2, 0x2, 0x18d, 0x18e, 
-       0x7, 0x3e, 0x2, 0x2, 0x18e, 0x18f, 0x5, 0x74, 0x3b, 0x2, 0x18f, 0x190, 
-       0x7, 0x3f, 0x2, 0x2, 0x190, 0x7b, 0x3, 0x2, 0x2, 0x2, 0x191, 0x192, 
-       0x7, 0x40, 0x2, 0x2, 0x192, 0x193, 0x5, 0x74, 0x3b, 0x2, 0x193, 0x194, 
-       0x7, 0x41, 0x2, 0x2, 0x194, 0x7d, 0x3, 0x2, 0x2, 0x2, 0x195, 0x19a, 
-       0x5, 0x7c, 0x3f, 0x2, 0x196, 0x19a, 0x5, 0x7a, 0x3e, 0x2, 0x197, 
-       0x19a, 0x5, 0x76, 0x3c, 0x2, 0x198, 0x19a, 0x5, 0x78, 0x3d, 0x2, 
-       0x199, 0x195, 0x3, 0x2, 0x2, 0x2, 0x199, 0x196, 0x3, 0x2, 0x2, 0x2, 
-       0x199, 0x197, 0x3, 0x2, 0x2, 0x2, 0x199, 0x198, 0x3, 0x2, 0x2, 0x2, 
-       0x19a, 0x7f, 0x3, 0x2, 0x2, 0x2, 0x19b, 0x19c, 0x7, 0x42, 0x2, 0x2, 
-       0x19c, 0x1a1, 0x5, 0x72, 0x3a, 0x2, 0x19d, 0x19e, 0x7, 0x44, 0x2, 
-       0x2, 0x19e, 0x1a0, 0x5, 0x72, 0x3a, 0x2, 0x19f, 0x19d, 0x3, 0x2, 
-       0x2, 0x2, 0x1a0, 0x1a3, 0x3, 0x2, 0x2, 0x2, 0x1a1, 0x19f, 0x3, 0x2, 
-       0x2, 0x2, 0x1a1, 0x1a2, 0x3, 0x2, 0x2, 0x2, 0x1a2, 0x1a4, 0x3, 0x2, 
-       0x2, 0x2, 0x1a3, 0x1a1, 0x3, 0x2, 0x2, 0x2, 0x1a4, 0x1a5, 0x7, 0x43, 
-       0x2, 0x2, 0x1a5, 0x81, 0x3, 0x2, 0x2, 0x2, 0x1a6, 0x1ab, 0x5, 0x72, 
-       0x3a, 0x2, 0x1a7, 0x1a8, 0x7, 0x44, 0x2, 0x2, 0x1a8, 0x1aa, 0x5, 
-       0x72, 0x3a, 0x2, 0x1a9, 0x1a7, 0x3, 0x2, 0x2, 0x2, 0x1aa, 0x1ad, 
-       0x3, 0x2, 0x2, 0x2, 0x1ab, 0x1a9, 0x3, 0x2, 0x2, 0x2, 0x1ab, 0x1ac, 
-       0x3, 0x2, 0x2, 0x2, 0x1ac, 0x83, 0x3, 0x2, 0x2, 0x2, 0x1ad, 0x1ab, 
-       0x3, 0x2, 0x2, 0x2, 0x1ae, 0x1b4, 0x7, 0x40, 0x2, 0x2, 0x1af, 0x1b0, 
-       0x5, 0x82, 0x42, 0x2, 0x1b0, 0x1b1, 0x7, 0x46, 0x2, 0x2, 0x1b1, 0x1b3, 
-       0x3, 0x2, 0x2, 0x2, 0x1b2, 0x1af, 0x3, 0x2, 0x2, 0x2, 0x1b3, 0x1b6, 
-       0x3, 0x2, 0x2, 0x2, 0x1b4, 0x1b2, 0x3, 0x2, 0x2, 0x2, 0x1b4, 0x1b5, 
-       0x3, 0x2, 0x2, 0x2, 0x1b5, 0x1b7, 0x3, 0x2, 0x2, 0x2, 0x1b6, 0x1b4, 
-       0x3, 0x2, 0x2, 0x2, 0x1b7, 0x1b8, 0x5, 0x82, 0x42, 0x2, 0x1b8, 0x1b9, 
-       0x7, 0x41, 0x2, 0x2, 0x1b9, 0x85, 0x3, 0x2, 0x2, 0x2, 0x1c, 0x8a, 
-       0x8e, 0x92, 0x94, 0x9e, 0xa7, 0xae, 0xb9, 0xbe, 0xce, 0xd2, 0xdd, 
-       0xe4, 0xeb, 0xf2, 0xfe, 0x103, 0x113, 0x117, 0x16f, 0x176, 0x17e, 
-       0x199, 0x1a1, 0x1ab, 0x1b4, 
+       0x9, 0x41, 0x4, 0x42, 0x9, 0x42, 0x4, 0x43, 0x9, 0x43, 0x4, 0x44, 
+       0x9, 0x44, 0x4, 0x45, 0x9, 0x45, 0x4, 0x46, 0x9, 0x46, 0x3, 0x2, 
+       0x3, 0x2, 0x3, 0x2, 0x3, 0x2, 0x3, 0x2, 0x3, 0x3, 0x3, 0x3, 0x3, 
+       0x4, 0x3, 0x4, 0x7, 0x4, 0x96, 0xa, 0x4, 0xc, 0x4, 0xe, 0x4, 0x99, 
+       0xb, 0x4, 0x3, 0x5, 0x3, 0x5, 0x3, 0x5, 0x3, 0x5, 0x5, 0x5, 0x9f, 
+       0xa, 0x5, 0x3, 0x6, 0x3, 0x6, 0x3, 0x6, 0x5, 0x6, 0xa4, 0xa, 0x6, 
+       0x3, 0x7, 0x3, 0x7, 0x3, 0x7, 0x3, 0x7, 0x3, 0x8, 0x3, 0x8, 0x3, 
+       0x8, 0x7, 0x8, 0xad, 0xa, 0x8, 0xc, 0x8, 0xe, 0x8, 0xb0, 0xb, 0x8, 
+       0x3, 0x9, 0x3, 0x9, 0x3, 0x9, 0x3, 0x9, 0x5, 0x9, 0xb6, 0xa, 0x9, 
+       0x3, 0xa, 0x3, 0xa, 0x3, 0xa, 0x3, 0xa, 0x3, 0xa, 0x3, 0xa, 0x5, 
+       0xa, 0xbe, 0xa, 0xa, 0x3, 0xb, 0x3, 0xb, 0x3, 0xb, 0x3, 0xc, 0x3, 
+       0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xc, 0x3, 0xd, 0x3, 0xd, 
+       0x5, 0xd, 0xcb, 0xa, 0xd, 0x3, 0xe, 0x3, 0xe, 0x5, 0xe, 0xcf, 0xa, 
+       0xe, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 
+       0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x5, 0xf, 0xdc, 
+       0xa, 0xf, 0x3, 0xf, 0x3, 0xf, 0x5, 0xf, 0xe0, 0xa, 0xf, 0x3, 0xf, 
+       0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x3, 0xf, 0x5, 
+       0xf, 0xe9, 0xa, 0xf, 0x3, 0x10, 0x3, 0x10, 0x3, 0x10, 0x5, 0x10, 
+       0xee, 0xa, 0x10, 0x3, 0x11, 0x3, 0x11, 0x3, 0x11, 0x3, 0x11, 0x3, 
+       0x11, 0x3, 0x11, 0x3, 0x11, 0x3, 0x12, 0x3, 0x12, 0x3, 0x12, 0x5, 
+       0x12, 0xfa, 0xa, 0x12, 0x3, 0x13, 0x7, 0x13, 0xfd, 0xa, 0x13, 0xc, 
+       0x13, 0xe, 0x13, 0x100, 0xb, 0x13, 0x3, 0x14, 0x3, 0x14, 0x3, 0x15, 
+       0x3, 0x15, 0x3, 0x16, 0x3, 0x16, 0x3, 0x17, 0x3, 0x17, 0x3, 0x18, 
+       0x3, 0x18, 0x3, 0x19, 0x3, 0x19, 0x3, 0x1a, 0x5, 0x1a, 0x10f, 0xa, 
+       0x1a, 0x3, 0x1a, 0x3, 0x1a, 0x5, 0x1a, 0x113, 0xa, 0x1a, 0x3, 0x1b, 
+       0x3, 0x1b, 0x3, 0x1c, 0x3, 0x1c, 0x3, 0x1d, 0x3, 0x1d, 0x3, 0x1e, 
+       0x3, 0x1e, 0x3, 0x1f, 0x3, 0x1f, 0x3, 0x20, 0x3, 0x20, 0x3, 0x21, 
+       0x3, 0x21, 0x3, 0x22, 0x3, 0x22, 0x3, 0x23, 0x3, 0x23, 0x3, 0x24, 
+       0x3, 0x24, 0x3, 0x25, 0x3, 0x25, 0x3, 0x26, 0x3, 0x26, 0x3, 0x27, 
+       0x3, 0x27, 0x3, 0x28, 0x3, 0x28, 0x3, 0x29, 0x3, 0x29, 0x3, 0x2a, 
+       0x3, 0x2a, 0x3, 0x2b, 0x3, 0x2b, 0x3, 0x2c, 0x3, 0x2c, 0x3, 0x2d, 
+       0x3, 0x2d, 0x3, 0x2e, 0x3, 0x2e, 0x3, 0x2f, 0x3, 0x2f, 0x3, 0x30, 
+       0x3, 0x30, 0x3, 0x31, 0x3, 0x31, 0x3, 0x32, 0x3, 0x32, 0x3, 0x33, 
+       0x3, 0x33, 0x3, 0x34, 0x3, 0x34, 0x3, 0x35, 0x3, 0x35, 0x3, 0x36, 
+       0x3, 0x36, 0x3, 0x37, 0x3, 0x37, 0x3, 0x38, 0x3, 0x38, 0x3, 0x39, 
+       0x3, 0x39, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3a, 0x3, 0x3b, 0x3, 0x3b, 
+       0x3, 0x3b, 0x3, 0x3c, 0x3, 0x3c, 0x3, 0x3d, 0x3, 0x3d, 0x3, 0x3d, 
+       0x7, 0x3d, 0x15e, 0xa, 0x3d, 0xc, 0x3d, 0xe, 0x3d, 0x161, 0xb, 0x3d, 
+       0x3, 0x3e, 0x3, 0x3e, 0x3, 0x3e, 0x3, 0x3e, 0x7, 0x3e, 0x167, 0xa, 
+       0x3e, 0xc, 0x3e, 0xe, 0x3e, 0x16a, 0xb, 0x3e, 0x3, 0x3e, 0x3, 0x3e, 
+       0x3, 0x3e, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 
+       0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 
+       0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x7, 0x3f, 0x17d, 0xa, 0x3f, 0xc, 
+       0x3f, 0xe, 0x3f, 0x180, 0xb, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x3, 0x3f, 
+       0x3, 0x3f, 0x3, 0x3f, 0x5, 0x3f, 0x187, 0xa, 0x3f, 0x3, 0x3f, 0x3, 
+       0x3f, 0x3, 0x3f, 0x3, 0x3f, 0x7, 0x3f, 0x18d, 0xa, 0x3f, 0xc, 0x3f, 
+       0xe, 0x3f, 0x190, 0xb, 0x3f, 0x3, 0x40, 0x3, 0x40, 0x3, 0x40, 0x3, 
+       0x40, 0x3, 0x41, 0x3, 0x41, 0x3, 0x41, 0x3, 0x41, 0x3, 0x42, 0x3, 
+       0x42, 0x3, 0x42, 0x3, 0x42, 0x3, 0x43, 0x3, 0x43, 0x3, 0x43, 0x3, 
+       0x43, 0x3, 0x44, 0x3, 0x44, 0x3, 0x44, 0x3, 0x44, 0x3, 0x45, 0x3, 
+       0x45, 0x3, 0x45, 0x3, 0x45, 0x5, 0x45, 0x1aa, 0xa, 0x45, 0x3, 0x46, 
+       0x3, 0x46, 0x3, 0x46, 0x3, 0x46, 0x7, 0x46, 0x1b0, 0xa, 0x46, 0xc, 
+       0x46, 0xe, 0x46, 0x1b3, 0xb, 0x46, 0x3, 0x46, 0x3, 0x46, 0x3, 0x46, 
+       0x2, 0x3, 0x7c, 0x47, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe, 0x10, 0x12, 
+       0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e, 0x20, 0x22, 0x24, 0x26, 0x28, 
+       0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e, 
+       0x40, 0x42, 0x44, 0x46, 0x48, 0x4a, 0x4c, 0x4e, 0x50, 0x52, 0x54, 
+       0x56, 0x58, 0x5a, 0x5c, 0x5e, 0x60, 0x62, 0x64, 0x66, 0x68, 0x6a, 
+       0x6c, 0x6e, 0x70, 0x72, 0x74, 0x76, 0x78, 0x7a, 0x7c, 0x7e, 0x80, 
+       0x82, 0x84, 0x86, 0x88, 0x8a, 0x2, 0x7, 0x4, 0x2, 0x2a, 0x2b, 0x2d, 
+       0x2e, 0x3, 0x2, 0x30, 0x32, 0x3, 0x2, 0x33, 0x34, 0x3, 0x2, 0x35, 
+       0x3a, 0x3, 0x2, 0x3b, 0x40, 0x2, 0x196, 0x2, 0x8c, 0x3, 0x2, 0x2, 
+       0x2, 0x4, 0x91, 0x3, 0x2, 0x2, 0x2, 0x6, 0x93, 0x3, 0x2, 0x2, 0x2, 
+       0x8, 0x9e, 0x3, 0x2, 0x2, 0x2, 0xa, 0xa3, 0x3, 0x2, 0x2, 0x2, 0xc, 
+       0xa5, 0x3, 0x2, 0x2, 0x2, 0xe, 0xa9, 0x3, 0x2, 0x2, 0x2, 0x10, 0xb1, 
+       0x3, 0x2, 0x2, 0x2, 0x12, 0xb7, 0x3, 0x2, 0x2, 0x2, 0x14, 0xbf, 0x3, 
+       0x2, 0x2, 0x2, 0x16, 0xc2, 0x3, 0x2, 0x2, 0x2, 0x18, 0xca, 0x3, 0x2, 
+       0x2, 0x2, 0x1a, 0xce, 0x3, 0x2, 0x2, 0x2, 0x1c, 0xe8, 0x3, 0x2, 0x2, 
+       0x2, 0x1e, 0xed, 0x3, 0x2, 0x2, 0x2, 0x20, 0xef, 0x3, 0x2, 0x2, 0x2, 
+       0x22, 0xf9, 0x3, 0x2, 0x2, 0x2, 0x24, 0xfe, 0x3, 0x2, 0x2, 0x2, 0x26, 
+       0x101, 0x3, 0x2, 0x2, 0x2, 0x28, 0x103, 0x3, 0x2, 0x2, 0x2, 0x2a, 
+       0x105, 0x3, 0x2, 0x2, 0x2, 0x2c, 0x107, 0x3, 0x2, 0x2, 0x2, 0x2e, 
+       0x109, 0x3, 0x2, 0x2, 0x2, 0x30, 0x10b, 0x3, 0x2, 0x2, 0x2, 0x32, 
+       0x10e, 0x3, 0x2, 0x2, 0x2, 0x34, 0x114, 0x3, 0x2, 0x2, 0x2, 0x36, 
+       0x116, 0x3, 0x2, 0x2, 0x2, 0x38, 0x118, 0x3, 0x2, 0x2, 0x2, 0x3a, 
+       0x11a, 0x3, 0x2, 0x2, 0x2, 0x3c, 0x11c, 0x3, 0x2, 0x2, 0x2, 0x3e, 
+       0x11e, 0x3, 0x2, 0x2, 0x2, 0x40, 0x120, 0x3, 0x2, 0x2, 0x2, 0x42, 
+       0x122, 0x3, 0x2, 0x2, 0x2, 0x44, 0x124, 0x3, 0x2, 0x2, 0x2, 0x46, 
+       0x126, 0x3, 0x2, 0x2, 0x2, 0x48, 0x128, 0x3, 0x2, 0x2, 0x2, 0x4a, 
+       0x12a, 0x3, 0x2, 0x2, 0x2, 0x4c, 0x12c, 0x3, 0x2, 0x2, 0x2, 0x4e, 
+       0x12e, 0x3, 0x2, 0x2, 0x2, 0x50, 0x130, 0x3, 0x2, 0x2, 0x2, 0x52, 
+       0x132, 0x3, 0x2, 0x2, 0x2, 0x54, 0x134, 0x3, 0x2, 0x2, 0x2, 0x56, 
+       0x136, 0x3, 0x2, 0x2, 0x2, 0x58, 0x138, 0x3, 0x2, 0x2, 0x2, 0x5a, 
+       0x13a, 0x3, 0x2, 0x2, 0x2, 0x5c, 0x13c, 0x3, 0x2, 0x2, 0x2, 0x5e, 
+       0x13e, 0x3, 0x2, 0x2, 0x2, 0x60, 0x140, 0x3, 0x2, 0x2, 0x2, 0x62, 
+       0x142, 0x3, 0x2, 0x2, 0x2, 0x64, 0x144, 0x3, 0x2, 0x2, 0x2, 0x66, 
+       0x146, 0x3, 0x2, 0x2, 0x2, 0x68, 0x148, 0x3, 0x2, 0x2, 0x2, 0x6a, 
+       0x14a, 0x3, 0x2, 0x2, 0x2, 0x6c, 0x14c, 0x3, 0x2, 0x2, 0x2, 0x6e, 
+       0x14e, 0x3, 0x2, 0x2, 0x2, 0x70, 0x150, 0x3, 0x2, 0x2, 0x2, 0x72, 
+       0x152, 0x3, 0x2, 0x2, 0x2, 0x74, 0x155, 0x3, 0x2, 0x2, 0x2, 0x76, 
+       0x158, 0x3, 0x2, 0x2, 0x2, 0x78, 0x15a, 0x3, 0x2, 0x2, 0x2, 0x7a, 
+       0x162, 0x3, 0x2, 0x2, 0x2, 0x7c, 0x186, 0x3, 0x2, 0x2, 0x2, 0x7e, 
+       0x191, 0x3, 0x2, 0x2, 0x2, 0x80, 0x195, 0x3, 0x2, 0x2, 0x2, 0x82, 
+       0x199, 0x3, 0x2, 0x2, 0x2, 0x84, 0x19d, 0x3, 0x2, 0x2, 0x2, 0x86, 
+       0x1a1, 0x3, 0x2, 0x2, 0x2, 0x88, 0x1a9, 0x3, 0x2, 0x2, 0x2, 0x8a, 
+       0x1ab, 0x3, 0x2, 0x2, 0x2, 0x8c, 0x8d, 0x7, 0x26, 0x2, 0x2, 0x8d, 
+       0x8e, 0x5, 0x48, 0x25, 0x2, 0x8e, 0x8f, 0x7, 0x23, 0x2, 0x2, 0x8f, 
+       0x90, 0x7, 0x2f, 0x2, 0x2, 0x90, 0x3, 0x3, 0x2, 0x2, 0x2, 0x91, 0x92, 
+       0x5, 0x22, 0x12, 0x2, 0x92, 0x5, 0x3, 0x2, 0x2, 0x2, 0x93, 0x97, 
+       0x5, 0x2, 0x2, 0x2, 0x94, 0x96, 0x5, 0x4, 0x3, 0x2, 0x95, 0x94, 0x3, 
+       0x2, 0x2, 0x2, 0x96, 0x99, 0x3, 0x2, 0x2, 0x2, 0x97, 0x95, 0x3, 0x2, 
+       0x2, 0x2, 0x97, 0x98, 0x3, 0x2, 0x2, 0x2, 0x98, 0x7, 0x3, 0x2, 0x2, 
+       0x2, 0x99, 0x97, 0x3, 0x2, 0x2, 0x2, 0x9a, 0x9f, 0x5, 0x34, 0x1b, 
+       0x2, 0x9b, 0x9f, 0x5, 0x38, 0x1d, 0x2, 0x9c, 0x9f, 0x5, 0x36, 0x1c, 
+       0x2, 0x9d, 0x9f, 0x5, 0x3a, 0x1e, 0x2, 0x9e, 0x9a, 0x3, 0x2, 0x2, 
+       0x2, 0x9e, 0x9b, 0x3, 0x2, 0x2, 0x2, 0x9e, 0x9c, 0x3, 0x2, 0x2, 0x2, 
+       0x9e, 0x9d, 0x3, 0x2, 0x2, 0x2, 0x9f, 0x9, 0x3, 0x2, 0x2, 0x2, 0xa0, 
+       0xa4, 0x5, 0x68, 0x35, 0x2, 0xa1, 0xa4, 0x5, 0x66, 0x34, 0x2, 0xa2, 
+       0xa4, 0x5, 0x6e, 0x38, 0x2, 0xa3, 0xa0, 0x3, 0x2, 0x2, 0x2, 0xa3, 
+       0xa1, 0x3, 0x2, 0x2, 0x2, 0xa3, 0xa2, 0x3, 0x2, 0x2, 0x2, 0xa4, 0xb, 
+       0x3, 0x2, 0x2, 0x2, 0xa5, 0xa6, 0x7, 0x23, 0x2, 0x2, 0xa6, 0xa7, 
+       0x7, 0x35, 0x2, 0x2, 0xa7, 0xa8, 0x5, 0x7c, 0x3f, 0x2, 0xa8, 0xd, 
+       0x3, 0x2, 0x2, 0x2, 0xa9, 0xae, 0x5, 0xc, 0x7, 0x2, 0xaa, 0xab, 0x7, 
+       0x47, 0x2, 0x2, 0xab, 0xad, 0x5, 0xc, 0x7, 0x2, 0xac, 0xaa, 0x3, 
+       0x2, 0x2, 0x2, 0xad, 0xb0, 0x3, 0x2, 0x2, 0x2, 0xae, 0xac, 0x3, 0x2, 
+       0x2, 0x2, 0xae, 0xaf, 0x3, 0x2, 0x2, 0x2, 0xaf, 0xf, 0x3, 0x2, 0x2, 
+       0x2, 0xb0, 0xae, 0x3, 0x2, 0x2, 0x2, 0xb1, 0xb5, 0x5, 0x8, 0x5, 0x2, 
+       0xb2, 0xb3, 0x5, 0x4a, 0x26, 0x2, 0xb3, 0xb4, 0x5, 0x88, 0x45, 0x2, 
+       0xb4, 0xb6, 0x3, 0x2, 0x2, 0x2, 0xb5, 0xb2, 0x3, 0x2, 0x2, 0x2, 0xb5, 
+       0xb6, 0x3, 0x2, 0x2, 0x2, 0xb6, 0x11, 0x3, 0x2, 0x2, 0x2, 0xb7, 0xb8, 
+       0x5, 0xa, 0x6, 0x2, 0xb8, 0xb9, 0x7, 0x41, 0x2, 0x2, 0xb9, 0xba, 
+       0x5, 0xe, 0x8, 0x2, 0xba, 0xbd, 0x7, 0x42, 0x2, 0x2, 0xbb, 0xbc, 
+       0x7, 0x47, 0x2, 0x2, 0xbc, 0xbe, 0x5, 0x10, 0x9, 0x2, 0xbd, 0xbb, 
+       0x3, 0x2, 0x2, 0x2, 0xbd, 0xbe, 0x3, 0x2, 0x2, 0x2, 0xbe, 0x13, 0x3, 
+       0x2, 0x2, 0x2, 0xbf, 0xc0, 0x5, 0x4e, 0x28, 0x2, 0xc0, 0xc1, 0x7, 
+       0x23, 0x2, 0x2, 0xc1, 0x15, 0x3, 0x2, 0x2, 0x2, 0xc2, 0xc3, 0x5, 
+       0x14, 0xb, 0x2, 0xc3, 0xc4, 0x5, 0x48, 0x25, 0x2, 0xc4, 0xc5, 0x7, 
+       0x2f, 0x2, 0x2, 0xc5, 0xc6, 0x5, 0x12, 0xa, 0x2, 0xc6, 0xc7, 0x7, 
+       0x49, 0x2, 0x2, 0xc7, 0x17, 0x3, 0x2, 0x2, 0x2, 0xc8, 0xcb, 0x7, 
+       0x23, 0x2, 0x2, 0xc9, 0xcb, 0x5, 0x12, 0xa, 0x2, 0xca, 0xc8, 0x3, 
+       0x2, 0x2, 0x2, 0xca, 0xc9, 0x3, 0x2, 0x2, 0x2, 0xcb, 0x19, 0x3, 0x2, 
+       0x2, 0x2, 0xcc, 0xcf, 0x5, 0x44, 0x23, 0x2, 0xcd, 0xcf, 0x5, 0x46, 
+       0x24, 0x2, 0xce, 0xcc, 0x3, 0x2, 0x2, 0x2, 0xce, 0xcd, 0x3, 0x2, 
+       0x2, 0x2, 0xcf, 0x1b, 0x3, 0x2, 0x2, 0x2, 0xd0, 0xd1, 0x5, 0x1a, 
+       0xe, 0x2, 0xd1, 0xd2, 0x5, 0x3e, 0x20, 0x2, 0xd2, 0xd3, 0x7, 0x23, 
+       0x2, 0x2, 0xd3, 0xd4, 0x5, 0x48, 0x25, 0x2, 0xd4, 0xd5, 0x7, 0x2f, 
+       0x2, 0x2, 0xd5, 0xdb, 0x5, 0x10, 0x9, 0x2, 0xd6, 0xd7, 0x7, 0x47, 
+       0x2, 0x2, 0xd7, 0xd8, 0x5, 0x4c, 0x27, 0x2, 0xd8, 0xd9, 0x7, 0x2f, 
+       0x2, 0x2, 0xd9, 0xda, 0x5, 0x18, 0xd, 0x2, 0xda, 0xdc, 0x3, 0x2, 
+       0x2, 0x2, 0xdb, 0xd6, 0x3, 0x2, 0x2, 0x2, 0xdb, 0xdc, 0x3, 0x2, 0x2, 
+       0x2, 0xdc, 0xdf, 0x3, 0x2, 0x2, 0x2, 0xdd, 0xde, 0x7, 0x47, 0x2, 
+       0x2, 0xde, 0xe0, 0x5, 0x42, 0x22, 0x2, 0xdf, 0xdd, 0x3, 0x2, 0x2, 
+       0x2, 0xdf, 0xe0, 0x3, 0x2, 0x2, 0x2, 0xe0, 0xe1, 0x3, 0x2, 0x2, 0x2, 
+       0xe1, 0xe2, 0x7, 0x49, 0x2, 0x2, 0xe2, 0xe9, 0x3, 0x2, 0x2, 0x2, 
+       0xe3, 0xe4, 0x5, 0x1a, 0xe, 0x2, 0xe4, 0xe5, 0x5, 0x10, 0x9, 0x2, 
+       0xe5, 0xe6, 0x5, 0x3e, 0x20, 0x2, 0xe6, 0xe7, 0x7, 0x23, 0x2, 0x2, 
+       0xe7, 0xe9, 0x3, 0x2, 0x2, 0x2, 0xe8, 0xd0, 0x3, 0x2, 0x2, 0x2, 0xe8, 
+       0xe3, 0x3, 0x2, 0x2, 0x2, 0xe9, 0x1d, 0x3, 0x2, 0x2, 0x2, 0xea, 0xee, 
+       0x5, 0x32, 0x1a, 0x2, 0xeb, 0xee, 0x5, 0x58, 0x2d, 0x2, 0xec, 0xee, 
+       0x5, 0x5a, 0x2e, 0x2, 0xed, 0xea, 0x3, 0x2, 0x2, 0x2, 0xed, 0xeb, 
+       0x3, 0x2, 0x2, 0x2, 0xed, 0xec, 0x3, 0x2, 0x2, 0x2, 0xee, 0x1f, 0x3, 
+       0x2, 0x2, 0x2, 0xef, 0xf0, 0x5, 0x40, 0x21, 0x2, 0xf0, 0xf1, 0x5, 
+       0x8, 0x5, 0x2, 0xf1, 0xf2, 0x7, 0x23, 0x2, 0x2, 0xf2, 0xf3, 0x7, 
+       0x2f, 0x2, 0x2, 0xf3, 0xf4, 0x5, 0x1e, 0x10, 0x2, 0xf4, 0xf5, 0x7, 
+       0x49, 0x2, 0x2, 0xf5, 0x21, 0x3, 0x2, 0x2, 0x2, 0xf6, 0xfa, 0x5, 
+       0x20, 0x11, 0x2, 0xf7, 0xfa, 0x5, 0x1c, 0xf, 0x2, 0xf8, 0xfa, 0x5, 
+       0x16, 0xc, 0x2, 0xf9, 0xf6, 0x3, 0x2, 0x2, 0x2, 0xf9, 0xf7, 0x3, 
+       0x2, 0x2, 0x2, 0xf9, 0xf8, 0x3, 0x2, 0x2, 0x2, 0xfa, 0x23, 0x3, 0x2, 
+       0x2, 0x2, 0xfb, 0xfd, 0x5, 0x22, 0x12, 0x2, 0xfc, 0xfb, 0x3, 0x2, 
+       0x2, 0x2, 0xfd, 0x100, 0x3, 0x2, 0x2, 0x2, 0xfe, 0xfc, 0x3, 0x2, 
+       0x2, 0x2, 0xfe, 0xff, 0x3, 0x2, 0x2, 0x2, 0xff, 0x25, 0x3, 0x2, 0x2, 
+       0x2, 0x100, 0xfe, 0x3, 0x2, 0x2, 0x2, 0x101, 0x102, 0x9, 0x2, 0x2, 
+       0x2, 0x102, 0x27, 0x3, 0x2, 0x2, 0x2, 0x103, 0x104, 0x7, 0x2c, 0x2, 
+       0x2, 0x104, 0x29, 0x3, 0x2, 0x2, 0x2, 0x105, 0x106, 0x9, 0x3, 0x2, 
+       0x2, 0x106, 0x2b, 0x3, 0x2, 0x2, 0x2, 0x107, 0x108, 0x9, 0x4, 0x2, 
+       0x2, 0x108, 0x2d, 0x3, 0x2, 0x2, 0x2, 0x109, 0x10a, 0x9, 0x5, 0x2, 
+       0x2, 0x10a, 0x2f, 0x3, 0x2, 0x2, 0x2, 0x10b, 0x10c, 0x9, 0x6, 0x2, 
+       0x2, 0x10c, 0x31, 0x3, 0x2, 0x2, 0x2, 0x10d, 0x10f, 0x7, 0x3c, 0x2, 
+       0x2, 0x10e, 0x10d, 0x3, 0x2, 0x2, 0x2, 0x10e, 0x10f, 0x3, 0x2, 0x2, 
+       0x2, 0x10f, 0x110, 0x3, 0x2, 0x2, 0x2, 0x110, 0x112, 0x7, 0x24, 0x2, 
+       0x2, 0x111, 0x113, 0x7, 0x25, 0x2, 0x2, 0x112, 0x111, 0x3, 0x2, 0x2, 
+       0x2, 0x112, 0x113, 0x3, 0x2, 0x2, 0x2, 0x113, 0x33, 0x3, 0x2, 0x2, 
+       0x2, 0x114, 0x115, 0x7, 0x3, 0x2, 0x2, 0x115, 0x35, 0x3, 0x2, 0x2, 
+       0x2, 0x116, 0x117, 0x7, 0x4, 0x2, 0x2, 0x117, 0x37, 0x3, 0x2, 0x2, 
+       0x2, 0x118, 0x119, 0x7, 0x5, 0x2, 0x2, 0x119, 0x39, 0x3, 0x2, 0x2, 
+       0x2, 0x11a, 0x11b, 0x7, 0x6, 0x2, 0x2, 0x11b, 0x3b, 0x3, 0x2, 0x2, 
+       0x2, 0x11c, 0x11d, 0x7, 0x7, 0x2, 0x2, 0x11d, 0x3d, 0x3, 0x2, 0x2, 
+       0x2, 0x11e, 0x11f, 0x7, 0x8, 0x2, 0x2, 0x11f, 0x3f, 0x3, 0x2, 0x2, 
+       0x2, 0x120, 0x121, 0x7, 0x9, 0x2, 0x2, 0x121, 0x41, 0x3, 0x2, 0x2, 
+       0x2, 0x122, 0x123, 0x7, 0xa, 0x2, 0x2, 0x123, 0x43, 0x3, 0x2, 0x2, 
+       0x2, 0x124, 0x125, 0x7, 0xb, 0x2, 0x2, 0x125, 0x45, 0x3, 0x2, 0x2, 
+       0x2, 0x126, 0x127, 0x7, 0xc, 0x2, 0x2, 0x127, 0x47, 0x3, 0x2, 0x2, 
+       0x2, 0x128, 0x129, 0x7, 0xd, 0x2, 0x2, 0x129, 0x49, 0x3, 0x2, 0x2, 
+       0x2, 0x12a, 0x12b, 0x7, 0xe, 0x2, 0x2, 0x12b, 0x4b, 0x3, 0x2, 0x2, 
+       0x2, 0x12c, 0x12d, 0x7, 0xf, 0x2, 0x2, 0x12d, 0x4d, 0x3, 0x2, 0x2, 
+       0x2, 0x12e, 0x12f, 0x7, 0x10, 0x2, 0x2, 0x12f, 0x4f, 0x3, 0x2, 0x2, 
+       0x2, 0x130, 0x131, 0x7, 0x11, 0x2, 0x2, 0x131, 0x51, 0x3, 0x2, 0x2, 
+       0x2, 0x132, 0x133, 0x7, 0x12, 0x2, 0x2, 0x133, 0x53, 0x3, 0x2, 0x2, 
+       0x2, 0x134, 0x135, 0x7, 0x13, 0x2, 0x2, 0x135, 0x55, 0x3, 0x2, 0x2, 
+       0x2, 0x136, 0x137, 0x7, 0x14, 0x2, 0x2, 0x137, 0x57, 0x3, 0x2, 0x2, 
+       0x2, 0x138, 0x139, 0x7, 0x15, 0x2, 0x2, 0x139, 0x59, 0x3, 0x2, 0x2, 
+       0x2, 0x13a, 0x13b, 0x7, 0x16, 0x2, 0x2, 0x13b, 0x5b, 0x3, 0x2, 0x2, 
+       0x2, 0x13c, 0x13d, 0x7, 0x17, 0x2, 0x2, 0x13d, 0x5d, 0x3, 0x2, 0x2, 
+       0x2, 0x13e, 0x13f, 0x7, 0x18, 0x2, 0x2, 0x13f, 0x5f, 0x3, 0x2, 0x2, 
+       0x2, 0x140, 0x141, 0x7, 0x19, 0x2, 0x2, 0x141, 0x61, 0x3, 0x2, 0x2, 
+       0x2, 0x142, 0x143, 0x7, 0x1a, 0x2, 0x2, 0x143, 0x63, 0x3, 0x2, 0x2, 
+       0x2, 0x144, 0x145, 0x7, 0x1b, 0x2, 0x2, 0x145, 0x65, 0x3, 0x2, 0x2, 
+       0x2, 0x146, 0x147, 0x7, 0x1c, 0x2, 0x2, 0x147, 0x67, 0x3, 0x2, 0x2, 
+       0x2, 0x148, 0x149, 0x7, 0x1d, 0x2, 0x2, 0x149, 0x69, 0x3, 0x2, 0x2, 
+       0x2, 0x14a, 0x14b, 0x7, 0x1e, 0x2, 0x2, 0x14b, 0x6b, 0x3, 0x2, 0x2, 
+       0x2, 0x14c, 0x14d, 0x7, 0x1f, 0x2, 0x2, 0x14d, 0x6d, 0x3, 0x2, 0x2, 
+       0x2, 0x14e, 0x14f, 0x7, 0x20, 0x2, 0x2, 0x14f, 0x6f, 0x3, 0x2, 0x2, 
+       0x2, 0x150, 0x151, 0x7, 0x21, 0x2, 0x2, 0x151, 0x71, 0x3, 0x2, 0x2, 
+       0x2, 0x152, 0x153, 0x7, 0x23, 0x2, 0x2, 0x153, 0x154, 0x7, 0x22, 
+       0x2, 0x2, 0x154, 0x73, 0x3, 0x2, 0x2, 0x2, 0x155, 0x156, 0x7, 0x3c, 
+       0x2, 0x2, 0x156, 0x157, 0x7, 0x23, 0x2, 0x2, 0x157, 0x75, 0x3, 0x2, 
+       0x2, 0x2, 0x158, 0x159, 0x7, 0x23, 0x2, 0x2, 0x159, 0x77, 0x3, 0x2, 
+       0x2, 0x2, 0x15a, 0x15f, 0x5, 0x7c, 0x3f, 0x2, 0x15b, 0x15c, 0x7, 
+       0x47, 0x2, 0x2, 0x15c, 0x15e, 0x5, 0x7c, 0x3f, 0x2, 0x15d, 0x15b, 
+       0x3, 0x2, 0x2, 0x2, 0x15e, 0x161, 0x3, 0x2, 0x2, 0x2, 0x15f, 0x15d, 
+       0x3, 0x2, 0x2, 0x2, 0x15f, 0x160, 0x3, 0x2, 0x2, 0x2, 0x160, 0x79, 
+       0x3, 0x2, 0x2, 0x2, 0x161, 0x15f, 0x3, 0x2, 0x2, 0x2, 0x162, 0x168, 
+       0x7, 0x43, 0x2, 0x2, 0x163, 0x164, 0x5, 0x78, 0x3d, 0x2, 0x164, 0x165, 
+       0x7, 0x49, 0x2, 0x2, 0x165, 0x167, 0x3, 0x2, 0x2, 0x2, 0x166, 0x163, 
+       0x3, 0x2, 0x2, 0x2, 0x167, 0x16a, 0x3, 0x2, 0x2, 0x2, 0x168, 0x166, 
+       0x3, 0x2, 0x2, 0x2, 0x168, 0x169, 0x3, 0x2, 0x2, 0x2, 0x169, 0x16b, 
+       0x3, 0x2, 0x2, 0x2, 0x16a, 0x168, 0x3, 0x2, 0x2, 0x2, 0x16b, 0x16c, 
+       0x5, 0x78, 0x3d, 0x2, 0x16c, 0x16d, 0x7, 0x44, 0x2, 0x2, 0x16d, 0x7b, 
+       0x3, 0x2, 0x2, 0x2, 0x16e, 0x16f, 0x8, 0x3f, 0x1, 0x2, 0x16f, 0x187, 
+       0x5, 0x72, 0x3a, 0x2, 0x170, 0x187, 0x7, 0x23, 0x2, 0x2, 0x171, 0x187, 
+       0x5, 0x74, 0x3b, 0x2, 0x172, 0x187, 0x5, 0x32, 0x1a, 0x2, 0x173, 
+       0x174, 0x7, 0x41, 0x2, 0x2, 0x174, 0x175, 0x5, 0x7c, 0x3f, 0x2, 0x175, 
+       0x176, 0x7, 0x42, 0x2, 0x2, 0x176, 0x187, 0x3, 0x2, 0x2, 0x2, 0x177, 
+       0x178, 0x5, 0x76, 0x3c, 0x2, 0x178, 0x179, 0x7, 0x41, 0x2, 0x2, 0x179, 
+       0x17e, 0x5, 0x7c, 0x3f, 0x2, 0x17a, 0x17b, 0x7, 0x47, 0x2, 0x2, 0x17b, 
+       0x17d, 0x5, 0x7c, 0x3f, 0x2, 0x17c, 0x17a, 0x3, 0x2, 0x2, 0x2, 0x17d, 
+       0x180, 0x3, 0x2, 0x2, 0x2, 0x17e, 0x17c, 0x3, 0x2, 0x2, 0x2, 0x17e, 
+       0x17f, 0x3, 0x2, 0x2, 0x2, 0x17f, 0x181, 0x3, 0x2, 0x2, 0x2, 0x180, 
+       0x17e, 0x3, 0x2, 0x2, 0x2, 0x181, 0x182, 0x7, 0x42, 0x2, 0x2, 0x182, 
+       0x187, 0x3, 0x2, 0x2, 0x2, 0x183, 0x187, 0x5, 0x7a, 0x3e, 0x2, 0x184, 
+       0x187, 0x5, 0x58, 0x2d, 0x2, 0x185, 0x187, 0x5, 0x5a, 0x2e, 0x2, 
+       0x186, 0x16e, 0x3, 0x2, 0x2, 0x2, 0x186, 0x170, 0x3, 0x2, 0x2, 0x2, 
+       0x186, 0x171, 0x3, 0x2, 0x2, 0x2, 0x186, 0x172, 0x3, 0x2, 0x2, 0x2, 
+       0x186, 0x173, 0x3, 0x2, 0x2, 0x2, 0x186, 0x177, 0x3, 0x2, 0x2, 0x2, 
+       0x186, 0x183, 0x3, 0x2, 0x2, 0x2, 0x186, 0x184, 0x3, 0x2, 0x2, 0x2, 
+       0x186, 0x185, 0x3, 0x2, 0x2, 0x2, 0x187, 0x18e, 0x3, 0x2, 0x2, 0x2, 
+       0x188, 0x189, 0xc, 0xc, 0x2, 0x2, 0x189, 0x18a, 0x5, 0x30, 0x19, 
+       0x2, 0x18a, 0x18b, 0x5, 0x7c, 0x3f, 0xd, 0x18b, 0x18d, 0x3, 0x2, 
+       0x2, 0x2, 0x18c, 0x188, 0x3, 0x2, 0x2, 0x2, 0x18d, 0x190, 0x3, 0x2, 
+       0x2, 0x2, 0x18e, 0x18c, 0x3, 0x2, 0x2, 0x2, 0x18e, 0x18f, 0x3, 0x2, 
+       0x2, 0x2, 0x18f, 0x7d, 0x3, 0x2, 0x2, 0x2, 0x190, 0x18e, 0x3, 0x2, 
+       0x2, 0x2, 0x191, 0x192, 0x5, 0x7c, 0x3f, 0x2, 0x192, 0x193, 0x7, 
+       0x47, 0x2, 0x2, 0x193, 0x194, 0x5, 0x7c, 0x3f, 0x2, 0x194, 0x7f, 
+       0x3, 0x2, 0x2, 0x2, 0x195, 0x196, 0x7, 0x41, 0x2, 0x2, 0x196, 0x197, 
+       0x5, 0x7e, 0x40, 0x2, 0x197, 0x198, 0x7, 0x44, 0x2, 0x2, 0x198, 0x81, 
+       0x3, 0x2, 0x2, 0x2, 0x199, 0x19a, 0x7, 0x43, 0x2, 0x2, 0x19a, 0x19b, 
+       0x5, 0x7e, 0x40, 0x2, 0x19b, 0x19c, 0x7, 0x42, 0x2, 0x2, 0x19c, 0x83, 
+       0x3, 0x2, 0x2, 0x2, 0x19d, 0x19e, 0x7, 0x41, 0x2, 0x2, 0x19e, 0x19f, 
+       0x5, 0x7e, 0x40, 0x2, 0x19f, 0x1a0, 0x7, 0x42, 0x2, 0x2, 0x1a0, 0x85, 
+       0x3, 0x2, 0x2, 0x2, 0x1a1, 0x1a2, 0x7, 0x43, 0x2, 0x2, 0x1a2, 0x1a3, 
+       0x5, 0x7e, 0x40, 0x2, 0x1a3, 0x1a4, 0x7, 0x44, 0x2, 0x2, 0x1a4, 0x87, 
+       0x3, 0x2, 0x2, 0x2, 0x1a5, 0x1aa, 0x5, 0x86, 0x44, 0x2, 0x1a6, 0x1aa, 
+       0x5, 0x84, 0x43, 0x2, 0x1a7, 0x1aa, 0x5, 0x80, 0x41, 0x2, 0x1a8, 
+       0x1aa, 0x5, 0x82, 0x42, 0x2, 0x1a9, 0x1a5, 0x3, 0x2, 0x2, 0x2, 0x1a9, 
+       0x1a6, 0x3, 0x2, 0x2, 0x2, 0x1a9, 0x1a7, 0x3, 0x2, 0x2, 0x2, 0x1a9, 
+       0x1a8, 0x3, 0x2, 0x2, 0x2, 0x1aa, 0x89, 0x3, 0x2, 0x2, 0x2, 0x1ab, 
+       0x1ac, 0x7, 0x45, 0x2, 0x2, 0x1ac, 0x1b1, 0x5, 0x7c, 0x3f, 0x2, 0x1ad, 
+       0x1ae, 0x7, 0x47, 0x2, 0x2, 0x1ae, 0x1b0, 0x5, 0x7c, 0x3f, 0x2, 0x1af, 
+       0x1ad, 0x3, 0x2, 0x2, 0x2, 0x1b0, 0x1b3, 0x3, 0x2, 0x2, 0x2, 0x1b1, 
+       0x1af, 0x3, 0x2, 0x2, 0x2, 0x1b1, 0x1b2, 0x3, 0x2, 0x2, 0x2, 0x1b2, 
+       0x1b4, 0x3, 0x2, 0x2, 0x2, 0x1b3, 0x1b1, 0x3, 0x2, 0x2, 0x2, 0x1b4, 
+       0x1b5, 0x7, 0x46, 0x2, 0x2, 0x1b5, 0x8b, 0x3, 0x2, 0x2, 0x2, 0x19, 
+       0x97, 0x9e, 0xa3, 0xae, 0xb5, 0xbd, 0xca, 0xce, 0xdb, 0xdf, 0xe8, 
+       0xed, 0xf9, 0xfe, 0x10e, 0x112, 0x15f, 0x168, 0x17e, 0x186, 0x18e, 
+       0x1a9, 0x1b1, 
   };
 
   _serializedATN.insert(_serializedATN.end(), serializedATNSegment0,

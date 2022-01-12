@@ -49,6 +49,8 @@ namespace chase {
         int visitInterval(Interval &interval) override;
         int visitMatrix(Matrix &matrix) override;
 
+        int visitProbabilityFunction(ProbabilityFunction &function) override;
+
         // Types
         int visitInteger( Integer & ) override;
         int visitReal( Real & ) override;

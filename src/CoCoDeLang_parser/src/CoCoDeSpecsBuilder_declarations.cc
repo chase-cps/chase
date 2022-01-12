@@ -10,7 +10,8 @@
 using namespace chase;
 using namespace antlr4;
 
-antlrcpp::Any CoCoDeSpecsBuilder::visitConstant(CoCoDeLangParser::ConstantContext *ctx)
+antlrcpp::Any CoCoDeSpecsBuilder::visitConstant(
+        CoCoDeLangParser::ConstantContext *ctx)
 {
     /// \todo In constant creation, manage the domain in case the value of the
     /// constant is out of the standard domain.
@@ -50,11 +51,13 @@ antlrcpp::Any CoCoDeSpecsBuilder::visitConstant(CoCoDeLangParser::ConstantContex
     return CoCoDeLangBaseVisitor::visitConstant(ctx);
 }
 
-antlrcpp::Any CoCoDeSpecsBuilder::visitVariable(CoCoDeLangParser::VariableContext *ctx) {
+antlrcpp::Any CoCoDeSpecsBuilder::visitVariable(
+        CoCoDeLangParser::VariableContext *ctx) {
     return CoCoDeLangBaseVisitor::visitVariable(ctx);
 }
 
-antlrcpp::Any CoCoDeSpecsBuilder::visitDistribution(CoCoDeLangParser::DistributionContext *ctx) {
+antlrcpp::Any CoCoDeSpecsBuilder::visitDistribution(
+        CoCoDeLangParser::DistributionContext *ctx) {
     return CoCoDeLangBaseVisitor::visitDistribution(ctx);
 }
 
@@ -65,3 +68,5 @@ chase::Type *CoCoDeSpecsBuilder::analyzeBaseType(
    if(ctx->realKW() != nullptr) return new chase::Real();
    return nullptr;
 }
+
+

@@ -15,6 +15,18 @@
 class  CoCoDeLangBaseVisitor : public CoCoDeLangVisitor {
 public:
 
+  virtual antlrcpp::Any visitDesign_header(CoCoDeLangParser::Design_headerContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDesign_body_element(CoCoDeLangParser::Design_body_elementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDesign(CoCoDeLangParser::DesignContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitBasetype(CoCoDeLangParser::BasetypeContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -23,15 +35,15 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFrequency_entry(CoCoDeLangParser::Frequency_entryContext *ctx) override {
+  virtual antlrcpp::Any visitDistribution_param(CoCoDeLangParser::Distribution_paramContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFrequency_table(CoCoDeLangParser::Frequency_tableContext *ctx) override {
+  virtual antlrcpp::Any visitDistribution_params(CoCoDeLangParser::Distribution_paramsContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitDistribution_features(CoCoDeLangParser::Distribution_featuresContext *ctx) override {
+  virtual antlrcpp::Any visitVartype(CoCoDeLangParser::VartypeContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -239,6 +251,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitValue(CoCoDeLangParser::ValueContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -268,14 +288,6 @@ public:
   }
 
   virtual antlrcpp::Any visitList(CoCoDeLangParser::ListContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *ctx) override {
     return visitChildren(ctx);
   }
 

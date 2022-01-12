@@ -55,5 +55,6 @@ namespace chase {
     class Component;
     class Library;
     class FunctionCall;
+    class ProbabilityFunction;
     class Constraint;
 }

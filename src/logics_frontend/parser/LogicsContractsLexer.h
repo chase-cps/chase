@@ -16,10 +16,10 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
     NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
-    NEXT = 27, UNTIL = 28, RELEASE = 29, EQ = 30, NEQ = 31, LT = 32, LE = 33, 
-    GT = 34, GE = 35, PLUS = 36, MINUS = 37, TIMES = 38, DIVIDE = 39, LBRACKET = 40, 
-    RBRACKET = 41, LSQUARE = 42, RSQUARE = 43, COMMA = 44, DOT = 45, ID = 46, 
-    DECIMAL = 47, NUMBER = 48, ENDST = 49
+    NEXT = 27, UNTIL = 28, RELEASE = 29, PROBABILITY = 30, EQ = 31, NEQ = 32, 
+    LT = 33, LE = 34, GT = 35, GE = 36, PLUS = 37, MINUS = 38, TIMES = 39, 
+    DIVIDE = 40, LBRACKET = 41, RBRACKET = 42, LSQUARE = 43, RSQUARE = 44, 
+    COMMA = 45, DOT = 46, ID = 47, DECIMAL = 48, NUMBER = 49, ENDST = 50
   };
 
   explicit LogicsContractsLexer(antlr4::CharStream *input);

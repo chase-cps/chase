@@ -8,6 +8,7 @@
 
 
 #include "GuideVisitor.hh"
+
 #include "representation.hh"
 
 chase::GuideVisitor::~GuideVisitor() = default;
@@ -224,7 +225,10 @@ int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
             auto v = reinterpret_cast< Identifier * > (o);
             return v->accept_visitor(*this);
         }
-
+        case probabilityFunction_node : {
+            auto v = reinterpret_cast< ProbabilityFunction * >(o);
+            return v->accept_visitor(*this);
+        }
         // Types
         case integer_node: {
             auto v = reinterpret_cast< Integer * > (o);
@@ -304,6 +308,7 @@ int chase::GuideVisitor::continueVisit(chase::ChaseObject *o)
             auto v = reinterpret_cast< Vertex *>(o);
             return v->accept_visitor(*this);
         }
+
 
         default:
             messageError("Unsupported formula.");
@@ -418,6 +423,11 @@ int chase::GuideVisitor::visitQuantifiedFormula(
     int rv = qf.getVariable()->accept_visitor(*this);
     rv |= qf.getFormula()->accept_visitor(*this);
     return rv;
+}
+
+int chase::GuideVisitor::visitProbabilityFunction(
+        chase::ProbabilityFunction &function) {
+    return function.getSpecification()->accept_visitor(*this);
 }
 
 

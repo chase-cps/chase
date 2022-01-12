@@ -67,8 +67,8 @@ int BaseVisitor::visitQuantifiedFormula(QuantifiedFormula &) {return 0;}
 int BaseVisitor::visitLibrary(Library &) {return 0;}
 int BaseVisitor::visitFunctionCall(FunctionCall &) {return 0;}
 int BaseVisitor::visitDesignProblem(DesignProblem &) {return 0;}
-
 int BaseVisitor::visitConstraint(Constraint &) {return 0;}
+int BaseVisitor::visitProbabilityFunction(ProbabilityFunction &) {return 0;}
 
 
 

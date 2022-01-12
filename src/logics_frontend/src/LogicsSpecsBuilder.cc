@@ -187,6 +187,15 @@ Value *LogicsSpecsBuilder::createValue(LogicsContractsParser::ValueContext *ctx)
                               createValue(ctx->value(1)));
 
     }
+    if(ctx->children.size() == 4)
+    {
+        if(ctx->PROBABILITY() != nullptr && ctx->formula() != nullptr)
+        {
+            return new ProbabilityFunction(
+                    createFormula(ctx->formula()));
+        }
+    }
+    messageWarning("Invalid context: " + ctx->getText());
     return nullptr;
 }
 
@@ -235,10 +244,8 @@ LogicsSpecsBuilder::visitAssumptions(LogicsContractsParser::AssumptionsContext *
     }
 
     _currContract->addAssumptions(logic, LargeAnd(*vec));
-    std::cout << _currContract->getString() << std::endl;
     return antlrcpp::Any();
 }
-
 
 antlrcpp::Any
 LogicsSpecsBuilder::visitGuarantees(LogicsContractsParser::GuaranteesContext *ctx) {

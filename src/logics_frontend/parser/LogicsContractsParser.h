@@ -16,10 +16,10 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, WS = 17, LINE_COMMENT = 18, AND = 19, OR = 20, 
     NOT = 21, IMPLIES = 22, IFF = 23, COLON = 24, ALWAYS = 25, EVENTUALLY = 26, 
-    NEXT = 27, UNTIL = 28, RELEASE = 29, EQ = 30, NEQ = 31, LT = 32, LE = 33, 
-    GT = 34, GE = 35, PLUS = 36, MINUS = 37, TIMES = 38, DIVIDE = 39, LBRACKET = 40, 
-    RBRACKET = 41, LSQUARE = 42, RSQUARE = 43, COMMA = 44, DOT = 45, ID = 46, 
-    DECIMAL = 47, NUMBER = 48, ENDST = 49
+    NEXT = 27, UNTIL = 28, RELEASE = 29, PROBABILITY = 30, EQ = 31, NEQ = 32, 
+    LT = 33, LE = 34, GT = 35, GE = 36, PLUS = 37, MINUS = 38, TIMES = 39, 
+    DIVIDE = 40, LBRACKET = 41, RBRACKET = 42, LSQUARE = 43, RSQUARE = 44, 
+    COMMA = 45, DOT = 46, ID = 47, DECIMAL = 48, NUMBER = 49, ENDST = 50
   };
 
   enum {
@@ -29,8 +29,8 @@ public:
     RuleOutputKW = 11, RuleConstantKW = 12, RulePropositionKw = 13, RuleIsKw = 14, 
     RuleTrueKW = 15, RuleFalseKW = 16, RuleContractKW = 17, RuleAssumptionsKW = 18, 
     RuleGuaranteesKW = 19, RuleNameKw = 20, RuleCausality = 21, RuleLogic_constant = 22, 
-    RuleRange = 23, RuleInteger = 24, RuleReal = 25, RuleTypeKW = 26, RuleLvalue = 27, 
-    RuleRvalue = 28, RulePrimed_ID = 29, RuleRelation = 30, RuleValue = 31, 
+    RuleRange = 23, RuleInteger = 24, RuleReal = 25, RuleTypeKW = 26, RuleValue = 27, 
+    RuleLvalue = 28, RuleRvalue = 29, RulePrimed_ID = 30, RuleRelation = 31, 
     RulePair = 32, RuleInterval_leftopen = 33, RuleInterval_rightopen = 34, 
     RuleInterval_fullopen = 35, RuleInterval_closed = 36, RuleInterval = 37, 
     RuleFormula = 38, RuleMinus_number = 39, RuleMinus_ID = 40, RuleAtom = 41, 
@@ -75,11 +75,11 @@ public:
   class IntegerContext;
   class RealContext;
   class TypeKWContext;
+  class ValueContext;
   class LvalueContext;
   class RvalueContext;
   class Primed_IDContext;
   class RelationContext;
-  class ValueContext;
   class PairContext;
   class Interval_leftopenContext;
   class Interval_rightopenContext;
@@ -458,6 +458,30 @@ public:
 
   TypeKWContext* typeKW();
 
+  class  ValueContext : public antlr4::ParserRuleContext {
+  public:
+    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Primed_IDContext *primed_ID();
+    antlr4::tree::TerminalNode *ID();
+    Minus_IDContext *minus_ID();
+    Minus_numberContext *minus_number();
+    antlr4::tree::TerminalNode *NUMBER();
+    antlr4::tree::TerminalNode *PROBABILITY();
+    antlr4::tree::TerminalNode *LBRACKET();
+    FormulaContext *formula();
+    antlr4::tree::TerminalNode *RBRACKET();
+    std::vector<ValueContext *> value();
+    ValueContext* value(size_t i);
+    Bin_math_opContext *bin_math_op();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  ValueContext* value();
+  ValueContext* value(int precedence);
   class  LvalueContext : public antlr4::ParserRuleContext {
   public:
     LvalueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -512,28 +536,6 @@ public:
 
   RelationContext* relation();
 
-  class  ValueContext : public antlr4::ParserRuleContext {
-  public:
-    ValueContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Primed_IDContext *primed_ID();
-    antlr4::tree::TerminalNode *ID();
-    Minus_IDContext *minus_ID();
-    Minus_numberContext *minus_number();
-    antlr4::tree::TerminalNode *NUMBER();
-    antlr4::tree::TerminalNode *LBRACKET();
-    std::vector<ValueContext *> value();
-    ValueContext* value(size_t i);
-    antlr4::tree::TerminalNode *RBRACKET();
-    Bin_math_opContext *bin_math_op();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  ValueContext* value();
-  ValueContext* value(int precedence);
   class  PairContext : public antlr4::ParserRuleContext {
   public:
     PairContext(antlr4::ParserRuleContext *parent, size_t invokingState);

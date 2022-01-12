@@ -39,9 +39,12 @@
 #include "representation/Interval.hh"
 #include "representation/Distribution.hh"
 #include "representation/Function.hh"
+#include "representation/ProbabilityFunction.hh"
 
 #include "representation/Contract.hh"
 #include "representation/Matrix.hh"
+
+#include "representation/Constraint.hh"
 
 #include "representation/Name.hh"
 
@@ -63,3 +66,5 @@
 
 #include "representation/Library.hh"
 #include "representation/System.hh"
+
+#include "representation/DesignProblem.hh"

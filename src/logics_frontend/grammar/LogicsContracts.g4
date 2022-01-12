@@ -37,6 +37,7 @@ EVENTUALLY: 'F';
 NEXT:       'X';
 UNTIL:      'U';
 RELEASE:    'R';
+PROBABILITY: 'P';
 
 unary_temp_op: ALWAYS | EVENTUALLY | NEXT;
 bin_temp_op: UNTIL | RELEASE;
@@ -113,6 +114,11 @@ typeKW: integer | real | booleanKW;
   GRAMMAR RULES
 **/
 
+value: value bin_math_op value | primed_ID |
+        ID | minus_ID | minus_number | NUMBER |
+        PROBABILITY LBRACKET formula RBRACKET |
+        LBRACKET value RBRACKET;
+
 lvalue: value;
 rvalue: value;
 
@@ -120,9 +126,6 @@ primed_ID : ID'\'';
 
 relation:
     lvalue relation_op rvalue;
-
-value: value bin_math_op value | primed_ID |
-        ID | minus_ID | minus_number | NUMBER | LBRACKET value RBRACKET;
 
 pair:
     value COMMA value;
@@ -139,8 +142,6 @@ interval_fullopen:
 interval_closed:
     LSQUARE pair RSQUARE;
 
-
-
 interval:
     interval_closed |
     interval_fullopen |
@@ -152,7 +153,8 @@ formula:
     unary_logic_op  formula |
     formula bin_logic_op formula |
     unary_temp_op (interval)? formula |
-    formula bin_temp_op (interval)? formula | atom;
+    formula bin_temp_op (interval)? formula |
+    atom;
 
 minus_number: MINUS NUMBER;
 minus_ID: MINUS ID;

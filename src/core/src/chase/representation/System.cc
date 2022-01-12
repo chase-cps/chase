@@ -14,9 +14,9 @@
 using namespace chase;
 
 System::System( std::string name ) :
-    Scope(new Name(name))
+    Scope(name)
 {
-    _name->setParent(this);
+    _node_type = system_node;
 }
 
 System::~System() = default;

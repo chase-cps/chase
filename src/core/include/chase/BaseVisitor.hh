@@ -50,6 +50,7 @@ namespace chase{
 
             virtual int visitInterval(Interval & );
             virtual int visitMatrix(Matrix & );
+            virtual int visitProbabilityFunction(ProbabilityFunction & );
 
             // Types
             virtual int visitInteger( Integer & );

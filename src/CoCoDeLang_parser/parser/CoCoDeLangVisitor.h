@@ -19,15 +19,21 @@ public:
   /**
    * Visit parse trees produced by CoCoDeLangParser.
    */
+    virtual antlrcpp::Any visitDesign_header(CoCoDeLangParser::Design_headerContext *context) = 0;
+
+    virtual antlrcpp::Any visitDesign_body_element(CoCoDeLangParser::Design_body_elementContext *context) = 0;
+
+    virtual antlrcpp::Any visitDesign(CoCoDeLangParser::DesignContext *context) = 0;
+
     virtual antlrcpp::Any visitBasetype(CoCoDeLangParser::BasetypeContext *context) = 0;
 
     virtual antlrcpp::Any visitDistribution_type(CoCoDeLangParser::Distribution_typeContext *context) = 0;
 
-    virtual antlrcpp::Any visitFrequency_entry(CoCoDeLangParser::Frequency_entryContext *context) = 0;
+    virtual antlrcpp::Any visitDistribution_param(CoCoDeLangParser::Distribution_paramContext *context) = 0;
 
-    virtual antlrcpp::Any visitFrequency_table(CoCoDeLangParser::Frequency_tableContext *context) = 0;
+    virtual antlrcpp::Any visitDistribution_params(CoCoDeLangParser::Distribution_paramsContext *context) = 0;
 
-    virtual antlrcpp::Any visitDistribution_features(CoCoDeLangParser::Distribution_featuresContext *context) = 0;
+    virtual antlrcpp::Any visitVartype(CoCoDeLangParser::VartypeContext *context) = 0;
 
     virtual antlrcpp::Any visitDistribution_definition(CoCoDeLangParser::Distribution_definitionContext *context) = 0;
 
@@ -131,6 +137,10 @@ public:
 
     virtual antlrcpp::Any visitFunction(CoCoDeLangParser::FunctionContext *context) = 0;
 
+    virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *context) = 0;
+
+    virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *context) = 0;
+
     virtual antlrcpp::Any visitValue(CoCoDeLangParser::ValueContext *context) = 0;
 
     virtual antlrcpp::Any visitPair(CoCoDeLangParser::PairContext *context) = 0;
@@ -146,10 +156,6 @@ public:
     virtual antlrcpp::Any visitInterval(CoCoDeLangParser::IntervalContext *context) = 0;
 
     virtual antlrcpp::Any visitList(CoCoDeLangParser::ListContext *context) = 0;
-
-    virtual antlrcpp::Any visitMatrix_line(CoCoDeLangParser::Matrix_lineContext *context) = 0;
-
-    virtual antlrcpp::Any visitMatrix(CoCoDeLangParser::MatrixContext *context) = 0;
 
 
 };

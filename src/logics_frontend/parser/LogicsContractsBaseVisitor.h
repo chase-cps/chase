@@ -123,6 +123,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitValue(LogicsContractsParser::ValueContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitLvalue(LogicsContractsParser::LvalueContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -136,10 +140,6 @@ public:
   }
 
   virtual antlrcpp::Any visitRelation(LogicsContractsParser::RelationContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitValue(LogicsContractsParser::ValueContext *ctx) override {
     return visitChildren(ctx);
   }
 

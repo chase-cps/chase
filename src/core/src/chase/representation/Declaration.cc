@@ -26,6 +26,7 @@ Declaration::Declaration( Name * n ) :
     _name(n)
 {
     _node_type = declaration_node;
+    _name->setParent(this);
 }
 
 Declaration::Declaration( std::string n ) :

@@ -24,6 +24,7 @@ namespace chase {
     enum nodeType
     {
         object_node,
+        system_node,
         design_problem_node,
         specification_node,
         contract_node,
@@ -69,6 +70,7 @@ namespace chase {
         graph_node,
         library_node,
         functionaCall_node,
+        probabilityFunction_node,
         relation_node,
         constraint_node
     };
