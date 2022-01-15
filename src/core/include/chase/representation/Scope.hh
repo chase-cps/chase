@@ -21,7 +21,7 @@ namespace chase {
         /// @brief List of declarations.
         std::list< Declaration * > declarations;
 
-        /// @brief Function to safely add a declaration to the contract.
+        virtual /// @brief Function to safely add a declaration to the contract.
         /// The function takes care of managing the parent link to the contract.
         /// @param declaration A pointer to the declaration to add.
         void addDeclaration(Declaration * declaration);

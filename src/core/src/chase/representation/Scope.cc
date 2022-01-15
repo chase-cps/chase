@@ -15,11 +15,13 @@ void Scope::addDeclaration(Declaration *declaration) {
 }
 
 Scope::Scope(Name *n) :
-    Declaration(n) {
+    Declaration(n)
+{
 }
 
 Scope::Scope(std::string name) :
-    Declaration(name) {
+    Declaration(name)
+{
 }
 
 Scope::Scope() {}

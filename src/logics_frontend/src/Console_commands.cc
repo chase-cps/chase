@@ -239,7 +239,7 @@ int Console::_execShow(std::vector<std::string> &tokens)
 {
     std::string ret("");
     if(tokens.size() == 1)
-        _system->getString();
+        std::cout << _system->getString() << std::endl;
     else {
         for (size_t it = 1; it < tokens.size(); ++it) {
             std::string name = tokens[it];

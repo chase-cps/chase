@@ -5,6 +5,7 @@
  * */
 
 #include "main.hh"
+#include "utilities/Factory.hh"
 
 using namespace chase;
 

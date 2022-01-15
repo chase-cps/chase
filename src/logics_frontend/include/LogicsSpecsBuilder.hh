@@ -41,13 +41,10 @@ namespace chase {
         visitSystemSpec(LogicsContractsParser::SystemSpecContext *ctx) override;
         antlrcpp::Any
         visitDeclaration(LogicsContractsParser::DeclarationContext *ctx) override;
-
         antlrcpp::Any
         visitContract(LogicsContractsParser::ContractContext *ctx) override;
-
         antlrcpp::Any
         visitAssumptions(LogicsContractsParser::AssumptionsContext *ctx) override;
-
         antlrcpp::Any
         visitGuarantees(LogicsContractsParser::GuaranteesContext *ctx) override;
 

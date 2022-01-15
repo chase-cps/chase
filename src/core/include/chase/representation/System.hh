@@ -9,7 +9,6 @@
 #pragma once
 
 #include "representation/Scope.hh"
-#include "representation/Declaration.hh"
 #include "representation/Contract.hh"
 #include "representation/Component.hh"
 
@@ -22,15 +21,15 @@ namespace chase {
     public:
 
         /// @brief Constructor.
-        System( std::string name = std::string("System") );
+        explicit System( std::string name = std::string("System") );
 
         /// @brief Destructor.
-        ~System();
+        ~System() override;
 
         /// @brief Method to safely add a declaration to the system.
         /// It manages the parent link of the declaration.
         /// @param declaration Pointer to the declaration to add.
-        void addDeclaration( Declaration * declaration );
+        void addDeclaration( Declaration * declaration ) override;
 
         /// @brief Method to safely add a contract to the system.
         /// It manages the parent link of the contract.
@@ -73,24 +72,15 @@ namespace chase {
         /// @return A clone of the object.
         System * clone() override;
 
-        /// @brief Getter of the name of the system.
-        /// @return A pointer to the name object.
-        Name * getName();
 
-        /// @brief Setter of the name of the system.
-        /// @return name The pointer to the name object.
-        void setName(Name * name);
 
     protected:
 
         /// Set of contracts describing the system's requirements.
         std::set< Contract * > _contracts;
-
-
+        /// Set of components of the system.
         std::set< Component * > _components;
 
-        /// @brief Name of the system.
-        Name * _name;
 
     };
 
