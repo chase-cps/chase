@@ -14,7 +14,7 @@
 using namespace chase;
 
 System::System( std::string name ) :
-    Scope(name)
+    Scope(std::move(name))
 {
     _node_type = system_node;
 }
@@ -98,17 +98,6 @@ System *System::clone()
     ret->accept_visitor(c);
 
     return ret;
-}
-
-Name * System::getName()
-{
-    return _name;
-}
-
-void System::setName(Name * name)
-{
-    _name = name;
-    _name->setParent(this);
 }
 
 void System::addComponent(Component * component)

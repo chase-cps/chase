@@ -52,9 +52,10 @@ LogicsSpecsBuilder::visitSystemSpec(LogicsContractsParser::SystemSpecContext *ct
         std::string name = n_ctx->ID()->getText();
         messageInfo("Parsing the system: " + name);
         _system = new System(name);
+        std::cout << _system->getName()->getString() << std::endl;
     } else{
         messageInfo("Parsing the system: SYSTEM (default)");
-        _system = new System();
+        _system = new System("system");
     }
 
     return LogicsContractsBaseVisitor::visitSystemSpec(ctx);
