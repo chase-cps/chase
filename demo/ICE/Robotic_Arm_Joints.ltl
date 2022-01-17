@@ -13,27 +13,27 @@ CONTRACT Joint1:
     Assumptions:
         !req_j1;
 
-        [](req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
+        G(req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
 
-        [](req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
-        [](req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
-        [](req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
+        G(req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
+        G(req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
+        G(req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
 
-        [](req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
+        G(req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
 
-        []((req_j1 & !j1_done) -> X(req_j1));
+        G((req_j1 & !j1_done) -> X(req_j1));
 
-        [](req_j1 -> j1_dangle' = j1_dangle);
-        []<>(req_j1);
-        []<>(req_j1 & j1_done -> X(!req_j1));
+        G(req_j1 -> j1_dangle' = j1_dangle);
+        G F(req_j1);
+        G F(req_j1 & j1_done -> X(!req_j1));
 
     Guarantees:
         j1_cmd = 0;
 
-        []((j1_done | !req_j1) -> X(j1_cmd = 0));
-        [](j1_angle = j1_dangle <-> j1_done);      
+        G((j1_done | !req_j1) -> X(j1_cmd = 0));
+        G(j1_angle = j1_dangle <-> j1_done);      
 
-        []<>(j1_done);
+        G F(j1_done);
 
 CONTRACT Joint2:
      output boolean variable j2_done;
@@ -48,27 +48,27 @@ CONTRACT Joint2:
     Assumptions:
         !req_j2;
 
-        [](req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
+        G(req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
 
-        [](req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
-        [](req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
-        [](req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
+        G(req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
+        G(req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
+        G(req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
 
-        [](req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
+        G(req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
 
-        []((req_j2 & !j2_done) -> X(req_j2));
+        G((req_j2 & !j2_done) -> X(req_j2));
 
-        [](req_j2 -> j2_dangle' = j2_dangle);
-        []<>(req_j2);
-        []<>(req_j2 & j2_done -> X(!req_j2));
+        G(req_j2 -> j2_dangle' = j2_dangle);
+        G F(req_j2);
+        G F(req_j2 & j2_done -> X(!req_j2));
 
     Guarantees:
         j2_cmd = 0;
 
-        []((j2_done | !req_j2) -> X(j2_cmd = 0));
-        [](j2_angle = j2_dangle <-> j2_done);      
+        G((j2_done | !req_j2) -> X(j2_cmd = 0));
+        G(j2_angle = j2_dangle <-> j2_done);      
 
-        []<>(j2_done);
+        G F(j2_done);
 
 CONTRACT Joint3:
      output boolean variable j3_done;
@@ -83,27 +83,27 @@ CONTRACT Joint3:
     Assumptions:
         !req_j3;
 
-        [](req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
+        G(req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
 
-        [](req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
-        [](req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
-        [](req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
+        G(req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
+        G(req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
+        G(req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
 
-        [](req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
+        G(req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
 
-        []((req_j3 & !j3_done) -> X(req_j3));
+        G((req_j3 & !j3_done) -> X(req_j3));
 
-        [](req_j3 -> j3_dangle' = j3_dangle);
-        []<>(req_j3);
-        []<>(req_j3 & j3_done -> X(!req_j3));
+        G(req_j3 -> j3_dangle' = j3_dangle);
+        G F(req_j3);
+        G F(req_j3 & j3_done -> X(!req_j3));
 
     Guarantees:
         j3_cmd = 0;
 
-        []((j3_done | !req_j3) -> X(j3_cmd = 0));
-        [](j3_angle = j3_dangle <-> j3_done);      
+        G((j3_done | !req_j3) -> X(j3_cmd = 0));
+        G(j3_angle = j3_dangle <-> j3_done);      
 
-        []<>(j3_done);
+        G F(j3_done);
 
 
 CONTRACT Joints:
@@ -135,37 +135,37 @@ CONTRACT Joints:
         !req_j3;
 
 
-        [](req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
-        [](req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
-        [](req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
-        [](req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
-        [](req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
-        []((req_j1 & !j1_done) -> X(req_j1));
-        [](req_j1 -> j1_dangle' = j1_dangle);
+        G(req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
+        G(req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
+        G(req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
+        G(req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
+        G(req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
+        G((req_j1 & !j1_done) -> X(req_j1));
+        G(req_j1 -> j1_dangle' = j1_dangle);
 
-        [](req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
-        [](req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
-        [](req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
-        [](req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
-        [](req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
-        []((req_j2 & !j2_done) -> X(req_j2));
-        [](req_j2 -> j2_dangle' = j2_dangle);
+        G(req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
+        G(req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
+        G(req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
+        G(req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
+        G(req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
+        G((req_j2 & !j2_done) -> X(req_j2));
+        G(req_j2 -> j2_dangle' = j2_dangle);
 
-        [](req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
-        [](req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
-        [](req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
-        [](req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
-        [](req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
-        []((req_j3 & !j3_done) -> X(req_j3));
-        [](req_j3 -> j3_dangle' = j3_dangle);
+        G(req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
+        G(req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
+        G(req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
+        G(req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
+        G(req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
+        G((req_j3 & !j3_done) -> X(req_j3));
+        G(req_j3 -> j3_dangle' = j3_dangle);
 
 
-        []<>(req_j1);
-        []<>(req_j1 & j1_done -> X(!req_j1));
-        []<>(req_j2);
-        []<>(req_j2 & j2_done -> X(!req_j2));
-        []<>(req_j3);
-        []<>(req_j3 & j3_done -> X(!req_j3));
+        G F(req_j1);
+        G F(req_j1 & j1_done -> X(!req_j1));
+        G F(req_j2);
+        G F(req_j2 & j2_done -> X(!req_j2));
+        G F(req_j3);
+        G F(req_j3 & j3_done -> X(!req_j3));
 
     Guarantees:
         j1_cmd = 0;
@@ -173,19 +173,19 @@ CONTRACT Joints:
         j3_cmd = 0;
 
 
-        []((j2_done | !req_j2) -> X(j2_cmd = 0));
-        [](j2_angle = j2_dangle <-> j2_done);      
+        G((j2_done | !req_j2) -> X(j2_cmd = 0));
+        G(j2_angle = j2_dangle <-> j2_done);      
 
-        []((j3_done | !req_j3) -> X(j3_cmd = 0));
-        [](j3_angle = j3_dangle <-> j3_done);      
+        G((j3_done | !req_j3) -> X(j3_cmd = 0));
+        G(j3_angle = j3_dangle <-> j3_done);      
 
-        []((j1_done | !req_j1) -> X(j1_cmd = 0));
-        [](j1_angle = j1_dangle <-> j1_done);      
+        G((j1_done | !req_j1) -> X(j1_cmd = 0));
+        G(j1_angle = j1_dangle <-> j1_done);      
 
 
-        []<>(j1_done);
-        []<>(j2_done);
-        []<>(j3_done);
+        G F(j1_done);
+        G F(j2_done);
+        G F(j3_done);
 
 
 
