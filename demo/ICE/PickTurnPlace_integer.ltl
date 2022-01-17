@@ -14,12 +14,12 @@ CONTRACT Turn:
         desired_angle = 0;
         angle = 0;
 
-        [](command = 1 -> angle' = angle + 1);
-        [](command = 2 -> angle = angle' + 1);
-        [](command = 0 -> angle' = angle);
+        G(command = 1 -> angle' = angle + 1);
+        G(command = 2 -> angle = angle' + 1);
+        G(command = 0 -> angle' = angle);
 
     Guarantees:
         !done;
         command = 0;
-        []<>(request -> angle = desired_angle);
+        G F(request -> angle = desired_angle);
 
