@@ -99,7 +99,7 @@ Params * chase::parseCmdLine(int argc, char **argv) {
 void chase::printHelp()
 {
     std::cerr << "[USAGE]\n" <<
-              "chase -i input_file -c commands_file [-V]"
+              "logics_frontend -i input_file -c commands_file [-V]"
               << std::endl <<
               std::endl <<
               "\t-i : specifies the txt input file containing the specifications."
