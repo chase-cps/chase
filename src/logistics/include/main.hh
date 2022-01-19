@@ -17,6 +17,8 @@
 #include <fstream>
 #include <sys/stat.h>
 
+#define APPLICATION LogisticsTool
+
 namespace chase
 {
     /// @brief Structure saving all the input console parameters.
