@@ -1,48 +1,38 @@
-Widgets:
-    orange, blue, red, purple, green;
+Map (
+rrr!Rr!Rr!Rr!Rrd
+u<>D<>u<>D<>u<>d
+u<>d<>u<>d<>u<>d
+u<>d<>u<>d<>u<>d
+U<>d<>U<>d<>U<>d
+!lL!lL!lL!lL!lL!
+u<>D<>u<>D<>u<>D
+u<>d<>u<>d<>u<>d
+u<>d<>u<>d<>u<>d
+U<>d<>U<>d<>U<>d
+!Rr!Rr!Rr!Rr!Rr!
+u<>D<>u<>D<>u<>D
+u<>d<>u<>d<>u<>d
+u<>d<>u<>d<>u<>d
+u<>d<>U<>d<>U<>d
+ulL!lL!lL!lL!lL!
+ffffffffffffffff
+fffFffffffffffff
+ffrrrrr!Ffffffff
+@@@@@@@B@@@@@@@@
+)
 
-Components:
-    OBin is Bin(0.5 orange);
-    BBin is Bin(0.25 blue);
-    RBin is Bin(1 red);
-    PMachine is Machine(
-        produces: 1 purple;
-        requires: 4 red, 1 blue);
-    GMachine is Machine(
-        produces: 1 green;
-        requires: 2 orange, 1 purple);
-    GSink is Sink(1 green);
+Products (
+    Sunglasses: (1,7,10), (1,8,10);
+    Scarves:    (1,7,1),  (1,8,2);
+)
 
-Crossroads:
-    C0,1;
-    C1,1;
-    C2,1;
-    C3,1;
-    C4,1;
-    C5,1;
-    C6,1;
-    C7,1;
 
-Architecture:
-    Obin -( 1.0 )-> C1;
-    C1 -( 1.0 )-> C2;
-    C2 -( 1.0 )-> GSink;
-    C2 -( 1.0 )-> RBin;
-    BBin -( 1.0 )-> C3;
-    C3 -( 1.0 )-> C2;
-    RBin -( 1.0 )-> C5;
-    C5 -( 1.0 )-> C4;
-    C5 -( 1.0 )-> C6;
-    C5 -( 1.0 )-> C7;
-    C7 -( 1.0 )-> PMac;
-    PMac -( 1.0 )-> C6;
-    C7 -( 1.0 )-> GMac;
-    GMac -( 1.0 )-> C4;
-    C4 -( 1.0 )-> C1;
-    C6 -( 1.0 )-> C3;
-    GSink -( 1.0 )-> C0;
-    C0 -( 1.0 )-> OBin;
-    C0 -( 1.0 )-> BBin;
+Destination LA 1000 (
+    sunglasses: 90,
+    scarves: 2
+)
 
-Requirements:
-    0.25 GSink;
+Destination Oslo variable (
+    sunglasses: 5,
+    scarves: 50
+)

@@ -13,102 +13,51 @@ fragment LETTER: [a-zA-Z];
 
 fragment ALPHANUM: DIGIT | LETTER | '_';
 
-// Punctuation.
 COLON:      ':';
-COMMA:      ',';
-DOT:        '.';
-EQ:         '=';
 ENDST:      ';';
+
+COMMA:  ',';
+DOT:    '.';
 
 LBRACKET: '(';
 RBRACKET: ')';
 
-// IDs and NUMBERs
-ID: LETTER ALPHANUM*;
+// Maps
+
+MAPCHAR: [fFrRlLdDuUBb@!><];
+
+mapKw:  'Map';
+MAPLINE : MAPCHAR MAPCHAR*;
+
+map :
+    mapKw LBRACKET MAPLINE+ RBRACKET;
+
+// Products
 DECIMAL: DOT DIGIT+;
-
 NUMBER: DIGIT+ DECIMAL?;
+ID: LETTER ALPHANUM*;
 
-// Keywords
-widgetsKw:      'Widgets';
-componentsKw:   'Components';
-crossroadsKw:   'Crossroads';
-architectureKw: 'Architecture';
-isKw:           'is';
-requirementsKw: 'Requirements';
+productsKw   : 'Products';
 
-producesKw:     'produces';
-requiresKw:     'requires';
+coordx      : NUMBER;
+coordy      : NUMBER;
+units       : NUMBER;
+triple      : LBRACKET coordx COMMA coordy COMMA units RBRACKET;
 
-binKw:          'Bin';
-machineKw:      'Machine';
-sinkKw:         'Sink';
+product     : ID COLON triple (COMMA triple)* ENDST;
 
-nothingKw:         'Nothing';
+products    : productsKw LBRACKET product+ RBRACKET;
 
-// Widgets
-widgets:
-    widgetsKw COLON ID (COMMA ID)* ENDST;
+// Requirements
 
-/*
-Components.
-*/
-item:
-    NUMBER ID;
+variableKw      : 'variable';
+destinationKw   : 'destination';
+time            : NUMBER | variableKw;
+location        : ID;
+request         : ID COLON NUMBER;
 
-bin:
-    ID isKw binKw LBRACKET item (COMMA item)* RBRACKET ENDST;
+destination     :
+    destinationKw location time LBRACKET
+        request (COMMA request)* RBRACKET;
 
-sink:
-    ID isKw sinkKw LBRACKET item (COMMA item)* RBRACKET ENDST;
-
-require: requiresKw COLON item (COMMA item)* | requiresKw COLON nothingKw;
-produce: producesKw COLON item (COMMA item)* | producesKw COLON nothingKw;
-
-machineSpec:
-    produce ENDST require | require ENDST produce;
-
-machine:
-    ID isKw machineKw LBRACKET machineSpec RBRACKET ENDST;
-
-component: machine | sink | bin;
-
-components: componentsKw COLON component+;
-
-/*
-Crossroads.
-*/
-
-crossroad:
-    ID COMMA NUMBER ENDST;
-
-crossroads:
-    crossroadsKw COLON crossroad+;
-
-/*
-Architecture
-*/
-ARROW_PRE: '-(';
-ARROW_POST: ')->';
-
-road:
-    ARROW_PRE NUMBER ARROW_POST;
-
-connection:
-    ID road ID ENDST;
-
-architecture:
-    architectureKw COLON
-        connection+;
-
-/*
-Requirements.
-*/
-
-requirement: NUMBER ID ENDST;
-
-requirements :
-    requirementsKw COLON requirement+;
-
-spec:
-    widgets components crossroads architecture requirements;
+spec    : map products destination+;

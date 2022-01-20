@@ -15,119 +15,63 @@
 class  LogisticsLangBaseVisitor : public LogisticsLangVisitor {
 public:
 
-  virtual antlrcpp::Any visitWidgetsKw(LogisticsLangParser::WidgetsKwContext *ctx) override {
+  virtual antlrcpp::Any visitMapKw(LogisticsLangParser::MapKwContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitComponentsKw(LogisticsLangParser::ComponentsKwContext *ctx) override {
+  virtual antlrcpp::Any visitMap(LogisticsLangParser::MapContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitCrossroadsKw(LogisticsLangParser::CrossroadsKwContext *ctx) override {
+  virtual antlrcpp::Any visitProductsKw(LogisticsLangParser::ProductsKwContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitArchitectureKw(LogisticsLangParser::ArchitectureKwContext *ctx) override {
+  virtual antlrcpp::Any visitCoordx(LogisticsLangParser::CoordxContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitIsKw(LogisticsLangParser::IsKwContext *ctx) override {
+  virtual antlrcpp::Any visitCoordy(LogisticsLangParser::CoordyContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitRequirementsKw(LogisticsLangParser::RequirementsKwContext *ctx) override {
+  virtual antlrcpp::Any visitUnits(LogisticsLangParser::UnitsContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitProducesKw(LogisticsLangParser::ProducesKwContext *ctx) override {
+  virtual antlrcpp::Any visitTriple(LogisticsLangParser::TripleContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitRequiresKw(LogisticsLangParser::RequiresKwContext *ctx) override {
+  virtual antlrcpp::Any visitProduct(LogisticsLangParser::ProductContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitBinKw(LogisticsLangParser::BinKwContext *ctx) override {
+  virtual antlrcpp::Any visitProducts(LogisticsLangParser::ProductsContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitMachineKw(LogisticsLangParser::MachineKwContext *ctx) override {
+  virtual antlrcpp::Any visitVariableKw(LogisticsLangParser::VariableKwContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitSinkKw(LogisticsLangParser::SinkKwContext *ctx) override {
+  virtual antlrcpp::Any visitDestinationKw(LogisticsLangParser::DestinationKwContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitNothingKw(LogisticsLangParser::NothingKwContext *ctx) override {
+  virtual antlrcpp::Any visitTime(LogisticsLangParser::TimeContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitWidgets(LogisticsLangParser::WidgetsContext *ctx) override {
+  virtual antlrcpp::Any visitLocation(LogisticsLangParser::LocationContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitItem(LogisticsLangParser::ItemContext *ctx) override {
+  virtual antlrcpp::Any visitRequest(LogisticsLangParser::RequestContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitBin(LogisticsLangParser::BinContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitSink(LogisticsLangParser::SinkContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitRequire(LogisticsLangParser::RequireContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitProduce(LogisticsLangParser::ProduceContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitMachineSpec(LogisticsLangParser::MachineSpecContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitMachine(LogisticsLangParser::MachineContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitComponent(LogisticsLangParser::ComponentContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitComponents(LogisticsLangParser::ComponentsContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitCrossroad(LogisticsLangParser::CrossroadContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitCrossroads(LogisticsLangParser::CrossroadsContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitRoad(LogisticsLangParser::RoadContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitConnection(LogisticsLangParser::ConnectionContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitArchitecture(LogisticsLangParser::ArchitectureContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitRequirement(LogisticsLangParser::RequirementContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitRequirements(LogisticsLangParser::RequirementsContext *ctx) override {
+  virtual antlrcpp::Any visitDestination(LogisticsLangParser::DestinationContext *ctx) override {
     return visitChildren(ctx);
   }
 

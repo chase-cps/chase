@@ -81,16 +81,33 @@ public:
     ~Machine() = default;
 };
 
+typedef struct destination
+{
+    std::string name;
+    unsigned int time;
+    std::map< std::string, unsigned int > requests;
+} Destination;
+
+typedef struct _location
+{
+    unsigned int xpos;
+    unsigned int ypos;
+    unsigned int quantity;
+} Location;
+
 /// @brief Main class of the logistics specification builder.
 class LogisticsSpecsBuilder : public LogisticsLangBaseVisitor {
 public:
 
-    /// @brief List of widgets.
-    std::vector< std::string > widgets;
-    /// @brief List of Equipment.
-    std::vector< Equipment * > equipment;
-    /// @brief List of Crossroads.
-    std::vector< item * > crossroads;
+    /// ASCII representation of the Map.
+    std::vector< std::string > asciimap;
+    /// Number of lines in the Map.
+    unsigned int map_lines;
+    /// Number of columns in the Map.
+    unsigned int map_columns;
+
+    std::map< std::string, std::vector< Location * > > products;
+    std::vector< Destination * > destinations;
 
     /// @brief Constructor.
     LogisticsSpecsBuilder();
@@ -103,14 +120,6 @@ public:
     void parseSpecificationFile( const std::string& infile );
 
     /// @cond
-    antlrcpp::Any visitWidgets(
-            LogisticsLangParser::WidgetsContext *ctx) override;
-    antlrcpp::Any visitMachine(
-            LogisticsLangParser::MachineContext *ctx) override;
-    antlrcpp::Any visitSink(
-            LogisticsLangParser::SinkContext *ctx) override;
-    antlrcpp::Any visitBin(LogisticsLangParser::BinContext *ctx) override;
-    antlrcpp::Any visitCrossroad(
-            LogisticsLangParser::CrossroadContext *ctx) override;
+    antlrcpp::Any visitMap(LogisticsLangParser::MapContext *ctx) override;
     /// @endcond
 };
