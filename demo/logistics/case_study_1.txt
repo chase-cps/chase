@@ -32,7 +32,7 @@ Destination LA 1000 (
     scarves: 2
 )
 
-Destination Oslo variable (
+Destination Oslo 0 (
     sunglasses: 5,
     scarves: 50
 )

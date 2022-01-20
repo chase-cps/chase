@@ -39,10 +39,10 @@ ID: LETTER ALPHANUM*;
 
 productsKw   : 'Products';
 
-coordx      : NUMBER;
-coordy      : NUMBER;
+xpos      : NUMBER;
+ypos      : NUMBER;
 units       : NUMBER;
-triple      : LBRACKET coordx COMMA coordy COMMA units RBRACKET;
+triple      : LBRACKET xpos COMMA ypos COMMA units RBRACKET;
 
 product     : ID COLON triple (COMMA triple)* ENDST;
 
@@ -50,9 +50,8 @@ products    : productsKw LBRACKET product+ RBRACKET;
 
 // Requirements
 
-variableKw      : 'variable';
-destinationKw   : 'destination';
-time            : NUMBER | variableKw;
+destinationKw   : 'Destination';
+time            : NUMBER;
 location        : ID;
 request         : ID COLON NUMBER;
 

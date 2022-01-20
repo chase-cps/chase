@@ -25,9 +25,9 @@ public:
 
     virtual antlrcpp::Any visitProductsKw(LogisticsLangParser::ProductsKwContext *context) = 0;
 
-    virtual antlrcpp::Any visitCoordx(LogisticsLangParser::CoordxContext *context) = 0;
+    virtual antlrcpp::Any visitXpos(LogisticsLangParser::XposContext *context) = 0;
 
-    virtual antlrcpp::Any visitCoordy(LogisticsLangParser::CoordyContext *context) = 0;
+    virtual antlrcpp::Any visitYpos(LogisticsLangParser::YposContext *context) = 0;
 
     virtual antlrcpp::Any visitUnits(LogisticsLangParser::UnitsContext *context) = 0;
 
@@ -36,8 +36,6 @@ public:
     virtual antlrcpp::Any visitProduct(LogisticsLangParser::ProductContext *context) = 0;
 
     virtual antlrcpp::Any visitProducts(LogisticsLangParser::ProductsContext *context) = 0;
-
-    virtual antlrcpp::Any visitVariableKw(LogisticsLangParser::VariableKwContext *context) = 0;
 
     virtual antlrcpp::Any visitDestinationKw(LogisticsLangParser::DestinationKwContext *context) = 0;
 

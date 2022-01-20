@@ -12,16 +12,16 @@
 class  LogisticsLangParser : public antlr4::Parser {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, WS = 5, LINE_COMMENT = 6, COLON = 7, 
-    ENDST = 8, COMMA = 9, DOT = 10, LBRACKET = 11, RBRACKET = 12, MAPCHAR = 13, 
-    MAPLINE = 14, DECIMAL = 15, NUMBER = 16, ID = 17
+    T__0 = 1, T__1 = 2, T__2 = 3, WS = 4, LINE_COMMENT = 5, COLON = 6, ENDST = 7, 
+    COMMA = 8, DOT = 9, LBRACKET = 10, RBRACKET = 11, MAPCHAR = 12, MAPLINE = 13, 
+    DECIMAL = 14, NUMBER = 15, ID = 16
   };
 
   enum {
-    RuleMapKw = 0, RuleMap = 1, RuleProductsKw = 2, RuleCoordx = 3, RuleCoordy = 4, 
-    RuleUnits = 5, RuleTriple = 6, RuleProduct = 7, RuleProducts = 8, RuleVariableKw = 9, 
-    RuleDestinationKw = 10, RuleTime = 11, RuleLocation = 12, RuleRequest = 13, 
-    RuleDestination = 14, RuleSpec = 15
+    RuleMapKw = 0, RuleMap = 1, RuleProductsKw = 2, RuleXpos = 3, RuleYpos = 4, 
+    RuleUnits = 5, RuleTriple = 6, RuleProduct = 7, RuleProducts = 8, RuleDestinationKw = 9, 
+    RuleTime = 10, RuleLocation = 11, RuleRequest = 12, RuleDestination = 13, 
+    RuleSpec = 14
   };
 
   explicit LogisticsLangParser(antlr4::TokenStream *input);
@@ -37,13 +37,12 @@ public:
   class MapKwContext;
   class MapContext;
   class ProductsKwContext;
-  class CoordxContext;
-  class CoordyContext;
+  class XposContext;
+  class YposContext;
   class UnitsContext;
   class TripleContext;
   class ProductContext;
   class ProductsContext;
-  class VariableKwContext;
   class DestinationKwContext;
   class TimeContext;
   class LocationContext;
@@ -92,9 +91,9 @@ public:
 
   ProductsKwContext* productsKw();
 
-  class  CoordxContext : public antlr4::ParserRuleContext {
+  class  XposContext : public antlr4::ParserRuleContext {
   public:
-    CoordxContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    XposContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMBER();
 
@@ -103,11 +102,11 @@ public:
    
   };
 
-  CoordxContext* coordx();
+  XposContext* xpos();
 
-  class  CoordyContext : public antlr4::ParserRuleContext {
+  class  YposContext : public antlr4::ParserRuleContext {
   public:
-    CoordyContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    YposContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMBER();
 
@@ -116,7 +115,7 @@ public:
    
   };
 
-  CoordyContext* coordy();
+  YposContext* ypos();
 
   class  UnitsContext : public antlr4::ParserRuleContext {
   public:
@@ -136,10 +135,10 @@ public:
     TripleContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *LBRACKET();
-    CoordxContext *coordx();
+    XposContext *xpos();
     std::vector<antlr4::tree::TerminalNode *> COMMA();
     antlr4::tree::TerminalNode* COMMA(size_t i);
-    CoordyContext *coordy();
+    YposContext *ypos();
     UnitsContext *units();
     antlr4::tree::TerminalNode *RBRACKET();
 
@@ -186,18 +185,6 @@ public:
 
   ProductsContext* products();
 
-  class  VariableKwContext : public antlr4::ParserRuleContext {
-  public:
-    VariableKwContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  VariableKwContext* variableKw();
-
   class  DestinationKwContext : public antlr4::ParserRuleContext {
   public:
     DestinationKwContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -215,7 +202,6 @@ public:
     TimeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMBER();
-    VariableKwContext *variableKw();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

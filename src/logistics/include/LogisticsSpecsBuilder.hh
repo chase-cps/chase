@@ -81,19 +81,40 @@ public:
     ~Machine() = default;
 };
 
-typedef struct destination
+typedef struct Destination
 {
+    /// @brief The name of the destination.
     std::string name;
-    unsigned int time;
-    std::map< std::string, unsigned int > requests;
+    /// @brief The delivery time.
+    unsigned time;
+    /// @brief List of request for the destination.
+    std::map< std::string, unsigned > requests;
+
+    /// @brief Constructor.
+    /// @param name The name of the destination.
+    /// @param time Delivery time.
+    Destination(std::string name, unsigned time);
+    /// @brief Destructor.
+    virtual ~Destination();
 } Destination;
 
-typedef struct _location
+typedef struct Position
 {
-    unsigned int xpos;
-    unsigned int ypos;
-    unsigned int quantity;
-} Location;
+    /// @brief Longitudinal position of the position.
+    unsigned xpos;
+    /// @brief Latitudinal position of the position.
+    unsigned ypos;
+    /// @brief Quantity available at the position.
+    unsigned quantity;
+
+    /// @brief Constructor.
+    /// @param xpos Longitudinal position of the position.
+    /// @param ypos Latitudinal position of the position.
+    /// @param quantity Quantity available at the position.
+    Position(unsigned xpos, unsigned ypos, unsigned quantity);
+    /// @brief Destructor.
+    virtual ~Position();
+} Position;
 
 /// @brief Main class of the logistics specification builder.
 class LogisticsSpecsBuilder : public LogisticsLangBaseVisitor {
@@ -102,11 +123,11 @@ public:
     /// ASCII representation of the Map.
     std::vector< std::string > asciimap;
     /// Number of lines in the Map.
-    unsigned int map_lines;
+    unsigned map_lines;
     /// Number of columns in the Map.
-    unsigned int map_columns;
+    unsigned map_columns;
 
-    std::map< std::string, std::vector< Location * > > products;
+    std::map< std::string, std::vector< Position * > > products;
     std::vector< Destination * > destinations;
 
     /// @brief Constructor.
@@ -121,5 +142,7 @@ public:
 
     /// @cond
     antlrcpp::Any visitMap(LogisticsLangParser::MapContext *ctx) override;
+    antlrcpp::Any visitProduct(LogisticsLangParser::ProductContext *ctx) override;
+    antlrcpp::Any visitDestination(LogisticsLangParser::DestinationContext *ctx) override;
     /// @endcond
 };

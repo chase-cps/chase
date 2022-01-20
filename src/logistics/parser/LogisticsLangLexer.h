@@ -12,9 +12,9 @@
 class  LogisticsLangLexer : public antlr4::Lexer {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, WS = 5, LINE_COMMENT = 6, COLON = 7, 
-    ENDST = 8, COMMA = 9, DOT = 10, LBRACKET = 11, RBRACKET = 12, MAPCHAR = 13, 
-    MAPLINE = 14, DECIMAL = 15, NUMBER = 16, ID = 17
+    T__0 = 1, T__1 = 2, T__2 = 3, WS = 4, LINE_COMMENT = 5, COLON = 6, ENDST = 7, 
+    COMMA = 8, DOT = 9, LBRACKET = 10, RBRACKET = 11, MAPCHAR = 12, MAPLINE = 13, 
+    DECIMAL = 14, NUMBER = 15, ID = 16
   };
 
   explicit LogisticsLangLexer(antlr4::CharStream *input);

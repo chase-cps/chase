@@ -26,6 +26,16 @@ Machine::Machine(const std::string &name) : Equipment(name) {}
 LogisticsSpecsBuilder::LogisticsSpecsBuilder() = default;
 LogisticsSpecsBuilder::~LogisticsSpecsBuilder() = default;
 
+Position::Position(
+        unsigned xpos, unsigned ypos, unsigned quantity) :
+        xpos(xpos), ypos(ypos), quantity(quantity) {}
+Position::~Position() = default;
+
+Destination::Destination(std::string name, unsigned time) :
+    name(std::move(name)), time(time) {}
+Destination::~Destination() = default;
+
+
 void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     ANTLRFileStream input( infile );
     LogisticsLangLexer lexer( &input );
@@ -46,7 +56,7 @@ antlrcpp::Any LogisticsSpecsBuilder::visitMap(
     map_columns = 0;
     for(auto i : ctx->MAPLINE()) {
         std::string line = i->toString();
-        unsigned int linesize = line.size();
+        unsigned linesize = line.size();
         if(map_columns == 0) map_columns = linesize;
         if(linesize != map_columns)
             messageError("Ill-formed map.");
@@ -55,3 +65,46 @@ antlrcpp::Any LogisticsSpecsBuilder::visitMap(
     return LogisticsLangBaseVisitor::visitMap(ctx);
 }
 
+antlrcpp::Any LogisticsSpecsBuilder::visitProduct(
+        LogisticsLangParser::ProductContext *ctx) {
+    std::string name(ctx->ID()->toString());
+
+    std::pair< std::string, std::vector< Position * > > p;
+    p.first = name;
+
+    for( auto it : ctx->triple() )
+    {
+        char * pEnd;
+        unsigned xpos = std::strtoul(
+                it->xpos()->NUMBER()->getText().c_str(), &pEnd, 10);
+        unsigned ypos = std::strtoul(
+                it->ypos()->NUMBER()->getText().c_str(), &pEnd, 10);
+        unsigned units = std::strtoul(
+                it->units()->NUMBER()->getText().c_str(), &pEnd, 10);
+    }
+
+    products.insert(p);
+    return LogisticsLangBaseVisitor::visitProduct(ctx);
+}
+
+antlrcpp::Any
+LogisticsSpecsBuilder::visitDestination(
+        LogisticsLangParser::DestinationContext *ctx) {
+    std::string name(ctx->location()->ID()->getText());
+    char * pEnd;
+    unsigned time(
+            std::strtoul(
+                    ctx->time()->NUMBER()->getText().c_str(),
+                    &pEnd, 10));
+    auto destination = new Destination(name, time);
+
+    for(auto it : ctx->request())
+    {
+        unsigned req = std::strtoul(
+                it->NUMBER()->toString().c_str(), &pEnd, 10);
+        std::pair< std::string, unsigned > p(it->ID()->getText(), req);
+        destination->requests.insert(p);
+    }
+
+    return LogisticsLangBaseVisitor::visitDestination(ctx);
+}

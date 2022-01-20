@@ -27,11 +27,11 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitCoordx(LogisticsLangParser::CoordxContext *ctx) override {
+  virtual antlrcpp::Any visitXpos(LogisticsLangParser::XposContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitCoordy(LogisticsLangParser::CoordyContext *ctx) override {
+  virtual antlrcpp::Any visitYpos(LogisticsLangParser::YposContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -48,10 +48,6 @@ public:
   }
 
   virtual antlrcpp::Any visitProducts(LogisticsLangParser::ProductsContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitVariableKw(LogisticsLangParser::VariableKwContext *ctx) override {
     return visitChildren(ctx);
   }
 
