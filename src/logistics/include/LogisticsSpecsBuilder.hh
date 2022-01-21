@@ -83,10 +83,21 @@ public:
     /// @endcond
 
 protected:
-    /// @brief Main method to build the Warehouse model.
-    Warehouse * buildWarehouseModel();
     /// @brief Matrix used to keep track of the components found
     /// and assigned.
     /// \todo Consider linearizing this matrix.
     std::vector< std::vector < Equipment * > > _components;
+    /// @brief Main method to build the Warehouse model.
+    Warehouse * buildWarehouseModel();
+
+    /// @brief Method to find Right-oriented roads.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeRigthRoad(unsigned  i, unsigned j);
+
+    /// @brief Method to find Left-oriented roads.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeLeftRoad(unsigned  i, unsigned j);
+
 };

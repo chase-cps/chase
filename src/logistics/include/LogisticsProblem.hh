@@ -12,6 +12,11 @@
 /// @brief Enumeration with the type of objects available in the warehouse.
 enum equipment_type {generic, bin, sink, machine, road, crossroad, forum, bay};
 
+typedef struct coordinate {
+    unsigned x;
+    unsigned y;
+} coordinate;
+
 /// @brief Base class for the objects in the warehouse.
 class Equipment
 {
@@ -74,6 +79,11 @@ public:
 class Road : public Equipment
 {
 public:
+    /// @brief Length of the road. It is also the its capacity.
+    unsigned len;
+
+    coordinate in;
+    coordinate out;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Road(const std::string &name = std::string("road"));
@@ -119,7 +129,7 @@ class Warehouse
 {
 public:
     /// @brief Vector of components.
-    std::vector< Equipment * > components;
+    std::vector< Road * > roads;
     /// @brief Constructor.
     Warehouse();
     /// @brief Destructor.
