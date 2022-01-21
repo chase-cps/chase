@@ -13,28 +13,23 @@
 using namespace chase;
 using namespace antlr4;
 
-
-item::item(double rate, std::string n) :
-    rate(rate), name(std::move(n)) {}
-
-Equipment::Equipment(std::string name) : name(std::move(name)) {}
-const std::string &Equipment::getName() const {return name;}
-void Equipment::setName(const std::string &n) {name = n;}
-Bin::Bin(const std::string &name) : Equipment(name) {}
-Sink::Sink(const std::string &name) : Equipment(name) {}
-Machine::Machine(const std::string &name) : Equipment(name) {}
-LogisticsSpecsBuilder::LogisticsSpecsBuilder() = default;
-LogisticsSpecsBuilder::~LogisticsSpecsBuilder() = default;
-
 Position::Position(
         unsigned xpos, unsigned ypos, unsigned quantity) :
         xpos(xpos), ypos(ypos), quantity(quantity) {}
 Position::~Position() = default;
 
 Destination::Destination(std::string name, unsigned time) :
-    name(std::move(name)), time(time) {}
+        name(std::move(name)), time(time) {}
 Destination::~Destination() = default;
 
+LogisticsSpecsBuilder::LogisticsSpecsBuilder() :
+    map_lines(0),
+    map_columns(0),
+    warehouse(nullptr)
+{
+}
+
+LogisticsSpecsBuilder::~LogisticsSpecsBuilder() = default;
 
 void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     ANTLRFileStream input( infile );
@@ -46,7 +41,12 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     parser.setBuildParseTree(true);
     auto tree = parser.spec();
 
+    messageInfo("Phase 1: parsing of the specification.");
     visitSpec(tree);
+
+    messageInfo("Phase 2: build facility model.");
+    warehouse = buildWarehouseModel();
+
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(
@@ -108,3 +108,5 @@ LogisticsSpecsBuilder::visitDestination(
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
+
+

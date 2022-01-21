@@ -11,75 +11,7 @@
 #include "parser/LogisticsLangParser.h"
 #include "parser/LogisticsLangLexer.h"
 
-typedef struct item
-{
-    /// @brief The rate of the item.
-    double rate;
-    /// @brief The name of the item.
-    std::string name;
-    /// @brief Constructor.
-    /// @param rate the rate of the item.
-    /// @param n the name of the item.
-    item(double rate, std::string n);
-    /// @brief Destructor.
-    ~item() = default;
-} item;
-
-class Equipment
-{
-public:
-    ///@brief The name of the piece of equipment.
-    std::string name;
-    ///@brief Constructor.
-    ///@param name The name of the piece of equipment.
-    explicit Equipment(std::string name);
-    ///@param destructor.
-    ~Equipment() = default;
-    /// @brief Getter of the name.
-    /// @return The name of the piece of equipment.
-    const std::string &getName() const;
-    /// @brief Setter of the name.
-    /// @param name The name of the piece of equipment.
-    void setName(const std::string &name);
-};
-
-class Bin : public Equipment
-{
-public:
-    /// @brief List of items.
-    std::vector< item * > items;
-    /// @brief Constructor.
-    ///@param name The name of the piece of equipment.
-    explicit Bin(const std::string &name);
-    /// @brief Destructor.
-    ~Bin() = default;
-};
-
-class Sink : public Equipment
-{
-public:
-    /// @brief List of items.
-    std::vector< item * > items;
-    /// @brief Constructor.
-    ///@param name The name of the piece of equipment.
-    explicit Sink(const std::string &name);
-    /// @brief Destructor.
-    ~Sink() = default;
-};
-
-class Machine : public Equipment
-{
-public:
-    /// @brief List of produced widgets.
-    std::vector< item * > produced;
-    /// @brief List of required widgets.
-    std::vector< item * > required;
-    /// @brief Constructor.
-    /// @param name The name of the piece of equipment.
-    explicit Machine(const std::string &name);
-    /// @brief Destructor.
-    ~Machine() = default;
-};
+#include "LogisticsProblem.hh"
 
 typedef struct Destination
 {
@@ -120,14 +52,18 @@ typedef struct Position
 class LogisticsSpecsBuilder : public LogisticsLangBaseVisitor {
 public:
 
-    /// ASCII representation of the Map.
+    /// @brief ASCII representation of the Map.
     std::vector< std::string > asciimap;
-    /// Number of lines in the Map.
+    /// @brief Number of lines in the Map.
     unsigned map_lines;
-    /// Number of columns in the Map.
+    /// @brief Number of columns in the Map.
     unsigned map_columns;
+    /// @brief Model of the warehouse.
+    Warehouse * warehouse;
 
+    /// @brief Products availability.
     std::map< std::string, std::vector< Position * > > products;
+    /// @brief Destinations requirements.
     std::vector< Destination * > destinations;
 
     /// @brief Constructor.
@@ -145,4 +81,12 @@ public:
     antlrcpp::Any visitProduct(LogisticsLangParser::ProductContext *ctx) override;
     antlrcpp::Any visitDestination(LogisticsLangParser::DestinationContext *ctx) override;
     /// @endcond
+
+protected:
+    /// @brief Main method to build the Warehouse model.
+    Warehouse * buildWarehouseModel();
+    /// @brief Matrix used to keep track of the components found
+    /// and assigned.
+    /// \todo Consider linearizing this matrix.
+    std::vector< std::vector < Equipment * > > _components;
 };

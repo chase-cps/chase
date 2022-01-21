@@ -38,7 +38,8 @@ add_dependencies(logistics_frontend antlr4_static)
 add_library(chase_logistics_parser_library
         ${logistics_PARSER_SRCS}
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder.cc
-        )
+        ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_formalization.cc
+        ${logistics_SRC_DIR}/src/LogisticsProblem.cc)
 
 ############## SUPPRESS THIRD PARTIES WARNINGS #################################
 target_compile_options(chase_logistics_parser_library PRIVATE "-w")

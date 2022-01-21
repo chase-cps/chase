@@ -11,7 +11,6 @@ using namespace chase;
 
 int main( int argc, char * argv[] ) {
     auto params = parseCmdLine(argc, argv);
-    messageInfo("Phase 1: parsing of the specification.");
     LogisticsSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);
     messageInfo("Phase 2: building contract-based representation.");
