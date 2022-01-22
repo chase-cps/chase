@@ -45,7 +45,7 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     visitSpec(tree);
 
     messageInfo("Phase 2: build facility model.");
-    warehouse = buildWarehouseModel();
+    buildWarehouseModel();
 
 }
 
@@ -108,6 +108,12 @@ LogisticsSpecsBuilder::visitDestination(
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
+
+
+
+
+
+
 
 
 

@@ -88,7 +88,7 @@ protected:
     /// \todo Consider linearizing this matrix.
     std::vector< std::vector < Equipment * > > _components;
     /// @brief Main method to build the Warehouse model.
-    Warehouse * buildWarehouseModel();
+    void buildWarehouseModel();
 
     /// @brief Method to find Right-oriented roads.
     /// @param i vertical starting point.
@@ -99,5 +99,35 @@ protected:
     /// @param i vertical starting point.
     /// @param j horizontal starting point.
     void _analyzeLeftRoad(unsigned  i, unsigned j);
+
+    /// @brief Method to find Down-oriented roads.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeDownRoad(unsigned  i, unsigned j);
+
+    /// @brief Method to find Up-oriented roads.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeUpRoad(unsigned  i, unsigned j);
+
+    /// @brief Method to find Forums. The method aims at maximizing forums
+    /// size by exploring the space both vertically and horizontally.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeForum(unsigned i, unsigned  j);
+
+    /// @brief Method analyzing a rectangle in the map to decide whether it
+    /// a forum or not.
+    /// @param io y coordinate of the top right corner.
+    /// @param jo x coordinate of the top right corner.
+    /// @param ie y coordinate of the bottom left corner.
+    /// @param je x coordinate of the bottom left corner.
+    /// @return True if the area is a forum. False otherwise.
+    bool _isSingleForum(unsigned io, unsigned jo, unsigned ie, unsigned je);
+
+    /// @brief Method to analyze Crossroads.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzeCrossroad(unsigned i, unsigned j);
 
 };

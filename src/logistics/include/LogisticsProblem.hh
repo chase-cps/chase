@@ -95,6 +95,9 @@ public:
 class Crossroad : public Equipment
 {
 public:
+    std::vector< Road * > entrances;
+    std::vector< Road * > exits;
+    coordinate position;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Crossroad(const std::string &name = std::string("Crossroad"));
@@ -106,6 +109,12 @@ public:
 class Forum : public Equipment
 {
 public:
+    /// @brief Coordinate of the top-left corner.
+    coordinate topleft;
+    /// @brief Coordinate of the bottom-right corner.
+    coordinate bottomright;
+    /// @brief Total capacity of the Forum.
+    unsigned capacity;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Forum(const std::string &name = std::string("Forum"));
@@ -128,8 +137,12 @@ public:
 class Warehouse
 {
 public:
-    /// @brief Vector of components.
+    /// @brief Vector of roads.
     std::vector< Road * > roads;
+    /// @brief Vector of forums.
+    std::vector< Forum * > forums;
+    /// @brief Vector of crossroads.
+    std::vector< Crossroad * > crossroads;
     /// @brief Constructor.
     Warehouse();
     /// @brief Destructor.
