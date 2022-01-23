@@ -73,7 +73,7 @@ namespace chase {
     {
     public:
         /// @brief Constructor.
-        Vertex(Name *name = nullptr);
+        Vertex(Name *name = new Name());
 
         /// @brief Destructor.
         ~Vertex() override;
@@ -91,6 +91,8 @@ namespace chase {
         /// @return The return value of the visitor.
         int accept_visitor(chase::BaseVisitor &v) override;
 
+        /// @brief ATTENTION: this function is not implemented.
+        /// \todo Implement the getGraphViz function.
         virtual std::string getGraphViz();
 
         /// @brief Function printing the vertex.
@@ -218,8 +220,8 @@ namespace chase {
         /// @param name Pointer to the Name object containing the name.
         void setName(Name *name);
 
-        /// @brief Function creating the GraphViz representation of the graph.
-        /// @return A string containing the GraphViz representation of the graph.
+        /// @brief ATTENTION: this function is not implemented.
+        /// \todo Implement the getGraphViz function.
         std::string getGraphViz();
 
         /// @brief Function to retrieve all the nodes adjacent to a given node.

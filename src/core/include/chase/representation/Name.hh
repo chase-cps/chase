@@ -13,6 +13,7 @@
 #include <string>
 #include "representation/ChaseObject.hh"
 #include "BaseVisitor.hh"
+#include "utilities/UtilityFunctions.hh"
 
 namespace chase {
 
@@ -23,7 +24,7 @@ namespace chase {
 
             /// @brief Constructor.
             /// @param s The string of the name.
-            explicit Name( std::string s );
+            explicit Name( std::string s = getRandomStr(5));
             /// @brief Destructor.
             ~Name() override;
 

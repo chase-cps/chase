@@ -39,6 +39,9 @@ void LogisticsSpecsBuilder::buildWarehouseModel()
                     case 'U':
                         _analyzeUpRoad(i, j);
                         break;
+                    case 'b':
+                    case 'B':
+                        _analyzeBay(i, j);
                     default:
                         break;
                 }
@@ -208,4 +211,11 @@ void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned int i, unsigned int j) {
     warehouse->crossroads.push_back(crossroad);
     crossroad->position.x = j; crossroad->position.y = i;
     _components[i][j] = crossroad;
+}
+
+void LogisticsSpecsBuilder::_analyzeBay(unsigned int i, unsigned int j) {
+    auto bay = new Bay();
+    _components[i][j] = bay;
+    bay->position.x = j; bay->position.y = i;
+    warehouse->bays.push_back(bay);
 }

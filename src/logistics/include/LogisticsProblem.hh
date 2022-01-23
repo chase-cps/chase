@@ -46,6 +46,8 @@ class Bin : public Equipment
 {
 public:
 
+    /// @brief Coordinate of the bin.
+    coordinate position;
     /// @brief Constructor.
     ///@param name The name of the piece of equipment.
     explicit Bin(const std::string &name = std::string("equipment"));
@@ -57,6 +59,8 @@ public:
 class Sink : public Equipment
 {
 public:
+    /// @brief Coordinate of the sink.
+    coordinate position;
     /// @brief Constructor.
     ///@param name The name of the piece of equipment.
     explicit Sink(const std::string &name = std::string("sink"));
@@ -68,6 +72,8 @@ public:
 class Machine : public Equipment
 {
 public:
+    /// @brief Coordinate of the machine.
+    coordinate position;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Machine(const std::string &name = std::string("machine"));
@@ -95,8 +101,11 @@ public:
 class Crossroad : public Equipment
 {
 public:
+    /// @brief Set of entrances.
     std::vector< Road * > entrances;
+    /// @brief Set of exits.
     std::vector< Road * > exits;
+    /// @brief Coordinate of the crossroad.
     coordinate position;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
@@ -126,6 +135,8 @@ public:
 class Bay : public Equipment
 {
 public:
+    /// @brief Coordinate of the bay.
+    coordinate position;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Bay(const std::string &name = std::string("Bay"));
@@ -143,6 +154,8 @@ public:
     std::vector< Forum * > forums;
     /// @brief Vector of crossroads.
     std::vector< Crossroad * > crossroads;
+    /// @brief Vector of bays.
+    std::vector< Bay * > bays;
     /// @brief Constructor.
     Warehouse();
     /// @brief Destructor.

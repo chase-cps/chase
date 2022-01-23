@@ -13,13 +13,13 @@ U<>d<>U<>d<>U<>d
 u<>D<>u<>D<>u<>D
 u<>d<>u<>d<>u<>d
 u<>d<>u<>d<>u<>d
-u<>d<>U<>d<>U<>d
-ulL!lL!lL!lL!lL!
+U<>d<>U<>d<>U<>d
+!lL!lL!lL!lL!lL!
 uuuDdduuuDdduuuD
-fffffff@ffffffff
-fff@ffffffffffff
-fffffff@ffffffff
-@@@@@@@b@@@@@@@@
+ffffffffffffffff
+ffffffffffffffff
+ffffffffffffffff
+@b@@b@@b@@b@@b@@
 )
 
 Products (

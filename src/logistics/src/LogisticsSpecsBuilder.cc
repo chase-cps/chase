@@ -25,8 +25,13 @@ Destination::~Destination() = default;
 LogisticsSpecsBuilder::LogisticsSpecsBuilder() :
     map_lines(0),
     map_columns(0),
-    warehouse(nullptr)
+    warehouse(nullptr),
+    _graph(nullptr)
 {
+    _crossroads2Nodes = new std::map< Crossroad *, chase::Vertex * >();
+    _nodes2Crossroads = new std::map< chase::Vertex *, Crossroad * >();
+    _bays2Nodes = new std::map< Bay *, chase::Vertex * >();
+    _nodes2Bays = new std::map< chase::Vertex *, Bay * >();
 }
 
 LogisticsSpecsBuilder::~LogisticsSpecsBuilder() = default;
@@ -47,6 +52,8 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     messageInfo("Phase 2: build facility model.");
     buildWarehouseModel();
 
+    messageInfo("Phase 3: formalize facility model.");
+    buildGraph();
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(
@@ -108,6 +115,10 @@ LogisticsSpecsBuilder::visitDestination(
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
+
+
+
+
 
 
 

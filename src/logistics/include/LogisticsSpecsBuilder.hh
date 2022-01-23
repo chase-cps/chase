@@ -10,8 +10,10 @@
 #include "parser/LogisticsLangVisitor.h"
 #include "parser/LogisticsLangParser.h"
 #include "parser/LogisticsLangLexer.h"
-
 #include "LogisticsProblem.hh"
+
+
+#include <map>
 
 typedef struct Destination
 {
@@ -87,8 +89,25 @@ protected:
     /// and assigned.
     /// \todo Consider linearizing this matrix.
     std::vector< std::vector < Equipment * > > _components;
+
+    /// @brief Map storing the correspondence between edge and crossroad.
+    std::map< Crossroad *, chase::Vertex * > * _crossroads2Nodes;
+    /// @brief Map storing the correspondence between edge and crossroad.
+    std::map< chase::Vertex *, Crossroad * > * _nodes2Crossroads;
+
+    /// @brief Map storing the correspondence between edge and crossroad.
+    std::map< Bay *, chase::Vertex * > * _bays2Nodes;
+    /// @brief Map storing the correspondence between edge and crossroad.
+    std::map< chase::Vertex *, Bay * > * _nodes2Bays;
+
+    /// @brief Graph representing the architecture.
+    chase::Graph * _graph;
+
     /// @brief Main method to build the Warehouse model.
     void buildWarehouseModel();
+
+    /// @brief Main method to build the
+    void buildGraph() const;
 
     /// @brief Method to find Right-oriented roads.
     /// @param i vertical starting point.
@@ -125,9 +144,14 @@ protected:
     /// @return True if the area is a forum. False otherwise.
     bool _isSingleForum(unsigned io, unsigned jo, unsigned ie, unsigned je);
 
+    /// @brief Method to analyze Bay.
+    /// @param i vertical position.
+    /// @param j horizontal position.
+    void _analyzeBay(unsigned i, unsigned j);
+
     /// @brief Method to analyze Crossroads.
-    /// @param i vertical starting point.
-    /// @param j horizontal starting point.
+    /// @param i vertical position.
+    /// @param j horizontal position.
     void _analyzeCrossroad(unsigned i, unsigned j);
 
 };
