@@ -125,6 +125,10 @@ public:
 
     coordinate in;
     coordinate out;
+
+    Equipment * entry;
+    Equipment * exit;
+
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Road(const std::string &name = std::string("road"));

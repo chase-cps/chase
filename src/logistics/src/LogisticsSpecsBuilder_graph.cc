@@ -68,9 +68,11 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
         switch(asciimap[i-1][j]) {
             case 'U':
                 cross->exits.push_back(r);
+                r->entry = cross;
                 break;
             case 'd':
                 cross->entrances.push_back(r);
+                r->exit = cross;
                 break;
             default:
                 break;
@@ -82,9 +84,11 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
         switch(asciimap[i+1][j]) {
             case 'D':
                 cross->exits.push_back(r);
+                r->entry = cross;
                 break;
             case 'u':
                 cross->entrances.push_back(r);
+                r->exit = cross;
                 break;
             default:
                 break;
@@ -97,9 +101,11 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
         switch (asciimap[i][j-1]) {
             case 'r':
                 cross->entrances.push_back(r);
+                r->exit = cross;
                 break;
             case 'L':
                 cross->exits.push_back(r);
+                r->entry = cross;
                 break;
             default:
                 break;
@@ -112,9 +118,11 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
         switch (asciimap[i][j+1]) {
             case 'l':
                 cross->entrances.push_back(r);
+                r->exit = cross;
                 break;
             case 'R':
                 cross->exits.push_back(r);
+                r->entry = cross;
                 break;
             default:
                 break;
