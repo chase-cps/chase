@@ -23,4 +23,21 @@ Bay::Bay(const std::string &name) : Equipment(name) {type = bay;}
 
 Warehouse::Warehouse() {}
 
+Position::Position(
+        unsigned long xpos, unsigned long ypos, unsigned long quantity) :
+        xpos(xpos), ypos(ypos), quantity(quantity) {}
+Position::~Position() = default;
+
+Destination::Destination(std::string name, unsigned long time) :
+        name(std::move(name)), time(time) {}
+Destination::~Destination() = default;
+
+Product::Product()
+{
+}
+
+Product::~Product() {
+    positions.clear();
+}
+
 

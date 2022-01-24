@@ -26,7 +26,7 @@ namespace chase {
         /// @brief Constructor.
         /// @param source the source node of the edge.
         /// @param target the target node of the edge.
-        Edge( unsigned int source, unsigned int target );
+        explicit Edge( unsigned int source = 0, unsigned int target = 0 );
 
         /// @brief Destructor.
         ~Edge() override;

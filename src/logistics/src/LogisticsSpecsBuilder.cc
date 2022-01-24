@@ -13,14 +13,7 @@
 using namespace chase;
 using namespace antlr4;
 
-Position::Position(
-        unsigned xpos, unsigned ypos, unsigned quantity) :
-        xpos(xpos), ypos(ypos), quantity(quantity) {}
-Position::~Position() = default;
 
-Destination::Destination(std::string name, unsigned time) :
-        name(std::move(name)), time(time) {}
-Destination::~Destination() = default;
 
 LogisticsSpecsBuilder::LogisticsSpecsBuilder() :
     map_lines(0),
@@ -28,10 +21,10 @@ LogisticsSpecsBuilder::LogisticsSpecsBuilder() :
     warehouse(nullptr),
     _graph(nullptr)
 {
-    _crossroads2Nodes = new std::map< Crossroad *, chase::Vertex * >();
-    _nodes2Crossroads = new std::map< chase::Vertex *, Crossroad * >();
-    _bays2Nodes = new std::map< Bay *, chase::Vertex * >();
-    _nodes2Bays = new std::map< chase::Vertex *, Bay * >();
+//    _crossroads2Nodes = new std::map< Crossroad *, chase::Vertex * >();
+//    _nodes2Crossroads = new std::map< chase::Vertex *, Crossroad * >();
+//    _bays2Nodes = new std::map< Bay *, chase::Vertex * >();
+//    _nodes2Bays = new std::map< chase::Vertex *, Bay * >()
 }
 
 LogisticsSpecsBuilder::~LogisticsSpecsBuilder() = default;
@@ -76,8 +69,8 @@ antlrcpp::Any LogisticsSpecsBuilder::visitProduct(
         LogisticsLangParser::ProductContext *ctx) {
     std::string name(ctx->ID()->toString());
 
-    std::pair< std::string, std::vector< Position * > > p;
-    p.first = name;
+    auto product = new Product();
+    product->name = name;
 
     for( auto it : ctx->triple() )
     {
@@ -88,9 +81,11 @@ antlrcpp::Any LogisticsSpecsBuilder::visitProduct(
                 it->ypos()->NUMBER()->getText().c_str(), &pEnd, 10);
         unsigned units = std::strtoul(
                 it->units()->NUMBER()->getText().c_str(), &pEnd, 10);
+        auto pos = new Position(xpos, ypos, units);
+        product->positions.push_back(pos);
     }
 
-    products.insert(p);
+    warehouse->products.push_back(product);
     return LogisticsLangBaseVisitor::visitProduct(ctx);
 }
 
@@ -115,17 +110,6 @@ LogisticsSpecsBuilder::visitDestination(
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

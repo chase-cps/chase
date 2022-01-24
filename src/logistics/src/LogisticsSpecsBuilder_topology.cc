@@ -63,7 +63,7 @@ void LogisticsSpecsBuilder::buildWarehouseModel()
                     _analyzeCrossroad(i, j);
 }
 
-void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
     auto road = new Road();
     road->in.x = j; road->in.y = i;
@@ -76,7 +76,7 @@ void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned int i, unsigned int j) {
     warehouse->roads.push_back(road);
 }
 
-void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
     auto road = new Road();
     road->out.x = j; road->out.y = i;
@@ -89,7 +89,7 @@ void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned int i, unsigned int j) {
     warehouse->roads.push_back(road);
 }
 
-void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned int i, unsigned int j)
+void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned long i, unsigned long j)
 {
     char c = asciimap[i][j];
     auto road = new Road();
@@ -103,7 +103,7 @@ void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned int i, unsigned int j)
     warehouse->roads.push_back(road);
 }
 
-void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
     auto road = new Road();
     road->out.x = j; road->out.y = i;
@@ -116,7 +116,7 @@ void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned int i, unsigned int j) {
     warehouse->roads.push_back(road);
 }
 
-void LogisticsSpecsBuilder::_analyzeForum(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeForum(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
     auto forum = new Forum();
     coordinate h;
@@ -124,9 +124,9 @@ void LogisticsSpecsBuilder::_analyzeForum(unsigned int i, unsigned int j) {
     forum->topleft.x = j; forum->topleft.y = i;
 
     // Search horizonatlly.
-    for(unsigned jt = j; jt < map_columns; ++jt)
+    for(unsigned long jt = j; jt < map_columns; ++jt)
     {
-        for(unsigned it = i; it < map_lines; ++it)
+        for(unsigned long it = i; it < map_lines; ++it)
         {
             if(_isSingleForum(i, j, it, jt)) {
                 h.x = jt;
@@ -135,9 +135,9 @@ void LogisticsSpecsBuilder::_analyzeForum(unsigned int i, unsigned int j) {
         }
     }
     // Search vertically.
-    for(unsigned it = i; it < map_lines; ++it)
+    for(unsigned long it = i; it < map_lines; ++it)
     {
-        for(unsigned jt = j; jt < map_columns; ++jt)
+        for(unsigned long jt = j; jt < map_columns; ++jt)
         {
             if(_isSingleForum(i, j, it, jt)) {
                 v.x = jt;
@@ -147,8 +147,8 @@ void LogisticsSpecsBuilder::_analyzeForum(unsigned int i, unsigned int j) {
     }
 
     // Compute the best search.
-    unsigned areah = (h.x - j) * (h.y - i);
-    unsigned areav = (v.x - j) * (v.y - i);
+    unsigned long areah = (h.x - j) * (h.y - i);
+    unsigned long areav = (v.x - j) * (v.y - i);
 
     if(areah > areav){
         forum->bottomright.x = h.x; forum->bottomright.y = h.y;
@@ -156,27 +156,27 @@ void LogisticsSpecsBuilder::_analyzeForum(unsigned int i, unsigned int j) {
         forum->bottomright.x = v.x; forum->bottomright.y = v.y;
     }
 
-    for(unsigned it = i; it <= forum->bottomright.y; ++it)
-        for(unsigned jt = j; jt <= forum->bottomright.x; ++jt) {
+    for(unsigned long it = i; it <= forum->bottomright.y; ++it)
+        for(unsigned long jt = j; jt <= forum->bottomright.x; ++jt) {
             forum->capacity++;
             _components[it][jt] = forum;
         }
     warehouse->forums.push_back(forum);
 }
 
-bool LogisticsSpecsBuilder::_isSingleForum(unsigned int io,
-                                           unsigned int jo,
-                                           unsigned int ie,
-                                           unsigned int je) {
-    for(unsigned i = io; i <= ie; ++i)
-        for(unsigned j = jo; j <= je; ++j)
+bool LogisticsSpecsBuilder::_isSingleForum(unsigned long io,
+                                           unsigned long jo,
+                                           unsigned long ie,
+                                           unsigned long je) {
+    for(unsigned long i = io; i <= ie; ++i)
+        for(unsigned long j = jo; j <= je; ++j)
             if((asciimap[i][j] != 'f' && asciimap[i][j] != 'F')
                 || _components[i][j] != nullptr)
                 return false;
     return true;
 }
 
-void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned long i, unsigned long j) {
     auto crossroad = new Crossroad();
     bool flag = false;
     if(j < map_columns - 1)
@@ -213,7 +213,7 @@ void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned int i, unsigned int j) {
     _components[i][j] = crossroad;
 }
 
-void LogisticsSpecsBuilder::_analyzeBay(unsigned int i, unsigned int j) {
+void LogisticsSpecsBuilder::_analyzeBay(unsigned long i, unsigned long j) {
     auto bay = new Bay();
     _components[i][j] = bay;
     bay->position.x = j; bay->position.y = i;

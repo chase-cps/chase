@@ -13,9 +13,40 @@
 enum equipment_type {generic, bin, sink, machine, road, crossroad, forum, bay};
 
 typedef struct coordinate {
-    unsigned x;
-    unsigned y;
+    unsigned long x;
+    unsigned long y;
 } coordinate;
+
+typedef struct Position
+{
+    /// @brief Longitudinal position of the position.
+    unsigned long xpos;
+    /// @brief Latitudinal position of the position.
+    unsigned long ypos;
+    /// @brief Quantity available at the position.
+    unsigned long quantity;
+
+    /// @brief Constructor.
+    /// @param xpos Longitudinal position of the position.
+    /// @param ypos Latitudinal position of the position.
+    /// @param quantity Quantity available at the position.
+    Position(unsigned long xpos, unsigned long ypos, unsigned long quantity);
+    /// @brief Destructor.
+    virtual ~Position();
+} Position;
+
+typedef struct Product
+{
+    /// @brief Name of the product.
+    std::string name;
+    /// @brief Positions where it can be found.
+    std::vector< Position *> positions;
+    /// @brief Constructor.
+    Product();
+    /// @brief Destructor.
+    ~Product();
+
+} Product;
 
 /// @brief Base class for the objects in the warehouse.
 class Equipment
@@ -46,8 +77,12 @@ class Bin : public Equipment
 {
 public:
 
-    /// @brief Coordinate of the bin.
+    /// @brief Product stored in the bin.
+    Product * product;
+    /// @brief Coordinate of the position.
     coordinate position;
+    /// @brief Quantity of product available.
+    unsigned long quantity;
     /// @brief Constructor.
     ///@param name The name of the piece of equipment.
     explicit Bin(const std::string &name = std::string("equipment"));
@@ -86,7 +121,7 @@ class Road : public Equipment
 {
 public:
     /// @brief Length of the road. It is also the its capacity.
-    unsigned len;
+    unsigned long len;
 
     coordinate in;
     coordinate out;
@@ -123,7 +158,7 @@ public:
     /// @brief Coordinate of the bottom-right corner.
     coordinate bottomright;
     /// @brief Total capacity of the Forum.
-    unsigned capacity;
+    unsigned long capacity;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
     explicit Forum(const std::string &name = std::string("Forum"));
@@ -144,6 +179,25 @@ public:
     ~Bay() = default;
 };
 
+typedef struct Destination
+{
+    /// @brief The name of the destination.
+    std::string name;
+    /// @brief The delivery time.
+    unsigned long time;
+    /// @brief List of request for the destination.
+    std::map< std::string, unsigned > requests;
+
+    /// @brief Constructor.
+    /// @param name The name of the destination.
+    /// @param time Delivery time.
+    Destination(std::string name, unsigned long time);
+    /// @brief Destructor.
+    virtual ~Destination();
+} Destination;
+
+
+
 /// @brief Class to represent the Warehouse.
 class Warehouse
 {
@@ -157,6 +211,33 @@ public:
     /// @brief Vector of bays.
     std::vector< Bay * > bays;
     /// @brief Constructor.
+    std::vector< Bin * > shelves;
+
+    /// @brief Products availability.
+    std::vector< Product * > products;
+    /// @brief Destinations requirements.
+    std::vector< Destination * > destinations;
+
+    /// @brief Map storing the correspondence between crossroads and vertexes.
+    std::map< Crossroad *, chase::Vertex * > crossroads2Nodes;
+    /// @brief Map storing the correspondence between vertexes and crossroads.
+    std::map< chase::Vertex *, Crossroad * > nodes2Crossroads;
+
+    /// @brief Map storing the correspondence between bays and vertexes.
+    std::map< Bay *, chase::Vertex * > bays2Nodes;
+    /// @brief Map storing the correspondence between vertexes and bays.
+    std::map< chase::Vertex *, Bay * > nodes2Bays;
+
+    /// @brief Map storing the correspondence between forums and vertexes.
+    std::map< Forum *, chase::Vertex * > forums2Nodes;
+    /// @brief Map storing the correspondence between vertexes and forums.
+    std::map< chase::Vertex *, Forum * > nodes2Forums;
+
+    /// @brief Map storing the correspondence between road and edges.
+    std::map< Road *, chase::Edge * > roads2Edges;
+    /// @brief Map storing the correspondence between edges and road.
+    std::map< chase::Edge *, Road * > edges2Roads;
+
     Warehouse();
     /// @brief Destructor.
     ~Warehouse() = default;
