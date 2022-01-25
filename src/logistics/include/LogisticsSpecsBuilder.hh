@@ -109,5 +109,11 @@ protected:
     /// @brief Method to identify the entry and exit roads of a crossroad.
     /// @param cross Pointer to the crossroad.
     void _connectCrossroad(Crossroad * cross) const;
+    /// @brief Method to identify the entry and exit roads of a forum.
+    /// @param cross Pointer to the forum.
+    void _connectForum(Forum * forum) const;
+    /// @brief Method to identify the entry and exit roads of a road.
+    /// @param cross Pointer to the road.
+    void _connectRoad(Road * road) const;
 
 };

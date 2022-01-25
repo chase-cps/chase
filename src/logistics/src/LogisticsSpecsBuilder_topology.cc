@@ -9,13 +9,12 @@
 
 void LogisticsSpecsBuilder::buildWarehouseModel()
 {
-    warehouse = new Warehouse();
-    _components.reserve(map_lines);
     for(size_t it = 0; it < map_lines; ++it)
     {
-        _components[it].reserve(map_columns);
+        std::vector< Equipment * > vec;
         for(size_t jt = 0; jt < map_columns; ++jt)
-            _components[it][jt] = nullptr;
+             vec.push_back(nullptr);
+        _components.push_back(vec);
     }
 
     // Find all the roads.
@@ -107,7 +106,7 @@ void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
     auto road = new Road();
     road->out.x = j; road->out.y = i;
-    while((c == 'd' || c == 'D') && i < map_lines ) {
+    while((c == 'u' || c == 'U') && i < map_lines ) {
         _components[i][j] = road;
         ++(road->len);
         road->in.x = j; road->in.y = i;
@@ -178,36 +177,6 @@ bool LogisticsSpecsBuilder::_isSingleForum(unsigned long io,
 
 void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned long i, unsigned long j) {
     auto crossroad = new Crossroad();
-    bool flag = false;
-    if(j < map_columns - 1)
-        if(asciimap[i][j+1] == 'R') crossroad->exits.push_back(
-            reinterpret_cast<Road*>(_components[i][j+1]));
-        else if(asciimap[i][j+1] == 'l') crossroad->entrances.push_back(
-                reinterpret_cast<Road*>(_components[i][j+1]));
-        else{flag = true; std::cout << "1" << std::endl;}
-    if(j > 0)
-        if(asciimap[i][j-1] == 'L') crossroad->exits.push_back(
-                reinterpret_cast<Road*>(_components[i][j-1]));
-        else if(asciimap[i][j-1] == 'r') crossroad->entrances.push_back(
-                    reinterpret_cast<Road*>(_components[i][j-1]));
-        else{flag = true; std::cout << "2" << std::endl;}
-    if(i < map_lines - 1)
-        if(asciimap[i+1][j] == 'D') crossroad->exits.push_back(
-                reinterpret_cast<Road*>(_components[i+1][j]));
-        else if(asciimap[i+1][j] == 'u') crossroad->entrances.push_back(
-                    reinterpret_cast<Road*>(_components[i+1][j]));
-        else{flag = true; std::cout << "3" << std::endl;}
-    if(i > 0)
-        if(asciimap[i-1][j] == 'U') crossroad->exits.push_back(
-                reinterpret_cast<Road*>(_components[i-1][j]));
-        else if(asciimap[i-1][j] == 'd') crossroad->entrances.push_back(
-                    reinterpret_cast<Road*>(_components[i-1][j]));
-        else{flag = true; std::cout << "4" << std::endl;}
-
-    if(crossroad->entrances.size() > 2 || flag)
-        chase::messageError("Ill-formed crossroad in position "
-            + std::to_string(i) + std::string(", ") + std::to_string(j));
-
     warehouse->crossroads.push_back(crossroad);
     crossroad->position.x = j; crossroad->position.y = i;
     _components[i][j] = crossroad;

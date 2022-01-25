@@ -41,6 +41,7 @@ typedef struct Product
     std::string name;
     /// @brief Positions where it can be found.
     std::vector< Position *> positions;
+
     /// @brief Constructor.
     Product();
     /// @brief Destructor.
@@ -52,6 +53,14 @@ typedef struct Product
 class Equipment
 {
 public:
+    /// @brief Set of entrances.
+    std::set< Equipment * > entries;
+    /// @brief Set of exits.
+    std::set< Equipment * > exits;
+
+    /// @brief Vertex in the Graph for the Chase representation
+    chase::Vertex * vertex;
+
     ///@brief The name of the piece of equipment.
     std::string name;
     /// @brief The contract representing the piece of equipment.
@@ -67,6 +76,8 @@ public:
     /// @brief Setter of the name.
     /// @param name The name of the piece of equipment.
     void setName(const std::string &name);
+
+
 
     /// @brief Type of equipment.
     equipment_type type;
@@ -116,6 +127,13 @@ public:
     ~Machine() = default;
 };
 
+class Shelf : public Equipment
+{
+public:
+    coordinate position;
+
+};
+
 /// @brief Class to represent a Road.
 class Road : public Equipment
 {
@@ -123,11 +141,10 @@ public:
     /// @brief Length of the road. It is also the its capacity.
     unsigned long len;
 
+    /// @brief Coordinate of the input point of the road.
     coordinate in;
+    /// @brief Coordinate of the output point of the road.
     coordinate out;
-
-    Equipment * entry;
-    Equipment * exit;
 
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
@@ -140,10 +157,7 @@ public:
 class Crossroad : public Equipment
 {
 public:
-    /// @brief Set of entrances.
-    std::vector< Road * > entrances;
-    /// @brief Set of exits.
-    std::vector< Road * > exits;
+
     /// @brief Coordinate of the crossroad.
     coordinate position;
     /// @brief Constructor.
@@ -162,6 +176,12 @@ public:
     /// @brief Coordinate of the bottom-right corner.
     coordinate bottomright;
     /// @brief Total capacity of the Forum.
+
+    /// @brief Set of entries.
+    std::set< Equipment * > entries;
+    /// @brief Set of exits.
+    std::set< Equipment * > exits;
+
     unsigned long capacity;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
@@ -238,9 +258,9 @@ public:
     std::map< chase::Vertex *, Forum * > nodes2Forums;
 
     /// @brief Map storing the correspondence between road and edges.
-    std::map< Road *, chase::Edge * > roads2Edges;
+    std::map< Road *, chase::Vertex * > roads2Nodes;
     /// @brief Map storing the correspondence between edges and road.
-    std::map< chase::Edge *, Road * > edges2Roads;
+    std::map< chase::Vertex *, Road * > nodes2Roads;
 
     Warehouse();
     /// @brief Destructor.

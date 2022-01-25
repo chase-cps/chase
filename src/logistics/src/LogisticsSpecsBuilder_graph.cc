@@ -13,46 +13,49 @@ void LogisticsSpecsBuilder::buildGraph() const
 {
     // Create a vertex for each Sink.
     for(auto b : warehouse->bays){
-        auto vertex = new Vertex();
+        b->vertex = new Vertex();
         warehouse->bays2Nodes.insert(
-                std::pair< Bay*, Vertex * >(b, vertex));
+                std::pair< Bay*, Vertex * >(b, b->vertex));
         warehouse->nodes2Bays.insert(
-                std::pair< Vertex*, Bay* >(vertex, b));
+                std::pair< Vertex*, Bay* >(b->vertex, b));
     }
 
-    // Create a vertex for each Forums.
-    for(auto f : warehouse->forums) {
-        auto vertex = new Vertex();
-        warehouse->forums2Nodes.insert(
-                std::pair< Forum*, Vertex * >(f, vertex));
-        warehouse->nodes2Forums.insert(
-                std::pair< Vertex*, Forum* >(vertex, f));
-    }
 
     // Create an edge for each road.
     for(auto r : warehouse->roads) {
-        auto edge = new chase::Edge();
-        warehouse->roads2Edges.insert(
-                std::pair< Road *, Edge * >(r, edge));
-        warehouse->edges2Roads.insert(
-                std::pair< Edge *, Road * >(edge, r));
+        r->vertex = new chase::Vertex();
+        warehouse->roads2Nodes.insert(
+                std::pair< Road *, Vertex * >(r, r->vertex));
+        warehouse->nodes2Roads.insert(
+                std::pair< Vertex *, Road * >(r->vertex, r));
     }
 
     // Create a vertex for each Crossroad.
     for(auto c : warehouse->crossroads) {
-        auto vertex = new Vertex();
+        c->vertex = new Vertex();
         warehouse->crossroads2Nodes.insert(
-                std::pair< Crossroad *, Vertex * >(c, vertex));
+                std::pair< Crossroad *, Vertex * >(c, c->vertex));
         warehouse->nodes2Crossroads.insert(
-                std::pair< Vertex *, Crossroad * >(vertex, c));
+                std::pair< Vertex *, Crossroad * >(c->vertex, c));
+
         // Connect crossroads.
         _connectCrossroad(c);
     }
 
+    // Create a vertex for each Forums.
+    for(auto f : warehouse->forums) {
+        f->vertex = new Vertex();
+        warehouse->forums2Nodes.insert(
+                std::pair< Forum*, Vertex * >(f, f->vertex));
+        warehouse->nodes2Forums.insert(
+                std::pair< Vertex*, Forum* >(f->vertex, f));
 
+        // Connect the forum.
+        _connectForum(f);
+    }
 
-    /// \todo For each node, finds its entry and exit road.
-    /// Basically, analyze its entry and exit star.
+    /// \todo For each node, finds its entries and exit road.
+    /// Basically, analyze its entries and exit star.
     /// Build an edge for each road. The edge is weigthed on the capacity of
     /// the road.
 }
@@ -64,15 +67,16 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
 
     // Analyze (if it exists) the position above.
     if(i > 0) {
-        auto r = reinterpret_cast<Road*>(_components[i-1][j]);
+        auto r = _components[i-1][j];
         switch(asciimap[i-1][j]) {
             case 'U':
-                cross->exits.push_back(r);
-                r->entry = cross;
+                cross->exits.insert(r);
+                r->entries.insert(cross);
                 break;
             case 'd':
-                cross->entrances.push_back(r);
-                r->exit = cross;
+            case 'D':
+                cross->entries.insert(r);
+                r->exits.insert(cross);
                 break;
             default:
                 break;
@@ -80,15 +84,16 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
     }
     // Analyze (if it exists) the position below.
     if(i < map_lines - 1) {
-        auto r = reinterpret_cast<Road*>(_components[i+1][j]);
+        auto r = _components[i+1][j];
         switch(asciimap[i+1][j]) {
             case 'D':
-                cross->exits.push_back(r);
-                r->entry = cross;
+                cross->exits.insert(r);
+                r->entries.insert(cross);
                 break;
             case 'u':
-                cross->entrances.push_back(r);
-                r->exit = cross;
+            case 'U':
+                cross->entries.insert(r);
+                r->exits.insert(cross);
                 break;
             default:
                 break;
@@ -97,32 +102,34 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
 
     // Analyze (if it exists) the position on the left.
     if(j > 0) {
-        auto r = reinterpret_cast<Road*>(_components[i][j-1]);
+        auto r = _components[i][j-1];
         switch (asciimap[i][j-1]) {
             case 'r':
-                cross->entrances.push_back(r);
-                r->exit = cross;
+            case 'R':
+                cross->entries.insert(r);
+                r->exits.insert(cross);
                 break;
             case 'L':
-                cross->exits.push_back(r);
-                r->entry = cross;
+                cross->exits.insert(r);
+                r->entries.insert(cross);
                 break;
             default:
                 break;
         }
     }
 
-    // Analyze (if it exists) the position on the left.
+    // Analyze (if it exists) the position on the Right.
     if(j < map_columns) {
-        auto r = reinterpret_cast<Road*>(_components[i][j-1]);
+        auto r = _components[i][j+1];
         switch (asciimap[i][j+1]) {
             case 'l':
-                cross->entrances.push_back(r);
-                r->exit = cross;
+            case 'L':
+                cross->entries.insert(r);
+                r->exits.insert(cross);
                 break;
             case 'R':
-                cross->exits.push_back(r);
-                r->entry = cross;
+                cross->exits.insert(r);
+                r->entries.insert(cross);
                 break;
             default:
                 break;
@@ -130,3 +137,12 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
     }
 }
 
+void LogisticsSpecsBuilder::_connectForum(Forum *forum) const
+{
+
+}
+
+void LogisticsSpecsBuilder::_connectRoad(Road *road) const
+{
+
+}

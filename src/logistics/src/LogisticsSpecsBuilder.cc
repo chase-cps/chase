@@ -36,6 +36,8 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
 
     LogisticsLangParser parser( &tokens );
 
+    warehouse = new Warehouse();
+
     parser.setBuildParseTree(true);
     auto tree = parser.spec();
 
@@ -110,6 +112,8 @@ LogisticsSpecsBuilder::visitDestination(
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
+
+
 
 
 

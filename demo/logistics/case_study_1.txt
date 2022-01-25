@@ -1,6 +1,6 @@
 Map (
-!Rr!Rr!Rr!Rr!Rr!
-u<>D<>u<>D<>u<>D
+Rrr!Rr!Rr!Rr!RrD
+u<>D<>u<>D<>u<>d
 u<>d<>u<>d<>u<>d
 u<>d<>u<>d<>u<>d
 U<>d<>U<>d<>U<>d
@@ -13,19 +13,23 @@ U<>d<>U<>d<>U<>d
 u<>D<>u<>D<>u<>D
 u<>d<>u<>d<>u<>d
 u<>d<>u<>d<>u<>d
-U<>d<>U<>d<>U<>d
-!lL!lL!lL!lL!lL!
-uuuDdduuuDdduuuD
-ffffffffffffffff
-ffffffffffffffff
-ffffffffffffffff
-@b@@b@@b@@b@@b@@
+u<>d<>U<>d<>U<>d
+UlL!lL!lL!lL!llL
+fffffffRffffffff
+fffffffLffffffff
+fffffffRffffffff
+fffffllLffffffff
 )
 
 Products (
     Sunglasses: (1,7,10), (1,8,10);
     Scarves:    (1,3,1),  (1,4,2);
 )
+
+
+
+
+
 
 
 Destination LA 1000 (
@@ -37,3 +41,6 @@ Destination Oslo 0 (
     sunglasses: 5,
     scarves: 50
 )
+
+
+
