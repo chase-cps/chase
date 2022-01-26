@@ -52,7 +52,13 @@ void LogisticsSpecsBuilder::buildWarehouseModel()
         for(size_t j = 0; j < map_columns; ++j)
             if (_components[i][j] == nullptr)
                 if(asciimap[i][j] == 'f' || asciimap[i][j] == 'F' )
-                    _analyzeForum(i, j);
+                    _analyzeForum(nullptr, i, j);
+
+    for(size_t i = 0; i < map_lines; ++i)
+        for(size_t j = 0; j < map_columns; ++j)
+            if (_components[i][j] == nullptr)
+                if(asciimap[i][j] == 'p' || asciimap[i][j] == 'P' )
+                    _analyzePickingStation(i, j);
 
     // Find all the crossroads.
     for(size_t i = 0; i < map_lines; ++i)
@@ -115,64 +121,76 @@ void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned long i, unsigned long j) {
     warehouse->roads.push_back(road);
 }
 
-void LogisticsSpecsBuilder::_analyzeForum(unsigned long i, unsigned long j) {
-    char c = asciimap[i][j];
-    auto forum = new Forum();
-    coordinate h;
-    coordinate v;
-    forum->topleft.x = j; forum->topleft.y = i;
-
-    // Search horizonatlly.
-    for(unsigned long jt = j; jt < map_columns; ++jt)
+void LogisticsSpecsBuilder::_analyzeForum(
+        Forum * forum, unsigned long i, unsigned long j)
+{
+    if((asciimap[i][j] == 'f' || asciimap[i][j] == 'F')
+                && _components[i][j] == nullptr)
     {
-        for(unsigned long it = i; it < map_lines; ++it)
-        {
-            if(_isSingleForum(i, j, it, jt)) {
-                h.x = jt;
-                h.y = it;
-            }
+        if(forum == nullptr) {
+            forum = new Forum();
+            warehouse->forums.push_back(forum);
         }
-    }
-    // Search vertically.
-    for(unsigned long it = i; it < map_lines; ++it)
-    {
-        for(unsigned long jt = j; jt < map_columns; ++jt)
-        {
-            if(_isSingleForum(i, j, it, jt)) {
-                v.x = jt;
-                v.y = it;
-            }
-        }
-    }
 
-    // Compute the best search.
-    unsigned long areah = (h.x - j) * (h.y - i);
-    unsigned long areav = (v.x - j) * (v.y - i);
-
-    if(areah > areav){
-        forum->bottomright.x = h.x; forum->bottomright.y = h.y;
-    } else {
-        forum->bottomright.x = v.x; forum->bottomright.y = v.y;
+        _components[i][j] = forum;
+        auto c = new coordinate();
+        c->x = j; c->y = i;
+        forum->coordinates.insert(c);
+        if(i < map_lines - 1) _analyzeForum(forum, i + 1, j);
+        if(i > 0)           _analyzeForum(forum, i - 1, j);
+        if(j < map_columns - 1)   _analyzeForum(forum, i, j + 1);
+        if(j > 0)           _analyzeForum(forum, i, j - 1);
     }
-
-    for(unsigned long it = i; it <= forum->bottomright.y; ++it)
-        for(unsigned long jt = j; jt <= forum->bottomright.x; ++jt) {
-            forum->capacity++;
-            _components[it][jt] = forum;
-        }
-    warehouse->forums.push_back(forum);
 }
 
-bool LogisticsSpecsBuilder::_isSingleForum(unsigned long io,
-                                           unsigned long jo,
-                                           unsigned long ie,
-                                           unsigned long je) {
-    for(unsigned long i = io; i <= ie; ++i)
-        for(unsigned long j = jo; j <= je; ++j)
-            if((asciimap[i][j] != 'f' && asciimap[i][j] != 'F')
-                || _components[i][j] != nullptr)
-                return false;
-    return true;
+void LogisticsSpecsBuilder::_analyzePickingStation(
+        unsigned long i, unsigned long j) {
+    auto station = new PickingStation();
+    warehouse->stations.push_back(station);
+    // Find forum.
+    Forum * forum = nullptr;
+    if(i > 0 && (asciimap[i-1][j] == 'f' || asciimap[i-1][j] == 'F')) {
+        forum = reinterpret_cast< Forum * >(_components[i-1][j]);
+    }
+    if(i < (map_lines - 1) &&
+        (asciimap[i+1][j] == 'f' || asciimap[i+1][j] == 'F')) {
+        if(forum == nullptr)
+            forum = reinterpret_cast< Forum * >(_components[i+1][j]);
+        else
+            if( forum != _components[i+1][j])
+                chase::messageError(
+                        "Picking station in a wrong position: "
+                        + std::to_string(i) + ", " + std::to_string(j)
+                        + ")");
+    }
+    if(j > 0 &&
+       (asciimap[i][j] == 'f' || asciimap[i][j] == 'F')) {
+        if(forum == nullptr)
+            forum = reinterpret_cast< Forum * >(_components[i][j-1]);
+        else
+        if( forum != _components[i][j-1])
+            chase::messageError(
+                    "Picking station in a wrong position: "
+                    + std::to_string(i) + ", " + std::to_string(j)
+                    + ")");
+    }
+    if(i < (map_columns - 1) &&
+       (asciimap[i][j+1] == 'f' || asciimap[i][j+1] == 'F')) {
+        if(forum == nullptr)
+            forum = reinterpret_cast< Forum * >(_components[i][j+1]);
+        else
+        if( forum != _components[i][j+1])
+            chase::messageError(
+                    "Picking station in a wrong position: "
+                    + std::to_string(i) + ", " + std::to_string(j)
+                    + ")");
+    }
+    if( forum == nullptr)
+        chase::messageError(
+                "Picking station in a wrong position: "
+                + std::to_string(i) + ", " + std::to_string(j)
+                + ")");
+    _components[i][j] = station;
 }
 
 void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned long i, unsigned long j) {

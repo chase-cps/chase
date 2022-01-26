@@ -24,7 +24,7 @@ RBRACKET: ')';
 
 // Maps
 
-MAPCHAR: [fFrRlLdDuUBb@!><];
+MAPCHAR: [fFrRlLdDuUBbPp@!><];
 
 mapKw:  'Map';
 MAPLINE : MAPCHAR MAPCHAR*;

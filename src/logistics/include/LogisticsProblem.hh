@@ -10,7 +10,7 @@
 #include "Chase.hh"
 
 /// @brief Enumeration with the type of objects available in the warehouse.
-enum equipment_type {generic, bin, sink, machine, road, crossroad, forum, bay};
+enum equipment_type {generic, bin, sink, machine, road, crossroad, forum, bay, picking_station};
 
 typedef struct coordinate {
     unsigned long x;
@@ -76,8 +76,6 @@ public:
     /// @brief Setter of the name.
     /// @param name The name of the piece of equipment.
     void setName(const std::string &name);
-
-
 
     /// @brief Type of equipment.
     equipment_type type;
@@ -171,16 +169,8 @@ public:
 class Forum : public Equipment
 {
 public:
-    /// @brief Coordinate of the top-left corner.
-    coordinate topleft;
-    /// @brief Coordinate of the bottom-right corner.
-    coordinate bottomright;
-    /// @brief Total capacity of the Forum.
 
-    /// @brief Set of entries.
-    std::set< Equipment * > entries;
-    /// @brief Set of exits.
-    std::set< Equipment * > exits;
+    std::set< coordinate * > coordinates;
 
     unsigned long capacity;
     /// @brief Constructor.
@@ -188,6 +178,24 @@ public:
     explicit Forum(const std::string &name = std::string("Forum"));
     /// @brief Destructor.
     ~Forum() = default;
+};
+
+class PickingStation : public Equipment
+{
+public:
+    /// @brief Forum owning the picking station.
+    Forum * forum;
+
+    /// @brief Coordinate of the position.
+    coordinate position;
+
+    /// @brief Constructor.
+    /// @param name The name of the piece of equipment.
+    explicit PickingStation(
+            std::string name = std::string("PickingStation"));
+    /// @brief Destructor.
+    ~PickingStation() = default;
+
 };
 
 /// @brief Class to represent a Bay.
@@ -234,6 +242,8 @@ public:
     std::vector< Crossroad * > crossroads;
     /// @brief Vector of bays.
     std::vector< Bay * > bays;
+    /// @brief Vector of bays.
+    std::vector< PickingStation * > stations;
     /// @brief Constructor.
     std::vector< Bin * > shelves;
 

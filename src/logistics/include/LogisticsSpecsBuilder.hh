@@ -85,16 +85,12 @@ protected:
     /// size by exploring the space both vertically and horizontally.
     /// @param i vertical starting point.
     /// @param j horizontal starting point.
-    void _analyzeForum(unsigned long i, unsigned long j);
+    void _analyzeForum( Forum * forum , unsigned long i, unsigned long j);
 
-    /// @brief Method analyzing a rectangle in the map to decide whether it
-    /// a forum or not.
-    /// @param io y coordinate of the top right corner.
-    /// @param jo x coordinate of the top right corner.
-    /// @param ie y coordinate of the bottom left corner.
-    /// @param je x coordinate of the bottom left corner.
-    /// @return True if the area is a forum. False otherwise.
-    bool _isSingleForum(unsigned long io, unsigned long jo, unsigned long ie, unsigned long je);
+    /// @brief Method to analyze the picking stations.
+    /// @param i vertical starting point.
+    /// @param j horizontal starting point.
+    void _analyzePickingStation(unsigned long i, unsigned long j);
 
     /// @brief Method to analyze Bay.
     /// @param i vertical position.

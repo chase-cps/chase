@@ -32,12 +32,11 @@ Destination::Destination(std::string name, unsigned long time) :
         name(std::move(name)), time(time) {}
 Destination::~Destination() = default;
 
-Product::Product()
-{
-}
+Product::Product(){}
 
-Product::~Product() {
-    positions.clear();
-}
+Product::~Product() {positions.clear();}
 
+
+PickingStation::PickingStation(const std::string name) :
+    Equipment(name) {type = picking_station;}
 

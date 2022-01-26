@@ -53,11 +53,22 @@ void LogisticsSpecsBuilder::buildGraph() const
         // Connect the forum.
         _connectForum(f);
     }
-
     /// \todo For each node, finds its entries and exit road.
     /// Basically, analyze its entries and exit star.
     /// Build an edge for each road. The edge is weigthed on the capacity of
     /// the road.
+
+    unsigned int nodes =
+            warehouse->roads.size() +
+            warehouse->crossroads.size() +
+            warehouse->bays.size() +
+            warehouse->stations.size() +
+            warehouse->forums.size();
+
+    auto graph = new Graph(nodes, true, new Name("Warehouse"));
+
+    // Populate the graph.
+
 }
 
 
@@ -137,12 +148,127 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
     }
 }
 
-void LogisticsSpecsBuilder::_connectForum(Forum *forum) const
-{
-
+void LogisticsSpecsBuilder::_connectForum(Forum *forum) const {
+    for(auto f : forum->coordinates) {
+        auto j = f->x; auto i = f->y;
+        if(i > 0) {
+            switch (asciimap[i - 1][j]) {
+                case 'u':
+                case 'U':
+                case 'd':
+                case 'D':
+                case 'r':
+                case 'R':
+                case 'l':
+                case 'L':
+                case 'P':
+                    auto c = _components[i - 1][j];
+                    forum->entries.insert(c);
+                    forum->exits.insert(c);
+                    c->entries.insert(forum);
+                    c->exits.insert(forum);
+                    break;
+            }
+        }
+        if(i < (map_lines - 1)) {
+            switch (asciimap[i + 1][j]) {
+                case 'u':
+                case 'U':
+                case 'd':
+                case 'D':
+                case 'r':
+                case 'R':
+                case 'l':
+                case 'L':
+                case 'P':
+                    auto c = _components[i + 1][j];
+                    forum->entries.insert(c);
+                    forum->exits.insert(c);
+                    c->entries.insert(forum);
+                    c->exits.insert(forum);
+                    break;
+            }
+        }
+        if(j > 0) {
+            switch (asciimap[i][j - 1]) {
+                case 'u':
+                case 'U':
+                case 'd':
+                case 'D':
+                case 'r':
+                case 'R':
+                case 'l':
+                case 'L':
+                case 'P':
+                    auto c = _components[i][j - 1];
+                    forum->entries.insert(c);
+                    forum->exits.insert(c);
+                    c->entries.insert(forum);
+                    c->exits.insert(forum);
+                    break;
+            }
+        }
+        if(j < (map_columns - 1)) {
+            switch (asciimap[i][j + 1]) {
+                case 'u':
+                case 'U':
+                case 'd':
+                case 'D':
+                case 'r':
+                case 'R':
+                case 'l':
+                case 'L':
+                case 'P':
+                    auto c = _components[i][j + 1];
+                    forum->entries.insert(c);
+                    forum->exits.insert(c);
+                    c->entries.insert(forum);
+                    c->exits.insert(forum);
+                    break;
+            }
+        }
+    }
 }
 
 void LogisticsSpecsBuilder::_connectRoad(Road *road) const
 {
+    if(road->exits.empty())
+    {
+        unsigned int x = road->out.x;
+        unsigned int y = road->out.y;
 
+        switch(asciimap[y][x]){
+            case 'u':
+            case 'U':
+                if(asciimap[y+1][x] == 'R' || asciimap[y+1][x] == 'L') {
+                    road->exits.insert(_components[y + 1][x]);
+                    _components[y + 1][x]->exits.insert(_components[y][x]);
+                }
+                break;
+            case 'd':
+            case 'D':
+                if(asciimap[y - 1][x] == 'R' || asciimap[y-1][x] == 'L') {
+                    road->exits.insert(_components[y - 1][x]);
+                    _components[y - 1][x]->exits.insert(_components[y][x]);
+                }
+                break;
+            case 'l':
+            case 'L':
+                if(asciimap[y][x - 1] == 'U' || asciimap[y][x - 1] == 'D') {
+                    road->exits.insert(_components[y][x - 1]);
+                    _components[y][x - 1]->exits.insert(_components[y][x]);
+                }
+                break;
+            case 'r':
+            case 'R':
+                if(asciimap[y][x + 1] == 'U' || asciimap[y][x + 1] == 'D') {
+                    road->exits.insert(_components[y][x + 1]);
+                    _components[y][x + 1]->exits.insert(_components[y][x]);
+                }
+                break;
+            default:
+                break;
+        }
+
+    }
 }
