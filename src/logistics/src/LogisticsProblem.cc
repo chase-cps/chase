@@ -23,6 +23,10 @@ Bay::Bay(const std::string &name) : Equipment(name) {type = bay;}
 
 Warehouse::Warehouse() {}
 
+Warehouse::~Warehouse() {
+    delete(graph);
+}
+
 Position::Position(
         unsigned long xpos, unsigned long ypos, unsigned long quantity) :
         xpos(xpos), ypos(ypos), quantity(quantity) {}

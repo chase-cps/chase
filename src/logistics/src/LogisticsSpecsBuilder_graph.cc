@@ -53,21 +53,17 @@ void LogisticsSpecsBuilder::buildGraph() const
         // Connect the forum.
         _connectForum(f);
     }
-    /// \todo For each node, finds its entries and exit road.
-    /// Basically, analyze its entries and exit star.
-    /// Build an edge for each road. The edge is weigthed on the capacity of
-    /// the road.
 
-    unsigned int nodes =
-            warehouse->roads.size() +
-            warehouse->crossroads.size() +
-            warehouse->bays.size() +
-            warehouse->stations.size() +
-            warehouse->forums.size();
+    // Create a vertex for each Station.
+    for(auto s : warehouse->stations) {
+        s->vertex = new Vertex();
+        warehouse->stations2Nodes.insert(
+                std::pair<PickingStation *, Vertex *>(s, s->vertex));
+        warehouse->nodes2Stations.insert(
+                std::pair<Vertex *, PickingStation *>(s->vertex, s));
+    }
 
-    auto graph = new Graph(nodes, true, new Name("Warehouse"));
-
-    // Populate the graph.
+    _createGraph();
 
 }
 
@@ -272,3 +268,76 @@ void LogisticsSpecsBuilder::_connectRoad(Road *road) const
 
     }
 }
+
+void LogisticsSpecsBuilder::_createGraph() const {
+    unsigned int nodes =
+            warehouse->roads.size() +
+            warehouse->crossroads.size() +
+            warehouse->bays.size() +
+            warehouse->stations.size() +
+            warehouse->forums.size();
+
+    // Create the indexes for the nodes, and insert the nodes in the graph.
+
+    auto graph = new Graph(nodes, true);
+
+    unsigned int i = 0;
+    for(auto c : warehouse->roads) {
+        auto v = warehouse->roads2Nodes.find(c)->second;
+        graph->associateVertex(i, v);
+        warehouse->equipment_nodes_indexes.insert(
+                std::pair<Equipment *, unsigned int>(c, i++)
+        );
+    }
+    for(auto c : warehouse->forums) {
+        auto v = warehouse->forums2Nodes.find(c)->second;
+        graph->associateVertex(i, v);
+        warehouse->equipment_nodes_indexes.insert(
+                std::pair<Equipment *, unsigned int>(c, i++)
+        );
+    }
+    for(auto c : warehouse->crossroads) {
+        auto v = warehouse->crossroads2Nodes.find(c)->second;
+        graph->associateVertex(i, v);
+        warehouse->equipment_nodes_indexes.insert(
+                std::pair<Equipment *, unsigned int>(c, i++)
+        );
+    }
+    for(auto c : warehouse->bays) {
+        auto v = warehouse->bays2Nodes.find(c)->second;
+        graph->associateVertex(i, v);
+        warehouse->equipment_nodes_indexes.insert(
+                std::pair<Equipment *, unsigned int>(c, i++)
+        );
+    }
+    for(auto c : warehouse->stations) {
+        auto v = warehouse->stations2Nodes.find(c)->second;
+        graph->associateVertex(i, v);
+        warehouse->equipment_nodes_indexes.insert(
+                std::pair<Equipment *, unsigned int>(c, i++)
+        );
+    }
+    warehouse->graph = graph;
+    _connectGraph();
+}
+
+void LogisticsSpecsBuilder::_connectGraph() const
+{
+    auto graph = warehouse->graph;
+
+    for(auto it : warehouse->equipment_nodes_indexes) {
+        auto equipment = it.first;
+        unsigned int i = it.second;
+
+        for(auto target : equipment->exits) {
+            auto jt = warehouse->equipment_nodes_indexes.find(target);
+            unsigned int j = jt->second;
+            auto edge = new Edge(i, j);
+            graph->addEdge(edge);
+        }
+    }
+}
+
+
+
+

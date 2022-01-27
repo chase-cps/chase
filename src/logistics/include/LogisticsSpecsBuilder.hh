@@ -112,4 +112,12 @@ protected:
     /// @param cross Pointer to the road.
     void _connectRoad(Road * road) const;
 
+    /// @brief Method creating the graph, after all the information has been
+    /// gathered and structured.
+    void _createGraph() const;
+
+    /// @brief Method creating the edges in the graph.
+    void _connectGraph() const;
+
+    void _productsToRoad() const;
 };

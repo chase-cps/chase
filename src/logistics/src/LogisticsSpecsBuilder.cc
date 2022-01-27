@@ -47,8 +47,12 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     messageInfo("Phase 2: build facility model.");
     buildWarehouseModel();
 
+    // Populate the roads with products.
+    _productsToRoad();
+    
     messageInfo("Phase 3: formalize facility model.");
     buildGraph();
+
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(
@@ -113,9 +117,26 @@ LogisticsSpecsBuilder::visitDestination(
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }
 
-
-
-
-
-
-
+void LogisticsSpecsBuilder::_productsToRoad() const {
+    for(auto product : warehouse->products) {
+        for(auto position : product->positions) {
+            auto j = position->xpos;
+            auto i = position->ypos;
+            auto quantity = position->quantity;
+            if(_components[i][j+1] != nullptr &&
+                _components[i][j+1]->type == road ) j = j + 1;
+            else if(_components[i][j-1] != nullptr &&
+                _components[i][j-1]->type == road ) j = j - 1;
+            else messageError("Product not in shelved road: " +
+                    std::to_string(i) + ", " + std::to_string(j));
+            auto road = reinterpret_cast< Road * >(_components[i][j]);
+            auto it = road->quantities.find(product);
+            if(it != road->quantities.end()) {
+                it->second = it->second + quantity;
+            } else {
+                road->quantities.insert(
+                        std::pair< Product *, unsigned long >(product, quantity));
+            }
+        }
+    }
+}

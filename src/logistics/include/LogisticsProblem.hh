@@ -129,7 +129,6 @@ class Shelf : public Equipment
 {
 public:
     coordinate position;
-
 };
 
 /// @brief Class to represent a Road.
@@ -138,6 +137,9 @@ class Road : public Equipment
 public:
     /// @brief Length of the road. It is also the its capacity.
     unsigned long len;
+
+    /// Map storing for each product, the quantity being stored.
+    std::map< Product *, unsigned long > quantities;
 
     /// @brief Coordinate of the input point of the road.
     coordinate in;
@@ -169,9 +171,10 @@ public:
 class Forum : public Equipment
 {
 public:
-
+    /// @brief Coordinates of the forum.
     std::set< coordinate * > coordinates;
 
+    /// @brief Capacity of the forum.
     unsigned long capacity;
     /// @brief Constructor.
     /// @param name The name of the piece of equipment.
@@ -272,7 +275,19 @@ public:
     /// @brief Map storing the correspondence between edges and road.
     std::map< chase::Vertex *, Road * > nodes2Roads;
 
+    /// @brief Map storing the correspondence between road and edges.
+    std::map< PickingStation *, chase::Vertex * > stations2Nodes;
+    /// @brief Map storing the correspondence between edges and road.
+    std::map< chase::Vertex *, PickingStation * > nodes2Stations;
+
+    /// @brief Map storing the correspondence between equipment and indexes in
+    /// the graph.
+    std::map< Equipment *, unsigned long > equipment_nodes_indexes;
+
+    /// @brief Warehouse graph.
+    chase::Graph * graph;
+
     Warehouse();
     /// @brief Destructor.
-    ~Warehouse() = default;
+    ~Warehouse();
 };
