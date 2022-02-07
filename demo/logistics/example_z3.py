@@ -321,15 +321,40 @@ node_1_F2_out2 = node_2_F2_inf
 node_1_F3_out2 = node_2_F3_inf
 node_1_F0_out2 = node_2_F0_inf
 
+node_1_F1_sinked = Real('node_1_F1_sinked')
+node_1_F2_sinked = Real('node_1_F2_sinked')
+node_1_F3_sinked = Real('node_1_F3_sinked')
+
 ##
 # ASSUMPTIONS AND GUARANTEES OF C1
 ##
+node_1_assumptions = And(
+    node_1_F1_in1 + node_1_F0_in1 + node_1_F2_in1 + node_1_F3_in1 +
+    node_1_F1_in2 + node_1_F0_in2 + node_1_F2_in2 + node_1_F3_in2 <= 1,
+    node_1_F1_in1 + node_1_F0_in1 + node_1_F2_in1 + node_1_F3_in1 +
+    node_1_F1_in2 + node_1_F0_in2 + node_1_F2_in2 + node_1_F3_in2 >= 0
+)
 
-
+node_1_guarantees = And(
+    node_1_F1_out1 + node_1_F0_out1 + node_1_F2_out1 + node_1_F3_out1 +
+    node_1_F1_out2 + node_1_F0_out2 + node_1_F2_out2 + node_1_F3_out2 <= 1,
+    node_1_F1_out1 + node_1_F0_out1 + node_1_F2_out1 + node_1_F3_out1 +
+    node_1_F1_out2 + node_1_F0_out2 + node_1_F2_out2 + node_1_F3_out2 >= 0,
+    node_1_F1_out1 == 0,
+    node_1_F2_out1 == 0,
+    node_1_F3_out1 == 0,
+    node_1_F0_out1 == 0,
+    node_1_F1_sinked == node_1_F1_in1 + node_1_F1_in2,
+    node_1_F2_sinked == node_1_F2_in1 + node_1_F2_in2,
+    node_1_F3_sinked == node_1_F3_in1 + node_1_F3_in2,
+    node_1_F3_sinked >= 0.3,
+    node_1_F2_sinked >= 0.3,
+    node_1_F1_sinked >= 0.3
+)
 
 ## Contracts saturation.
 node_0_guarantees = Implies(node_0_assumptions, node_0_guarantees)
-#node_1_guarantees = Implies(node_1_assumptions, node_1_guarantees)
+node_1_guarantees = Implies(node_1_assumptions, node_1_guarantees)
 node_2_guarantees = Implies(node_2_assumptions, node_2_guarantees)
 node_3_guarantees = Implies(node_3_assumptions, node_3_guarantees)
 node_4_guarantees = Implies(node_4_assumptions, node_4_guarantees)
@@ -339,5 +364,51 @@ node_7_guarantees = Implies(node_7_assumptions, node_7_guarantees)
 node_8_guarantees = Implies(node_8_assumptions, node_8_guarantees)
 node_9_guarantees = Implies(node_9_assumptions, node_9_guarantees)
 
+### Contract warehouse
 
+warehouse_assumptions = True;
+
+warehouse_guarantees = And(
+    node_1_F3_sinked >= 0.3,
+    node_1_F2_sinked >= 0.3,
+    node_1_F1_sinked >= 0.3
+)
+
+warehouse_guarantees = Implies(warehouse_assumptions, warehouse_guarantees)
+
+##### Algebra stuff...
+system_guarantees = And(
+    node_0_guarantees,
+    node_1_guarantees,
+    node_2_guarantees,
+    node_3_guarantees,
+    node_4_guarantees,
+    node_5_guarantees,
+    node_6_guarantees,
+    node_7_guarantees,
+    node_8_guarantees,
+    node_9_guarantees
+)
+
+system_assumptions = And(
+    node_0_assumptions,
+    node_1_assumptions,
+    node_2_assumptions,
+    node_3_assumptions,
+    node_4_assumptions,
+    node_5_assumptions,
+    node_6_assumptions,
+    node_7_assumptions,
+    node_8_assumptions,
+    node_9_assumptions
+)
+
+system_assumptions = Or(
+    system_assumptions,
+    Not(system_guarantees)
+)
+
+system_guarantees = Implies(system_assumptions, system_guarantees)
+
+solve(And(system_assumptions, system_guarantees))
 
