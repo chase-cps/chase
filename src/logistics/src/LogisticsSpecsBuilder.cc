@@ -49,7 +49,7 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
 
     // Populate the roads with products.
     _productsToRoad();
-    
+
     messageInfo("Phase 3: formalize facility model.");
     buildGraph();
 

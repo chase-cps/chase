@@ -118,6 +118,9 @@ protected:
 
     /// @brief Method creating the edges in the graph.
     void _connectGraph() const;
-
+   /// @brief Method assigning products to roads.
     void _productsToRoad() const;
+
+    /// @brief Main method
+    void _createContracts() const;
 };

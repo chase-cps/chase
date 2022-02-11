@@ -4,3 +4,9 @@
  *              This project is released under the 3-Clause BSD License.
  *
  */
+
+#include "LogisticsSpecsBuilder.hh"
+
+void LogisticsSpecsBuilder::_createContracts() const {
+
+}

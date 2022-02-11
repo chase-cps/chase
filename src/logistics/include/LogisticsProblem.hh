@@ -287,6 +287,7 @@ public:
     /// @brief Warehouse graph.
     chase::Graph * graph;
 
+    /// @brief Costructor.
     Warehouse();
     /// @brief Destructor.
     ~Warehouse();

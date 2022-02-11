@@ -40,6 +40,7 @@ add_library(chase_logistics_parser_library
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder.cc
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_topology.cc
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_graph.cc
+        ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_contracts.cc
         ${logistics_SRC_DIR}/src/LogisticsProblem.cc)
 
 ############## SUPPRESS THIRD PARTIES WARNINGS #################################
@@ -50,6 +51,7 @@ target_link_libraries(logistics_frontend
         chase_logistics_parser_library
         chasecore
         antlr4_static
+        z3
         )
 
 install(TARGETS logistics_frontend

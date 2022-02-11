@@ -27,7 +27,8 @@ node_4_guarantees = And(
     node_4_F1_out >= 0,
     node_4_F2_out >= 0,
     node_4_F3_out >= 0,
-    node_4_F1_in + node_4_F2_in + node_4_F3_in + node_4_F0_in == node_4_F1_out + node_4_F2_out + node_4_F3_out + node_4_F0_out)
+    node_4_F1_in + node_4_F2_in + node_4_F3_in + node_4_F0_in == node_4_F1_out +
+    node_4_F2_out + node_4_F3_out + node_4_F0_out)
 
 ################################################################################
 ################################################################################
