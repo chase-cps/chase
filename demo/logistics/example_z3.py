@@ -12,7 +12,7 @@ node_4_F0_in = Real('node_4_F0_in')
 node_4_F1_out = Real('node_4_F1_out')
 node_4_F2_out = Real('node_4_F2_out')
 node_4_F3_out = Real('node_4_F3_out')
-node_4_F0_out = Real('node_4_F3_out')
+node_4_F0_out = Real('node_4_F0_out')
 
 ## assumptions:
 node_4_assumptions = And(
@@ -36,8 +36,8 @@ node_4_guarantees = And(
     node_4_F1_out >= node_4_F1_in,
     node_4_F2_out == node_4_F2_in,
     node_4_F3_out == node_4_F3_in,
-    node_4_F1_in + node_4_F2_in + node_4_F3_in + node_4_F0_in == node_4_F1_out +
-    node_4_F2_out + node_4_F3_out + node_4_F0_out)
+    node_4_F1_in + node_4_F2_in + node_4_F3_in + node_4_F0_in == 
+        node_4_F1_out + node_4_F2_out + node_4_F3_out + node_4_F0_out)
 
 ################################################################################
 ################################################################################
@@ -52,7 +52,7 @@ node_5_F0_in = Real('node_5_F0_in')
 node_5_F1_out = Real('node_5_F1_out')
 node_5_F2_out = Real('node_5_F2_out')
 node_5_F3_out = Real('node_5_F3_out')
-node_5_F0_out = Real('node_5_F3_out')
+node_5_F0_out = Real('node_5_F0_out')
 
 ## assumptions:
 node_5_assumptions = And(
@@ -60,7 +60,7 @@ node_5_assumptions = And(
     node_5_F1_in + node_5_F2_in + node_5_F3_in + node_5_F0_in >= 0,
     node_5_F0_in >= 0, node_5_F0_in <= 1,
     node_5_F1_in >= 0, node_5_F1_in <= 1,
-    node_5_F2_in == 0, 
+    #node_5_F2_in == 0, 
     node_5_F2_in <= 1,
     node_5_F3_in >= 0, node_5_F3_in <= 1)
 
@@ -76,8 +76,8 @@ node_5_guarantees = And(
     node_5_F2_out >= node_5_F2_in,
     node_5_F1_out == node_5_F1_in,
     node_5_F3_out == node_5_F3_in,
-    node_5_F1_in + node_5_F2_in + node_5_F3_in + node_5_F0_in == node_5_F1_out +
-    node_5_F2_out + node_5_F3_out + node_5_F0_out)
+    node_5_F1_in + node_5_F2_in + node_5_F3_in + node_5_F0_in ==
+        node_5_F1_out + node_5_F2_out + node_5_F3_out + node_5_F0_out)
 
 ################################################################################
 ################################################################################
@@ -133,7 +133,7 @@ node_0_F0_in = node_4_F0_out
 node_0_F1_out = Real('node_0_F1_out')
 node_0_F2_out = Real('node_0_F2_out')
 node_0_F3_out = Real('node_0_F3_out')
-node_0_F0_out = Real('node_0_F3_out')
+node_0_F0_out = Real('node_0_F0_out')
 
 ## assumptions:
 node_0_assumptions = And(
@@ -274,7 +274,7 @@ node_3_F0_inf = Real('node_3_F0_inf')
 node_3_F1_out = Real('node_3_F1_out')
 node_3_F2_out = Real('node_3_F2_out')
 node_3_F3_out = Real('node_3_F3_out')
-node_3_F0_out = Real('node_3_F3_out')
+node_3_F0_out = Real('node_3_F0_out')
 
 node_3_F1_outf = Real('node_3_F1_outf')
 node_3_F2_outf = Real('node_3_F2_outf')
@@ -479,9 +479,9 @@ node_9_guarantees = Implies(node_9_assumptions, node_9_guarantees)
 warehouse_assumptions = True;
 
 warehouse_guarantees = And(
-    node_1_F3_sinked >= 0.1,
-    node_1_F2_sinked >= 0.1,
-    node_1_F1_sinked >= 0.1
+    node_1_F3_sinked >= 0.2,
+    node_1_F2_sinked >= 0.2,
+    node_1_F1_sinked >= 0.2
 )
 
 warehouse_guarantees = Implies(warehouse_assumptions, warehouse_guarantees)
