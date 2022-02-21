@@ -60,8 +60,8 @@ node_5_assumptions = And(
     node_5_F1_in + node_5_F2_in + node_5_F3_in + node_5_F0_in >= 0,
     node_5_F0_in >= 0, node_5_F0_in <= 1,
     node_5_F1_in >= 0, node_5_F1_in <= 1,
-    #node_5_F2_in == 0, 
-    node_5_F2_in <= 1,
+    # node_5_F2_in == 0,
+    node_5_F2_in >= 0, node_5_F2_in <= 1,
     node_5_F3_in >= 0, node_5_F3_in <= 1)
 
 ## guarantee:
@@ -98,8 +98,8 @@ node_6_F0_out = Real('node_6_F0_out')
 node_6_assumptions = And(
     node_6_F1_in + node_6_F2_in + node_6_F3_in + node_6_F0_in <= 1,
     node_6_F1_in + node_6_F2_in + node_6_F3_in + node_6_F0_in >= 0,
-    node_6_F3_in >= 0, node_6_F3_in <= 1,
-    #node_6_F3_in == 0,
+    #node_6_F3_in >= 0, node_6_F3_in <= 1,
+    node_6_F3_in == 0,
     node_6_F0_in >= 0, node_6_F0_in <= 1,
     node_6_F1_in >= 0, node_6_F1_in <= 1,
     node_6_F2_in >= 0, node_6_F2_in <= 1
@@ -439,7 +439,15 @@ node_1_assumptions = And(
     node_1_F1_in1 + node_1_F0_in1 + node_1_F2_in1 + node_1_F3_in1 +
     node_1_F1_in2 + node_1_F0_in2 + node_1_F2_in2 + node_1_F3_in2 <= 1,
     node_1_F1_in1 + node_1_F0_in1 + node_1_F2_in1 + node_1_F3_in1 +
-    node_1_F1_in2 + node_1_F0_in2 + node_1_F2_in2 + node_1_F3_in2 >= 0
+    node_1_F1_in2 + node_1_F0_in2 + node_1_F2_in2 + node_1_F3_in2 >= 0,
+    node_1_F1_in1 >= 0, node_1_F1_in1 <= 1,
+    node_1_F2_in1 >= 0, node_1_F2_in1 <= 1,
+    node_1_F3_in1 >= 0, node_1_F3_in1 <= 1,
+    node_1_F0_in1 >= 0, node_1_F0_in1 <= 1,
+    node_1_F1_in2 >= 0, node_1_F1_in2 <= 1,
+    node_1_F2_in2 >= 0, node_1_F2_in2 <= 1,
+    node_1_F3_in2 >= 0, node_1_F3_in2 <= 1,
+    node_1_F0_in2 >= 0, node_1_F0_in2 <= 1
 )
 
 node_1_guarantees = And(
@@ -447,16 +455,15 @@ node_1_guarantees = And(
     node_1_F1_out2 + node_1_F0_out2 + node_1_F2_out2 + node_1_F3_out2 <= 1,
     node_1_F1_out1 + node_1_F0_out1 + node_1_F2_out1 + node_1_F3_out1 +
     node_1_F1_out2 + node_1_F0_out2 + node_1_F2_out2 + node_1_F3_out2 >= 0,
-    node_1_F1_out1 == 0,
-    node_1_F2_out1 == 0,
-    node_1_F3_out1 == 0,
-    node_1_F0_out1 >= 0,
-    node_1_F0_out1 <= 1,
-    node_1_F1_out2 == 0,
-    node_1_F2_out2 == 0,
-    node_1_F3_out2 == 0,
-    node_1_F0_out2 >= 0,
-    node_1_F0_out2 <= 1,
+    node_1_F1_out1 >= 0, node_1_F1_out1 <= 1,
+    node_1_F2_out1 >= 0, node_1_F2_out1 <= 1,
+    node_1_F3_out1 >= 0, node_1_F3_out1 <= 1,
+    node_1_F1_out2 >= 0, node_1_F1_out2 <= 1,
+    node_1_F2_out2 >= 0, node_1_F2_out2 <= 1,
+    node_1_F3_out2 >= 0, node_1_F3_out2 <= 1,
+    node_1_F0_out1 + node_1_F0_out2 == 
+        node_1_F1_sinked + node_1_F2_sinked + node_1_F3_sinked 
+        + node_1_F0_in1 + node_1_F0_in2,   
     node_1_F1_sinked == node_1_F1_in1 + node_1_F1_in2,
     node_1_F2_sinked == node_1_F2_in1 + node_1_F2_in2,
     node_1_F3_sinked == node_1_F3_in1 + node_1_F3_in2
