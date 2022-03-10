@@ -21,14 +21,16 @@ int main( int argc, char * argv[] ) {
     expr x = c.bool_const("x");
     expr y = c.bool_const("y");
     expr op1 = x;
-    expr conjecture = (!(op1 && y)) == (!x || !y);
+    expr op2 = (!x || !y);
+    expr conjecture = (!(op1 && y)) == op2;
+    std::cout << op2 << std::endl;
     expr conjecture2 = (!(x && y)) == (!x || !y) && conjecture;
 
     solver s(c);
     // adding the negation of the conjecture as a constraint.
     s.add(!conjecture2);
-    std::cout << s << "\n";
-    std::cout << s.to_smt2() << "\n";
+    //std::cout << s << "\n";
+    //std::cout << s.to_smt2() << "\n";
     switch (s.check()) {
         case unsat:   std::cout << "de-Morgan is valid\n"; break;
         case sat:     std::cout << "de-Morgan is not valid\n"; break;
