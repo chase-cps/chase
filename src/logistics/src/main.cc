@@ -1,34 +1,50 @@
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
- * @date        12/10/2021
+ * @date        1/18/2022
  *              This project is released under the 3-Clause BSD License.
  *
  */
 
 #include "main.hh"
+#include "z3++.h"
 
+using namespace z3;
 using namespace chase;
 
-int main(int argc, char *argv[])
-{
+int main( int argc, char * argv[] ) {
 
-    std::vector< Value* > v = {new IntegerValue(4),
-                               new IntegerValue(4),
-                               new IntegerValue(4),
-                               new IntegerValue(4)};
+    // Test Z3
+    std::cout << "de-Morgan example\n";
 
-    auto * matrix = new Matrix(2, 2, v);
+    context c;
 
-    std::cout << matrix->getString() << std::endl;
-    std::cout << matrix->getType()->getString() << std::endl;
+    expr x = c.bool_const("x");
+    expr y = c.bool_const("y");
+    expr op1 = x;
+    expr op2 = (!x || !y);
+    expr conjecture = (!(op1 && y)) == op2;
+    std::cout << op2 << std::endl;
+    expr conjecture2 = (!(x && y)) == (!x || !y) && conjecture;
+
+    solver s(c);
+    // adding the negation of the conjecture as a constraint.
+    s.add(!conjecture2);
+    //std::cout << s << "\n";
+    //std::cout << s.to_smt2() << "\n";
+    switch (s.check()) {
+        case unsat:   std::cout << "de-Morgan is valid\n"; break;
+        case sat:     std::cout << "de-Morgan is not valid\n"; break;
+        case unknown: std::cout << "unknown\n"; break;
+    }
+    // End test z3.
+
 
     auto params = parseCmdLine(argc, argv);
-
-    CoCoDeSpecsBuilder builder;
+    LogisticsSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);
-    // System * system = builder.getSystem();
-    //delete system;
-    return 1;
+    messageInfo("Phase 2: building contract-based representation.");
+    messageInfo("Phase 3: encoding.");
+    messageInfo("Phase 4: solution.");
 }
 
 Params * chase::parseCmdLine(int argc, char **argv) {

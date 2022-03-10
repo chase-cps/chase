@@ -1,6 +1,6 @@
 /**
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
- * @date        12/10/2021
+ * @date        1/18/2022
  *              This project is released under the 3-Clause BSD License.
  *
  */
@@ -9,14 +9,18 @@
 
 #include "Chase.hh"
 
-#include "CoCoDeSpecsBuilder.hh"
+#include "LogisticsSpecsBuilder.hh"
+
+
 
 #include <unistd.h>
 #include <fstream>
 #include <sys/stat.h>
 
+#define APPLICATION LogisticsTool
 
-namespace chase {
+namespace chase
+{
     /// @brief Structure saving all the input console parameters.
     typedef struct _params
     {
@@ -48,5 +52,4 @@ namespace chase {
 
     /// @brief Method printing usage banner of the tool.
     void printHelp();
-
 }

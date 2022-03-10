@@ -35,5 +35,9 @@ void getSubsetBySize(
             std::vector< std::string >& combination,
             std::list< std::vector<std::string> > &results);
 
+    std::string getRandomStr(int len,
+                             std::string prefix = std::string(""),
+                             std::string suffix = std::string(""));
+
 
 }
