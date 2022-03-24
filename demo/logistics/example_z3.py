@@ -1,4 +1,4 @@
-import re
+
 from z3 import *
 
 # Shelving Row in node 4
@@ -407,7 +407,7 @@ node_9_guarantees = And(
 
 ################################################################################
 ################################################################################
-# Crossing node 1
+# Picking station node 1
 node_1_F1_in1 = node_3_F1_outf
 node_1_F2_in1 = node_3_F2_outf
 node_1_F3_in1 = node_3_F3_outf
