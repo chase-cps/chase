@@ -117,7 +117,8 @@ node_6_guarantees = And(
     node_6_F3_out >= node_6_F3_in,
     node_6_F1_out == node_6_F1_in,
     node_6_F2_out == node_6_F2_in,
-    node_6_F1_in + node_6_F2_in + node_6_F3_in + node_6_F0_in == node_6_F1_out + node_6_F2_out + node_6_F3_out + node_6_F0_out)
+    node_6_F1_in + node_6_F2_in + node_6_F3_in + node_6_F0_in == node_6_F1_out + 
+        node_6_F2_out + node_6_F3_out + node_6_F0_out)
 
 ################################################################################
 ################################################################################

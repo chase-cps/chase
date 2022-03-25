@@ -13,32 +13,6 @@ using namespace chase;
 
 int main( int argc, char * argv[] ) {
 
-    // Test Z3
-    std::cout << "de-Morgan example\n";
-
-    context c;
-
-    expr x = c.bool_const("x");
-    expr y = c.bool_const("y");
-    expr op1 = x;
-    expr op2 = (!x || !y);
-    expr conjecture = (!(op1 && y)) == op2;
-    std::cout << op2 << std::endl;
-    expr conjecture2 = (!(x && y)) == (!x || !y) && conjecture;
-
-    solver s(c);
-    // adding the negation of the conjecture as a constraint.
-    s.add(!conjecture2);
-    //std::cout << s << "\n";
-    //std::cout << s.to_smt2() << "\n";
-    switch (s.check()) {
-        case unsat:   std::cout << "de-Morgan is valid\n"; break;
-        case sat:     std::cout << "de-Morgan is not valid\n"; break;
-        case unknown: std::cout << "unknown\n"; break;
-    }
-    // End test z3.
-
-
     auto params = parseCmdLine(argc, argv);
     LogisticsSpecsBuilder builder;
     builder.parseSpecificationFile(params->fileIn);

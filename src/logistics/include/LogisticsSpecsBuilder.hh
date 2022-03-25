@@ -123,4 +123,22 @@ protected:
 
     /// @brief Main method
     void _createContracts() const;
+
+    /// @brief Function to create a Contract given a road.
+    /// @param road The road object.
+    /// @return the Contract generated to represent the road.
+    chase::Contract * _createRoadContract(Road * road) const;
+    /// @brief Function to create a Contract given a crossroad.
+    /// @param xroad The crossroad object.
+    /// @return the Contract generated to represent the crossroad.
+    chase::Contract * _createCrossroadContract(Crossroad * xroad) const;
+    /// @brief Function to create a Contract given a forum.
+    /// @param forum The forum object.
+    /// @return the Contract generated to represent the forum.
+    chase::Contract * _createForumContract(Forum * forum) const;
+    /// @brief Function to create a Contract given a picking station.
+    /// @param station The picking station object.
+    /// @return the Contract generated to represent the picking station.
+    chase::Contract * _createPickingStationContract(
+            PickingStation * station) const;
 };

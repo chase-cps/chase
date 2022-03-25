@@ -5,6 +5,9 @@
 # @author Michele Lora
 ###############################################################################
 
+#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/scripts)
+#find_package(GUROBI REQUIRED)
+
 include_directories(
         ${PROJECT_SOURCE_DIR}/third_party/antlr4_runtime/runtime/src
         ${PROJECT_SOURCE_DIR}/src/core/include

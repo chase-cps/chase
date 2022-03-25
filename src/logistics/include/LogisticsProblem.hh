@@ -280,6 +280,9 @@ public:
     /// @brief Map storing the correspondence between edges and road.
     std::map< chase::Vertex *, PickingStation * > nodes2Stations;
 
+    /// @brief Map storing the correspondence between equipment and contracts.
+    std::map< Equipment *, chase::Contract * > component2Contract;
+
     /// @brief Map storing the correspondence between equipment and indexes in
     /// the graph.
     std::map< Equipment *, unsigned long > equipment_nodes_indexes;

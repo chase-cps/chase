@@ -27,7 +27,7 @@ RBRACKET: ')';
 MAPCHAR: [fFrRlLdDuUBbPp@!><];
 
 mapKw:  'Map';
-MAPLINE : MAPCHAR MAPCHAR*;
+MAPLINE : MAPCHAR+;
 
 map :
     mapKw LBRACKET MAPLINE+ RBRACKET;

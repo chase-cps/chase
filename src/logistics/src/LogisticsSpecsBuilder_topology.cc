@@ -70,7 +70,7 @@ void LogisticsSpecsBuilder::buildWarehouseModel()
 
 void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road();
+    auto road = new Road(chase::getRandomStr(5, "road_"));
     road->in.x = j; road->in.y = i;
     while((c == 'r' || c == 'R') && j < map_columns ) {
         _components[i][j] = road;
@@ -83,7 +83,7 @@ void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned long i, unsigned long j) 
 
 void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road();
+    auto road = new Road(chase::getRandomStr(5, "road_"));
     road->out.x = j; road->out.y = i;
     while((c == 'l' || c == 'L') && j < map_columns ) {
         _components[i][j] = road;
@@ -97,7 +97,7 @@ void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned long i, unsigned long j) {
 void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned long i, unsigned long j)
 {
     char c = asciimap[i][j];
-    auto road = new Road();
+    auto road = new Road(chase::getRandomStr(5, "road_"));
     road->in.x = j; road->in.y = i;
     while((c == 'd' || c == 'D') && i < map_lines ) {
         _components[i][j] = road;
@@ -110,7 +110,7 @@ void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned long i, unsigned long j)
 
 void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road();
+    auto road = new Road(chase::getRandomStr(5, "road_"));
     road->out.x = j; road->out.y = i;
     while((c == 'u' || c == 'U') && i < map_lines ) {
         _components[i][j] = road;
@@ -128,11 +128,12 @@ void LogisticsSpecsBuilder::_analyzeForum(
                 && _components[i][j] == nullptr)
     {
         if(forum == nullptr) {
-            forum = new Forum();
+            forum = new Forum(chase::getRandomStr(5, "forum_"));
             warehouse->forums.push_back(forum);
         }
 
         _components[i][j] = forum;
+        ++forum->capacity;
         auto c = new coordinate();
         c->x = j; c->y = i;
         forum->coordinates.insert(c);
@@ -145,7 +146,7 @@ void LogisticsSpecsBuilder::_analyzeForum(
 
 void LogisticsSpecsBuilder::_analyzePickingStation(
         unsigned long i, unsigned long j) {
-    auto station = new PickingStation();
+    auto station = new PickingStation(chase::getRandomStr(5, "picking_"));
     warehouse->stations.push_back(station);
     // Find forum.
     Forum * forum = nullptr;
@@ -194,14 +195,14 @@ void LogisticsSpecsBuilder::_analyzePickingStation(
 }
 
 void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned long i, unsigned long j) {
-    auto crossroad = new Crossroad();
+    auto crossroad = new Crossroad(chase::getRandomStr(5, "crossroad_"));
     warehouse->crossroads.push_back(crossroad);
     crossroad->position.x = j; crossroad->position.y = i;
     _components[i][j] = crossroad;
 }
 
 void LogisticsSpecsBuilder::_analyzeBay(unsigned long i, unsigned long j) {
-    auto bay = new Bay();
+    auto bay = new Bay(chase::getRandomStr(5, "bay_"));
     _components[i][j] = bay;
     bay->position.x = j; bay->position.y = i;
     warehouse->bays.push_back(bay);

@@ -53,6 +53,7 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     messageInfo("Phase 3: formalize facility model.");
     buildGraph();
 
+    _createContracts();
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(

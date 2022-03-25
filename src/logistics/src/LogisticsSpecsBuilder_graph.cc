@@ -13,7 +13,7 @@ void LogisticsSpecsBuilder::buildGraph() const
 {
     // Create a vertex for each Sink.
     for(auto b : warehouse->bays){
-        b->vertex = new Vertex();
+        b->vertex = new Vertex(new Name(b->name));
         warehouse->bays2Nodes.insert(
                 std::pair< Bay*, Vertex * >(b, b->vertex));
         warehouse->nodes2Bays.insert(
@@ -23,7 +23,7 @@ void LogisticsSpecsBuilder::buildGraph() const
 
     // Create an edge for each road.
     for(auto r : warehouse->roads) {
-        r->vertex = new chase::Vertex();
+        r->vertex = new chase::Vertex(new Name(r->name));
         warehouse->roads2Nodes.insert(
                 std::pair< Road *, Vertex * >(r, r->vertex));
         warehouse->nodes2Roads.insert(
@@ -32,7 +32,7 @@ void LogisticsSpecsBuilder::buildGraph() const
 
     // Create a vertex for each Crossroad.
     for(auto c : warehouse->crossroads) {
-        c->vertex = new Vertex();
+        c->vertex = new Vertex(new Name(c->name));
         warehouse->crossroads2Nodes.insert(
                 std::pair< Crossroad *, Vertex * >(c, c->vertex));
         warehouse->nodes2Crossroads.insert(
@@ -44,7 +44,7 @@ void LogisticsSpecsBuilder::buildGraph() const
 
     // Create a vertex for each Forums.
     for(auto f : warehouse->forums) {
-        f->vertex = new Vertex();
+        f->vertex = new Vertex(new Name(f->name));
         warehouse->forums2Nodes.insert(
                 std::pair< Forum*, Vertex * >(f, f->vertex));
         warehouse->nodes2Forums.insert(
@@ -56,7 +56,7 @@ void LogisticsSpecsBuilder::buildGraph() const
 
     // Create a vertex for each Station.
     for(auto s : warehouse->stations) {
-        s->vertex = new Vertex();
+        s->vertex = new Vertex(new Name(s->name));
         warehouse->stations2Nodes.insert(
                 std::pair<PickingStation *, Vertex *>(s, s->vertex));
         warehouse->nodes2Stations.insert(
@@ -337,6 +337,12 @@ void LogisticsSpecsBuilder::_connectGraph() const
         }
     }
 }
+
+
+
+
+
+
 
 
 
