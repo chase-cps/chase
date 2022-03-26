@@ -153,3 +153,12 @@ BooleanValue * chase::BoolVal(bool b)
 BinaryTemporalFormula *chase::Until(LogicFormula *op1, LogicFormula *op2) {
     return new BinaryTemporalFormula(op_until, op1, op2);
 }
+
+Constraint * chase::arithmeticConstraint(Operator op,
+                                  Value * op1, Value * op2)
+{
+    auto c = new Constraint();
+    auto e = new Expression(op, op1, op2);
+    c->setExpression(e);
+    return c;
+}
