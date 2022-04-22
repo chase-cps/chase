@@ -1,0 +1,14 @@
+show Joint1;
+break;
+saturate Joint1;
+break;
+show Joint1;
+break;
+saturate Joint2;
+saturate Joint3;
+saturate Joints;
+break;
+compose Joint1 Joint2 J12;
+compose Joint3 J12 System;
+break;
+refinement System Joints refinement.smv;

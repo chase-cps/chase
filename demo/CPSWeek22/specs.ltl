@@ -1,0 +1,191 @@
+NAME: ICE_Robotic_Arm_Joints;
+
+CONTRACT Joint1:
+     output boolean variable j1_done;
+
+    input integer (0:4) variable j1_dangle;
+    input integer (0:4) variable j1_angle;
+
+    input boolean variable req_j1;
+
+    output integer (0:2) variable j1_cmd;
+
+    Assumptions:
+        !req_j1;
+
+        G(req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
+
+        G(req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
+        G(req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
+        G(req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
+
+        G(req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
+
+        G((req_j1 & !j1_done) -> X(req_j1));
+
+        G(req_j1 -> j1_dangle' = j1_dangle);
+        G F(req_j1);
+        G F(req_j1 & j1_done -> X(!req_j1));
+
+    Guarantees:
+        j1_cmd = 0;
+
+        G((j1_done | !req_j1) -> X(j1_cmd = 0));
+        G(j1_angle = j1_dangle <-> j1_done);      
+
+        G F(j1_done);
+
+CONTRACT Joint2:
+     output boolean variable j2_done;
+
+    input integer (0:4) variable j2_dangle;
+    input integer (0:4) variable j2_angle;
+
+    input boolean variable req_j2;
+
+    output integer (0:2) variable j2_cmd;
+
+    Assumptions:
+        !req_j2;
+
+        G(req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
+
+        G(req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
+        G(req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
+        G(req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
+
+        G(req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
+
+        G((req_j2 & !j2_done) -> X(req_j2));
+
+        G(req_j2 -> j2_dangle' = j2_dangle);
+        G F(req_j2);
+        G F(req_j2 & j2_done -> X(!req_j2));
+
+    Guarantees:
+        j2_cmd = 0;
+
+        G((j2_done | !req_j2) -> X(j2_cmd = 0));
+        G(j2_angle = j2_dangle <-> j2_done);      
+
+        G F(j2_done);
+
+CONTRACT Joint3:
+     output boolean variable j3_done;
+
+    input integer (0:4) variable j3_dangle;
+    input integer (0:4) variable j3_angle;
+
+    input boolean variable req_j3;
+
+    output integer (0:2) variable j3_cmd;
+
+    Assumptions:
+        !req_j3;
+
+        G(req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
+
+        G(req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
+        G(req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
+        G(req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
+
+        G(req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
+
+        G((req_j3 & !j3_done) -> X(req_j3));
+
+        G(req_j3 -> j3_dangle' = j3_dangle);
+        G F(req_j3);
+        G F(req_j3 & j3_done -> X(!req_j3));
+
+    Guarantees:
+        j3_cmd = 0;
+
+        G((j3_done | !req_j3) -> X(j3_cmd = 0));
+        G(j3_angle = j3_dangle <-> j3_done);      
+
+        G F(j3_done);
+
+
+CONTRACT Joints:
+    input integer (0:4) variable j1_dangle;
+    input integer (0:4) variable j1_angle;
+    input boolean variable req_j1;
+    output integer (0:2) variable j1_cmd;
+    output boolean variable j1_done;
+
+
+    input integer (0:4) variable j2_dangle;
+    input integer (0:4) variable j2_angle;
+    input boolean variable req_j2;
+    output integer (0:2) variable j2_cmd;
+    output boolean variable j2_done;
+
+
+    input integer (0:4) variable j3_dangle;
+    input integer (0:4) variable j3_angle;
+    input boolean variable req_j3;
+    output integer (0:2) variable j3_cmd;
+    output boolean variable j3_done;
+
+
+
+    Assumptions:
+        !req_j1;
+        !req_j2;
+        !req_j3;
+
+
+        G(req_j1 & j1_angle = 0 & j1_cmd = 2 -> X(j1_angle = 0));
+        G(req_j1 & j1_cmd = 1 -> j1_angle' = j1_angle + 1);
+        G(req_j1 & j1_cmd = 2 -> j1_angle' + 1 = j1_angle);
+        G(req_j1 & j1_cmd = 0 -> j1_angle' = j1_angle);
+        G(req_j1 & j1_angle = 4 & j1_cmd = 1 -> X(j1_angle = 4));
+        G((req_j1 & !j1_done) -> X(req_j1));
+        G(req_j1 -> j1_dangle' = j1_dangle);
+
+        G(req_j2 & j2_angle = 0 & j2_cmd = 2 -> X(j2_angle = 0));
+        G(req_j2 & j2_cmd = 1 -> j2_angle' = j2_angle + 1);
+        G(req_j2 & j2_cmd = 2 -> j2_angle' + 1 = j2_angle);
+        G(req_j2 & j2_cmd = 0 -> j2_angle' = j2_angle);
+        G(req_j2 & j2_angle = 4 & j2_cmd = 1 -> X(j2_angle = 4));
+        G((req_j2 & !j2_done) -> X(req_j2));
+        G(req_j2 -> j2_dangle' = j2_dangle);
+
+        G(req_j3 & j3_angle = 0 & j3_cmd = 2 -> X(j3_angle = 0));
+        G(req_j3 & j3_cmd = 1 -> j3_angle' = j3_angle + 1);
+        G(req_j3 & j3_cmd = 2 -> j3_angle' + 1 = j3_angle);
+        G(req_j3 & j3_cmd = 0 -> j3_angle' = j3_angle);
+        G(req_j3 & j3_angle = 4 & j3_cmd = 1 -> X(j3_angle = 4));
+        G((req_j3 & !j3_done) -> X(req_j3));
+        G(req_j3 -> j3_dangle' = j3_dangle);
+
+
+        G F(req_j1);
+        G F(req_j1 & j1_done -> X(!req_j1));
+        G F(req_j2);
+        G F(req_j2 & j2_done -> X(!req_j2));
+        G F(req_j3);
+        G F(req_j3 & j3_done -> X(!req_j3));
+
+    Guarantees:
+        j1_cmd = 0;
+        j2_cmd = 0;
+        j3_cmd = 0;
+
+
+        G((j2_done | !req_j2) -> X(j2_cmd = 0));
+        G(j2_angle = j2_dangle <-> j2_done);      
+
+        G((j3_done | !req_j3) -> X(j3_cmd = 0));
+        G(j3_angle = j3_dangle <-> j3_done);      
+
+        G((j1_done | !req_j1) -> X(j1_cmd = 0));
+        G(j1_angle = j1_dangle <-> j1_done);      
+
+
+        G F(j1_done);
+        G F(j2_done);
+        G F(j3_done);
+
+
+
