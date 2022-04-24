@@ -5,6 +5,7 @@
  * */
 
 #include "main.hh"
+#include "Console.hh"
 #include "utilities/Factory.hh"
 
 using namespace chase;
@@ -18,7 +19,7 @@ int main( int argc, char * argv[] )
 
     System * system = builder.getSystem();
 
-    Console console(system, params->outDir);
+    Console console(system, params->outDir, params->verbose);
 
     if(params->cmdFile.empty()) {
         while (console.run());

@@ -1,3 +1,2 @@
-show Joints;
 synthesize Joints single_model;
 exit;

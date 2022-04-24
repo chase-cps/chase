@@ -1,18 +1,18 @@
 Map (
-Rrr!Rrr
-u<>D<>D
+Rrr!RrD
+u<>D<>d
 u<>d<>d
 u<>d<>d
-U<>d<>d
-llL!llL
+u<>d<>d
+UlL!llL
 fffffff
-fffpfff
+fffPfff
 )
 
 Products (
-    P1: (1,2,100);
-    P2: (1,1,100);
-    P3: (1,1,100);
+    P1: (1,1,100);
+    P2: (2,1,100);
+    P3: (5,1,100);
 )
 
 Destination D1 1000 (P1: 50, P2: 50, P3: 50)

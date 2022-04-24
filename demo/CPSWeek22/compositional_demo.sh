@@ -1,19 +1,38 @@
 #!/bin/sh
 
-echo "Verification of the refinement relation"
-echo
+PS1="COMPOSITIONAL MODEL DEMO >> "
+clear
+red () {
+    echo "\033[0;31m$1"
+}
+
+redn () {
+    echo -n "\033[0;31m$1"
+}
+
+black () {
+    echo "\033[0m$1"
+}
+
+blackn () {
+    echo -n "\033[0m$1"
+}
+
+clear && red "Verification of the refinement relation"
+blackn "COMPOSITIONAL MODEL DEMO >> logics_frontend -i specs.ltl -o workdir -c verification.chase"
 read ans
+
 logics_frontend -i specs.ltl -o workdir -c verification.chase -V
 
-echo "Run NuSMV to verify refinement"
+red "Run NuSMV to verify refinement"
 ref=`nuxmv workdir/refinement.smv | egrep "is true" | wc -l `
 
 if test $ref -eq 2
 then
-    echo "Refinement Check: OK"
+    black "Refinement Check: OK"
+    red "Synthesis of the control strategies"
 
-    echo "Synthesis of the control strategies"
-    echo
+    blackn "COMPOSITIONAL MODEL DEMO >> logics_frontend -i specs.ltl -o workdir -c synthesis.chase"
     read ans
     logics_frontend -i specs.ltl -o workdir -c synthesis.chase
 
@@ -24,13 +43,13 @@ then
     python3 /home/lora/third_party/slugs/tools/StructuredSlugsParser/compiler.py \
         workdir/joint3.structuredSlugs > workdir/joint3.slugsin
 
-    slugs --explicitStrategy workdir/joint1.slugsin > workdir/joint1.fsm
-    slugs --explicitStrategy workdir/joint2.slugsin > workdir/joint2.fsm
-    slugs --explicitStrategy workdir/joint3.slugsin > workdir/joint3.fsm
+    slugs --explicitStrategy --jsonOutput workdir/joint1.slugsin > workdir/joint1.json
+    slugs --explicitStrategy --jsonOutput workdir/joint2.slugsin > workdir/joint2.json
+    slugs --explicitStrategy --jsonOutput workdir/joint3.slugsin > workdir/joint3.json
 
     echo
-    read -p "FSMs generated: press enter to view the FSMs" ans
-    vim -o workdir/joint*.fsm
+    black "FSMs generated: press enter to view the FSMs" ans
+    nano workdir/joint1.json
 fi
 
 

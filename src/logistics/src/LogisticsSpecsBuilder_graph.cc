@@ -28,6 +28,7 @@ void LogisticsSpecsBuilder::buildGraph() const
                 std::pair< Road *, Vertex * >(r, r->vertex));
         warehouse->nodes2Roads.insert(
                 std::pair< Vertex *, Road * >(r->vertex, r));
+        _connectRoad(r);
     }
 
     // Create a vertex for each Crossroad.
@@ -146,13 +147,10 @@ void LogisticsSpecsBuilder::_connectCrossroad(Crossroad * cross) const {
 
 void LogisticsSpecsBuilder::_connectForum(Forum *forum) const {
     for(auto f : forum->coordinates) {
-        auto j = f->x; auto i = f->y;
+        auto j = f->x;
+        auto i = f->y;
         if(i > 0) {
             switch (asciimap[i - 1][j]) {
-                case 'u':
-                case 'U':
-                case 'd':
-                case 'D':
                 case 'r':
                 case 'R':
                 case 'l':
@@ -168,10 +166,6 @@ void LogisticsSpecsBuilder::_connectForum(Forum *forum) const {
         }
         if(i < (map_lines - 1)) {
             switch (asciimap[i + 1][j]) {
-                case 'u':
-                case 'U':
-                case 'd':
-                case 'D':
                 case 'r':
                 case 'R':
                 case 'l':
@@ -191,10 +185,6 @@ void LogisticsSpecsBuilder::_connectForum(Forum *forum) const {
                 case 'U':
                 case 'd':
                 case 'D':
-                case 'r':
-                case 'R':
-                case 'l':
-                case 'L':
                 case 'P':
                     auto c = _components[i][j - 1];
                     forum->entries.insert(c);
@@ -210,10 +200,6 @@ void LogisticsSpecsBuilder::_connectForum(Forum *forum) const {
                 case 'U':
                 case 'd':
                 case 'D':
-                case 'r':
-                case 'R':
-                case 'l':
-                case 'L':
                 case 'P':
                     auto c = _components[i][j + 1];
                     forum->entries.insert(c);
@@ -233,36 +219,47 @@ void LogisticsSpecsBuilder::_connectRoad(Road *road) const
         unsigned int x = road->out.x;
         unsigned int y = road->out.y;
 
+        std::cout << road->name << ": " << x << " " << y << std::endl;
         switch(asciimap[y][x]){
-            case 'u':
-            case 'U':
-                if(asciimap[y+1][x] == 'R' || asciimap[y+1][x] == 'L') {
-                    road->exits.insert(_components[y + 1][x]);
-                    _components[y + 1][x]->exits.insert(_components[y][x]);
-                }
-                break;
-            case 'd':
-            case 'D':
-                if(asciimap[y - 1][x] == 'R' || asciimap[y-1][x] == 'L') {
-                    road->exits.insert(_components[y - 1][x]);
-                    _components[y - 1][x]->exits.insert(_components[y][x]);
-                }
-                break;
-            case 'l':
-            case 'L':
-                if(asciimap[y][x - 1] == 'U' || asciimap[y][x - 1] == 'D') {
-                    road->exits.insert(_components[y][x - 1]);
-                    _components[y][x - 1]->exits.insert(_components[y][x]);
-                }
-                break;
-            case 'r':
             case 'R':
-                if(asciimap[y][x + 1] == 'U' || asciimap[y][x + 1] == 'D') {
-                    road->exits.insert(_components[y][x + 1]);
-                    _components[y][x + 1]->exits.insert(_components[y][x]);
-                }
+            case 'r':
+                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D')
+                    road->exits.insert(_components[y+1][x]);
+                if(y > 0) if(asciimap[y-1][x] == 'U')
+                    road->exits.insert(_components[y-1][x]);
+                if(x < asciimap[y].size()-1)
+                    if(asciimap[y][x+1] == 'D' || asciimap[y][x+1] == 'U')
+                        road->exits.insert(_components[y][x+1]);
+            break;
+            case 'L':
+            case 'l':
+                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D')
+                        road->exits.insert(_components[y+1][x]);
+                if(y > 0) if(asciimap[y-1][x] == 'U')
+                        road->exits.insert(_components[y-1][x]);
+                if(x > 0)
+                    if(asciimap[y][x-1] == 'D' || asciimap[y][x-1] == 'U')
+                        road->exits.insert(_components[y][x-1]);
                 break;
-            default:
+            case 'D':
+            case 'd':
+                if(x < asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R')
+                    road->exits.insert(_components[y][x+1]);
+                if(x > 0) if(asciimap[y][x-1] == 'L')
+                        road->exits.insert(_components[y][x-1]);
+                if(y < asciimap.size() - 1)
+                    if(asciimap[y+1][x] == 'L' || asciimap[y+1][x] == 'R')
+                        road->exits.insert(_components[y+1][x]);
+                break;
+            case 'U':
+            case 'u':
+                if(x > asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R')
+                        road->exits.insert(_components[y][x+1]);
+                if(x > 0) if(asciimap[y][x-1] == 'L')
+                        road->exits.insert(_components[y][x-1]);
+                if(y > 0)
+                    if(asciimap[y-1][x] == 'L' || asciimap[y-1][x] == 'R')
+                        road->exits.insert(_components[y-1][x]);
                 break;
         }
 
@@ -319,6 +316,9 @@ void LogisticsSpecsBuilder::_createGraph() const {
     }
     warehouse->graph = graph;
     _connectGraph();
+
+    std::cout << graph->getString() << std::endl;
+
 }
 
 void LogisticsSpecsBuilder::_connectGraph() const
@@ -335,6 +335,18 @@ void LogisticsSpecsBuilder::_connectGraph() const
             auto edge = new Edge(i, j);
             graph->addEdge(edge);
         }
+    }
+    for(size_t i = 0; i < _components.size(); ++i)
+    {
+        for(size_t j = 0; j < _components[i].size(); ++j)
+        {
+            if(_components[i][j] != nullptr)
+            {
+                std::cout << _components[i][j]->name << "\t";
+            }
+            else std::cout << "SHELF_SHELF" << "\t";
+        }
+        std::cout << std::endl;
     }
 }
 
