@@ -219,50 +219,73 @@ void LogisticsSpecsBuilder::_connectRoad(Road *road) const
         unsigned int x = road->out.x;
         unsigned int y = road->out.y;
 
-        std::cout << road->name << ": " << x << " " << y << std::endl;
+        // if(_params->verbose) std::cout << road->name << ": " << x << " " << y << std::endl;
         switch(asciimap[y][x]){
             case 'R':
             case 'r':
-                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D')
-                    road->exits.insert(_components[y+1][x]);
-                if(y > 0) if(asciimap[y-1][x] == 'U')
-                    road->exits.insert(_components[y-1][x]);
+                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D') {
+                        road->exits.insert(_components[y + 1][x]);
+                        _components[y+1][x]->entries.insert(road);
+                    }
+                if(y > 0) if(asciimap[y-1][x] == 'U') {
+                        road->exits.insert(_components[y - 1][x]);
+                        _components[y-1][x]->entries.insert(road);
+                    }
                 if(x < asciimap[y].size()-1)
-                    if(asciimap[y][x+1] == 'D' || asciimap[y][x+1] == 'U')
-                        road->exits.insert(_components[y][x+1]);
+                    if(asciimap[y][x+1] == 'D' || asciimap[y][x+1] == 'U') {
+                        road->exits.insert(_components[y][x + 1]);
+                        _components[y][x + 1]->entries.insert(road);
+                    }
             break;
             case 'L':
             case 'l':
-                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D')
-                        road->exits.insert(_components[y+1][x]);
-                if(y > 0) if(asciimap[y-1][x] == 'U')
-                        road->exits.insert(_components[y-1][x]);
+                if(y < asciimap.size() - 1) if(asciimap[y+1][x] == 'D') {
+                        road->exits.insert(_components[y + 1][x]);
+                        _components[y + 1][x]->entries.insert(road);
+                    }
+                if(y > 0) if(asciimap[y-1][x] == 'U') {
+                        road->exits.insert(_components[y - 1][x]);
+                        _components[y - 1][x]->entries.insert(road);
+                    }
                 if(x > 0)
-                    if(asciimap[y][x-1] == 'D' || asciimap[y][x-1] == 'U')
-                        road->exits.insert(_components[y][x-1]);
+                    if(asciimap[y][x-1] == 'D' || asciimap[y][x-1] == 'U') {
+                        road->exits.insert(_components[y][x - 1]);
+                        _components[y][x - 1]->entries.insert(road);
+                    }
                 break;
             case 'D':
             case 'd':
-                if(x < asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R')
-                    road->exits.insert(_components[y][x+1]);
-                if(x > 0) if(asciimap[y][x-1] == 'L')
-                        road->exits.insert(_components[y][x-1]);
+                if(x < asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R') {
+                        road->exits.insert(_components[y][x + 1]);
+                        _components[y][x + 1]->entries.insert(road);
+                    }
+                if(x > 0) if(asciimap[y][x-1] == 'L') {
+                        road->exits.insert(_components[y][x - 1]);
+                        _components[y][x - 1]->entries.insert(road);
+                    }
                 if(y < asciimap.size() - 1)
-                    if(asciimap[y+1][x] == 'L' || asciimap[y+1][x] == 'R')
-                        road->exits.insert(_components[y+1][x]);
+                    if(asciimap[y+1][x] == 'L' || asciimap[y+1][x] == 'R') {
+                        road->exits.insert(_components[y + 1][x]);
+                        _components[y + 1][x]->entries.insert(road);
+                    }
                 break;
             case 'U':
             case 'u':
-                if(x > asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R')
-                        road->exits.insert(_components[y][x+1]);
-                if(x > 0) if(asciimap[y][x-1] == 'L')
-                        road->exits.insert(_components[y][x-1]);
+                if(x > asciimap[y].size() - 1) if(asciimap[y][x+1] == 'R') {
+                        road->exits.insert(_components[y][x + 1]);
+                        _components[y][x + 1]->entries.insert(road);
+                    }
+                if(x > 0) if(asciimap[y][x-1] == 'L') {
+                        road->exits.insert(_components[y][x - 1]);
+                        _components[y][x - 1]->entries.insert(road);
+                    }
                 if(y > 0)
-                    if(asciimap[y-1][x] == 'L' || asciimap[y-1][x] == 'R')
-                        road->exits.insert(_components[y-1][x]);
+                    if(asciimap[y-1][x] == 'L' || asciimap[y-1][x] == 'R') {
+                        road->exits.insert(_components[y - 1][x]);
+                        _components[y - 1][x]->entries.insert(road);
+                    }
                 break;
         }
-
     }
 }
 
@@ -317,7 +340,7 @@ void LogisticsSpecsBuilder::_createGraph() const {
     warehouse->graph = graph;
     _connectGraph();
 
-    std::cout << graph->getString() << std::endl;
+    if(_params->verbose) std::cout << graph->getString() << std::endl;
 
 }
 
@@ -336,18 +359,14 @@ void LogisticsSpecsBuilder::_connectGraph() const
             graph->addEdge(edge);
         }
     }
-    for(size_t i = 0; i < _components.size(); ++i)
-    {
-        for(size_t j = 0; j < _components[i].size(); ++j)
-        {
-            if(_components[i][j] != nullptr)
-            {
-                std::cout << _components[i][j]->name << "\t";
-            }
-            else std::cout << "SHELF_SHELF" << "\t";
+    if(_params->verbose)
+        for(const auto & _component : _components) {
+            for(auto j : _component) {
+                if(j != nullptr) {
+                    std::cout << j->name << "\t";
+                } else std::cout << "SHELF_" << "\t";
+            } std::cout << std::endl;
         }
-        std::cout << std::endl;
-    }
 }
 
 

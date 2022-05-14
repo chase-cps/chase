@@ -22,7 +22,7 @@ namespace chase {
         output,
         inout,
         internal
-    } causality_t;
+    }  causality_t;
 
     /// @brief Class representing a Variable declaration.
     class Variable : public DataDeclaration

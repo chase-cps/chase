@@ -6,6 +6,7 @@
  */
 
 #include "LogisticsSpecsBuilder.hh"
+#include <iomanip>
 
 void LogisticsSpecsBuilder::buildWarehouseModel()
 {
@@ -70,7 +71,10 @@ void LogisticsSpecsBuilder::buildWarehouseModel()
 
 void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road(chase::getRandomStr(5, "road_"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_roads;
+    std::string name("R");
+    auto road = new Road(name + ss.str());
     road->in.x = j; road->in.y = i;
     while((c == 'r' || c == 'R') && j < map_columns ) {
         _components[i][j] = road;
@@ -83,7 +87,10 @@ void LogisticsSpecsBuilder::_analyzeRigthRoad(unsigned long i, unsigned long j) 
 
 void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road(chase::getRandomStr(5, "road_"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_roads;
+    std::string name("R");
+    auto road = new Road(name + ss.str());
     road->out.x = j; road->out.y = i;
     while((c == 'l' || c == 'L') && j < map_columns ) {
         _components[i][j] = road;
@@ -97,7 +104,10 @@ void LogisticsSpecsBuilder::_analyzeLeftRoad(unsigned long i, unsigned long j) {
 void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned long i, unsigned long j)
 {
     char c = asciimap[i][j];
-    auto road = new Road(chase::getRandomStr(5, "road_"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_roads;
+    std::string name("R");
+    auto road = new Road(name + ss.str());
     road->in.x = j; road->in.y = i;
     while((c == 'd' || c == 'D') && i < map_lines ) {
         _components[i][j] = road;
@@ -110,7 +120,10 @@ void LogisticsSpecsBuilder::_analyzeDownRoad(unsigned long i, unsigned long j)
 
 void LogisticsSpecsBuilder::_analyzeUpRoad(unsigned long i, unsigned long j) {
     char c = asciimap[i][j];
-    auto road = new Road(chase::getRandomStr(5, "road_"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_roads;
+    std::string name("R");
+    auto road = new Road(name + ss.str());
     road->out.x = j; road->out.y = i;
     while((c == 'u' || c == 'U') && i < map_lines ) {
         _components[i][j] = road;
@@ -128,7 +141,10 @@ void LogisticsSpecsBuilder::_analyzeForum(
                 && _components[i][j] == nullptr)
     {
         if(forum == nullptr) {
-            forum = new Forum(chase::getRandomStr(5, "forum_"));
+            std::stringstream ss;
+            ss << std::setfill('0') << std::setw(5) << ++_forums;
+            std::string name("F");
+            forum = new Forum(name + ss.str());
             warehouse->forums.push_back(forum);
         }
 
@@ -146,7 +162,10 @@ void LogisticsSpecsBuilder::_analyzeForum(
 
 void LogisticsSpecsBuilder::_analyzePickingStation(
         unsigned long i, unsigned long j) {
-    auto station = new PickingStation(chase::getRandomStr(5, "picking_"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_stations;
+    std::string name("P");
+    auto station = new PickingStation(name + ss.str());
     warehouse->stations.push_back(station);
     // Find forum.
     Forum * forum = nullptr;
@@ -195,14 +214,19 @@ void LogisticsSpecsBuilder::_analyzePickingStation(
 }
 
 void LogisticsSpecsBuilder::_analyzeCrossroad(unsigned long i, unsigned long j) {
-    auto crossroad = new Crossroad(chase::getRandomStr(5, "crossroad_"));
+    // auto crossroad = new Crossroad(chase::getRandomStr(5, "X"));
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(5) << ++_xroads;
+    std::string name("X");
+    auto crossroad = new Crossroad(name + ss.str());
+
     warehouse->crossroads.push_back(crossroad);
     crossroad->position.x = j; crossroad->position.y = i;
     _components[i][j] = crossroad;
 }
 
 void LogisticsSpecsBuilder::_analyzeBay(unsigned long i, unsigned long j) {
-    auto bay = new Bay(chase::getRandomStr(5, "bay_"));
+    auto bay = new Bay(chase::getRandomStr(5, "B"));
     _components[i][j] = bay;
     bay->position.x = j; bay->position.y = i;
     warehouse->bays.push_back(bay);

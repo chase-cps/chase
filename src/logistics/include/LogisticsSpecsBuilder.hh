@@ -16,6 +16,41 @@
 #include <map>
 
 
+namespace chase
+{
+    /// @brief Structure saving all the input console parameters.
+    typedef struct _params
+    {
+        /// @brief Input file path.
+        std::string fileIn;
+        /// @brief Commands file path.
+        std::string cmdFile;
+
+        /// @brief Output directory path.
+        std::string outDir;
+
+        /// @brief Verbose flag. Execution is verbose when flag is set to true.
+        bool verbose;
+
+        _params() :
+                fileIn("chase_spec.txt"),
+                cmdFile(""),
+                outDir(""),
+                verbose(false)
+        {
+        }
+    } Params;
+
+    /// @brief Method parsing the input command line.
+    /// @param argc The number of parameters to parse.
+    /// @param argv The array of parameters.
+    /// @return A structure storing all the parameters sorted out.
+    Params * parseCmdLine( int argc, char * argv[] );
+
+    /// @brief Method printing usage banner of the tool.
+    void printHelp();
+}
+
 
 /// @brief Main class of the logistics specification builder.
 class LogisticsSpecsBuilder : public LogisticsLangBaseVisitor {
@@ -31,7 +66,7 @@ public:
     Warehouse * warehouse;
 
     /// @brief Constructor.
-    LogisticsSpecsBuilder();
+    LogisticsSpecsBuilder( chase::Params * params );
     /// @brief Destructor.
     ~LogisticsSpecsBuilder() override;
 
@@ -47,6 +82,11 @@ public:
     /// @endcond
 
 protected:
+    unsigned int _roads;
+    unsigned int _xroads;
+    unsigned int _forums;
+    unsigned int _stations;
+
     /// @brief Matrix used to keep track of the components found
     /// and assigned.
     /// \todo Consider linearizing this matrix.
@@ -54,6 +94,9 @@ protected:
 
     /// @brief Graph representing the architecture.
     chase::Graph * _graph;
+
+    /// @brief The parameters given as command line.
+    chase::Params * _params;
 
     /// @brief Main method to build the Warehouse model.
     void buildWarehouseModel();
@@ -141,4 +184,17 @@ protected:
     /// @return the Contract generated to represent the picking station.
     chase::Contract * _createPickingStationContract(
             PickingStation * station) const;
+
+    /// @brief Function performing the special composition for the logistics.
+    /// @return Pointer to the contract containing the composition.
+    chase::Contract * _composeWarehouse() const;
+
+    void _composeVariables(chase::Contract* composition,
+                           std::map<chase::Declaration *, chase::Declaration *> &cmap) const;
+
+    /// @brief Function creating the projection map by name matching.
+    /// @param m Projection map to be parsed.
+    static void _createProjectionMapName(
+            chase::names_projection_map & m,
+            chase::Contract * c1, chase::Contract * c2);
 };

@@ -14,11 +14,8 @@ using namespace chase;
 int main( int argc, char * argv[] ) {
 
     auto params = parseCmdLine(argc, argv);
-    LogisticsSpecsBuilder builder;
+    LogisticsSpecsBuilder builder(params);
     builder.parseSpecificationFile(params->fileIn);
-    messageInfo("Phase 2: building contract-based representation.");
-    messageInfo("Phase 3: encoding.");
-    messageInfo("Phase 4: solution.");
 }
 
 Params * chase::parseCmdLine(int argc, char **argv) {

@@ -9,17 +9,23 @@
 
 #include "../include/LogisticsSpecsBuilder.hh"
 #include "utilities/Factory.hh"
+#include "Z3Printer.hh"
 
 using namespace chase;
 using namespace antlr4;
 
 
 
-LogisticsSpecsBuilder::LogisticsSpecsBuilder() :
+LogisticsSpecsBuilder::LogisticsSpecsBuilder(chase::Params * params) :
     map_lines(0),
     map_columns(0),
     warehouse(nullptr),
-    _graph(nullptr)
+    _roads(0),
+    _xroads(0),
+    _forums(0),
+    _stations(0),
+    _graph(nullptr),
+    _params(params)
 {
 //    _crossroads2Nodes = new std::map< Crossroad *, chase::Vertex * >();
 //    _nodes2Crossroads = new std::map< chase::Vertex *, Crossroad * >();
@@ -54,6 +60,9 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     buildGraph();
 
     _createContracts();
+
+    // _composeWarehouse(); // Bypass it, go to printer.
+    Z3Printer printer(warehouse);
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(

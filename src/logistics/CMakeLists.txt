@@ -44,6 +44,8 @@ add_library(chase_logistics_parser_library
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_topology.cc
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_graph.cc
         ${logistics_SRC_DIR}/src/LogisticsSpecsBuilder_contracts.cc
+        ${logistics_SRC_DIR}/src/WarehouseComposition.cc
+        ${logistics_SRC_DIR}/src/Z3Printer.cc
         ${logistics_SRC_DIR}/src/LogisticsProblem.cc)
 
 ############## SUPPRESS THIRD PARTIES WARNINGS #################################
