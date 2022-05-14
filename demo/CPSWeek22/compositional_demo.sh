@@ -18,6 +18,7 @@ blackn () {
     echo -n "\033[0m$1"
 }
 
+less specs.ltl
 clear && red "Verification of the refinement relation"
 blackn "COMPOSITIONAL MODEL DEMO >> logics_frontend -i specs.ltl -o workdir -c verification.chase"
 read ans
@@ -49,7 +50,7 @@ then
 
     echo
     black "FSMs generated: press enter to view the FSMs" ans
-    nano workdir/joint1.json
+    less workdir/joint1.json
 fi
 
 

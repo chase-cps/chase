@@ -20,10 +20,10 @@ blackn () {
 }
 
 
-nano specs.ltl
-clear && echo -n "SINGLE MODEL DEMO >> logics_frontend -i specs.ltl -o workdir -c singlemodel.chase"
+less single_model.ltl
+clear && echo -n "SINGLE MODEL DEMO >> logics_frontend -i single_model.ltl -o workdir -c singlemodel.chase"
 read ans
-logics_frontend -i specs.ltl -o workdir -c singlemodel.chase -V
+logics_frontend -i single_model.ltl -o workdir -c singlemodel.chase -V
 python3 /home/lora/third_party/slugs/tools/StructuredSlugsParser/compiler.py \
      workdir/single_model.structuredSlugs > workdir/single_model.slugsin
 slugs --explicitStrategy workdir/single_model.slugsin > workdir/single_mode.fsm
