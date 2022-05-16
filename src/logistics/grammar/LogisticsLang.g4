@@ -50,7 +50,8 @@ products    : productsKw LBRACKET product+ RBRACKET;
 
 // Requirements
 
-destinationKw   : 'Destination';
+destinationKw   : 'Destinations:';
+objectivesKw    : 'Objectives:';
 time            : NUMBER;
 location        : ID;
 request         : ID COLON NUMBER;
@@ -59,4 +60,11 @@ destination     :
     destinationKw location time LBRACKET
         request (COMMA request)* RBRACKET;
 
-spec    : map products destination+;
+objective       :
+    location COLON NUMBER;
+
+objectives      :
+    objectivesKw LBRACKET objective
+    (COMMA objective)* RBRACKET;
+
+spec : map products objectives;

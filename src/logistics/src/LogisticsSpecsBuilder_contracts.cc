@@ -37,6 +37,7 @@ void LogisticsSpecsBuilder::_createContracts() const {
                             reinterpret_cast<Equipment*>(station), c));
     }
 
+    warehouse->requirements = _createRequirementsContract();
 }
 
 
@@ -238,6 +239,8 @@ Contract *LogisticsSpecsBuilder::_createCrossroadContract(
                 Prop(LE(Id(vout), RealVal(1.0))));
     }
 
+    guarantees->addOperand(Prop(Eq(zero_inflow_sum, zero_outflow_sum)));
+
     for(size_t i = 0; i < warehouse->products.size(); ++i) {
         unsigned int flow = i + 1;
 
@@ -283,6 +286,8 @@ Contract *LogisticsSpecsBuilder::_createCrossroadContract(
             guarantees->addOperand(
                     Prop(LE(Id(cvout), RealVal(1.0))));
         }
+
+        guarantees->addOperand(Prop(Eq(inflow, outflow)));
     }
 
     auto sum_in = reinterpret_cast<Value*>(Id(Fin[0]));
@@ -310,6 +315,10 @@ Contract *LogisticsSpecsBuilder::_createCrossroadContract(
 
     return c;
 }
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 Contract *LogisticsSpecsBuilder::_createForumContract(
         Forum *forum) const {
@@ -346,6 +355,8 @@ Contract *LogisticsSpecsBuilder::_createForumContract(
                 Prop(LE(Id(vin), RealVal(1.0))));
     }
 
+
+
     for(auto exit: forum->exits)
     {
         std::string name(forum->name + "_to_" + exit->name + "_0");
@@ -365,6 +376,10 @@ Contract *LogisticsSpecsBuilder::_createForumContract(
         guarantees->addOperand(
                 Prop(LE(Id(vout), RealVal(1.0))));
     }
+
+    guarantees->addOperand(Prop(Eq(zero_inflow_sum, zero_outflow_sum)));
+
+    //std::cout <<
 
     for(size_t i = 0; i < warehouse->products.size(); ++i) {
         unsigned int flow = i + 1;
@@ -394,6 +409,8 @@ Contract *LogisticsSpecsBuilder::_createForumContract(
                     Prop(LE(Id(cvin), RealVal(1.0))));
         }
 
+
+
         for (auto exit: forum->exits) {
             std::string name(forum->name + "_to_" + exit->name
                     + "_" + std::to_string(flow));
@@ -411,6 +428,8 @@ Contract *LogisticsSpecsBuilder::_createForumContract(
             guarantees->addOperand(
                     Prop(LE(Id(cvout), RealVal(1.0))));
         }
+
+        guarantees->addOperand(Prop(Eq(inflow, outflow)));
     }
 
     auto sum_in = reinterpret_cast<Value*>(Id(Fin[0]));
@@ -438,6 +457,11 @@ Contract *LogisticsSpecsBuilder::_createForumContract(
 
     return c;
 }
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
 
 Contract *LogisticsSpecsBuilder::_createPickingStationContract(
         PickingStation *station) const {
@@ -581,7 +605,41 @@ Contract *LogisticsSpecsBuilder::_createPickingStationContract(
     return c;
 }
 
+chase::Contract * LogisticsSpecsBuilder::_createRequirementsContract() const{
+    auto requirements = new Contract("Requirements");
 
+
+
+    auto guarantees = new LargeBooleanFormula(op_and);
+
+    for(size_t index = 0; index < warehouse->products.size(); index++) {
+        auto var = new Variable(new Real(), new Name(std::string("sinked_")+std::to_string(index+1)));
+        requirements->addDeclaration(var);
+
+        auto product_name = warehouse->products[index]->name;
+
+        for(auto d : warehouse->destinations) {
+            double steps = d->time;
+
+            for(auto p : d->requests){
+                if(p.first == product_name){
+                    double request = p.second;
+                    double rate = request/steps;
+                    guarantees->addOperand(
+                            Prop(GE(Id(var), RealVal(rate))));
+                }
+            }
+        }
+    }
+    requirements->addGuarantees(chase::constraints, guarantees);
+    auto assumptions = True();
+
+    requirements->addAssumptions(chase::constraints, assumptions);
+
+    if(_params->verbose) std::cout << requirements->getString() << std::endl;
+
+    return requirements;
+}
 
 
 #pragma clang diagnostic pop

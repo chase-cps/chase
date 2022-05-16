@@ -29,6 +29,8 @@ namespace chase
         /// @brief Output directory path.
         std::string outDir;
 
+        unsigned int timesteps;
+
         /// @brief Verbose flag. Execution is verbose when flag is set to true.
         bool verbose;
 
@@ -36,6 +38,7 @@ namespace chase
                 fileIn("chase_spec.txt"),
                 cmdFile(""),
                 outDir(""),
+                timesteps(100),
                 verbose(false)
         {
         }
@@ -197,4 +200,7 @@ protected:
     static void _createProjectionMapName(
             chase::names_projection_map & m,
             chase::Contract * c1, chase::Contract * c2);
+
+    chase::Contract * _createRequirementsContract() const;
+
 };

@@ -15,4 +15,4 @@ Products (
     P3: (5,1,100);
 )
 
-Destination D1 1000 (P1: 50, P2: 50, P3: 50)
+Destination D1 250 (P1: 50, P2: 50, P3: 50)

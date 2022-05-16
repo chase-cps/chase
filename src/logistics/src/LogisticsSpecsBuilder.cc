@@ -62,7 +62,7 @@ void LogisticsSpecsBuilder::parseSpecificationFile(const std::string& infile) {
     _createContracts();
 
     // _composeWarehouse(); // Bypass it, go to printer.
-    Z3Printer printer(warehouse);
+    Z3Printer printer(warehouse, _params->outDir);
 }
 
 antlrcpp::Any LogisticsSpecsBuilder::visitMap(
@@ -123,6 +123,8 @@ LogisticsSpecsBuilder::visitDestination(
         std::pair< std::string, unsigned > p(it->ID()->getText(), req);
         destination->requests.insert(p);
     }
+
+    warehouse->destinations.push_back(destination);
 
     return LogisticsLangBaseVisitor::visitDestination(ctx);
 }

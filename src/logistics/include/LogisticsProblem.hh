@@ -254,6 +254,8 @@ public:
     std::vector< Product * > products;
     /// @brief Destinations requirements.
     std::vector< Destination * > destinations;
+    /// @brief Objectives of the transportation problem.
+    std::map< Product *, double > objectives;
 
     /// @brief Map storing the correspondence between crossroads and vertexes.
     std::map< Crossroad *, chase::Vertex * > crossroads2Nodes;
@@ -289,6 +291,9 @@ public:
 
     /// @brief Warehouse graph.
     chase::Graph * graph;
+
+    /// @brief Requirements Contract.
+    chase::Contract * requirements;
 
     /// @brief Costructor.
     Warehouse();

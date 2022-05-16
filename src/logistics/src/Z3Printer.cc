@@ -70,10 +70,26 @@ void Z3Printer::_printContracts() {
         }
     }
 
+    _fout << "req_assumptions = True;" << std::endl;
+    _fout << "req_guarantees = And(True";
+    auto rit = _warehouse->requirements->guarantees.find(constraints);
+    if(rit == _warehouse->requirements->guarantees.end())
+        messageError("Missing requirements.");
+    else {
+        auto lbf = reinterpret_cast< LargeBooleanFormula* >(rit->second);
+        for(auto op : lbf->operands)
+            _fout << "," << std::endl << "\t" << op->getString();
+        _fout << std::endl << ")" << std::endl << std::endl;
+    }
+
+
+    _fout << "# SATURATE CONTRACTS" <<std::endl << std::endl;
+
+    _fout << "req_guarantees = Implies(req_assumptions, req_guarantees)"<< std::endl;
+
     std::string sys_assume("system_assumptions = And(True");
     std::string sys_guaran("system_guarantees = And(True");
 
-    _fout << "# SATURATE CONTRACTS" <<std::endl << std::endl;
     for(auto ci : _warehouse->component2Contract) {
         auto contract = ci.second;
         std::string name(contract->getName()->getString());
@@ -83,17 +99,18 @@ void Z3Printer::_printContracts() {
         sys_assume += (",\n\t" + name + "_assumptions");
         sys_guaran += (",\n\t" + name + "_guarantees");
     }
+    sys_guaran += ",\n\treq_guarantees";
     sys_assume += ")";
     sys_guaran += ")";
     _fout << std::endl;
     _fout << "# COMPOSE CONTRACTS" << std::endl << std::endl;
     _fout << sys_assume << std::endl << std::endl;
     _fout << sys_guaran << std::endl;
-    _fout <<
+    _fout << std::endl <<
         "system_assumptions = Or(system_assumptions, Not(system_guarantees))"
         << std::endl;
 
-    _fout <<
+    _fout << std::endl <<
     "system_guarantees = Implies(system_assumptions, system_guarantees)"
     << std::endl;
 

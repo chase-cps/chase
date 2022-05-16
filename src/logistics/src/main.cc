@@ -7,7 +7,7 @@
 
 #include "main.hh"
 #include "z3++.h"
-
+#include "stdlib.h"
 using namespace z3;
 using namespace chase;
 
@@ -24,7 +24,7 @@ Params * chase::parseCmdLine(int argc, char **argv) {
     opterr = 0;
     int c;
 
-    while ((c = getopt(argc, argv, "i:c:b:o:V")) != -1) {
+    while ((c = getopt(argc, argv, "i:c:b:o:t:V")) != -1) {
         switch (c) {
             case 'i':
                 parameters->fileIn = std::string(optarg);
@@ -37,11 +37,12 @@ Params * chase::parseCmdLine(int argc, char **argv) {
                 exit(-1);
             case 'o':
                 parameters->outDir = std::string(optarg);
-                if(parameters->outDir.back() != '/')
-                    parameters->outDir += "/";
                 break;
             case 'V':
                 parameters->verbose = true;
+                break;
+            case 't':
+                parameters->timesteps = atoi(std::string((optarg)).c_str());
                 break;
             default:
                 printHelp();
@@ -59,16 +60,6 @@ Params * chase::parseCmdLine(int argc, char **argv) {
     }
     f.close();
 
-    struct stat info;
-    if(stat (parameters->outDir.c_str(), &info) != 0 && !parameters->outDir
-            .empty()) {
-        if (mkdir(parameters->outDir.c_str(), 0755) == -1)
-        {
-            std::cout << strerror(errno) << std::endl;
-            exit(-1);
-
-        } else messageInfo(parameters->outDir + " created.");
-    }
     return parameters;
 }
 
@@ -78,6 +69,8 @@ void chase::printHelp()
               "chase -i input_file -c commands_file [-V]"
               << std::endl <<
               std::endl <<
+              "\t-t : specifies the number of timesteps. Default is 100."
+              << std::endl <<
               "\t-i : specifies the txt input file containing the specifications."
               << std::endl <<
               "\t-c : command file to be executed."
