@@ -341,7 +341,10 @@ void LogisticsSpecsBuilder::_createGraph() const {
     _connectGraph();
 
     if(_params->verbose) std::cout << graph->getString() << std::endl;
-
+    std::ofstream graphfile;
+    graphfile.open("graph.txt");
+    graphfile << graph->getString() << std::endl;
+    graphfile.close();
 }
 
 void LogisticsSpecsBuilder::_connectGraph() const
@@ -359,14 +362,17 @@ void LogisticsSpecsBuilder::_connectGraph() const
             graph->addEdge(edge);
         }
     }
-    if(_params->verbose)
-        for(const auto & _component : _components) {
-            for(auto j : _component) {
-                if(j != nullptr) {
-                    std::cout << j->name << "\t";
-                } else std::cout << "SHELF_" << "\t";
-            } std::cout << std::endl;
-        }
+
+    std::ofstream mapfile;
+    mapfile.open("map.txt");
+    for(const auto & _component : _components) {
+        for(auto j : _component) {
+            if(j != nullptr) {
+                mapfile << j->name << "\t";
+            } else mapfile << "SHELF_" << "\t";
+        } mapfile << std::endl;
+    }
+    mapfile.close();
 }
 
 
