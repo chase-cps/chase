@@ -2,13 +2,11 @@
  * @author      <a href="mailto:michele.lora@univr.it">Michele Lora</a>
  * @date        11/12/2019
  *              This project is released under the 3-Clause BSD License.
- *
  */
 
 
 
 #include "GuideVisitor.hh"
-
 #include "representation.hh"
 
 chase::GuideVisitor::~GuideVisitor() = default;
@@ -94,8 +92,7 @@ int chase::GuideVisitor::visitBooleanConstant(chase::BooleanConstant &) {
 }
 
 int chase::GuideVisitor::visitBinaryBooleanOperation(
-        chase::BinaryBooleanFormula &o)
-{
+        chase::BinaryBooleanFormula &o) {
     int rv = continueVisit(o.getOp1());
     rv |= continueVisit(o.getOp2());
     return rv;
