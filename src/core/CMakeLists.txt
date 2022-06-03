@@ -3,7 +3,7 @@
 # @author Michele Lora
 ###############################################################################
 
-set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src/core/src/chase)
+set( SRC_CHASELIB_PATH ${PROJECT_SOURCE_DIR}/src)
 
 
 
