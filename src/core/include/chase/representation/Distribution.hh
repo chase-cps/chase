@@ -20,6 +20,7 @@ namespace chase {
         homogeneous
     };
 
+    /// @brief Array to map the name of the distributions.
     static const std::string distribution_type_names[] = {
             std::string("custom"),
             std::string("gaussian"),

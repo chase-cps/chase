@@ -22,9 +22,7 @@ void Contract:: mergeDeclarations(
 {
     /// \todo Implement the type checking.
 
-    for(auto i = c1->declarations.begin(); i != c1->declarations.end(); ++i)
-    {
-        auto original = (*i);
+    for(auto original : c1->declarations) {
         auto cloned = original->clone();
         std::pair< Declaration*, Declaration *> p(original, cloned);
         declaration_map.insert(p);
@@ -32,20 +30,17 @@ void Contract:: mergeDeclarations(
         r->declarations.push_back(cloned);
     }
 
-
-    for(auto i = c2->declarations.begin(); i != c2->declarations.end(); ++i)
+    for(auto original : c2->declarations)
     {
-        auto original = (*i);
         std::string name = original->getName()->getString();
+        std::cout << name << std::endl;
         auto found = correspondences.find(name);
 
         if( found == correspondences.end())
         {
             // Check for name clashing between C1 and C2.
-            for(auto j = r->declarations.begin();
-                    j != r->declarations.end();++j)
-            {
-                if( name == (*j)->getName()->getString() )
+            for(auto & declaration : r->declarations) {
+                if( name == declaration->getName()->getString() )
                     messageError("Name clashing in composition: " + name);
             }
 
@@ -55,15 +50,11 @@ void Contract:: mergeDeclarations(
 
             r->declarations.push_back(cloned);
         }
-        else
-        {
+        else {
             std::string to_find = found->second;
-            for(auto j = r->declarations.begin();
-                j != r->declarations.end();++j)
-            {
-                if((*j)->getName()->getString() == to_find )
-                {
-                    std::pair< Declaration*, Declaration *> p(original,*j);
+            for(auto & declaration : r->declarations) {
+                if(declaration->getName()->getString() == to_find ) {
+                    std::pair< Declaration*, Declaration *> p(original,declaration);
                     declaration_map.insert(p);
                 }
             }
@@ -95,13 +86,13 @@ Contract * Contract::composition(
                 if(mit.second == dit)
                     originals.push_back(mit.first);
             }
-            for(size_t vit = 0; vit < originals.size(); ++vit )
+            for(auto & vit : originals)
             {
-                if(originals[vit]->IsA() == variable_node)
+                if(vit->IsA() == variable_node)
                 {
                     auto var = reinterpret_cast< Variable * >(dit);
                     auto original =
-                            reinterpret_cast< Variable * >(originals[vit]);
+                            reinterpret_cast< Variable * >(vit);
                     if(original->getCausality() == output && var->getCausality() == input)
                     {
                         var->setCausality(output);

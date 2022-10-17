@@ -5,6 +5,7 @@
  * */
 
 #include "main.hh"
+#include "Console.hh"
 #include "utilities/Factory.hh"
 
 using namespace chase;
@@ -18,7 +19,7 @@ int main( int argc, char * argv[] )
 
     System * system = builder.getSystem();
 
-    Console console(system, params->outDir);
+    Console console(system, params->outDir, params->verbose);
 
     if(params->cmdFile.empty()) {
         while (console.run());
@@ -99,7 +100,7 @@ Params * chase::parseCmdLine(int argc, char **argv) {
 void chase::printHelp()
 {
     std::cerr << "[USAGE]\n" <<
-              "chase -i input_file -c commands_file [-V]"
+              "logics_frontend -i input_file -c commands_file [-V]"
               << std::endl <<
               std::endl <<
               "\t-i : specifies the txt input file containing the specifications."

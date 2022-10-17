@@ -51,3 +51,15 @@ void chase::getSubsetBySize(
         combination.pop_back();
     }
 }
+
+std::string chase::getRandomStr(int len, std::string prefix, std::string suffix){
+    static const char alphanum[] =
+            "0123456789"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz";
+    std::string ret(std::move(prefix));
+    for (int i = 0; i < len; ++i)
+        ret += alphanum[rand() % (sizeof(alphanum) - 1)];
+    ret += suffix;
+    return ret;
+}

@@ -198,5 +198,12 @@ namespace chase
     /// @return Pointer to the created boolean value object.
     BooleanValue * BoolVal( bool b );
 
+    /// @brief Factory to create an Arithmetic Constraint.
+    /// @param op The operator of the constraint.
+    /// @param op1 The first operator.
+    /// @param op2 The second operator.
+    /// @return A pointer to the arithmetic constraint.
+    Constraint * arithmeticConstraint(Operator op,
+                                      Value * op1, Value * op2);
 
 }

@@ -1,0 +1,3 @@
+synthesize Joint1 joint1;
+synthesize Joint2 joint2;
+synthesize Joint3 joint3;

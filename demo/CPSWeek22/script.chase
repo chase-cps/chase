@@ -1,0 +1,8 @@
+help;
+saturate Joint1;
+saturate Joint2;
+saturate Joint3;
+saturate Joints; 
+compose Joint1 Joint2 J12
+compose Joint3 J12 J123
+synthesize Joints

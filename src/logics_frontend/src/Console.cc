@@ -12,8 +12,8 @@
 using namespace chase;
 using namespace chase;
 
-chase::Console::Console(System *system, std::string outDir) :
-    _system(system), _outDir(outDir)
+chase::Console::Console(System *system, std::string outDir, bool verbose) :
+    _system(system), _outDir(outDir), _verbose(verbose)
 {
     simplify(_system);
 }
@@ -37,9 +37,11 @@ int Console::run(std::string cmd)
         std::getline(std::cin, cmd);
         if(cmd.empty()) return 1;
     }
-
     if(cmd == "exit") return 0;
     else {
+        if(_verbose && cmd != "break") {
+            std::cout << "$> " << cmd << std::endl;
+        }
         int rv = _execCommand(cmd);
         if( rv == 0 )
             std::cout << "Wrong command:\n\t" << cmd
@@ -89,6 +91,10 @@ int Console::_execCommand(std::string cmd)
         return _computeQuotient(tokens);
     else if(tokens[0] == "show")
         return _execShow(tokens);
+    else if(tokens[0] == "break") {
+        std::cin.get();
+        return 1;
+    }
     else if(tokens[0] == "stl")
         return _stlContract(tokens);
     return 0;

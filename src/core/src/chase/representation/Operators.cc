@@ -37,7 +37,7 @@ std::string chase::to_string(chase::Operator op )
             return std::string("%");
             break;
         case op_eq:
-            return std::string("=");
+            return std::string("==");
             break;
         case op_neq:
             return std::string("!=");

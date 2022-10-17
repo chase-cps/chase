@@ -74,9 +74,9 @@ int LargeBooleanFormula::accept_visitor(chase::BaseVisitor &v)
 
 std::string LargeBooleanFormula::getString()
 {
-    std::string ret("AND(");
-    for(size_t i = 0; i < operands.size(); ++i)
-    {
+    std::string ret("AND(\n");
+    for(size_t i = 0; i < operands.size(); ++i){
+        ret += "\t";
         ret += operands[i]->getString();
         if( i == operands.size() -1 ) ret += "\n";
         else ret += ",\n";
@@ -88,9 +88,8 @@ std::string LargeBooleanFormula::getString()
 LargeBooleanFormula *LargeBooleanFormula::clone()
 {
     auto ret = new LargeBooleanFormula( _op );
-    for( size_t i = 0; i < operands.size(); ++i )
-    {
-        ret->addOperand(operands[i]->clone());
+    for(auto & operand : operands) {
+        ret->addOperand(operand->clone());
     }
 
     return ret;

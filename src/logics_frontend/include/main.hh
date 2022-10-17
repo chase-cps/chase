@@ -10,7 +10,7 @@
 #include "Chase.hh"
 
 #include "LogicsSpecsBuilder.hh"
-#include "Console.hh"
+
 
 #include <unistd.h>
 #include <fstream>

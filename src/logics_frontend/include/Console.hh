@@ -19,7 +19,7 @@ namespace chase
     public:
         /// @brief Constructor of the console object.
         /// @param system System to be manipulated by the console.
-        Console( System * system, std::string outDir );
+        Console( System * system, std::string outDir, bool verbose = false );
 
         /// @brief The main function of the console.
         /// @param cmd The command being read.
@@ -29,6 +29,7 @@ namespace chase
     protected:
         System * _system;
         std::string _outDir;
+        bool _verbose;
 
         /// @brief Method parsing the command different than "show" and "exit".
         /// @param cmd The command to be parsed.

@@ -1,0 +1,18 @@
+Map (
+Rrr!RrD
+u<>D<>d
+u<>d<>d
+u<>d<>d
+u<>d<>d
+UlL!llL
+fffffff
+fffPfff
+)
+
+Products (
+    P1: (1,1,100);
+    P2: (2,1,100);
+    P3: (5,1,100);
+)
+
+Destination D1 250 (P1: 50, P2: 50, P3: 50)

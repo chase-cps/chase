@@ -18,15 +18,10 @@ namespace chase{
             ChaseObject * object,
             std::ostream &str )
     {
-        std::string application("GENERIC CHASE APPLICATION");
-#ifdef APPLICATION
-        application = std::string(APPLICATION);
-#endif
-
         time_t now = time(NULL);
 
         char * t = strtok(ctime(&now), "\n");
-        str << "[" << application << "] " << t << " || ";
+        str <<  t << " || ";
 
         str << msg << std::endl;
         if( object != nullptr )
@@ -49,7 +44,7 @@ namespace chase{
     void messageInfo(
             const char * msg, ChaseObject * object )
     {
-        std::cout << "INFO:   \t";
+        std::cout << "INFO:\t";
         baseMessage(msg, object, std::cout);
     }
 

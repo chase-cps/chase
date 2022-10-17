@@ -33,12 +33,11 @@ void NuSMVPrinter::print(Contract *contract)
 void NuSMVPrinter::printDeclarations() {
     _fout << "MODULE main" << std::endl;
     _fout << "VAR" << std::endl;
-    for (auto vit = _contract->declarations.begin();
-         vit != _contract->declarations.end(); ++vit)
+    for (auto & declaration : _contract->declarations)
     {
         /// \todo Support for constants.
-        if( (*vit)->IsA() != variable_node ) continue;
-        auto var = reinterpret_cast<Variable*>(*vit);
+        if( declaration->IsA() != variable_node ) continue;
+        auto var = reinterpret_cast<Variable*>(declaration);
         var->accept_visitor(*this);
     }
 }
