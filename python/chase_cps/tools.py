@@ -219,7 +219,18 @@ def _check_shared_libraries(tool: str, executable: str) -> None:
     if not ldd:
         return
     r = subprocess.run([ldd, executable], capture_output=True, text=True)
-    missing = sorted({line.split()[0] for line in r.stdout.splitlines() if "not found" in line})
+    output = (r.stdout + r.stderr).splitlines()
+    old = sorted({line.split("version `")[1].split("'")[0] for line in output
+                  if "version `" in line and "not found" in line})
+    if old:
+        raise InstallError(
+            f"{tool} needs newer system libraries ({', '.join(old)}): the C++ library of "
+            "GCC 13 or later, as in Ubuntu 24.04, Debian 13, or Fedora 39. On Ubuntu 22.04:\n"
+            "  sudo apt-get install software-properties-common\n"
+            "  sudo add-apt-repository ppa:ubuntu-toolchain-r/test\n"
+            "  sudo apt-get install libstdc++6\n"
+            f"Or use the CHASE Docker image. Then run chase-cps install {tool} again.")
+    missing = sorted({line.split()[0] for line in output if "=> not found" in line})
     if not missing:
         return
     deb = " ".join(LINUX_PACKAGES.get(m, (m, m))[0] for m in missing)

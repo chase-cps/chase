@@ -19,7 +19,7 @@
 #   docker run --rm chase /opt/chase/tests/demo-suite.sh
 ###############################################################################
 
-ARG UBUNTU_VERSION=22.04
+ARG UBUNTU_VERSION=24.04
 
 FROM ubuntu:${UBUNTU_VERSION} AS base
 ENV DEBIAN_FRONTEND=noninteractive
@@ -89,9 +89,10 @@ ENV CHASE_INSTALL_DIR=/opt/chase \
 # nuXmv (model checking), installed by chase-cps when its license is
 # accepted. FBK ships it for x86_64 Linux only.
 ARG ACCEPT_NUXMV_LICENSE=no
-RUN if [ "${ACCEPT_NUXMV_LICENSE}" = "yes" ]; then \
-        python3 -m chase_cps install nuxmv --accept-license \
-        || echo "nuXmv is not installed in the image."; \
+RUN if [ "${ACCEPT_NUXMV_LICENSE}" = "yes" ] && [ "$(uname -m)" = "x86_64" ]; then \
+        python3 -m chase_cps install nuxmv --accept-license; \
+    elif [ "${ACCEPT_NUXMV_LICENSE}" = "yes" ]; then \
+        echo "nuXmv: no build for $(uname -m), not installed."; \
     else \
         echo "nuXmv: license not accepted, not installed" \
              "(docker build --build-arg ACCEPT_NUXMV_LICENSE=yes)."; \
