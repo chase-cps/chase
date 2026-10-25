@@ -11,7 +11,7 @@ authors:
 repository-code: "https://github.com/chase-cps/chase"
 url: "https://chase-cps.github.io"
 license: BSD-3-Clause
-version: 0.1.0
+version: 0.1.1
 date-released: 2026-10-25
 preferred-citation:
   type: conference-paper

@@ -21,7 +21,7 @@ from .contract import Contract, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",

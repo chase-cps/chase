@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1
+## 0.1.1 (2026-10-25)
 
 - The slugs back end dropped the temporal operators F and G nested in a
   term, so `G (req -> F grant)` was checked as `G (req -> grant)` and
