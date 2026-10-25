@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Implication and coimplication of contracts (the adjoints of conjunction
+  and disjunction), the reciprocal, and the two Boolean actions that add an
+  assumption or a guarantee (Incer, Benveniste, Sangiovanni-Vincentelli,
+  arXiv 2309.08875). In the core library and the console of logics_tool
+  (`imply`, `coimply`, `invert`), and in Python and the MCP server (`imply`,
+  `coimply`, `invert`, `assume`, `ensure`).
+- `compose(..., discharge=True)`: composition that keeps the terms of the
+  contracts and drops the assumptions discharged by the other contract and
+  the redundant terms (Incer, PhD thesis 2022, Algorithm 2).
+
 ## 0.1.0 (2026-10-25)
 
 First release of the CHASE Python package, `chase-cps`, and of this

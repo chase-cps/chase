@@ -88,12 +88,32 @@ return a new contract; the checks read as predicates (`refines(a, b)`: does
 | merging • | `merge C1 C2 R` | `c1.merge(c2)` | | `merge` |
 | quotient / | `divide C1 C2 R` | `c1.divide(c2)` | | `divide` |
 | separation ÷ | `separate C1 C2 R` | `c1.separate(c2)` | | `separate` |
+| implication → | `imply C1 C2 R` | `c1.imply(c2)` | | `imply` |
+| coimplication | `coimply C1 C2 R` | `c1.coimply(c2)` | | `coimply` |
+| reciprocal C⁻¹ | `invert C R` | `c.invert()` | | `invert` |
+| adding an assumption b·C | | `c.assume(b)` | | `assume` |
+| adding a guarantee C·b | | `c.ensure(b)` | | `ensure` |
 | saturation | `saturate C` | `c.saturate()` | | `saturate` |
 | (formula simplification) | `simplify C` | `c.simplify()` | | `simplify` |
 | refinement ⪯ | `refines C1 C2 file` | `refines(c1, c2)` | `--refines C1 C2` | `refines` |
 | compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
 | realizability | | `is_realizable(c)` | `--realizable C` | `is_realizable` |
 | synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
+
+Implication and coimplication are the adjoints of conjunction and
+disjunction, as the quotient and separation are of composition and merging
+(Incer, Benveniste, Sangiovanni-Vincentelli, arXiv 2309.08875, Table 1).
+`c1.imply(c2)` is the largest contract C such that C conjoined with c1
+refines c2. The reciprocal (G, A) is the contract seen from its environment.
+`c.assume(b)` gives (b & A, b -> G), an abstraction of c, and `c.ensure(b)`
+gives (b -> A, b & G), which refines c.
+
+`c1.compose(c2, discharge=True)` keeps the terms of the two contracts instead
+of the closed form (Incer, PhD thesis 2022, Algorithm 2). When c1 drives the
+inputs of c2 and not the reverse, the assumptions of c2 implied by the
+assumptions and guarantees of c1 are dropped, then the redundant terms. Each
+test is one call to nuXmv. The result is an abstraction of the composition:
+a refinement proved on it holds for the composition; a failed one may not.
 
 The console also accepts the names of its first version: `conjunction` for
 `conjoin`, `quotient` for `divide`, and `refinement` for `refines`. It has

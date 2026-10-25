@@ -268,13 +268,32 @@ class Contract:
         return Contract(name or self.name, dict(self.inputs), dict(self.outputs),
                         list(self.assumptions), guarantees)
 
-    def compose(self, other: "Contract", name: str | None = None) -> "Contract":
-        """Parallel composition; variables with the same name are connected."""
+    def compose(self, other: "Contract", name: str | None = None, discharge: bool = False,
+                backend: str = "auto", **options) -> "Contract":
+        """Parallel composition; variables with the same name are connected.
+
+        By default the closed form of the core library:
+        ((A1 & A2) | !(G1 & G2), G1 & G2).
+
+        With ``discharge=True``, the result keeps the terms of the two
+        contracts (Incer, PhD thesis 2022, Algorithm 2, without variable
+        elimination). When the outputs of one contract feed the inputs of the
+        other and not the reverse, each assumption of the receiving contract
+        implied by the assumptions and guarantees of the driving one is
+        dropped; then the terms implied by the others are dropped as in
+        ``remove_redundant``. Each test is one implication check (nuXmv or
+        NuSMV; ``backend`` and ``options`` as for the checks). The result is
+        an abstraction of the composition: the closed form refines it, so a
+        refinement proved on it holds for the composition.
+        """
         both = set(self.outputs) & set(other.outputs)
         if both:
             raise ValueError(f"cannot compose {self.name} and {other.name}: "
                              f"{sorted(both)} are outputs of both")
-        return _algebra("composition", self, other, name or f"{self.name}_{other.name}")
+        name = name or f"{self.name}_{other.name}"
+        if discharge:
+            return _compose_terms(self, other, name, backend, **options)
+        return _algebra("composition", self, other, name)
 
     def conjoin(self, other: "Contract", name: str | None = None) -> "Contract":
         """Greatest lower bound (both specifications at once):
@@ -299,6 +318,93 @@ class Contract:
         """Smallest C such that self refines other . C (merging):
         ((A1 & G2) | !(G1 & A2), G1 & A2) (Passerone et al., TECS 2019)."""
         return _algebra("separation", self, other, name or f"{self.name}_sep_{other.name}")
+
+    def imply(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Implication self -> other, the adjoint of conjunction: the largest C
+        such that C conjoined with self refines other:
+        ((A2 & !A1) | (G1 & !G2), G2 | !G1) (Incer et al., arXiv 2309.08875,
+        Proposition 6)."""
+        return _algebra("implication", self, other, name or f"{self.name}_imply_{other.name}")
+
+    def coimply(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Coimplication, the adjoint of disjunction: the smallest C such that
+        other refines C disjoined with self:
+        (A2 | !A1, (G2 & !G1) | (A1 & !A2)) (Incer et al., arXiv 2309.08875,
+        Proposition 7)."""
+        return _algebra("coimplication", self, other,
+                        name or f"{self.name}_coimply_{other.name}")
+
+    def invert(self, name: str | None = None) -> "Contract":
+        """Reciprocal (G, A): the contract seen from its environment; the
+        inputs become outputs and the outputs inputs."""
+        from ._native import representation as R
+        c = self.saturate()
+        holder = _parse_contracts([c])
+        out = Contract.from_pychase(R.Contract.reciprocal(holder[c.name],
+                                                          name or f"{self.name}_inv"))
+        variables = {**out.inputs, **out.outputs}
+        out.inputs = {v: t for v, t in variables.items() if v in self.outputs}
+        out.outputs = {v: t for v, t in variables.items() if v not in self.outputs}
+        return out
+
+    def assume(self, formula, name: str | None = None) -> "Contract":
+        """Adds the assumption b: (b & A, b -> G), the left action of Incer et
+        al., arXiv 2309.08875, Section 4, computed as the merging of (b, true)
+        with the contract. The result is an abstraction of the contract."""
+        b = _single_term(self, formula, assumption=True)
+        return _algebra("merging", self, b, name or f"{self.name}_assume")
+
+    def ensure(self, formula, name: str | None = None) -> "Contract":
+        """Adds the guarantee b: (b -> A, b & G), the right action of Incer et
+        al., arXiv 2309.08875, Section 4, computed as the composition of
+        (true, b) with the contract. The result refines the contract."""
+        b = _single_term(self, formula, assumption=False)
+        return _algebra("composition", self, b, name or f"{self.name}_ensure")
+
+
+def _single_term(c: Contract, formula, assumption: bool) -> Contract:
+    """The contract (b, true) or (true, b) over the variables of c, as
+    inputs."""
+    f = ltl.parse(formula) if isinstance(formula, str) else formula
+    missing = ltl.variables(f) - set(c.variables)
+    if missing:
+        raise ValueError(f"undeclared variables {sorted(missing)} in {ltl.to_str(f)!r} "
+                         f"(contract {c.name})")
+    inputs = {v: c.variables[v] for v in sorted(ltl.variables(f))}
+    if assumption:
+        return Contract(f"{c.name}_b", inputs, {}, [f], [])
+    return Contract(f"{c.name}_b", inputs, {}, [], [f])
+
+
+def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
+                   **options) -> Contract:
+    """Composition keeping the terms (see Contract.compose)."""
+    from .checks import VALID, _merge_vars, implies, remove_redundant
+    variables = _merge_vars(c1, c2)
+
+    def refine(terms, context):
+        # The terms not implied by the context (RefineWithSupport).
+        ctx = ltl.conjunction(context)
+        return [t for t in terms
+                if implies(ctx, t, variables, backend, **options).status != VALID]
+
+    # The guarantees of one contract simplify the assumptions of the other
+    # in one direction only: in both directions at once the result can be
+    # wrong (Incer, thesis, Example 7.3.2).
+    feeds12 = bool(set(c1.outputs) & set(c2.inputs))
+    feeds21 = bool(set(c2.outputs) & set(c1.inputs))
+    if feeds12 and not feeds21:
+        assumptions = list(c1.assumptions) + refine(c2.assumptions,
+                                                    c1.assumptions + c1.guarantees)
+    elif feeds21 and not feeds12:
+        assumptions = refine(c1.assumptions, c2.assumptions + c2.guarantees) \
+            + list(c2.assumptions)
+    else:
+        assumptions = list(c1.assumptions) + list(c2.assumptions)
+    outputs = {**c1.outputs, **c2.outputs}
+    inputs = {v: t for v, t in {**c1.inputs, **c2.inputs}.items() if v not in outputs}
+    c = Contract(name, inputs, outputs, assumptions, list(c1.guarantees) + list(c2.guarantees))
+    return remove_redundant(c, backend, **options).contract
 
 
 class _Holder:

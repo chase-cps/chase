@@ -204,6 +204,69 @@ def test_composition_refines_and_separation():
 
 @needs_native
 @needs_mc
+def test_compose_with_discharge():
+    from chase_cps import refines
+    c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
+                               guarantees=["G (a -> b)"], name="C1")
+    c2 = Contract.from_strings(inputs=["b"], outputs=["c"], assumptions=["G b"],
+                               guarantees=["G (b -> c)"], name="C2")
+    top = Contract.from_strings(inputs=["a"], outputs=["c"], assumptions=["G a"],
+                                guarantees=["G c"], name="Top")
+    for c in (c1.compose(c2, discharge=True), c2.compose(c1, discharge=True)):
+        # G b is implied by the assumption and the guarantee of C1
+        assert [ltl.to_str(t) for t in c.assumptions] == ["G a"]
+        assert sorted(ltl.to_str(t) for t in c.guarantees) == ["G (a -> b)", "G (b -> c)"]
+        assert (set(c.inputs), set(c.outputs)) == ({"a"}, {"b", "c"})
+        # an abstraction of the closed form, which still refines Top
+        assert refines(c1.compose(c2), c).status == "valid"
+        assert refines(c, top).status == "valid"
+    # feedback: nothing is discharged
+    back = Contract.from_strings(inputs=["c"], outputs=["a"], assumptions=["G c"],
+                                 guarantees=["G (c -> a)"], name="Back")
+    loop = Contract.from_strings(inputs=["a", "c"], outputs=["b"], assumptions=["G a"],
+                                 guarantees=["G (a -> b)"], name="Loop")
+    c = c2.compose(back).compose(loop, discharge=True)
+    assert refines(c2.compose(back).compose(loop), c).status == "valid"
+
+
+@needs_native
+@needs_mc
+def test_implication_coimplication_and_reciprocal():
+    from chase_cps import refines
+    c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
+                               guarantees=["G F b"], name="C1")
+    c2 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G F a"],
+                               guarantees=["G (a -> b)"], name="C2")
+    # C1 -> C2 is the largest C with C & C1 <= C2; C1 ~> C2 the smallest C
+    # with C2 <= C | C1
+    assert refines(c1.imply(c2).conjoin(c1), c2).status == "valid"
+    assert refines(c2, c1.coimply(c2).disjoin(c1)).status == "valid"
+    assert refines(c2.conjoin(c1), c1.imply(c2)).status == "valid"
+    # reciprocal: (G, A), inputs and outputs exchanged, an involution
+    r = c1.invert()
+    assert (set(r.inputs), set(r.outputs)) == ({"b"}, {"a"})
+    back = r.invert()
+    assert refines(back, c1).status == "valid" and refines(c1, back).status == "valid"
+    # quotient = C1 . C2^-1 (arXiv 2309.08875, Section 2.6)
+    q, mq = c1.divide(c2), c1.merge(c2.invert())
+    assert refines(q, mq).status == "valid" and refines(mq, q).status == "valid"
+
+
+@needs_native
+@needs_mc
+def test_assume_and_ensure():
+    from chase_cps import refines
+    c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
+                              guarantees=["G (a -> b)"], name="C")
+    assert refines(c, c.assume("G F b")).status == "valid"
+    assert refines(c.ensure("G (b -> X b)"), c).status == "valid"
+    assert refines(c.assume("G F b"), c).status == "invalid"
+    with pytest.raises(ValueError):
+        c.assume("G z")
+
+
+@needs_native
+@needs_mc
 def test_quotient_composed_with_divisor_refines():
     from chase_cps import refines
     # C2 || (C1 / C2) <= C1, also when A2 is not implied by A1 and G2.
