@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0
+## 0.1.0 (2026-10-25)
 
 First release of the CHASE Python package, `chase-cps`, and of this
 repository as the entry point to CHASE.
