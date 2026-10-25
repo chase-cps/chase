@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev pybind11-dev uuid-dev
+          echo "PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
+          echo "CMAKE_EXTRA=-Dpybind11_DIR=/usr/lib/cmake/pybind11" >> "$GITHUB_ENV"
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install pybind11 python@3.13
+          echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
+          echo "CMAKE_EXTRA=-DCMAKE_PREFIX_PATH=$(brew --prefix)" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_INSTALL_PREFIX=$RUNNER_TEMP/chase
+          -DPython_EXECUTABLE=$PYTHON
+          -DCHASE_BUILD_TESTS=ON
+          $CMAKE_EXTRA
+
+      - name: Build and install
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Check the installation
+        run: |
+          export PATH=$RUNNER_TEMP/chase/chase/bin:$PATH
+          export PYTHONPATH=$RUNNER_TEMP/chase/chase/lib
+          cd demos
+          dsl_tool -i DATE18/template_0_realizable.txt -o $RUNNER_TEMP/t -b gr1c
+          test -s $RUNNER_TEMP/t.spc
+          (cd DATE21 && logics_tool -i specs/robotic_arm.ltl -o $RUNNER_TEMP/d21 -c solution.script)
+          test -s $RUNNER_TEMP/d21/system.smv
+          $PYTHON -c "import pychase, pychase_backends, pychase_DSL, pychase_logicsLang"
+
+      - name: Python tests (without model checkers)
+        run: |
+          $PYTHON -m pip install pytest || $PYTHON -m pip install --break-system-packages pytest
+          CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests
+
+  docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build the Docker image
+        run: docker build -t chase .
+
+      - name: Run the demos
+        run: docker run --rm chase /opt/chase/tests/demo-suite.sh
+
+      - name: Python tests (with NuSMV and slugs)
+        run: docker run --rm chase python3 -m pytest -q /opt/chase/python/tests

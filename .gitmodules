@@ -1,0 +1,24 @@
+[submodule "modules/third_party"]
+	path = modules/third_party
+	url = https://github.com/chase-cps/third_party.git
+	branch = main
+[submodule "modules/core-library"]
+	path = modules/core-library
+	url = https://github.com/chase-cps/core-library.git
+	branch = main
+[submodule "modules/chase-backends"]
+	path = modules/chase-backends
+	url = https://github.com/chase-cps/chase-backends.git
+	branch = main
+[submodule "modules/DSL_tool"]
+	path = modules/DSL_tool
+	url = https://github.com/chase-cps/DSL_tool.git
+	branch = main
+[submodule "modules/logics_tool"]
+	path = modules/logics_tool
+	url = https://github.com/chase-cps/logics_tool.git
+	branch = main
+[submodule "demos"]
+	path = demos
+	url = https://github.com/chase-cps/demos.git
+	branch = main

@@ -1,0 +1,11 @@
+**/.git
+**/.DS_Store
+.github
+.idea
+.vscode
+build
+install
+cmake-build-*
+legacy
+**/__pycache__
+**/.pytest_cache
