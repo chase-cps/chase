@@ -20,7 +20,8 @@ arithmetic (optimization, variable bounds) have no counterpart in CHASE.
 | (none) | `Contract::separation` | `Contract.separation` | Adjoint of merging (roadmap O8). |
 | (none) | `Contract::saturate` | `Contract.saturate` | (A, A -> G); the algebra saturates its operands. |
 | `refines` | `Contract::refinementCheck` (writes a NuSMV model) | `refines` | chase_cps returns a counterexample when the check fails. |
-| `simplify` | `simplify` (Boolean formulas only) | `simplify` | Each term is dropped when the context implies it (roadmap O10). |
+| `simplify` | (none) | `remove_redundant` | Each term is dropped when the context implies it (roadmap O10). |
+| (none) | `simplify` (formula rewriting) | `Contract.simplify` | Negations moved to the atoms, temporal operators grouped. |
 | `contains_environment` | (none) | `contains_environment` | E -> A. |
 | `contains_implementation` | (none) | `contains_implementation` | M & A -> G. |
 | `can_compose_with` | name clashes checked by `mergeDeclarations` | `Contract.can_compose_with` | No variable is an output of both contracts. |

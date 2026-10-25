@@ -12,13 +12,15 @@ repository as the entry point to CHASE.
   CHASE (`load_spec`, `parse_spec`, `to_spec`).
 - The contract algebra of the core library: composition, conjunction,
   disjunction, merging, quotient, separation, and saturation.
-- Checks with nuXmv or NuSMV: implication, satisfiability, refinement,
-  consistency, compatibility, and containment of an environment or an
-  implementation. A failed check returns a counterexample trace.
-  Simplification removes the terms implied by the others.
+- Checks with nuXmv (or NuSMV, where nuXmv cannot be used): implication,
+  satisfiability, refinement, consistency, compatibility, and containment of
+  an environment or an implementation. A failed check returns a counterexample trace.
+  `remove_redundant` drops the terms implied by the others, and
+  `Contract.simplify` rewrites the formulas as the simplify command of
+  logics_tool.
 - GR(1) realizability with slugs, with the controller or the counter-strategy
   of the environment.
-- Command line: `chase-cps install` installs nuXmv, NuSMV, and slugs in
+- Command line: `chase-cps install` installs nuXmv, slugs, and NuSMV in
   `~/.chase`, `chase-cps doctor` shows the tools found, and `chase-cps check`
   checks the contracts of a specification and prints the counterexamples.
 - Wheels for Python 3.10 to 3.15 on Linux (x86_64, aarch64) and macOS (arm64,
@@ -27,6 +29,8 @@ repository as the entry point to CHASE.
 ### Core library and tools
 
 - Separation of contracts, and Python bindings for disjunction and merging.
+- The console of logics_tool has the commands disjunction and merging, and
+  `show` prints the temporal operators (it printed their codes).
 - The quotient follows again the closed form of Incer et al. (MEMOCODE 2018):
   the guarantees are (G1 & A2) | !(A1 & G2).
 - Primed variables kept their prime when a formula was cloned, and the NuSMV

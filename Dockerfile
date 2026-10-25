@@ -1,12 +1,18 @@
 ###############################################################################
 # Docker image with the complete CHASE toolchain:
 #   - CHASE core-library, chase-backends, DSL_tool, logics_tool (+ Python API)
-#   - external solvers used by the backends: gr1c, slugs, NuSMV (x86_64 only)
+#   - external solvers used by the backends: gr1c, slugs, and nuXmv (x86_64
+#     only, when its license is accepted, see below)
 #
 # The CHASE modules are built from the git submodules of this repository,
 # which must be initialized before building the image:
 #   git submodule update --init --recursive
 #   docker build -t chase .
+#
+# nuXmv may be used only for academic and non-commercial purposes
+# (https://nuxmv.fbk.eu/license.html). It is downloaded into the image only
+# when its license is accepted:
+#   docker build --build-arg ACCEPT_NUXMV_LICENSE=yes -t chase .
 #
 # Run the demos:
 #   docker run --rm -it chase
@@ -20,7 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git ca-certificates curl pkg-config \
         python3 python3-dev python3-pytest pybind11-dev uuid-dev \
-        bison flex libboost-dev graphviz less \
+        bison flex libboost-dev graphviz less libxml2 libedit2 xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 ###############################################################################
@@ -45,18 +51,6 @@ RUN git clone https://github.com/VerifiableRobotics/slugs /opt/slugs \
         src/BFAbstractionLibrary/compilerOptionGenerator.c \
     && cd src && make -j"$(nproc)" \
     && ln -s /opt/slugs/src/slugs /usr/local/bin/slugs
-
-# NuSMV (model checking). Upstream only ships x86_64 Linux binaries.
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-        curl -fsSL -o /tmp/nusmv.tgz \
-            https://nusmv.fbk.eu/distrib/NuSMV-2.6.0-linux64.tar.gz \
-        && echo "11b12e42bc04566c4ec1f7cc205fa8704382ac4d69e052154cbb59c9b7e8e08c  /tmp/nusmv.tgz" | sha256sum -c - \
-        && tar xzf /tmp/nusmv.tgz -C /opt \
-        && ln -s /opt/NuSMV-2.6.0-Linux/bin/NuSMV /usr/local/bin/NuSMV \
-        && rm /tmp/nusmv.tgz; \
-    else \
-        echo "NuSMV: no prebuilt binary for ${TARGETARCH}, skipping."; \
-    fi
 
 ###############################################################################
 # CHASE.
@@ -87,9 +81,21 @@ COPY tests/demo-suite.sh /opt/chase/tests/demo-suite.sh
 COPY python /opt/chase/python
 
 ENV CHASE_INSTALL_DIR=/opt/chase \
-    PATH=/opt/chase/chase/bin:${PATH} \
+    CHASE_HOME=/opt/chase/tools \
+    PATH=/opt/chase/tools/bin:/opt/chase/chase/bin:${PATH} \
     PYTHONPATH=/opt/chase/python:/opt/chase/chase/lib \
     SLUGSCOMPILER=/opt/slugs/tools/StructuredSlugsParser/compiler.py
+
+# nuXmv (model checking), installed by chase-cps when its license is
+# accepted. FBK ships it for x86_64 Linux only.
+ARG ACCEPT_NUXMV_LICENSE=no
+RUN if [ "${ACCEPT_NUXMV_LICENSE}" = "yes" ]; then \
+        python3 -m chase_cps install nuxmv --accept-license \
+        || echo "nuXmv is not installed in the image."; \
+    else \
+        echo "nuXmv: license not accepted, not installed" \
+             "(docker build --build-arg ACCEPT_NUXMV_LICENSE=yes)."; \
+    fi
 
 WORKDIR /opt/chase/demos
 CMD ["/bin/bash"]

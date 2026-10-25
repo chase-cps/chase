@@ -25,7 +25,8 @@ at once. Each module is developed in its own repository.
   represent design problems and systems, and their Python bindings
   ([chase-cps/core-library][CORE]).
 - `modules/chase-backends`: the backends encoding CHASE problems into external
-  tools, i.e., Slugs, GR1C, NuSMV, and PySTL ([chase-cps/chase-backends][BACKENDS]).
+  tools, i.e., Slugs, GR1C, the SMV language of nuXmv, and PySTL
+  ([chase-cps/chase-backends][BACKENDS]).
 - `modules/DSL_tool`: the tool using a Domain Specific Language to specify
   discrete timed problems over architectures modeled as graphs
   ([chase-cps/DSL_tool][DSL]).
@@ -43,15 +44,19 @@ at once. Each module is developed in its own repository.
 
 ## Quick start
 
-The complete CHASE toolchain, including the gr1c, slugs, and NuSMV solvers,
+The complete CHASE toolchain, including the gr1c, slugs, and nuXmv solvers,
 is available as a Docker image:
 
 ````
 $>  git clone --recursive https://github.com/chase-cps/chase
 $>  cd chase
-$>  docker build -t chase .
+$>  docker build --build-arg ACCEPT_NUXMV_LICENSE=yes -t chase .
 $>  docker run --rm -it chase
 ````
+
+nuXmv may be used only for academic and non-commercial purposes (see its
+[license](https://nuxmv.fbk.eu/license.html)): it is installed in the image
+only with `--build-arg ACCEPT_NUXMV_LICENSE=yes`.
 
 The container starts in the directory of the demos. All the demos can be run
 and checked with:
@@ -60,9 +65,9 @@ and checked with:
 $>  docker run --rm chase /opt/chase/tests/demo-suite.sh
 ````
 
-NuSMV is distributed only for x86_64. On ARM machines (e.g., Apple Silicon),
-add `--platform linux/amd64` to the `docker build` and `docker run` commands
-to include it in the image.
+nuXmv is distributed for Linux only for x86_64. On ARM machines (e.g., Apple
+Silicon), add `--platform linux/amd64` to the `docker build` and `docker run`
+commands to include it in the image.
 
 ## Installation from sources
 
@@ -138,7 +143,6 @@ The external tools used by the backends are not installed by the script. They
 are available at the following locations:
 - [gr1c](https://github.com/tulip-control/gr1c)
 - [slugs](https://github.com/VerifiableRobotics/slugs)
-- [NuSMV](https://nusmv.fbk.eu/)
 - [nuXmv](https://nuxmv.fbk.eu/)
 
 ## Python package
@@ -147,8 +151,7 @@ The `chase_cps` package, in the `python` directory, provides contracts written
 in the standard LTL syntax, the contract algebra of the core library, and a
 common interface to the external tools: implication, satisfiability,
 refinement, consistency, and compatibility checks with
-[nuXmv](https://nuxmv.fbk.eu/) or [NuSMV](https://nusmv.fbk.eu/), and GR(1)
-realizability with slugs. A failed check returns a counterexample trace.
+[nuXmv](https://nuxmv.fbk.eu/), and GR(1) realizability with slugs. A failed check returns a counterexample trace.
 
 The package, together with the compiled CHASE modules, is installed with:
 
@@ -164,11 +167,11 @@ $>  cd chase
 $>  pip install .
 ````
 
-The checks call external tools, which are installed separately: nuXmv or
-NuSMV for the implication, refinement, consistency, and compatibility checks,
-and slugs for realizability. `chase-cps install nuxmv --accept-license`,
-`chase-cps install nusmv`, and `chase-cps install slugs` install them, and
-`chase-cps doctor` shows the tools found. `chase-cps check` checks the
+The checks call external tools, which are installed separately: nuXmv for
+the implication, refinement, consistency, and compatibility checks, and slugs
+for realizability. `chase-cps install nuxmv --accept-license` and
+`chase-cps install slugs` install them, and `chase-cps doctor` shows the
+tools found. `chase-cps check` checks the
 contracts of a specification from the command line. The details are in the
 [package README](python/README.md).
 

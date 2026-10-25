@@ -24,9 +24,9 @@ from .queries import REALIZABLE, SAT, VALID
 
 # What each back end is needed for.
 NEEDED_FOR = {
-    "nuxmv": "refines, consistent, compatible, implies, satisfiable, simplify, "
+    "nuxmv": "refines, consistent, compatible, implies, satisfiable, remove_redundant, "
              "contains_environment, contains_implementation",
-    "nusmv": "the same checks as nuXmv (nuXmv is used first when both are installed)",
+    "nusmv": "the same checks, where nuXmv cannot be used (optional)",
     "slugs": "realizable (GR(1) realizability, controllers, counter-strategies)",
 }
 
@@ -70,14 +70,15 @@ def doctor(args=None) -> int:
             missing.append(name)
 
     model_checker = any(_location(n) for n in ("nuxmv", "nusmv"))
+    missing = [n for n in missing if n != "nusmv"]      # NuSMV is optional
     if model_checker:   # one model checker is enough
-        missing = [n for n in missing if n not in ("nuxmv", "nusmv")]
+        missing = [n for n in missing if n != "nuxmv"]
     if missing:
         print("\nTo install the missing back ends:")
         for name in missing:
             print(f"  {name}: {_how_to_install(name)}")
     if not model_checker:
-        print("\nThe checks on contracts need nuXmv or NuSMV: install one of them.")
+        print("\nThe checks on contracts need nuXmv (or NuSMV where nuXmv cannot be used).")
     return 0 if ok and model_checker else 1
 
 

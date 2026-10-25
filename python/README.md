@@ -20,8 +20,9 @@ result = refines(impl, spec)
 print(result.status)          # valid, or invalid with a counterexample trace
 ```
 
-Contracts can be saturated, composed (`compose`), conjoined, disjoined,
-merged, and divided (`quotient`, `separation`), and simplified (`simplify`).
+Contracts can be saturated, simplified (`simplify`, as in `logics_tool`),
+composed (`compose`), conjoined, disjoined, merged, and divided (`quotient`,
+`separation`). `remove_redundant` drops the terms implied by the others.
 The checks on contracts are `refines`, `consistent`, `compatible`,
 `realizable`, `contains_environment`, and `contains_implementation`; the
 checks on formulas are `implies` and `satisfiable`. `load_spec` and
@@ -41,33 +42,33 @@ supported: use WSL or the CHASE Docker image.
 The package contains the CHASE library. The checks call external tools,
 which are not installed with the package:
 
-- [nuXmv][NUXMV] (free for non-commercial and academic use) or
-  [NuSMV][NUSMV] for `refines`, `consistent`, `compatible`, `implies`,
-  `satisfiable`, `simplify`, `contains_environment`, and
-  `contains_implementation`. nuXmv is preferred: it proves the properties
-  with IC3.
+- [nuXmv][NUXMV] for `refines`, `consistent`, `compatible`, `implies`,
+  `satisfiable`, `remove_redundant`, `contains_environment`, and
+  `contains_implementation`. nuXmv is free for academic and non-commercial
+  use.
 - [slugs][SLUGS] for `realizable`.
 
-The command `chase-cps install` downloads them from their sites (or builds
-slugs from its sources) into `~/.chase`:
+The command `chase-cps install` downloads nuXmv from its site, and builds
+slugs from its sources, into `~/.chase`:
 
 ````
 $> chase-cps install nuxmv --accept-license    # Linux x86_64, macOS arm64
-$> chase-cps install nusmv                     # Linux x86_64
 $> chase-cps install slugs                     # needs a C++ compiler, make, and Boost
 ````
 
 On macOS, nuXmv needs the libraries of Homebrew (`brew install libxml2 gmp
 libedit`); on Debian and Ubuntu, `sudo apt-get install libxml2 libedit2`.
 The tools can also be installed by hand: they are looked up in the `PATH`
-and in `~/.chase/bin`, or given with the environment variables
-`CHASE_NUXMV`, `CHASE_NUSMV`, and `CHASE_SLUGS`. The command
+and in `~/.chase/bin`, or given with the environment variables `CHASE_NUXMV`
+and `CHASE_SLUGS`. The command
 
 `$> chase-cps doctor`
 
-shows the tools found and how to install the missing ones. When both nuXmv
-and NuSMV are installed, the environment variable `CHASE_BACKEND` (`nuxmv`,
-`nusmv`) selects one.
+shows the tools found and how to install the missing ones.
+
+Where nuXmv cannot be used (e.g. for commercial purposes), the checks run
+with [NuSMV][NUSMV] (LGPL) instead: `chase-cps install nusmv` installs it on
+Linux x86_64, or set `CHASE_NUSMV`.
 
 ## Command line
 

@@ -14,9 +14,9 @@ Python interface to the CHASE core library and its back ends::
 
 from . import backends, ltl, tools
 from .backends import check
-from .checks import (RefinementResult, Simplification, compatible, consistent,
+from .checks import (RefinementResult, Redundancy, compatible, consistent,
                      contains_environment, contains_implementation, implies,
-                     realizable, refines, satisfiable, simplify)
+                     realizable, refines, remove_redundant, satisfiable)
 from .contract import Contract, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
@@ -25,9 +25,9 @@ __version__ = "0.1.0"
 
 __all__ = [
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
-    "Result", "Trace", "RefinementResult", "Simplification",
+    "Result", "Trace", "RefinementResult", "Redundancy",
     "implies", "satisfiable", "realizable", "refines", "consistent", "compatible",
-    "simplify", "contains_environment", "contains_implementation",
+    "remove_redundant", "contains_environment", "contains_implementation",
     "check", "backends", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
 ]

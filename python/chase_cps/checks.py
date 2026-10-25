@@ -106,8 +106,8 @@ def compatible(contract: Contract, backend: str = "auto", **options) -> Result:
 
 
 @dataclass
-class Simplification:
-    """Outcome of ``simplify``."""
+class Redundancy:
+    """Outcome of ``remove_redundant``."""
     contract: Contract
     removed_assumptions: list[ltl.Node] = field(default_factory=list)
     removed_guarantees: list[ltl.Node] = field(default_factory=list)
@@ -120,8 +120,8 @@ class Simplification:
                 "unknown": [ltl.to_str(f) for f in self.unknown]}
 
 
-def simplify(contract: Contract, backend: str = "auto", **options) -> Simplification:
-    """Simplification: drop each term implied by the other terms and the context.
+def remove_redundant(contract: Contract, backend: str = "auto", **options) -> Redundancy:
+    """Drop each term implied by the other terms and the context.
 
     An assumption is dropped when the other assumptions imply it; a guarantee
     when the assumptions and the other guarantees imply it. Each test is one
@@ -129,7 +129,7 @@ def simplify(contract: Contract, backend: str = "auto", **options) -> Simplifica
     """
     c = contract
     variables = c.variables
-    out = Simplification(Contract(c.name, dict(c.inputs), dict(c.outputs),
+    out = Redundancy(Contract(c.name, dict(c.inputs), dict(c.outputs),
                                   list(c.assumptions), list(c.guarantees)))
     kept = list(c.assumptions)
     for term in list(kept):

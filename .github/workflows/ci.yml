@@ -24,14 +24,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-dev pybind11-dev uuid-dev libboost-dev
+          sudo apt-get install -y python3-dev pybind11-dev uuid-dev libboost-dev libxml2 libedit2
           echo "PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
           echo "CMAKE_EXTRA=-Dpybind11_DIR=/usr/lib/cmake/pybind11" >> "$GITHUB_ENV"
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install pybind11 python@3.13 boost
+          brew install pybind11 python@3.13 boost libxml2 gmp libedit
           echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
           echo "CMAKE_EXTRA=-DCMAKE_PREFIX_PATH=$(brew --prefix)" >> "$GITHUB_ENV"
 
@@ -70,13 +70,13 @@ jobs:
       - name: Install the back ends with chase-cps install
         run: |
           export CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python
-          if [ "$RUNNER_OS" = Linux ] && [ ! -x ~/.chase/bin/NuSMV ]; then
-            $PYTHON -m chase_cps install nusmv
+          if [ ! -x ~/.chase/bin/nuXmv ]; then
+            $PYTHON -m chase_cps install nuxmv --accept-license
           fi
           if [ ! -e ~/.chase/bin/slugs ]; then $PYTHON -m chase_cps install slugs; fi
           $PYTHON -m chase_cps doctor || true
 
-      - name: Python tests (NuSMV on Linux, slugs)
+      - name: Python tests (with nuXmv and slugs)
         run: |
           $PYTHON -m pip install pytest || $PYTHON -m pip install --break-system-packages pytest
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests
@@ -89,10 +89,10 @@ jobs:
           submodules: recursive
 
       - name: Build the Docker image
-        run: docker build -t chase .
+        run: docker build --build-arg ACCEPT_NUXMV_LICENSE=yes -t chase .
 
       - name: Run the demos
         run: docker run --rm chase /opt/chase/tests/demo-suite.sh
 
-      - name: Python tests (with NuSMV and slugs)
+      - name: Python tests (with nuXmv and slugs)
         run: docker run --rm chase python3 -m pytest -q /opt/chase/python/tests

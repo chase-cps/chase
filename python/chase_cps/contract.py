@@ -225,6 +225,22 @@ class Contract:
 
     # Contract algebra (computed by the CHASE core library) -------------------
 
+    def simplify(self, name: str | None = None, nots: bool = True,
+                 temporal_operators: bool = True) -> "Contract":
+        """The contract with its formulas simplified by the core library (the
+        simplify command of logics_tool): the negations are moved towards the
+        atoms (nots), and the temporal operators are grouped
+        (temporal_operators): G f & G g becomes G (f & g), F f | F g becomes
+        F (f | g), X f & X g becomes X (f & g). The contract is equivalent."""
+        from ._native import utilities
+        pc = self.to_pychase()
+        utilities.simplify(pc, utilities.simplify_options(nots, temporal_operators))
+        out = Contract.from_pychase(pc)
+        out.name = name or self.name
+        out.inputs = {v: t for v, t in out.variables.items() if v in self.inputs}
+        out.outputs = {v: t for v, t in out.variables.items() if v not in self.inputs}
+        return out
+
     def saturate(self, name: str | None = None) -> "Contract":
         """Saturation: the equivalent contract (A, A -> G)."""
         guarantees = [self.saturated_guarantee] if self.assumptions else list(self.guarantees)

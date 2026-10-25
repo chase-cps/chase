@@ -133,14 +133,14 @@ def test_refinement_consistency_compatibility():
 
 
 @needs_mc
-def test_simplify():
-    from chase_cps import simplify
+def test_remove_redundant():
+    from chase_cps import remove_redundant
     c = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               assumptions=["G F !req", "F !req"],
                               guarantees=["G (req -> X grant)", "G (req -> F grant)",
                                           "G F (req -> grant) | !req"],
                               name="Red")
-    out = simplify(c)
+    out = remove_redundant(c)
     assert [ltl.to_str(f) for f in out.removed_assumptions] == ["F !req"]
     assert "G (req -> F grant)" in [ltl.to_str(f) for f in out.removed_guarantees]
     assert out.contract.guarantees[0] == ltl.parse("G (req -> X grant)")
@@ -410,3 +410,15 @@ def test_install_downloads_checks_and_links(tmp_path, monkeypatch):
                         (archive.as_uri(), "0" * 64, "NuSMV-x/bin/NuSMV"))
     with pytest.raises(tools.InstallError, match="SHA-256"):
         tools.install("nusmv", log=lambda *a: None)
+
+
+@needs_native
+@needs_mc
+def test_simplify_gives_an_equivalent_contract():
+    from chase_cps import refines
+    c = Contract.from_strings(inputs=["a"], outputs=["b", "d"], assumptions=["G a", "G !(!a)"],
+                              guarantees=["!(!b | X d)", "F b | F d"], name="C")
+    s = c.simplify()
+    assert [ltl.to_str(f) for f in s.guarantees] == ["b", "X !d", "F (b | d)"]
+    assert s.inputs == c.inputs and s.outputs == c.outputs
+    assert refines(c, s).status == "valid" and refines(s, c).status == "valid"
