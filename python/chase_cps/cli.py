@@ -24,10 +24,10 @@ from .queries import REALIZABLE, SAT, VALID
 
 # What each back end is needed for.
 NEEDED_FOR = {
-    "nuxmv": "refines, consistent, compatible, implies, satisfiable, remove_redundant, "
-             "contains_environment, contains_implementation",
+    "nuxmv": "refinement, verify, consistent, compatible, implies, satisfiable, "
+             "remove_redundant, contains_environment, contains_implementation",
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
-    "slugs": "realizable (GR(1) realizability, controllers, counter-strategies)",
+    "slugs": "synthesize (GR(1) realizability, controllers, counter-strategies)",
 }
 
 
@@ -128,7 +128,8 @@ def _checks(args, contracts):
     """(kind, label, function) for each check asked, in order."""
     out = []
     every = args.contracts or list(contracts)
-    if not (args.compatible or args.consistent or args.refines or args.realizable):
+    if args.verify or not (args.compatible or args.consistent or args.refinement
+                           or args.synthesize):
         args.compatible = args.consistent = True
     options = {"timeout": args.timeout}
     for name in every if args.compatible or args.consistent else []:
@@ -139,18 +140,18 @@ def _checks(args, contracts):
         if args.consistent:
             out.append(("consistent", name,
                         lambda c=c: checks.consistent(c, args.backend, **options)))
-    for refined, abstract in args.refines or []:
+    for refined, abstract in args.refinement or []:
         r, a = _contract(refined, contracts), _contract(abstract, contracts)
-        out.append(("refines", f"{refined} <= {abstract}",
-                    lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
-    for name in args.realizable or []:
+        out.append(("refinement", f"{refined} <= {abstract}",
+                    lambda r=r, a=a: checks.refinement(r, a, args.backend, **options)))
+    for name in args.synthesize or []:
         c = _contract(name, contracts)
-        out.append(("realizable", name, lambda c=c: checks.realizable(c, **options)))
+        out.append(("synthesize", name, lambda c=c: checks.synthesize(c, **options)))
     return out
 
 
 def _passed(kind: str, result) -> bool:
-    return result.status == {"refines": VALID, "realizable": REALIZABLE}.get(kind, SAT)
+    return result.status == {"refinement": VALID, "synthesize": REALIZABLE}.get(kind, SAT)
 
 
 def _indent(text) -> str:
@@ -159,10 +160,10 @@ def _indent(text) -> str:
 
 def _report(kind: str, label: str, result) -> None:
     seconds = (result.assumptions.seconds + result.guarantees.seconds
-               if kind == "refines" else result.seconds)
-    extra = f"  ({result.failed} fail)" if kind == "refines" and result.failed else ""
+               if kind == "refinement" else result.seconds)
+    extra = f"  ({result.failed} fail)" if kind == "refinement" and result.failed else ""
     print(f"{kind:11} {label:40} {result.status:12} {seconds:7.2f} s{extra}")
-    if kind == "refines":
+    if kind == "refinement":
         part = result.assumptions if result.failed == "assumptions" else result.guarantees
         if result.failed and part.trace is not None:
             print(f"  counterexample ({result.failed}):")
@@ -215,18 +216,21 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser(
         "check", help="check the contracts of a specification",
         description="Check the contracts of a specification in the logics language of "
-        "CHASE, or of a JSON file. Without options, checks the compatibility and the "
-        "consistency of every contract. A contract argument can be NAME or NAME+NAME+... "
+        "CHASE, or of a JSON file, as the commands verify, refinement, and synthesize of "
+        "logics_tool. Without options, verifies (compatibility and consistency) every "
+        "contract. A contract argument can be NAME or NAME+NAME+... "
         "for the composition of the contracts. The exit status is 0 when every check "
         "passes, 1 when a check fails or does not finish, and 2 on an error in the input.")
     p.add_argument("file")
     p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
                    help="the contracts for --compatible and --consistent (default: all)")
+    p.add_argument("--verify", action="store_true",
+                   help="compatibility and consistency (the default)")
     p.add_argument("--compatible", action="store_true", help="some environment satisfies A")
     p.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
-    p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
+    p.add_argument("--refinement", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="REFINED refines ABSTRACT (may be repeated)")
-    p.add_argument("--realizable", action="append", metavar="CONTRACT",
+    p.add_argument("--synthesize", action="append", metavar="CONTRACT",
                    help="GR(1) realizability with slugs (may be repeated)")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")

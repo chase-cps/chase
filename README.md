@@ -178,14 +178,14 @@ contracts of a specification from the command line. The details are in the
 For instance:
 
 ````
-from chase_cps import Contract, refines
+from chase_cps import Contract, refinement
 
 spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              assumptions=["G F !req"],
                              guarantees=["G (req -> F grant)"], name="Spec")
 impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              guarantees=["G (req -> X grant)"], name="Impl")
-print(refines(impl, spec).status)
+print(refinement(impl, spec).status)
 ````
 
 The tests are run with `pytest`. The operations of CHASE are also available
@@ -194,6 +194,8 @@ to AI agents through the [CHASE MCP server](https://github.com/chase-cps/chase-m
 ## Documentation
 
 - [CHASE website](https://chase-cps.github.io)
+- [Using CHASE](docs/usage.md): the console, the Python package, the
+  command line, and the MCP server, with the specification language
 - [Python API reference](https://chase-cps.github.io/api/)
 - [Tools](https://github.com/chase-cps/core-library/blob/main/doc/md/tools.md)
 - [Python interface](https://github.com/chase-cps/core-library/blob/main/doc/md/python.md)

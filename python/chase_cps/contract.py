@@ -89,21 +89,42 @@ class Contract:
     def from_pychase(cls, pc) -> "Contract":
         """Convert a contract of the CHASE core library."""
         from ._native import representation as R
-        inputs, outputs = {}, {}
+        inputs, outputs, generic, constants = {}, {}, {}, {}
         for d in pc.declarations:
+            name = d.getName().getString()
+            if type(d).__name__ == "Constant":
+                constants[name] = d.getValue().getValue()
+                continue
             t = d.getType()
             vtype = (t.getMin(), t.getMax()) if type(t).__name__ == "Integer" else "bool"
-            target = inputs if d.getCausality() == R.causality_t.input else outputs
-            target[d.getName().getString()] = vtype
+            causality = d.getCausality()
+            if causality == R.causality_t.input:
+                inputs[name] = vtype
+            elif causality == R.causality_t.generic:   # e.g. a proposition, inlined
+                generic[name] = vtype
+            else:
+                outputs[name] = vtype
+
+        def value(node):    # constants are replaced by their values
+            if isinstance(node, ltl.Var) and node.name in constants:
+                return ltl.Num(constants[node.name])
+            if isinstance(node, ltl.Unary):
+                return ltl.Unary(node.op, value(node.arg))
+            if isinstance(node, ltl.Binary):
+                return ltl.Binary(node.op, value(node.left), value(node.right))
+            return node
 
         def terms(domain_map) -> list[ltl.Node]:
             out = []
             for spec in domain_map.values():
-                out.extend(ltl.conjuncts(ltl.from_pychase(spec)))
+                out.extend(value(t) for t in ltl.conjuncts(ltl.from_pychase(spec)))
             return out
 
+        assumptions, guarantees = terms(pc.assumptions), terms(pc.guarantees)
+        used = ltl.variables(ltl.conjunction(assumptions + guarantees))
+        outputs.update({k: v for k, v in generic.items() if k in used})
         return cls(name=pc.getName().getString(), inputs=inputs, outputs=outputs,
-                   assumptions=terms(pc.assumptions), guarantees=terms(pc.guarantees))
+                   assumptions=assumptions, guarantees=guarantees)
 
     def validate(self) -> None:
         for n in [self.name] + list(self.variables):
@@ -255,16 +276,16 @@ class Contract:
                              f"{sorted(both)} are outputs of both")
         return _algebra("composition", self, other, name or f"{self.name}_{other.name}")
 
-    def conjoin(self, other: "Contract", name: str | None = None) -> "Contract":
+    def conjunction(self, other: "Contract", name: str | None = None) -> "Contract":
         """Greatest lower bound (both specifications at once):
         (A1 | A2, G1 & G2)."""
         return _algebra("conjunction", self, other, name or f"{self.name}_and_{other.name}")
 
-    def disjoin(self, other: "Contract", name: str | None = None) -> "Contract":
+    def disjunction(self, other: "Contract", name: str | None = None) -> "Contract":
         """Least upper bound: (A1 & A2, G1 | G2)."""
         return _algebra("disjunction", self, other, name or f"{self.name}_or_{other.name}")
 
-    def merge(self, other: "Contract", name: str | None = None) -> "Contract":
+    def merging(self, other: "Contract", name: str | None = None) -> "Contract":
         """Merging of two viewpoints of the same component:
         (A1 & A2, (G1 & G2) | !(A1 & A2))."""
         return _algebra("merging", self, other, name or f"{self.name}_merge_{other.name}")

@@ -8,7 +8,7 @@ The package contains the CHASE core library (contract representation and
 algebra) and a common interface to model checkers and synthesis tools.
 
 ```python
-from chase_cps import Contract, refines
+from chase_cps import Contract, refinement
 
 spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              assumptions=["G F !req"],
@@ -16,16 +16,17 @@ spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
 impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              guarantees=["G (req -> X grant)"], name="Impl")
 
-result = refines(impl, spec)
+result = refinement(impl, spec)
 print(result.status)          # valid, or invalid with a counterexample trace
 ```
 
-Contracts can be saturated, simplified (`simplify`, as in `logics_tool`),
-composed (`compose`), conjoined, disjoined, merged, and divided (`quotient`,
-`separation`). `remove_redundant` drops the terms implied by the others.
-The checks on contracts are `refines`, `consistent`, `compatible`,
-`realizable`, `contains_environment`, and `contains_implementation`; the
-checks on formulas are `implies` and `satisfiable`. `load_spec` and
+The operations have the names of the commands of `logics_tool`. A contract
+`c` has the methods `compose`, `conjunction`, `disjunction`, `merging`,
+`quotient`, `separation`, `saturate`, and `simplify`, which return new
+contracts. The checks on contracts are `refinement`, `verify` (`compatible`
+and `consistent`), `synthesize` (GR(1) realizability), `contains_environment`,
+and `contains_implementation`; the checks on formulas are `implies` and
+`satisfiable`. `remove_redundant` drops the terms implied by the others. `load_spec` and
 `parse_spec` read the contracts of a specification written in the logics
 language of CHASE, and `to_spec` writes one.
 
@@ -42,11 +43,11 @@ supported: use WSL or the CHASE Docker image.
 The package contains the CHASE library. The checks call external tools,
 which are not installed with the package:
 
-- [nuXmv][NUXMV] for `refines`, `consistent`, `compatible`, `implies`,
+- [nuXmv][NUXMV] for `refinement`, `verify`, `implies`,
   `satisfiable`, `remove_redundant`, `contains_environment`, and
   `contains_implementation`. nuXmv is free for academic and non-commercial
   use.
-- [slugs][SLUGS] for `realizable`.
+- [slugs][SLUGS] for `synthesize`.
 
 The command `chase-cps install` downloads nuXmv from its site, and builds
 slugs from its sources, into `~/.chase`:
@@ -78,9 +79,9 @@ Linux x86_64, or set `CHASE_NUSMV`.
 logics language of CHASE, or of a JSON file, and prints the counterexamples:
 
 ````
-$> chase-cps check specs.ltl                                  # compatibility and consistency
-$> chase-cps check specs.ltl --refines Joint1+Joint2 Joints   # composition refines Joints
-$> chase-cps check specs.ltl --realizable Joint1 --json
+$> chase-cps check specs.ltl                                    # verify every contract
+$> chase-cps check specs.ltl --refinement Joint1+Joint2 Joints   # composition refines Joints
+$> chase-cps check specs.ltl --synthesize Joint1 --json
 ````
 
 The exit status is 0 when every check passes, and 1 when a check fails.

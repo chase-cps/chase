@@ -117,14 +117,14 @@ def test_satisfiable():
 
 @needs_mc
 def test_refinement_consistency_compatibility():
-    from chase_cps import compatible, consistent, refines
+    from chase_cps import compatible, consistent, refinement
     spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                                  assumptions=["G F !req"],
                                  guarantees=["G (req -> F grant)"], name="Spec")
     impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
                                  guarantees=["G (req -> X grant)"], name="Impl")
-    assert refines(impl, spec).status == "valid"
-    r = refines(spec, impl)     # impl accepts every environment, spec does not
+    assert refinement(impl, spec).status == "valid"
+    r = refinement(spec, impl)     # impl accepts every environment, spec does not
     assert r.status == "invalid" and r.failed == "assumptions"
     assert consistent(spec).status == "sat"
     assert compatible(spec).status == "sat"
@@ -189,37 +189,37 @@ def test_bad_formula_raises_instead_of_exiting():
 @needs_native
 @needs_mc
 def test_composition_refines_and_separation():
-    from chase_cps import refines
+    from chase_cps import refinement
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                                guarantees=["G (a -> b)"], name="C1")
     c2 = Contract.from_strings(inputs=["b"], outputs=["c"], assumptions=["G b"],
                                guarantees=["G (b -> c)"], name="C2")
     top = Contract.from_strings(inputs=["a"], outputs=["c"], assumptions=["G a"],
                                 guarantees=["G c"], name="Top")
-    assert refines(c1.compose(c2), top).status == "valid"
+    assert refinement(c1.compose(c2), top).status == "valid"
     # separation: Top is refined by (Top / sep C2) merged with C2
     s = top.separation(c2)
-    assert refines(top, s.merge(c2)).status == "valid"
+    assert refinement(top, s.merging(c2)).status == "valid"
 
 
 @needs_native
 @needs_mc
 def test_quotient_composed_with_divisor_refines():
-    from chase_cps import refines
+    from chase_cps import refinement
     # C2 || (C1 / C2) <= C1, also when A2 is not implied by A1 and G2.
     c1 = Contract.from_strings(inputs=["a"], outputs=["c"], assumptions=["G a"],
                                guarantees=["G c"], name="C1")
     c2 = Contract.from_strings(inputs=["b"], outputs=["c"], assumptions=["G b"],
                                guarantees=["G (b -> c)"], name="C2")
     q = c1.quotient(c2)
-    assert refines(c2.compose(q), c1).status == "valid"
+    assert refinement(c2.compose(q), c1).status == "valid"
 
 
 @needs_native
 @needs_mc
 @pytest.mark.skipif(not os.path.isfile(ROBOTIC_JOINTS), reason="demos not found")
 def test_robotic_joints_refinement_and_counterexample():
-    from chase_cps import refines
+    from chase_cps import refinement
     from chase_cps._native import pychase_logicsLang
     system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(ROBOTIC_JOINTS)
     C = {c.getName().getString(): Contract.from_pychase(c) for c in system.getContractsSet()}
@@ -227,13 +227,13 @@ def test_robotic_joints_refinement_and_counterexample():
     nuxmv = (os.environ.get("CHASE_BACKEND", "nuxmv") != "nusmv"
              and ADAPTERS["nuxmv"].available())
     if nuxmv:   # IC3 proves it in seconds
-        assert refines(composed, C["Joints"]).status == "valid"
+        assert refinement(composed, C["Joints"]).status == "valid"
     else:       # NuSMV proves it with BDDs, which take minutes
-        assert refines(composed, C["Joints"], timeout=60).status in ("valid", "unknown")
+        assert refinement(composed, C["Joints"], timeout=60).status in ("valid", "unknown")
     j1 = C["Joint1"]
     weak = Contract(j1.name, j1.inputs, j1.outputs, j1.assumptions,
                     [g for g in j1.guarantees if ltl.to_str(g) != "G F j1_done"])
-    r = refines(C["Joint3"].compose(weak.compose(C["Joint2"])), C["Joints"])
+    r = refinement(C["Joint3"].compose(weak.compose(C["Joint2"])), C["Joints"])
     assert r.status == "invalid" and r.failed == "guarantees"
     assert all(s["req_j1"] and not s["j1_done"] for s in r.guarantees.trace.loop)
 
@@ -249,15 +249,15 @@ def _has_slugs():
 @needs_native
 @pytest.mark.skipif(not _has_slugs(), reason="slugs not installed")
 def test_realizability_with_controller_and_counter_strategy():
-    from chase_cps import realizable
+    from chase_cps import synthesize
     ok = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F !req"],
                                guarantees=["G (req -> X grant)", "G F grant"], name="Arb")
-    r = realizable(ok)
+    r = synthesize(ok)
     assert r.status == "realizable" and "nodes" in r.controller
     bad = Contract.from_strings(inputs=["req"], outputs=["grant"],
                                 guarantees=["G (req -> X grant)", "G (req -> X !grant)"],
                                 name="Bad")
-    r = realizable(bad)
+    r = synthesize(bad)
     assert r.status == "unrealizable" and "State" in r.counter_strategy
 
 
@@ -291,15 +291,15 @@ def test_environment_and_implementation():
 @needs_native
 @needs_mc
 def test_conjunction_and_disjunction_bounds():
-    from chase_cps import refines
+    from chase_cps import refinement
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                                guarantees=["G b"], name="C1")
     c2 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G F a"],
                                guarantees=["F b"], name="C2")
-    meet, join = c1.conjoin(c2), c1.disjoin(c2)
+    meet, join = c1.conjunction(c2), c1.disjunction(c2)
     for c in (c1, c2):
-        assert refines(meet, c).status == "valid"
-        assert refines(c, join).status == "valid"
+        assert refinement(meet, c).status == "valid"
+        assert refinement(c, join).status == "valid"
 
 
 @needs_native
@@ -315,12 +315,12 @@ def test_spec_text_round_trip():
 
 @needs_mc
 def test_saturate_gives_an_equivalent_contract():
-    from chase_cps import refines
+    from chase_cps import refinement
     c = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F !req"],
                               guarantees=["G (req -> F grant)"], name="C")
     s = c.saturate()
     assert ltl.to_str(s.guarantee) == "G F !req -> G (req -> F grant)"
-    assert refines(c, s).status == "valid" and refines(s, c).status == "valid"
+    assert refinement(c, s).status == "valid" and refinement(s, c).status == "valid"
 
 
 def test_doctor_lists_the_back_ends(capsys):
@@ -361,12 +361,14 @@ def test_check_command(tmp_path, capsys):
     assert main(["check", str(spec)]) == 0
     out = capsys.readouterr().out
     assert out.count("sat") == 4
-    assert main(["check", str(spec), "--refines", "Impl", "Spec"]) == 0
+    assert main(["check", str(spec), "--verify", "--contracts", "Spec"]) == 0
+    assert capsys.readouterr().out.count("sat") == 2
+    assert main(["check", str(spec), "--refinement", "Impl", "Spec"]) == 0
     assert "valid" in capsys.readouterr().out
-    assert main(["check", str(spec), "--refines", "Spec", "Impl", "--json"]) == 1
+    assert main(["check", str(spec), "--refinement", "Spec", "Impl", "--json"]) == 1
     report = json.loads(capsys.readouterr().out)
     assert not report["passed"] and report["checks"][0]["failed"] == "assumptions"
-    assert main(["check", str(spec), "--refines", "Nope", "Spec"]) == 2
+    assert main(["check", str(spec), "--refinement", "Nope", "Spec"]) == 2
     contracts = tmp_path / "arbiter.json"
     contracts.write_text(json.dumps({"contracts": [
         {"name": "A", "inputs": {"x": "bool"}, "assumptions": ["G x", "F !x"]}]}))
@@ -415,10 +417,43 @@ def test_install_downloads_checks_and_links(tmp_path, monkeypatch):
 @needs_native
 @needs_mc
 def test_simplify_gives_an_equivalent_contract():
-    from chase_cps import refines
+    from chase_cps import refinement
     c = Contract.from_strings(inputs=["a"], outputs=["b", "d"], assumptions=["G a", "G !(!a)"],
                               guarantees=["!(!b | X d)", "F b | F d"], name="C")
     s = c.simplify()
     assert [ltl.to_str(f) for f in s.guarantees] == ["b", "X !d", "F (b | d)"]
     assert s.inputs == c.inputs and s.outputs == c.outputs
-    assert refines(c, s).status == "valid" and refines(s, c).status == "valid"
+    assert refinement(c, s).status == "valid" and refinement(s, c).status == "valid"
+
+
+@needs_mc
+def test_verify_is_compatibility_and_consistency():
+    from chase_cps import verify
+    ok = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G F a"],
+                               guarantees=["G (a -> b)"], name="Ok")
+    r = verify(ok)
+    assert r and r.status == "sat"
+    assert r.compatible.status == "sat" and r.consistent.status == "sat"
+    bad = Contract.from_strings(inputs=["a"], assumptions=["G a", "F !a"], name="Bad")
+    r = verify(bad)
+    assert not r and r.status == "unsat" and r.compatible.status == "unsat"
+
+
+@needs_native
+def test_spec_with_constants_and_propositions():
+    from chase_cps import parse_spec
+    c = parse_spec("""NAME: k;
+
+CONTRACT K:
+    input integer (0:9) variable x;
+    integer constant N 5;
+    proposition p is x > 3;
+    output boolean variable y;
+    Assumptions:
+        x < N;
+    Guarantees:
+        G(p -> y);
+""")["K"]
+    assert c.inputs == {"x": (0, 9)} and c.outputs == {"y": "bool"}
+    assert [ltl.to_str(f) for f in c.assumptions] == ["x < 5"]
+    assert [ltl.to_str(f) for f in c.guarantees] == ["G (x > 3 -> y)"]

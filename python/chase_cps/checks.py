@@ -48,7 +48,7 @@ def satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
     return backends.check(Satisfiable(_formula(phi), dict(variables)), backend, **options)
 
 
-def realizable(contract: Contract, backend: str = "auto", **options) -> Result:
+def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
     """GR(1) realizability of the contract: ``realizable`` with a controller, or
     ``unrealizable`` with the counter-strategy of the environment."""
     return backends.check(Realizable(contract), backend, **options)
@@ -56,7 +56,7 @@ def realizable(contract: Contract, backend: str = "auto", **options) -> Result:
 
 @dataclass
 class RefinementResult:
-    """Outcome of ``refines(refined, abstract)``; the trace of a failed part is a
+    """Outcome of ``refinement(refined, abstract)``; the trace of a failed part is a
     counterexample to it."""
     status: str                    # valid, invalid, unknown
     assumptions: Result            # A_abstract -> A_refined
@@ -79,7 +79,7 @@ class RefinementResult:
                 "guarantees": self.guarantees.to_dict()}
 
 
-def refines(refined: Contract, abstract: Contract, backend: str = "auto",
+def refinement(refined: Contract, abstract: Contract, backend: str = "auto",
             **options) -> RefinementResult:
     """Does ``refined`` refine ``abstract`` (can it replace it)?"""
     variables = _merge_vars(refined, abstract)
@@ -103,6 +103,34 @@ def consistent(contract: Contract, backend: str = "auto", **options) -> Result:
 def compatible(contract: Contract, backend: str = "auto", **options) -> Result:
     """Is there an environment allowed by the contract (A satisfiable)?"""
     return satisfiable(contract.assumption, contract.variables, backend, **options)
+
+
+@dataclass
+class Verification:
+    """Outcome of ``verify``: compatibility and consistency of a contract."""
+    compatible: Result
+    consistent: Result
+
+    @property
+    def status(self) -> str:
+        statuses = {self.compatible.status, self.consistent.status}
+        if statuses == {SAT}:
+            return SAT
+        return UNSAT if UNSAT in statuses else UNKNOWN
+
+    def __bool__(self) -> bool:
+        return self.status == SAT
+
+    def to_dict(self) -> dict:
+        return {"status": self.status, "compatible": self.compatible.to_dict(),
+                "consistent": self.consistent.to_dict()}
+
+
+def verify(contract: Contract, backend: str = "auto", **options) -> Verification:
+    """Compatibility and consistency of the contract (the verify command of
+    logics_tool). The status is sat when both hold."""
+    return Verification(compatible(contract, backend, **options),
+                        consistent(contract, backend, **options))
 
 
 @dataclass
