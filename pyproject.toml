@@ -1,0 +1,38 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.10"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "chase-cps"
+version = "0.1.0"
+description = "CHASE: Contract-based Heterogeneous Analysis and Systems Exploration"
+readme = "python/README.md"
+license = "BSD-3-Clause"
+requires-python = ">=3.10"
+keywords = ["contracts", "assume-guarantee", "LTL", "formal methods",
+            "cyber-physical systems", "requirements", "model checking"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://chase-cps.github.io"
+Repository = "https://github.com/chase-cps/chase"
+
+[tool.scikit-build]
+cmake.version = ">=3.18"
+wheel.packages = ["python/chase_cps"]
+build-dir = "build/{wheel_tag}"
+sdist.exclude = ["legacy", ".github", "build", "install"]
+
+[tool.scikit-build.cmake.define]
+CHASE_BUILD_TESTS = "OFF"
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
