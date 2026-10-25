@@ -204,6 +204,19 @@ def test_composition_refines_and_separation():
 
 @needs_native
 @needs_mc
+def test_quotient_composed_with_divisor_refines():
+    from chase_cps import refines
+    # C2 || (C1 / C2) <= C1, also when A2 is not implied by A1 and G2.
+    c1 = Contract.from_strings(inputs=["a"], outputs=["c"], assumptions=["G a"],
+                               guarantees=["G c"], name="C1")
+    c2 = Contract.from_strings(inputs=["b"], outputs=["c"], assumptions=["G b"],
+                               guarantees=["G (b -> c)"], name="C2")
+    q = c1.quotient(c2)
+    assert refines(c2.compose(q), c1).status == "valid"
+
+
+@needs_native
+@needs_mc
 @pytest.mark.skipif(not os.path.isfile(ROBOTIC_JOINTS), reason="demos not found")
 def test_robotic_joints_refinement_and_counterexample():
     from chase_cps import refines

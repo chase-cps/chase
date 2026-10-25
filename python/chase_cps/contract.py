@@ -243,9 +243,13 @@ class Contract:
         return _algebra("merging", self, other, name or f"{self.name}_merge_{other.name}")
 
     def quotient(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Largest C such that other || C refines self:
+        (A1 & G2, (G1 & A2) | !(A1 & G2)) (Incer et al., MEMOCODE 2018)."""
         return _algebra("quotient", self, other, name or f"{self.name}_div_{other.name}")
 
     def separation(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Smallest C such that self refines other . C (merging):
+        ((A1 & G2) | !(G1 & A2), G1 & A2) (Passerone et al., TECS 2019)."""
         return _algebra("separation", self, other, name or f"{self.name}_sep_{other.name}")
 
 
@@ -304,8 +308,14 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     else:
         result = fn(p1, p2, shared, name)
     out = Contract.from_pychase(result)
-    # A variable that is an output of one operand stays an output.
-    for v in list(out.inputs):
-        if v in c1.outputs or v in c2.outputs:
-            out.outputs[v] = out.inputs.pop(v)
+    if operation == "quotient":
+        # The quotient controls the outputs of c1 not provided by c2 and the
+        # inputs of c2 not provided by the environment of c1 (as in Pacti).
+        outputs = (set(c1.outputs) - set(c2.outputs)) | (set(c2.inputs) - set(c1.inputs))
+    else:
+        # A variable that is an output of one operand stays an output.
+        outputs = set(c1.outputs) | set(c2.outputs)
+    variables = {**out.inputs, **out.outputs}
+    out.inputs = {v: t for v, t in variables.items() if v not in outputs}
+    out.outputs = {v: t for v, t in variables.items() if v in outputs}
     return out
