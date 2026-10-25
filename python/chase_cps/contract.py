@@ -237,9 +237,17 @@ class Contract:
         return _algebra("composition", self, other, name or f"{self.name}_{other.name}")
 
     def conjoin(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Greatest lower bound (both specifications at once):
+        (A1 | A2, G1 & G2)."""
         return _algebra("conjunction", self, other, name or f"{self.name}_and_{other.name}")
 
+    def disjoin(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Least upper bound: (A1 & A2, G1 | G2)."""
+        return _algebra("disjunction", self, other, name or f"{self.name}_or_{other.name}")
+
     def merge(self, other: "Contract", name: str | None = None) -> "Contract":
+        """Merging of two viewpoints of the same component:
+        (A1 & A2, (G1 & G2) | !(A1 & A2))."""
         return _algebra("merging", self, other, name or f"{self.name}_merge_{other.name}")
 
     def quotient(self, other: "Contract", name: str | None = None) -> "Contract":
@@ -266,7 +274,7 @@ class _Holder:
 
 def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
     from ._native import pychase_logicsLang
-    text = "NAME: chase_cps;\n\n" + "\n".join(c.to_logics() for c in contracts)
+    text = to_spec(contracts)
     fd, path = tempfile.mkstemp(suffix=".ltl", prefix="chase_cps_")
     try:
         with os.fdopen(fd, "w") as f:
@@ -277,6 +285,33 @@ def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
         os.unlink(path)
     found = {c.getName().getString(): c for c in system.getContractsSet()}
     return _Holder(system, found)
+
+
+def load_spec(path: str | os.PathLike) -> dict[str, Contract]:
+    """The contracts of a specification file in the logics language of CHASE,
+    by name."""
+    from ._native import pychase_logicsLang
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"no such file: {os.fspath(path)}")
+    system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(os.fspath(path))
+    return {c.getName().getString(): Contract.from_pychase(c)
+            for c in system.getContractsSet()}
+
+
+def parse_spec(text: str) -> dict[str, Contract]:
+    """Like ``load_spec``, from the text of the specification."""
+    fd, path = tempfile.mkstemp(suffix=".ltl", prefix="chase_cps_")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        return load_spec(path)
+    finally:
+        os.unlink(path)
+
+
+def to_spec(contracts: Iterable[Contract], name: str = "chase_cps") -> str:
+    """A specification in the logics language of CHASE with the contracts."""
+    return f"NAME: {name};\n\n" + "\n".join(c.to_logics() for c in contracts)
 
 
 def _saturated(c: Contract, name: str | None = None) -> Contract:

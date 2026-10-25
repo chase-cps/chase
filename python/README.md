@@ -20,9 +20,12 @@ result = refines(impl, spec)
 print(result.status)          # valid, or invalid with a counterexample trace
 ```
 
-Contracts can be composed (`compose`), conjoined, merged, and divided
-(`quotient`, `separation`). The checks are `implies`, `satisfiable`,
-`refines`, `consistent`, `compatible`, `realizable`, and `remove_redundant`.
+Contracts can be composed (`compose`), conjoined, disjoined, merged, and
+divided (`quotient`, `separation`). The checks are `implies`, `satisfiable`,
+`refines`, `consistent`, `compatible`, `realizable`, `contains_environment`,
+`contains_implementation`, and `remove_redundant`. `load_spec` and
+`parse_spec` read the contracts of a specification written in the logics
+language of CHASE, and `to_spec` writes one.
 
 The checks need external tools in the `PATH`:
 

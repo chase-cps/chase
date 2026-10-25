@@ -5,6 +5,16 @@ for cyber-physical systems. It features a modular and extensible software
 infrastructure that can support different domain-specific languages, modeling
 formalisms, and analysis tools.
 
+<p align="center">
+  <img src="docs/chase-framework.png" alt="The CHASE framework components and flow" width="640">
+</p>
+
+The front-end modules parse the specification languages and build the CHASE
+representation of a design problem. The CHASE libraries represent and
+manipulate systems, behaviors, and contracts. The back-end modules translate
+the problems into the languages of verification and synthesis tools (figure
+from the [DATE 2018 paper][DATE18]).
+
 This repository is the entry point to CHASE. It collects the CHASE modules as
 git submodules, and it provides the scripts to build and install all of them
 at once. Each module is developed in its own repository.
@@ -201,3 +211,4 @@ following bibtex entry:
 [LOGICS]: https://github.com/chase-cps/logics_tool
 [THIRD]: https://github.com/chase-cps/third_party
 [DEMOS]: https://github.com/chase-cps/demos
+[DATE18]: https://past.date-conference.com/proceedings-archive/2018/pdf/0451.pdf

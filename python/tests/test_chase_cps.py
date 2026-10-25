@@ -286,3 +286,28 @@ def test_environment_and_implementation():
     assert contains_implementation(spec, "G (grant <-> X req)").status == "invalid"
     assert contains_implementation(spec, "G grant").status == "valid"
 
+
+
+@needs_native
+@needs_mc
+def test_conjunction_and_disjunction_bounds():
+    from chase_cps import refines
+    c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
+                               guarantees=["G b"], name="C1")
+    c2 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G F a"],
+                               guarantees=["F b"], name="C2")
+    meet, join = c1.conjoin(c2), c1.disjoin(c2)
+    for c in (c1, c2):
+        assert refines(meet, c).status == "valid"
+        assert refines(c, join).status == "valid"
+
+
+@needs_native
+def test_spec_text_round_trip():
+    from chase_cps import parse_spec, to_spec
+    c = Contract.from_strings(inputs={"req": "bool", "n": (0, 3)}, outputs=["grant"],
+                              assumptions=["G F !req"],
+                              guarantees=["G (req -> F grant)", "G (n < 3)"], name="Arbiter")
+    back = parse_spec(to_spec([c]))["Arbiter"]
+    assert back.inputs == c.inputs and back.outputs == c.outputs
+    assert [ltl.to_str(f) for f in back.guarantees] == [ltl.to_str(f) for f in c.guarantees]

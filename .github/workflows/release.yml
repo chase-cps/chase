@@ -44,6 +44,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Check that the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          test "${GITHUB_REF_NAME#v}" = "$version"
+          grep -q "__version__ = \"$version\"" python/chase_cps/__init__.py
       - run: pipx run build --sdist
       - uses: actions/upload-artifact@v4
         with:
@@ -65,6 +71,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
   pypi:
     if: startsWith(github.ref, 'refs/tags/v')
