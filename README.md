@@ -139,6 +139,7 @@ are available at the following locations:
 - [gr1c](https://github.com/tulip-control/gr1c)
 - [slugs](https://github.com/VerifiableRobotics/slugs)
 - [NuSMV](https://nusmv.fbk.eu/)
+- [nuXmv](https://nuxmv.fbk.eu/)
 
 ## Python package
 
@@ -152,10 +153,22 @@ realizability with slugs. A failed check returns a counterexample trace.
 The package, together with the compiled CHASE modules, is installed with:
 
 ````
+$>  pip install chase-cps
+````
+
+or, from the sources:
+
+````
 $>  git clone --recursive https://github.com/chase-cps/chase
 $>  cd chase
 $>  pip install .
 ````
+
+The checks call external tools, which are installed separately: nuXmv or
+NuSMV for the implication, refinement, consistency, and compatibility checks,
+and slugs for realizability. `chase-cps doctor` shows the tools found and how
+to install the missing ones. The details are in the
+[package README](python/README.md).
 
 For instance:
 
@@ -176,6 +189,7 @@ to AI agents through the [CHASE MCP server](https://github.com/chase-cps/chase-m
 ## Documentation
 
 - [CHASE website](https://chase-cps.github.io)
+- [Python API reference](https://chase-cps.github.io/api/)
 - [Tools](https://github.com/chase-cps/core-library/blob/main/doc/md/tools.md)
 - [Python interface](https://github.com/chase-cps/core-library/blob/main/doc/md/python.md)
 - [Demos](https://github.com/chase-cps/demos)

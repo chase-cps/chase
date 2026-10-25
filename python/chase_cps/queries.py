@@ -35,14 +35,15 @@ class Realizable:
 
 @dataclass
 class Simplify:
-    """An equivalent, simpler formula."""
+    """An equivalent, simpler formula. No back end answers it yet."""
     phi: ltl.Node
     variables: dict[str, VarType]
 
 
 @dataclass
 class Project:
-    """A formula over ``keep`` only, implied by phi (existential projection)."""
+    """A formula over ``keep`` only, implied by phi (existential projection).
+    No back end answers it yet."""
     phi: ltl.Node
     variables: dict[str, VarType]
     keep: list[str]

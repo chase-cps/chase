@@ -149,7 +149,8 @@ def test_simplify():
 
 @needs_mc
 def test_backends_answer_or_report_unknown():
-    from chase_cps import Project, check, ltl as L
+    from chase_cps import check, ltl as L
+    from chase_cps.queries import Project
     r = check(Project(L.parse("a & b"), {"a": "bool", "b": "bool"}, ["a"]))
     assert r.status == "unknown" and "Project" in r.reason
 
@@ -321,3 +322,11 @@ def test_saturate_gives_an_equivalent_contract():
     s = c.saturate()
     assert ltl.to_str(s.guarantee) == "G F !req -> G (req -> F grant)"
     assert refines(c, s).status == "valid" and refines(s, c).status == "valid"
+
+
+def test_doctor_lists_the_back_ends(capsys):
+    from chase_cps.cli import main
+    code = main(["doctor"])
+    out = capsys.readouterr().out
+    assert "Back ends:" in out and "nuxmv" in out and "slugs" in out
+    assert code in (0, 1)

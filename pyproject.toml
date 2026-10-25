@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11>=2.10"]
+requires = ["scikit-build-core>=0.11", "pybind11>=2.10"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -8,12 +8,16 @@ version = "0.1.0"
 description = "CHASE: Contract-based Heterogeneous Analysis and Systems Exploration"
 readme = "python/README.md"
 license = "BSD-3-Clause"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES"]
+authors = [{ name = "Yifeng Xiao", email = "yifengx@berkeley.edu" }]
 requires-python = ">=3.10"
 keywords = ["contracts", "assume-guarantee", "LTL", "formal methods",
             "cyber-physical systems", "requirements", "model checking"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: C++",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
     "Topic :: Scientific/Engineering",
     "Intended Audience :: Science/Research",
 ]
@@ -21,9 +25,15 @@ classifiers = [
 [project.optional-dependencies]
 test = ["pytest"]
 
+[project.scripts]
+chase-cps = "chase_cps.cli:main"
+
 [project.urls]
 Homepage = "https://chase-cps.github.io"
+Documentation = "https://chase-cps.github.io/api/"
 Repository = "https://github.com/chase-cps/chase"
+Issues = "https://github.com/chase-cps/chase/issues"
+Changelog = "https://github.com/chase-cps/chase/blob/master/CHANGELOG.md"
 
 [tool.scikit-build]
 cmake.version = ">=3.18"

@@ -59,7 +59,8 @@ def check(query, backend: str = "auto", **options) -> Result:
         if ADAPTERS[name].available():
             return _configured(ADAPTERS[name], options).run(query)
     return Result(UNKNOWN, reason="no installed back end answers "
-                  f"{type(query).__name__}; tried {candidates}")
+                  f"{type(query).__name__}; tried {candidates}. Run `chase-cps doctor` "
+                  "to see how to install them")
 
 
 def _configured(adapter: Adapter, options: dict) -> Adapter:

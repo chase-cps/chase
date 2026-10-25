@@ -19,15 +19,15 @@ from .checks import (RefinementResult, Simplification, compatible, consistent,
                      realizable, refines, satisfiable, simplify)
 from .contract import Contract, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
-from .queries import (Implies, Project, Realizable, Result, Satisfiable,
-                      Simplify, Trace)
+from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
 __version__ = "0.1.0"
 
 __all__ = [
-    "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError", "Result", "Trace", "RefinementResult", "Simplification",
+    "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
+    "Result", "Trace", "RefinementResult", "Simplification",
     "implies", "satisfiable", "realizable", "refines", "consistent", "compatible",
     "simplify", "contains_environment", "contains_implementation",
     "check", "backends", "ltl",
-    "Implies", "Satisfiable", "Realizable", "Simplify", "Project",
+    "Implies", "Satisfiable", "Realizable",
 ]

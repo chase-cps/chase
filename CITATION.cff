@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use CHASE, please cite the paper below."
+title: "CHASE: Contract-based Heterogeneous Analysis and Systems Exploration"
+type: software
+authors:
+  - family-names: Lora
+    given-names: Michele
+  - family-names: Xiao
+    given-names: Yifeng
+    affiliation: "University of California, Berkeley"
+repository-code: "https://github.com/chase-cps/chase"
+url: "https://chase-cps.github.io"
+license: BSD-3-Clause
+version: 0.1.0
+preferred-citation:
+  type: conference-paper
+  title: "CHASE: Contract-based requirement engineering for cyber-physical system design"
+  authors:
+    - family-names: Nuzzo
+      given-names: Pierluigi
+    - family-names: Lora
+      given-names: Michele
+    - family-names: Feldman
+      given-names: Yishai A.
+    - family-names: Sangiovanni-Vincentelli
+      given-names: Alberto L.
+  collection-title: "Proceedings of the Design, Automation & Test in Europe Conference & Exhibition (DATE)"
+  publisher:
+    name: IEEE
+  year: 2018
+  start: 839
+  end: 844

@@ -60,7 +60,8 @@ class SlugsAdapter(Adapter):
 
     def run(self, query: Realizable) -> Result:
         if not self.available():
-            return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed")
+            return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed; run "
+                          "`chase-cps doctor` to see how to install it")
         start = time.monotonic()
         try:
             structured = self.emit(query)
