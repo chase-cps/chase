@@ -263,6 +263,28 @@ def test_realizability_and_synthesis():
     assert r.status == "unrealizable" and "State" in r.counter_strategy
 
 
+@needs_native
+@pytest.mark.skipif(not _has_slugs(), reason="slugs not installed")
+def test_terms_outside_gr1_are_reported():
+    from chase_cps import is_realizable
+    # F inside G, or G inside a Boolean term, is not GR(1): the slugs back end
+    # must not drop the operator (G (req -> F grant) is realizable here, and
+    # (req -> grant) is not).
+    for a, g in [(["G F req", "G (stop -> X !stop)", "G F !stop"],
+                  ["G (req -> F grant)", "G (stop -> !grant)"]),
+                 (["G F req"], ["(G req) -> grant"]),
+                 (["G (req -> F !req)"], ["G (req -> X grant)"])]:
+        c = Contract.from_strings(inputs=["req", "stop"], outputs=["grant"],
+                                  assumptions=a, guarantees=g, name="T")
+        r = is_realizable(c)
+        assert r.status == "unknown" and "Not a GR1" in r.reason
+    # X inside a liveness term is accepted, as by slugs
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                              assumptions=["G F (req -> X !req)"],
+                              guarantees=["G (req -> X grant)", "G F grant"], name="T")
+    assert is_realizable(c).status == "realizable"
+
+
 def test_rename_and_signatures():
     c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                               guarantees=["G (a -> X b')"], name="C")
