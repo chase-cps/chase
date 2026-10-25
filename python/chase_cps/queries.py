@@ -86,7 +86,8 @@ class Result:
     backend: str = ""
     trace: Optional[Trace] = None        # counterexample or witness
     controller: Optional[Any] = None     # synthesized strategy
-    core: Optional[Any] = None           # unrealizable core / counter-strategy
+    counter_strategy: Optional[Any] = None   # of the environment, when unrealizable
+    core: Optional[Any] = None           # unrealizable or unsatisfiable core
     formula: Optional[ltl.Node] = None   # simplified or projected formula
     reason: str = ""                     # why the result is unknown
     seconds: float = 0.0
@@ -101,6 +102,8 @@ class Result:
             d["trace"] = self.trace.to_dict()
         if self.controller is not None:
             d["controller"] = self.controller
+        if self.counter_strategy is not None:
+            d["counter_strategy"] = self.counter_strategy
         if self.core is not None:
             d["core"] = self.core
         if self.formula is not None:

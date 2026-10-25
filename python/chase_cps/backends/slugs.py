@@ -97,7 +97,7 @@ class SlugsAdapter(Adapter):
                         result.controller = s.stdout
                 elif self.strategy and status == UNREALIZABLE:
                     s = self._slugs(["--counterStrategy", "spec.slugsin"], tmp)
-                    result.core = s.stdout
+                    result.counter_strategy = s.stdout
             except subprocess.TimeoutExpired:
                 return Result(UNKNOWN, self.name, reason=f"timeout after {self.timeout:g} s",
                               seconds=time.monotonic() - start)

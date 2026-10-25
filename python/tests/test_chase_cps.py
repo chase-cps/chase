@@ -134,14 +134,14 @@ def test_refinement_consistency_compatibility():
 
 
 @needs_mc
-def test_remove_redundant():
-    from chase_cps import remove_redundant
+def test_simplify():
+    from chase_cps import simplify
     c = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               assumptions=["G F !req", "F !req"],
                               guarantees=["G (req -> X grant)", "G (req -> F grant)",
                                           "G F (req -> grant) | !req"],
                               name="Red")
-    out = remove_redundant(c)
+    out = simplify(c)
     assert [ltl.to_str(f) for f in out.removed_assumptions] == ["F !req"]
     assert "G (req -> F grant)" in [ltl.to_str(f) for f in out.removed_guarantees]
     assert out.contract.guarantees[0] == ltl.parse("G (req -> X grant)")
@@ -258,7 +258,7 @@ def test_realizability_with_controller_and_counter_strategy():
                                 guarantees=["G (req -> X grant)", "G (req -> X !grant)"],
                                 name="Bad")
     r = realizable(bad)
-    assert r.status == "unrealizable" and "State" in r.core
+    assert r.status == "unrealizable" and "State" in r.counter_strategy
 
 
 def test_rename_and_signatures():
@@ -311,3 +311,13 @@ def test_spec_text_round_trip():
     back = parse_spec(to_spec([c]))["Arbiter"]
     assert back.inputs == c.inputs and back.outputs == c.outputs
     assert [ltl.to_str(f) for f in back.guarantees] == [ltl.to_str(f) for f in c.guarantees]
+
+
+@needs_mc
+def test_saturate_gives_an_equivalent_contract():
+    from chase_cps import refines
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F !req"],
+                              guarantees=["G (req -> F grant)"], name="C")
+    s = c.saturate()
+    assert ltl.to_str(s.guarantee) == "G F !req -> G (req -> F grant)"
+    assert refines(c, s).status == "valid" and refines(s, c).status == "valid"

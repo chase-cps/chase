@@ -228,6 +228,12 @@ class Contract:
 
     # Contract algebra (computed by the CHASE core library) -------------------
 
+    def saturate(self, name: str | None = None) -> "Contract":
+        """Saturation: the equivalent contract (A, A -> G)."""
+        guarantees = [self.saturated_guarantee] if self.assumptions else list(self.guarantees)
+        return Contract(name or self.name, dict(self.inputs), dict(self.outputs),
+                        list(self.assumptions), guarantees)
+
     def compose(self, other: "Contract", name: str | None = None) -> "Contract":
         """Parallel composition; variables with the same name are connected."""
         both = set(self.outputs) & set(other.outputs)
@@ -314,18 +320,11 @@ def to_spec(contracts: Iterable[Contract], name: str = "chase_cps") -> str:
     return f"NAME: {name};\n\n" + "\n".join(c.to_logics() for c in contracts)
 
 
-def _saturated(c: Contract, name: str | None = None) -> Contract:
-    """The same contract with guarantee A -> G (the algebra expects it)."""
-    guarantees = [c.saturated_guarantee] if c.assumptions else list(c.guarantees)
-    return Contract(name or c.name, dict(c.inputs), dict(c.outputs),
-                    list(c.assumptions), guarantees)
-
-
 def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     from ._native import representation as R
     # The operations of the core library are defined on saturated contracts.
-    c1 = _saturated(c1)
-    c2 = _saturated(c2, c2.name + "_2" if c1.name == c2.name else None)
+    c1 = c1.saturate()
+    c2 = c2.saturate(c2.name + "_2" if c1.name == c2.name else None)
     # Variables with the same name are the same variable (connected ports).
     shared = {}
     for v in set(c1.variables) & set(c2.variables):
