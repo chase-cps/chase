@@ -57,7 +57,9 @@ $> chase-cps install slugs                     # needs a C++ compiler, make, and
 ````
 
 On macOS, nuXmv needs the libraries of Homebrew (`brew install libxml2 gmp
-libedit`); on Debian and Ubuntu, `sudo apt-get install libxml2 libedit2`.
+libedit`). On Linux it needs `libxml2` and `libedit2`, and the C++ library of
+GCC 13 or later (Ubuntu 24.04, Debian 13, Fedora 39, or newer);
+`chase-cps install` says what is missing.
 The tools can also be installed by hand: they are looked up in the `PATH`
 and in `~/.chase/bin`, or given with the environment variables `CHASE_NUXMV`
 and `CHASE_SLUGS`. The command
