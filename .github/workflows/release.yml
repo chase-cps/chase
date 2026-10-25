@@ -1,7 +1,8 @@
 name: Release
 
 # Builds the wheels of the chase-cps Python package.
-# - Manual run: the wheels are uploaded to TestPyPI.
+# - Manual run: the wheels are uploaded to TestPyPI, with the version
+#   X.Y.Z.devN (N is the number of the run), so that each run can be uploaded.
 # - Tag v*: the wheels are uploaded to PyPI.
 # Both use trusted publishing: the PyPI (and TestPyPI) project must list this
 # repository, this workflow (release.yml), and the environment (pypi, testpypi).
@@ -24,9 +25,22 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pypa/cibuildwheel@v2.22.0
+      - name: Use a development version on TestPyPI
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          python3 - "pyproject.toml python/chase_cps/__init__.py" "${{ github.run_number }}" <<'PY'
+          import re, sys
+          files, run = sys.argv[1].split(), sys.argv[2]
+          for f in files:
+              s = open(f).read()
+              s = re.sub(r'^(version|__version__) = "([^"]+)"', rf'\1 = "\2.dev{run}"', s, flags=re.M)
+              open(f, "w").write(s)
+          PY
+
+      - uses: pypa/cibuildwheel@v4.3.4
         env:
-          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
           CIBW_SKIP: "*-musllinux_*"
           CIBW_BEFORE_ALL_LINUX: "yum install -y libuuid-devel || dnf install -y libuuid-devel"
           CIBW_ENVIRONMENT_MACOS: "MACOSX_DEPLOYMENT_TARGET=11.0"
@@ -50,6 +64,18 @@ jobs:
           version=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
           test "${GITHUB_REF_NAME#v}" = "$version"
           grep -q "__version__ = \"$version\"" python/chase_cps/__init__.py
+      - name: Use a development version on TestPyPI
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          python3 - "pyproject.toml python/chase_cps/__init__.py" "${{ github.run_number }}" <<'PY'
+          import re, sys
+          files, run = sys.argv[1].split(), sys.argv[2]
+          for f in files:
+              s = open(f).read()
+              s = re.sub(r'^(version|__version__) = "([^"]+)"', rf'\1 = "\2.dev{run}"', s, flags=re.M)
+              open(f, "w").write(s)
+          PY
       - run: pipx run build --sdist
       - uses: actions/upload-artifact@v4
         with:
