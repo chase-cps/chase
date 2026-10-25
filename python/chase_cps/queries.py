@@ -83,13 +83,17 @@ class Trace:
 
 @dataclass
 class Result:
+    """The answer of a back end.
+
+    status is valid or invalid (implication), sat or unsat (satisfiability),
+    realizable or unrealizable, or unknown with the reason (e.g. a timeout,
+    or no back end installed). A Result is true when the property holds.
+    """
     status: str
     backend: str = ""
     trace: Optional[Trace] = None        # counterexample or witness
     controller: Optional[Any] = None     # synthesized strategy
     counter_strategy: Optional[Any] = None   # of the environment, when unrealizable
-    core: Optional[Any] = None           # unrealizable or unsatisfiable core
-    formula: Optional[ltl.Node] = None   # simplified or projected formula
     reason: str = ""                     # why the result is unknown
     seconds: float = 0.0
     details: dict = field(default_factory=dict)
@@ -105,10 +109,6 @@ class Result:
             d["controller"] = self.controller
         if self.counter_strategy is not None:
             d["counter_strategy"] = self.counter_strategy
-        if self.core is not None:
-            d["core"] = self.core
-        if self.formula is not None:
-            d["formula"] = ltl.to_str(self.formula)
         if self.reason:
             d["reason"] = self.reason
         if self.details:

@@ -18,8 +18,9 @@ repository as the entry point to CHASE.
   Simplification removes the terms implied by the others.
 - GR(1) realizability with slugs, with the controller or the counter-strategy
   of the environment.
-- `chase-cps doctor` shows the external tools found and how to install the
-  missing ones.
+- Command line: `chase-cps install` installs nuXmv, NuSMV, and slugs in
+  `~/.chase`, `chase-cps doctor` shows the tools found, and `chase-cps check`
+  checks the contracts of a specification and prints the counterexamples.
 - Wheels for Python 3.10 to 3.15 on Linux (x86_64, aarch64) and macOS (arm64,
   x86_64).
 

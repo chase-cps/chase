@@ -12,7 +12,7 @@ Python interface to the CHASE core library and its back ends::
     result = refines(impl, spec)    # valid, or invalid with a counterexample
 """
 
-from . import backends, ltl
+from . import backends, ltl, tools
 from .backends import check
 from .checks import (RefinementResult, Simplification, compatible, consistent,
                      contains_environment, contains_implementation, implies,
@@ -28,6 +28,6 @@ __all__ = [
     "Result", "Trace", "RefinementResult", "Simplification",
     "implies", "satisfiable", "realizable", "refines", "consistent", "compatible",
     "simplify", "contains_environment", "contains_implementation",
-    "check", "backends", "ltl",
+    "check", "backends", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
 ]

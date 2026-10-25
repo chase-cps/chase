@@ -5,6 +5,8 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly, also installs the back ends from their sites
 
 jobs:
   build:
@@ -22,14 +24,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-dev pybind11-dev uuid-dev
+          sudo apt-get install -y python3-dev pybind11-dev uuid-dev libboost-dev
           echo "PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
           echo "CMAKE_EXTRA=-Dpybind11_DIR=/usr/lib/cmake/pybind11" >> "$GITHUB_ENV"
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install pybind11 python@3.13
+          brew install pybind11 python@3.13 boost
           echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
           echo "CMAKE_EXTRA=-DCMAKE_PREFIX_PATH=$(brew --prefix)" >> "$GITHUB_ENV"
 
@@ -58,7 +60,23 @@ jobs:
           test -s $RUNNER_TEMP/d21/system.smv
           $PYTHON -c "import pychase, pychase_backends, pychase_DSL, pychase_logicsLang"
 
-      - name: Python tests (without model checkers)
+      - name: Cache the back ends
+        if: github.event_name != 'schedule'
+        uses: actions/cache@v4
+        with:
+          path: ~/.chase
+          key: chase-tools-${{ runner.os }}-${{ hashFiles('python/chase_cps/tools.py') }}
+
+      - name: Install the back ends with chase-cps install
+        run: |
+          export CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python
+          if [ "$RUNNER_OS" = Linux ] && [ ! -x ~/.chase/bin/NuSMV ]; then
+            $PYTHON -m chase_cps install nusmv
+          fi
+          if [ ! -e ~/.chase/bin/slugs ]; then $PYTHON -m chase_cps install slugs; fi
+          $PYTHON -m chase_cps doctor || true
+
+      - name: Python tests (NuSMV on Linux, slugs)
         run: |
           $PYTHON -m pip install pytest || $PYTHON -m pip install --break-system-packages pytest
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import time
 
 from .. import ltl
+from ..tools import find
 from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Implies, Result,
                        Satisfiable, Trace)
 from .base import Adapter
@@ -46,7 +46,7 @@ class NuSMVAdapter(Adapter):
         for path, flavor in candidates:
             if self.tool not in ("auto", flavor):
                 continue
-            found = shutil.which(path)
+            found = find(path)
             if found:
                 return found, flavor
         return None

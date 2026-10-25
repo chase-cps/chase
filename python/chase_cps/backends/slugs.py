@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import time
 
 from ..queries import REALIZABLE, UNKNOWN, UNREALIZABLE, Realizable, Result
+from ..tools import find
 from .base import Adapter
 
 
@@ -26,7 +26,7 @@ class SlugsAdapter(Adapter):
         self.timeout = timeout
 
     def binary(self) -> str | None:
-        return shutil.which(os.environ.get("CHASE_SLUGS", "slugs"))
+        return find(os.environ.get("CHASE_SLUGS", "slugs"))
 
     def compiler(self) -> str | None:
         """The structured-slugs compiler shipped with slugs."""

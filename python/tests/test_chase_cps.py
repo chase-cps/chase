@@ -5,15 +5,14 @@ CHASE modules are skipped when those are not installed.
 """
 
 import os
-import shutil
 
 import pytest
 
 from chase_cps import ltl
+from chase_cps.backends import ADAPTERS
 from chase_cps.contract import Contract
 
-HAS_MC = bool(shutil.which("nuXmv") or shutil.which("NuSMV")
-              or os.environ.get("CHASE_NUXMV") or os.environ.get("CHASE_NUSMV"))
+HAS_MC = ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()
 try:
     from chase_cps import _native  # noqa: F401
     HAS_NATIVE = True
@@ -225,8 +224,8 @@ def test_robotic_joints_refinement_and_counterexample():
     system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(ROBOTIC_JOINTS)
     C = {c.getName().getString(): Contract.from_pychase(c) for c in system.getContractsSet()}
     composed = C["Joint3"].compose(C["Joint1"].compose(C["Joint2"]))
-    nuxmv = os.environ.get("CHASE_BACKEND", "nuxmv") != "nusmv" and bool(
-        shutil.which("nuXmv") or os.environ.get("CHASE_NUXMV"))
+    nuxmv = (os.environ.get("CHASE_BACKEND", "nuxmv") != "nusmv"
+             and ADAPTERS["nuxmv"].available())
     if nuxmv:   # IC3 proves it in seconds
         assert refines(composed, C["Joints"]).status == "valid"
     else:       # NuSMV proves it with BDDs, which take minutes
@@ -330,3 +329,84 @@ def test_doctor_lists_the_back_ends(capsys):
     out = capsys.readouterr().out
     assert "Back ends:" in out and "nuxmv" in out and "slugs" in out
     assert code in (0, 1)
+
+
+ARBITER_SPEC = """NAME: arbiter;
+
+CONTRACT Spec:
+    input boolean variable req;
+    output boolean variable grant;
+    Assumptions:
+        G(F(!(req)));
+    Guarantees:
+        G(req -> F(grant));
+
+CONTRACT Impl:
+    input boolean variable req;
+    output boolean variable grant;
+    Assumptions:
+        true;
+    Guarantees:
+        G(req -> X(grant));
+"""
+
+
+@needs_native
+@needs_mc
+def test_check_command(tmp_path, capsys):
+    import json
+    from chase_cps.cli import main
+    spec = tmp_path / "arbiter.ltl"
+    spec.write_text(ARBITER_SPEC)
+    assert main(["check", str(spec)]) == 0
+    out = capsys.readouterr().out
+    assert out.count("sat") == 4
+    assert main(["check", str(spec), "--refines", "Impl", "Spec"]) == 0
+    assert "valid" in capsys.readouterr().out
+    assert main(["check", str(spec), "--refines", "Spec", "Impl", "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert not report["passed"] and report["checks"][0]["failed"] == "assumptions"
+    assert main(["check", str(spec), "--refines", "Nope", "Spec"]) == 2
+    contracts = tmp_path / "arbiter.json"
+    contracts.write_text(json.dumps({"contracts": [
+        {"name": "A", "inputs": {"x": "bool"}, "assumptions": ["G x", "F !x"]}]}))
+    assert main(["check", str(contracts), "--compatible"]) == 1
+
+
+def test_install_refusals(monkeypatch):
+    from chase_cps import tools
+    monkeypatch.setattr(tools, "this_platform", lambda: ("Linux", "aarch64"))
+    with pytest.raises(tools.InstallError, match="no nuxmv build for Linux aarch64"):
+        tools.install("nuxmv", accept_license=True)
+    monkeypatch.setattr(tools, "this_platform", lambda: ("Darwin", "arm64"))
+    with pytest.raises(tools.InstallError, match="install nuXmv instead"):
+        tools.install("nusmv")
+    with pytest.raises(tools.InstallError, match="--accept-license"):
+        tools.install("nuxmv")
+
+
+def test_install_downloads_checks_and_links(tmp_path, monkeypatch):
+    import hashlib
+    import tarfile
+    from chase_cps import tools
+    exe = tmp_path / "NuSMV-x" / "bin" / "NuSMV"
+    exe.parent.mkdir(parents=True)
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    archive = tmp_path / "nusmv.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(tmp_path / "NuSMV-x", arcname="NuSMV-x")
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    monkeypatch.setenv("CHASE_HOME", str(tmp_path / "home"))
+    monkeypatch.setattr(tools, "this_platform", lambda: ("Linux", "x86_64"))
+    monkeypatch.setattr(tools, "_verify", lambda tool, path, log: path)
+    monkeypatch.setitem(tools.NUSMV, ("Linux", "x86_64"),
+                        (archive.as_uri(), digest, "NuSMV-x/bin/NuSMV"))
+    path = tools.install("nusmv", log=lambda *a: None)
+    assert path == str(tmp_path / "home" / "bin" / "NuSMV")
+    assert os.path.realpath(path) == str(tmp_path / "home" / "tools" / "nusmv" / "NuSMV-x" / "bin" / "NuSMV")
+    assert tools.find("NuSMV")
+    monkeypatch.setitem(tools.NUSMV, ("Linux", "x86_64"),
+                        (archive.as_uri(), "0" * 64, "NuSMV-x/bin/NuSMV"))
+    with pytest.raises(tools.InstallError, match="SHA-256"):
+        tools.install("nusmv", log=lambda *a: None)

@@ -1,7 +1,13 @@
 """Checks on contracts, all built on implication and satisfiability.
 
 Contracts are read as saturated: a contract (A, G) allows the behaviors of
-A -> G. ``c1`` refines ``c2`` when A2 -> A1 and (A1 -> G1) -> (A2 -> G2).
+A -> G. ``refined`` refines ``abstract`` when A_abstract -> A_refined and
+(A_refined -> G_refined) -> (A_abstract -> G_abstract).
+
+The checks take the back end (``"auto"``, ``"nuxmv"``, ``"nusmv"``) and
+options of the back end as keywords: ``timeout`` in seconds (300 by
+default), and for NuSMV ``engine`` (``"auto"``, ``"bdd"``, ``"bmc"``) and
+``bmc_bound``.
 """
 
 from __future__ import annotations
@@ -50,11 +56,11 @@ def realizable(contract: Contract, backend: str = "auto", **options) -> Result:
 
 @dataclass
 class RefinementResult:
-    """Outcome of ``refines(c1, c2)``; the trace of a failed part is a
+    """Outcome of ``refines(refined, abstract)``; the trace of a failed part is a
     counterexample to it."""
     status: str                    # valid, invalid, unknown
-    assumptions: Result            # A2 -> A1
-    guarantees: Result             # (A1 -> G1) -> (A2 -> G2)
+    assumptions: Result            # A_abstract -> A_refined
+    guarantees: Result             # (A_refined -> G_refined) -> (A_abstract -> G_abstract)
 
     def __bool__(self) -> bool:
         return self.status == VALID
@@ -73,11 +79,13 @@ class RefinementResult:
                 "guarantees": self.guarantees.to_dict()}
 
 
-def refines(c1: Contract, c2: Contract, backend: str = "auto", **options) -> RefinementResult:
-    """Does c1 refine c2 (can c1 replace c2)?"""
-    variables = _merge_vars(c1, c2)
-    a = implies(c2.assumption, c1.assumption, variables, backend, **options)
-    g = implies(c1.saturated_guarantee, c2.saturated_guarantee, variables, backend, **options)
+def refines(refined: Contract, abstract: Contract, backend: str = "auto",
+            **options) -> RefinementResult:
+    """Does ``refined`` refine ``abstract`` (can it replace it)?"""
+    variables = _merge_vars(refined, abstract)
+    a = implies(abstract.assumption, refined.assumption, variables, backend, **options)
+    g = implies(refined.saturated_guarantee, abstract.saturated_guarantee, variables, backend,
+                **options)
     if a.status == VALID and g.status == VALID:
         status = VALID
     elif INVALID in (a.status, g.status):
@@ -87,14 +95,14 @@ def refines(c1: Contract, c2: Contract, backend: str = "auto", **options) -> Ref
     return RefinementResult(status, a, g)
 
 
-def consistent(c: Contract, backend: str = "auto", **options) -> Result:
+def consistent(contract: Contract, backend: str = "auto", **options) -> Result:
     """Is there a behavior allowed by the contract (A -> G satisfiable)?"""
-    return satisfiable(c.saturated_guarantee, c.variables, backend, **options)
+    return satisfiable(contract.saturated_guarantee, contract.variables, backend, **options)
 
 
-def compatible(c: Contract, backend: str = "auto", **options) -> Result:
+def compatible(contract: Contract, backend: str = "auto", **options) -> Result:
     """Is there an environment allowed by the contract (A satisfiable)?"""
-    return satisfiable(c.assumption, c.variables, backend, **options)
+    return satisfiable(contract.assumption, contract.variables, backend, **options)
 
 
 @dataclass
@@ -112,16 +120,17 @@ class Simplification:
                 "unknown": [ltl.to_str(f) for f in self.unknown]}
 
 
-def simplify(c: Contract, backend: str = "auto", **options) -> Simplification:
+def simplify(contract: Contract, backend: str = "auto", **options) -> Simplification:
     """Simplification: drop each term implied by the other terms and the context.
 
     An assumption is dropped when the other assumptions imply it; a guarantee
     when the assumptions and the other guarantees imply it. Each test is one
     implication check; a term whose check does not finish is kept.
     """
+    c = contract
     variables = c.variables
     out = Simplification(Contract(c.name, dict(c.inputs), dict(c.outputs),
-                              list(c.assumptions), list(c.guarantees)))
+                                  list(c.assumptions), list(c.guarantees)))
     kept = list(c.assumptions)
     for term in list(kept):
         others = [t for t in kept if t is not term]
@@ -146,17 +155,18 @@ def simplify(c: Contract, backend: str = "auto", **options) -> Simplification:
     return out
 
 
-def contains_environment(c: Contract, environment, backend: str = "auto",
+def contains_environment(contract: Contract, environment, backend: str = "auto",
                          **options) -> Result:
     """Is the environment (an LTL formula over the variables of the contract)
     accepted by the contract, i.e. E -> A?"""
-    return implies(_formula(environment), c.assumption, c.variables, backend, **options)
+    return implies(_formula(environment), contract.assumption, contract.variables, backend,
+                   **options)
 
 
-def contains_implementation(c: Contract, implementation, backend: str = "auto",
+def contains_implementation(contract: Contract, implementation, backend: str = "auto",
                             **options) -> Result:
     """Does the implementation (an LTL formula describing the behaviors of a
     component) satisfy the contract, i.e. M & A -> G?"""
-    return implies(ltl.Binary("&", _formula(implementation), c.assumption), c.guarantee,
-                   c.variables, backend, **options)
+    return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
+                   contract.guarantee, contract.variables, backend, **options)
 

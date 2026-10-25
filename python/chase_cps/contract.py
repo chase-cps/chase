@@ -188,11 +188,8 @@ class Contract:
         return "\n".join(lines) + "\n"
 
     def to_pychase(self):
-        """Parse the contract with the CHASE core library.
-
-        Returns the pychase ``Contract``. The parsed ``System`` that owns it is
-        kept alive as an attribute of the returned object's holder.
-        """
+        """Parse the contract with the CHASE core library and return the
+        pychase ``Contract`` (the CHASE objects are never freed)."""
         return _parse_contracts([self])[self.name]
 
     # Signature ---------------------------------------------------------------
@@ -300,8 +297,8 @@ def load_spec(path: str | os.PathLike) -> dict[str, Contract]:
     if not os.path.isfile(path):
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
     system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(os.fspath(path))
-    return {c.getName().getString(): Contract.from_pychase(c)
-            for c in system.getContractsSet()}
+    contracts = {c.getName().getString(): c for c in system.getContractsSet()}
+    return {name: Contract.from_pychase(contracts[name]) for name in sorted(contracts)}
 
 
 def parse_spec(text: str) -> dict[str, Contract]:

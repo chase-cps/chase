@@ -166,8 +166,10 @@ $>  pip install .
 
 The checks call external tools, which are installed separately: nuXmv or
 NuSMV for the implication, refinement, consistency, and compatibility checks,
-and slugs for realizability. `chase-cps doctor` shows the tools found and how
-to install the missing ones. The details are in the
+and slugs for realizability. `chase-cps install nuxmv --accept-license`,
+`chase-cps install nusmv`, and `chase-cps install slugs` install them, and
+`chase-cps doctor` shows the tools found. `chase-cps check` checks the
+contracts of a specification from the command line. The details are in the
 [package README](python/README.md).
 
 For instance:
