@@ -21,12 +21,12 @@ print(result.status)          # valid, or invalid with a counterexample trace
 ```
 
 The operations have the names of the commands of `logics_tool`. A contract
-`c` has the methods `compose`, `conjunction`, `disjunction`, `merging`,
-`quotient`, `separation`, `saturate`, and `simplify`, which return new
-contracts. The checks on contracts are `refinement`, `verify` (`compatible`
-and `consistent`), `synthesize` (GR(1) realizability), `contains_environment`,
-and `contains_implementation`; the checks on formulas are `implies` and
-`satisfiable`. `remove_redundant` drops the terms implied by the others. `load_spec` and
+`c` has the methods `compose`, `conjoin`, `disjoin`, `merge`, `divide`
+(quotient), `separate`, `saturate`, and `simplify`, which return new
+contracts. The checks on contracts are `refines`, `verify` (`is_compatible`
+and `is_consistent`), `is_realizable`, `accepts`, and `implements`;
+`synthesize` builds a controller. The checks on formulas are `implies` and
+`is_satisfiable`. `remove_redundant` drops the terms implied by the others. `load_spec` and
 `parse_spec` read the contracts of a specification written in the logics
 language of CHASE, and `to_spec` writes one.
 
@@ -43,11 +43,10 @@ supported: use WSL or the CHASE Docker image.
 The package contains the CHASE library. The checks call external tools,
 which are not installed with the package:
 
-- [nuXmv][NUXMV] for `refinement`, `verify`, `implies`,
-  `satisfiable`, `remove_redundant`, `contains_environment`, and
-  `contains_implementation`. nuXmv is free for academic and non-commercial
+- [nuXmv][NUXMV] for `refines`, `verify`, `implies`, `is_satisfiable`,
+  `remove_redundant`, `accepts`, and `implements`. nuXmv is free for academic and non-commercial
   use.
-- [slugs][SLUGS] for `synthesize`.
+- [slugs][SLUGS] for `is_realizable` and `synthesize`.
 
 The command `chase-cps install` downloads nuXmv from its site, and builds
 slugs from its sources, into `~/.chase`:
@@ -80,8 +79,8 @@ logics language of CHASE, or of a JSON file, and prints the counterexamples:
 
 ````
 $> chase-cps check specs.ltl                                    # verify every contract
-$> chase-cps check specs.ltl --refinement Joint1+Joint2 Joints   # composition refines Joints
-$> chase-cps check specs.ltl --synthesize Joint1 --json
+$> chase-cps check specs.ltl --refines Joint1+Joint2 Joints      # composition refines Joints
+$> chase-cps check specs.ltl --realizable Joint1 --json
 ````
 
 The exit status is 0 when every check passes, and 1 when a check fails.

@@ -76,33 +76,46 @@ d = Contract.from_dict({"name": "Spec", "inputs": {"req": "bool", "n": [0, 3]},
 
 ## Operations
 
-| logics_tool | Python | chase-cps check | MCP tool |
-|---|---|---|---|
-| `show C` | `print(c)` | | |
-| `compose C1 C2 R` | `c1.compose(c2)` | `C1+C2` in a contract argument | `compose` |
-| `conjunction C1 C2 R` | `c1.conjunction(c2)` | | `conjunction` |
-| `disjunction C1 C2 R` | `c1.disjunction(c2)` | | `disjunction` |
-| `merging C1 C2 R` | `c1.merging(c2)` | | `merging` |
-| `quotient C1 C2 R` | `c1.quotient(c2)` | | `quotient` |
-| `separation C1 C2 R` | `c1.separation(c2)` | | `separation` |
-| `saturate C` | `c.saturate()` | | `saturate` |
-| `simplify C` | `c.simplify()` | | `simplify` |
-| `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
-| `refinement C1 C2 file` | `refinement(c1, c2)` | `--refinement C1 C2` | `refinement` |
-| `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
+The operations are named with verbs. The operations of the contract algebra
+return a new contract; the checks read as predicates (`refines(a, b)`: does
+`a` refine `b`?).
+
+| Contract theory | logics_tool | Python | chase-cps check | MCP tool |
+|---|---|---|---|---|
+| composition ∥ | `compose C1 C2 R` | `c1.compose(c2)` | `C1+C2` in a contract argument | `compose` |
+| conjunction ∧ | `conjoin C1 C2 R` | `c1.conjoin(c2)` | | `conjoin` |
+| disjunction ∨ | `disjoin C1 C2 R` | `c1.disjoin(c2)` | | `disjoin` |
+| merging • | `merge C1 C2 R` | `c1.merge(c2)` | | `merge` |
+| quotient / | `divide C1 C2 R` | `c1.divide(c2)` | | `divide` |
+| separation ÷ | `separate C1 C2 R` | `c1.separate(c2)` | | `separate` |
+| saturation | `saturate C` | `c.saturate()` | | `saturate` |
+| (formula simplification) | `simplify C` | `c.simplify()` | | `simplify` |
+| refinement ⪯ | `refines C1 C2 file` | `refines(c1, c2)` | `--refines C1 C2` | `refines` |
+| compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
+| realizability | | `is_realizable(c)` | `--realizable C` | `is_realizable` |
+| synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
+
+The console also accepts the names of its first version: `conjunction` for
+`conjoin`, `quotient` for `divide`, and `refinement` for `refines`. It has
+`show C` to print a contract (`print(c)` in Python).
 
 In the console, the variables of two contracts are matched by name (the
 default), by a map entered by hand (`manual` as last argument), or by a map
-read from a file (its name as last argument). In Python, variables with the same name
-are the same variable, and `c.rename({...})` renames them.
+read from a file (its name as last argument). In Python, variables with the
+same name are the same variable, and `c.rename({...})` renames them.
+
+`is_realizable` checks GR(1) realizability with slugs and gives the
+counter-strategy of the environment when the contract is unrealizable;
+`synthesize` also builds the controller. The console writes the input file of
+slugs or gr1c, which decide realizability and build the controller.
 
 The Python package, the command line, and the MCP server have also:
 
-- `compatible(c)` and `consistent(c)`, the two checks of `verify`;
-- `implies(phi, psi, variables)` and `satisfiable(phi, variables)` on
+- `is_compatible(c)` and `is_consistent(c)`, the two checks of `verify`;
+- `implies(phi, psi, variables)` and `is_satisfiable(phi, variables)` on
   formulas;
-- `contains_environment(c, e)` (E -> A) and `contains_implementation(c, m)`
-  (M & A -> G);
+- `accepts(c, e)`: the contract accepts the environment E (E -> A), and
+  `implements(m, c)`: M is an implementation of the contract (M & A -> G);
 - `remove_redundant(c)`, which drops the terms implied by the others;
 - `load_spec(path)`, `parse_spec(text)`, and `to_spec(contracts)`, which
   read and write specification files.
@@ -112,12 +125,14 @@ The Python package, the command line, and the MCP server have also:
 The checks return a result with a `status`: `valid` or `invalid` for
 implications and refinement, `sat` or `unsat` for satisfiability,
 compatibility, consistency, and verify, `realizable` or `unrealizable` for
-synthesis, and `unknown` with a `reason` when the check does not finish or
-no tool is installed. A failed check comes with a `trace`: the states of
-`prefix`, then the states of `loop` repeated forever. `synthesize` returns
-the `controller`, or the `counter_strategy` of the environment.
+realizability and synthesis, and `unknown` with a `reason` when the check
+does not finish or no tool is installed. A failed check comes with a
+`trace`: the states of `prefix`, then the states of `loop` repeated forever.
+`synthesize` returns the `controller`, and both `is_realizable` and
+`synthesize` return the `counter_strategy` of the environment when the
+contract is unrealizable.
 
-`refinement` checks the assumptions and the guarantees separately; `failed`
+`refines` checks the assumptions and the guarantees separately; `failed`
 says which part fails, and its result has the counterexample.
 
 ## External tools

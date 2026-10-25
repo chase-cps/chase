@@ -24,10 +24,10 @@ from .queries import REALIZABLE, SAT, VALID
 
 # What each back end is needed for.
 NEEDED_FOR = {
-    "nuxmv": "refinement, verify, consistent, compatible, implies, satisfiable, "
-             "remove_redundant, contains_environment, contains_implementation",
+    "nuxmv": "refines, verify, is_consistent, is_compatible, implies, is_satisfiable, "
+             "implements, accepts, remove_redundant",
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
-    "slugs": "synthesize (GR(1) realizability, controllers, counter-strategies)",
+    "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis)",
 }
 
 
@@ -128,22 +128,25 @@ def _checks(args, contracts):
     """(kind, label, function) for each check asked, in order."""
     out = []
     every = args.contracts or list(contracts)
-    if args.verify or not (args.compatible or args.consistent or args.refinement
-                           or args.synthesize):
+    if args.verify or not (args.compatible or args.consistent or args.refines
+                           or args.realizable or args.synthesize):
         args.compatible = args.consistent = True
     options = {"timeout": args.timeout}
     for name in every if args.compatible or args.consistent else []:
         c = _contract(name, contracts)
         if args.compatible:
             out.append(("compatible", name,
-                        lambda c=c: checks.compatible(c, args.backend, **options)))
+                        lambda c=c: checks.is_compatible(c, args.backend, **options)))
         if args.consistent:
             out.append(("consistent", name,
-                        lambda c=c: checks.consistent(c, args.backend, **options)))
-    for refined, abstract in args.refinement or []:
+                        lambda c=c: checks.is_consistent(c, args.backend, **options)))
+    for refined, abstract in args.refines or []:
         r, a = _contract(refined, contracts), _contract(abstract, contracts)
-        out.append(("refinement", f"{refined} <= {abstract}",
-                    lambda r=r, a=a: checks.refinement(r, a, args.backend, **options)))
+        out.append(("refines", f"{refined} <= {abstract}",
+                    lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
+    for name in args.realizable or []:
+        c = _contract(name, contracts)
+        out.append(("realizable", name, lambda c=c: checks.is_realizable(c, **options)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
         out.append(("synthesize", name, lambda c=c: checks.synthesize(c, **options)))
@@ -151,7 +154,8 @@ def _checks(args, contracts):
 
 
 def _passed(kind: str, result) -> bool:
-    return result.status == {"refinement": VALID, "synthesize": REALIZABLE}.get(kind, SAT)
+    return result.status == {"refines": VALID, "realizable": REALIZABLE,
+                             "synthesize": REALIZABLE}.get(kind, SAT)
 
 
 def _indent(text) -> str:
@@ -160,10 +164,10 @@ def _indent(text) -> str:
 
 def _report(kind: str, label: str, result) -> None:
     seconds = (result.assumptions.seconds + result.guarantees.seconds
-               if kind == "refinement" else result.seconds)
-    extra = f"  ({result.failed} fail)" if kind == "refinement" and result.failed else ""
+               if kind == "refines" else result.seconds)
+    extra = f"  ({result.failed} fail)" if kind == "refines" and result.failed else ""
     print(f"{kind:11} {label:40} {result.status:12} {seconds:7.2f} s{extra}")
-    if kind == "refinement":
+    if kind == "refines":
         part = result.assumptions if result.failed == "assumptions" else result.guarantees
         if result.failed and part.trace is not None:
             print(f"  counterexample ({result.failed}):")
@@ -172,6 +176,9 @@ def _report(kind: str, label: str, result) -> None:
             if p.reason:
                 print(f"  {p.reason}")
     else:
+        if result.controller is not None:
+            nodes = result.controller.get("nodes", {}) if isinstance(result.controller, dict) else {}
+            print(f"  controller with {len(nodes)} states (use --json to print it)")
         if result.status == "unrealizable" and result.counter_strategy:
             print("  counter-strategy of the environment:")
             print(_indent(result.counter_strategy))
@@ -216,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser(
         "check", help="check the contracts of a specification",
         description="Check the contracts of a specification in the logics language of "
-        "CHASE, or of a JSON file, as the commands verify, refinement, and synthesize of "
+        "CHASE, or of a JSON file, as the commands verify, refines, and synthesize of "
         "logics_tool. Without options, verifies (compatibility and consistency) every "
         "contract. A contract argument can be NAME or NAME+NAME+... "
         "for the composition of the contracts. The exit status is 0 when every check "
@@ -228,10 +235,12 @@ def main(argv: list[str] | None = None) -> int:
                    help="compatibility and consistency (the default)")
     p.add_argument("--compatible", action="store_true", help="some environment satisfies A")
     p.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
-    p.add_argument("--refinement", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
+    p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="REFINED refines ABSTRACT (may be repeated)")
-    p.add_argument("--synthesize", action="append", metavar="CONTRACT",
+    p.add_argument("--realizable", action="append", metavar="CONTRACT",
                    help="GR(1) realizability with slugs (may be repeated)")
+    p.add_argument("--synthesize", action="append", metavar="CONTRACT",
+                   help="GR(1) synthesis of a controller with slugs (may be repeated)")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")

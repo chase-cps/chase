@@ -15,14 +15,17 @@ from .base import Adapter
 
 
 class SlugsAdapter(Adapter):
-    """``strategy``: also extract the controller (realizable) or the
-    counter-strategy of the environment (unrealizable)."""
+    """``controller``: also extract the controller when realizable;
+    ``counter_strategy``: also extract the counter-strategy of the environment
+    when unrealizable."""
 
     name = "slugs"
     answers = (Realizable,)
 
-    def __init__(self, strategy: bool = True, timeout: float = 300.0):
-        self.strategy = strategy
+    def __init__(self, controller: bool = False, counter_strategy: bool = True,
+                 timeout: float = 300.0):
+        self.controller = controller
+        self.counter_strategy = counter_strategy
         self.timeout = timeout
 
     def binary(self) -> str | None:
@@ -90,13 +93,13 @@ class SlugsAdapter(Adapter):
                     return Result(UNKNOWN, self.name, reason=out.strip()[-300:],
                                   seconds=time.monotonic() - start)
                 result = Result(status, self.name, details={"structuredSlugs": structured})
-                if self.strategy and status == REALIZABLE:
+                if self.controller and status == REALIZABLE:
                     s = self._slugs(["--explicitStrategy", "--jsonOutput", "spec.slugsin"], tmp)
                     try:
                         result.controller = json.loads(s.stdout)
                     except json.JSONDecodeError:
                         result.controller = s.stdout
-                elif self.strategy and status == UNREALIZABLE:
+                elif self.counter_strategy and status == UNREALIZABLE:
                     s = self._slugs(["--counterStrategy", "spec.slugsin"], tmp)
                     result.counter_strategy = s.stdout
             except subprocess.TimeoutExpired:

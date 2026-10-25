@@ -42,21 +42,27 @@ def implies(phi, psi, variables: dict[str, VarType], backend: str = "auto",
                           backend, **options)
 
 
-def satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
-                **options) -> Result:
+def is_satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
+                   **options) -> Result:
     """Is phi satisfiable? ``sat`` with a witness trace, or ``unsat``."""
     return backends.check(Satisfiable(_formula(phi), dict(variables)), backend, **options)
 
 
-def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
-    """GR(1) realizability of the contract: ``realizable`` with a controller, or
-    ``unrealizable`` with the counter-strategy of the environment."""
+def is_realizable(contract: Contract, backend: str = "auto", **options) -> Result:
+    """GR(1) realizability of the contract: ``realizable``, or ``unrealizable``
+    with the counter-strategy of the environment."""
     return backends.check(Realizable(contract), backend, **options)
+
+
+def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
+    """GR(1) synthesis: ``realizable`` with the controller, or ``unrealizable``
+    with the counter-strategy of the environment."""
+    return backends.check(Realizable(contract), backend, controller=True, **options)
 
 
 @dataclass
 class RefinementResult:
-    """Outcome of ``refinement(refined, abstract)``; the trace of a failed part is a
+    """Outcome of ``refines(refined, abstract)``; the trace of a failed part is a
     counterexample to it."""
     status: str                    # valid, invalid, unknown
     assumptions: Result            # A_abstract -> A_refined
@@ -79,7 +85,7 @@ class RefinementResult:
                 "guarantees": self.guarantees.to_dict()}
 
 
-def refinement(refined: Contract, abstract: Contract, backend: str = "auto",
+def refines(refined: Contract, abstract: Contract, backend: str = "auto",
             **options) -> RefinementResult:
     """Does ``refined`` refine ``abstract`` (can it replace it)?"""
     variables = _merge_vars(refined, abstract)
@@ -95,14 +101,14 @@ def refinement(refined: Contract, abstract: Contract, backend: str = "auto",
     return RefinementResult(status, a, g)
 
 
-def consistent(contract: Contract, backend: str = "auto", **options) -> Result:
+def is_consistent(contract: Contract, backend: str = "auto", **options) -> Result:
     """Is there a behavior allowed by the contract (A -> G satisfiable)?"""
-    return satisfiable(contract.saturated_guarantee, contract.variables, backend, **options)
+    return is_satisfiable(contract.saturated_guarantee, contract.variables, backend, **options)
 
 
-def compatible(contract: Contract, backend: str = "auto", **options) -> Result:
+def is_compatible(contract: Contract, backend: str = "auto", **options) -> Result:
     """Is there an environment allowed by the contract (A satisfiable)?"""
-    return satisfiable(contract.assumption, contract.variables, backend, **options)
+    return is_satisfiable(contract.assumption, contract.variables, backend, **options)
 
 
 @dataclass
@@ -129,8 +135,8 @@ class Verification:
 def verify(contract: Contract, backend: str = "auto", **options) -> Verification:
     """Compatibility and consistency of the contract (the verify command of
     logics_tool). The status is sat when both hold."""
-    return Verification(compatible(contract, backend, **options),
-                        consistent(contract, backend, **options))
+    return Verification(is_compatible(contract, backend, **options),
+                        is_consistent(contract, backend, **options))
 
 
 @dataclass
@@ -183,18 +189,17 @@ def remove_redundant(contract: Contract, backend: str = "auto", **options) -> Re
     return out
 
 
-def contains_environment(contract: Contract, environment, backend: str = "auto",
-                         **options) -> Result:
-    """Is the environment (an LTL formula over the variables of the contract)
-    accepted by the contract, i.e. E -> A?"""
+def accepts(contract: Contract, environment, backend: str = "auto", **options) -> Result:
+    """Does the contract accept the environment (an LTL formula over the
+    variables of the contract), i.e. E -> A?"""
     return implies(_formula(environment), contract.assumption, contract.variables, backend,
                    **options)
 
 
-def contains_implementation(contract: Contract, implementation, backend: str = "auto",
-                            **options) -> Result:
+def implements(implementation, contract: Contract, backend: str = "auto",
+               **options) -> Result:
     """Does the implementation (an LTL formula describing the behaviors of a
-    component) satisfy the contract, i.e. M & A -> G?"""
+    component) implement the contract, i.e. M & A -> G?"""
     return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
                    contract.guarantee, contract.variables, backend, **options)
 

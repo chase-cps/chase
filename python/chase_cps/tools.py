@@ -320,7 +320,7 @@ def _verify(tool: str, path: str, log) -> str:
         if tool == "slugs":
             c = Contract.from_strings(inputs=["r"], outputs=["g"], guarantees=["G (r -> X g)"],
                                       name="Check")
-            r = checks.synthesize(c, "slugs", timeout=60)
+            r = checks.is_realizable(c, "slugs", timeout=60)
             ok = r.status == REALIZABLE
         else:
             r = checks.implies("G a", "F a", {"a": "bool"}, tool, timeout=60)

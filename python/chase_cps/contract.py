@@ -276,26 +276,26 @@ class Contract:
                              f"{sorted(both)} are outputs of both")
         return _algebra("composition", self, other, name or f"{self.name}_{other.name}")
 
-    def conjunction(self, other: "Contract", name: str | None = None) -> "Contract":
+    def conjoin(self, other: "Contract", name: str | None = None) -> "Contract":
         """Greatest lower bound (both specifications at once):
         (A1 | A2, G1 & G2)."""
         return _algebra("conjunction", self, other, name or f"{self.name}_and_{other.name}")
 
-    def disjunction(self, other: "Contract", name: str | None = None) -> "Contract":
+    def disjoin(self, other: "Contract", name: str | None = None) -> "Contract":
         """Least upper bound: (A1 & A2, G1 | G2)."""
         return _algebra("disjunction", self, other, name or f"{self.name}_or_{other.name}")
 
-    def merging(self, other: "Contract", name: str | None = None) -> "Contract":
+    def merge(self, other: "Contract", name: str | None = None) -> "Contract":
         """Merging of two viewpoints of the same component:
         (A1 & A2, (G1 & G2) | !(A1 & A2))."""
         return _algebra("merging", self, other, name or f"{self.name}_merge_{other.name}")
 
-    def quotient(self, other: "Contract", name: str | None = None) -> "Contract":
+    def divide(self, other: "Contract", name: str | None = None) -> "Contract":
         """Largest C such that other || C refines self:
         (A1 & G2, (G1 & A2) | !(A1 & G2)) (Incer et al., MEMOCODE 2018)."""
         return _algebra("quotient", self, other, name or f"{self.name}_div_{other.name}")
 
-    def separation(self, other: "Contract", name: str | None = None) -> "Contract":
+    def separate(self, other: "Contract", name: str | None = None) -> "Contract":
         """Smallest C such that self refines other . C (merging):
         ((A1 & G2) | !(G1 & A2), G1 & A2) (Passerone et al., TECS 2019)."""
         return _algebra("separation", self, other, name or f"{self.name}_sep_{other.name}")

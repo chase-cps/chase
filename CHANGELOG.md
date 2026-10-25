@@ -18,11 +18,12 @@ repository as the entry point to CHASE.
   `remove_redundant` drops the terms implied by the others, and
   `Contract.simplify` rewrites the formulas as the simplify command of
   logics_tool.
-- GR(1) realizability with slugs (`synthesize`), with the controller or the
-  counter-strategy of the environment.
-- The operations have the names of the commands of logics_tool:
-  `conjunction`, `disjunction`, `merging`, `quotient`, `separation`,
-  `saturate`, `simplify`, `refinement`, `verify`, and `synthesize`.
+- GR(1) realizability (`is_realizable`) and synthesis (`synthesize`) with
+  slugs, with the controller or the counter-strategy of the environment.
+- The operations are named with verbs, the same in Python, on the command
+  line, in the MCP server, and in the console of logics_tool: `compose`,
+  `conjoin`, `disjoin`, `merge`, `divide` (quotient), `separate`,
+  `saturate`, `simplify`, `refines`, `verify`, and `synthesize`.
 - Command line: `chase-cps install` installs nuXmv, slugs, and NuSMV in
   `~/.chase`, `chase-cps doctor` shows the tools found, and `chase-cps check`
   checks the contracts of a specification and prints the counterexamples.
@@ -32,8 +33,10 @@ repository as the entry point to CHASE.
 ### Core library and tools
 
 - Separation of contracts, and Python bindings for disjunction and merging.
-- The console of logics_tool has the commands disjunction and merging, and
-  `show` prints the temporal operators (it printed their codes).
+- The console of logics_tool has the commands `disjoin`, `merge`, and
+  `separate`; `conjunction`, `quotient`, and `refinement` are now `conjoin`,
+  `divide`, and `refines`, and the old names are still accepted. `show`
+  prints the temporal operators (it printed their codes).
 - The quotient follows again the closed form of Incer et al. (MEMOCODE 2018):
   the guarantees are (G1 & A2) | !(A1 & G2).
 - Primed variables kept their prime when a formula was cloned, and the NuSMV
