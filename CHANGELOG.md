@@ -22,6 +22,19 @@
   specification (inherent vacuity, Maoz and Shalom 2020), with the kind of
   each term and the terms that make it vacuous.
 
+## 0.1.2 (2026-10-25)
+
+- The slugs back end wrote the constants `true` and `false` as nothing, so
+  `G F false` became an empty liveness condition and any term with a
+  constant was written wrongly. It now writes them, and a formula node it
+  cannot write is reported instead of skipped.
+  The gr1c back end of logics_tool had the same problem with the constants.
+- A new test writes contracts for slugs, compiles them with the slugs
+  compiler, reads them back, and checks with nuXmv that the assumptions and
+  guarantees read back are equivalent to those of the contract, for fixed
+  cases and for random contracts (`CHASE_SLUGS_FUZZ`).
+- The comparison with Pacti is no longer in the documentation.
+
 ## 0.1.1 (2026-10-25)
 
 - The slugs back end dropped the temporal operators F and G nested in a
