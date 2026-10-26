@@ -115,7 +115,8 @@ def test_table_command_line_options():
 def test_table_console_commands(tmp_path):
     usage = USAGE
     tool = os.path.join(os.environ.get("CHASE_INSTALL_DIR", ""), "chase", "bin", "logics_tool")
-    if not os.path.isfile(tool):
+    built = os.path.isfile(tool)    # the build under test, else one found in the PATH
+    if not built:
         tool = shutil.which("logics_tool") or ""
     if not os.path.isfile(usage) or not os.path.isfile(tool):
         pytest.skip("docs/usage.md or logics_tool not found")
@@ -126,6 +127,8 @@ def test_table_console_commands(tmp_path):
     script.write_text("help;\n")
     run = subprocess.run([tool, "-i", str(spec), "-o", str(tmp_path) + "/", "-c", str(script)],
                          capture_output=True, text=True, timeout=60)
+    if run.returncode != 0 and not built:
+        pytest.skip(f"{tool} does not run: {run.stderr.strip()[:200]}")
     assert run.returncode == 0, f"{tool}: {run.stderr}"
     out = run.stdout
     for row in table(usage):
