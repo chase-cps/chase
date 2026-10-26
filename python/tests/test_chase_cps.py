@@ -52,6 +52,13 @@ def test_syntax_errors(bad):
         ltl.parse(bad)
 
 
+@pytest.mark.parametrize("bad", ["G (b < X b)", "G (b + F b > 1)", "G (n = (a U b))"])
+def test_temporal_operators_only_apply_to_formulas(bad):
+    with pytest.raises(ltl.LTLSyntaxError):
+        ltl.parse(bad)
+    assert ltl.parse("G (b < b')") and ltl.parse("G (X (b = 1))")
+
+
 def test_weak_until_expands():
     assert ltl.parse("a W b") == ltl.parse("(a U b) | G a")
 

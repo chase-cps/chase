@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 
 class LTLSyntaxError(ValueError):
@@ -62,6 +62,7 @@ Node = Union[Const, Var, Num, Unary, Binary]
 RELATIONS = ("=", "!=", "<", "<=", ">", ">=")
 ARITHMETIC = ("+", "-", "*", "/")
 BOOLEAN_BINARY = ("&", "|", "->", "<->")
+TEMPORAL_UNARY = ("G", "F", "X")
 TEMPORAL_BINARY = ("U", "R")
 
 
@@ -188,7 +189,26 @@ def parse(text: str) -> Node:
     """Parse a formula written in the standard LTL syntax."""
     if not isinstance(text, str) or not text.strip():
         raise LTLSyntaxError("empty formula")
-    return _Parser(text).parse()
+    node = _Parser(text).parse()
+    _check_terms(node, None)
+    return node
+
+
+def _check_terms(node: Node, relation: Optional[str]) -> None:
+    """Temporal operators apply to formulas, not to the operands of a
+    relation or of arithmetic: the value of x in the next step is x'."""
+    if isinstance(node, Unary):
+        if relation and node.op in TEMPORAL_UNARY:
+            raise LTLSyntaxError(
+                f"{node.op} applied to an operand of '{relation}': temporal operators apply "
+                f"to formulas; write x' for the value of x in the next step")
+        _check_terms(node.arg, relation)
+    elif isinstance(node, Binary):
+        if relation and node.op in TEMPORAL_BINARY:
+            raise LTLSyntaxError(f"{node.op} inside an operand of '{relation}'")
+        inner = node.op if node.op in RELATIONS + ARITHMETIC else relation
+        _check_terms(node.left, inner)
+        _check_terms(node.right, inner)
 
 
 # Queries on formulas ---------------------------------------------------------
