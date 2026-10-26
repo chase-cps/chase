@@ -10,7 +10,9 @@
   `coimply`, `invert`, `assume`, `ensure`).
 - `compose(..., discharge=True)`: composition that keeps the terms of the
   contracts and drops the assumptions discharged by the other contract and
-  the redundant terms (Incer, PhD thesis 2022, Algorithm 2).
+  the redundant terms (Incer, PhD thesis 2022, Algorithm 2). When the
+  contracts feed each other, the assumptions are discharged in one
+  direction only, the one that drops more of them.
 - Cores: `unrealizable_core` (with slugs, QuickCore order) and `unsat_core`
   (of A & G, with nuXmv), from a contract or from formulas, and `core=True`
   on `is_realizable`, `is_compatible`, `is_consistent`, and `is_satisfiable`;
@@ -21,6 +23,15 @@
 - `remove_vacuous`: removes the terms whose removal keeps the GR(1)
   specification (inherent vacuity, Maoz and Shalom 2020), with the kind of
   each term and the terms that make it vacuous.
+- The GR(1) back end reports a contract whose variables do not have the
+  roles of slugs (an initial assumption that reads an output, a safety
+  assumption that reads the next value of an output) before calling slugs,
+  with the term.
+- `load_spec` and `parse_spec`: the variables declared outside the contracts
+  are given to the contracts that use them. Before, they were left out of
+  the inputs and outputs of the contracts.
+- A temporal operator applied to an operand of a relation or of arithmetic
+  (`X x = 3`) is rejected with a message (write `x' = 3`).
 
 ## 0.1.2 (2026-10-25)
 
