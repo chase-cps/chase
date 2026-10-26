@@ -37,8 +37,8 @@
   was read as a Boolean one and `20.5` as `20`; a real constant was read as
   an integer (`real constant K 2.5;` gave 2). The checks handle real
   variables in this order, and say which way answered (`reals`):
-  regions, exact, when the real variables are compared with constants only
-  (also for realizability and synthesis, with the controller written with
+  regions, exact, when the real variables are compared with constants or
+  with each other, without arithmetic (also for realizability and synthesis, with the controller written with
   the conditions on the real variables); the SMT engine of nuXmv; predicate
   abstraction, which returns only the answers that hold for the real
   variables, refined with z3 when it is installed

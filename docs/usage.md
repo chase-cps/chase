@@ -212,10 +212,13 @@ checks handle real variables in this order, and the result says in `reals`
 which way answered:
 
 1. `regions`: when a real variable is only compared with constants
-   (`kias > 40`, `kias' <= 30.5`), only the interval between the constants
-   matters. With the constants c1 < ... < ck the variable is replaced by
-   the index of its region among (-inf, c1), c1, (c1, c2), ..., ck,
-   (ck, inf). The answer is exact, traces have real values (one in each
+   (`kias > 40`, `kias' <= 30.5`) or with other real variables of the same
+   step (`kias = kgs`), without arithmetic, only the interval between the
+   constants matters. With the constants c1 < ... < ck the variable is
+   replaced by the index of its region among (-inf, c1), c1, (c1, c2), ...,
+   ck, (ck, inf); variables compared with each other share their constants,
+   and each interval has one place per variable, so that their order is
+   kept. The answer is exact, traces have real values (one in each
    region), and realizability and synthesis work: the controller of
    `synthesize` gives for each node the values of the variables, the real
    ones as conditions (`30.5 < kias < 40`), and the list of the regions.
