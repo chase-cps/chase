@@ -206,6 +206,31 @@ CONTRACT One:
     assert c.outputs == {"done": "bool", "n": (0, 16)}   # integer without range: 0..16
 
 
+REAL_SPEC = """NAME: reals;
+
+{decl}
+
+CONTRACT One:
+    input boolean variable req;
+    Assumptions:
+        G(F(req));
+    Guarantees:
+        G(req -> F(n <= {bound}));
+"""
+
+
+@needs_native
+def test_real_variables_and_numbers_are_rejected():
+    # They were read as Boolean variables and as truncated integers.
+    from chase_cps import parse_spec
+    with pytest.raises(ValueError, match="only Boolean and integer"):
+        parse_spec(REAL_SPEC.format(decl="real variable n;", bound="20"))
+    with pytest.raises(ValueError, match="not an integer"):
+        parse_spec(REAL_SPEC.format(decl="integer variable n;", bound="20.5"))
+    c = parse_spec(REAL_SPEC.format(decl="integer variable n;", bound="20.0"))["One"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 20)"]
+
+
 @needs_native
 def test_bad_formula_raises_instead_of_exiting():
     from chase_cps.contract import _parse_contracts

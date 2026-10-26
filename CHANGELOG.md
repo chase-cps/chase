@@ -32,6 +32,9 @@
   the inputs and outputs of the contracts.
 - A temporal operator applied to an operand of a relation or of arithmetic
   (`X x = 3`) is rejected with a message (write `x' = 3`).
+- Real variables and numbers with a fraction in a specification are
+  rejected. Before, a real variable was read as a Boolean one and `20.5` as
+  `20`.
 
 ## 0.1.2 (2026-10-25)
 

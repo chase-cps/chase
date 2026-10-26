@@ -315,8 +315,14 @@ def from_pychase(obj) -> Node:
     if name == "Identifier":
         text = obj.getString()
         return Var(text.rstrip("'"), primed=text.endswith("'"))
-    if name in ("IntegerValue", "RealValue"):
+    if name == "IntegerValue":
         return Num(int(obj.getValue()))
+    if name == "RealValue":
+        value = obj.getValue()
+        if value != int(value):
+            raise ValueError(f"the number {value} is not an integer: only integer "
+                             "values are supported")
+        return Num(int(value))
     if name == "BooleanValue":
         return Const(bool(obj.getValue()))
     if name == "UnaryBooleanFormula":

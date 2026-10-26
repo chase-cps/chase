@@ -94,10 +94,13 @@ class Contract:
         inputs, outputs, generic, constants = {}, {}, {}, {}
         for d in list(shared) + list(pc.declarations):
             name = d.getName().getString()
+            t = d.getType()
+            if type(t).__name__ not in ("Integer", "Boolean"):
+                raise ValueError(f"{name!r} has the type {type(t).__name__}: only Boolean "
+                                 "and integer variables are supported")
             if type(d).__name__ == "Constant":
                 constants[name] = d.getValue().getValue()
                 continue
-            t = d.getType()
             vtype = (t.getMin(), t.getMax()) if type(t).__name__ == "Integer" else "bool"
             causality = d.getCausality()
             if causality == R.causality_t.input:
