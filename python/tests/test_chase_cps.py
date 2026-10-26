@@ -186,6 +186,27 @@ def test_grouping_survives_the_chase_parser(formula):
 
 
 @needs_native
+def test_declarations_shared_by_the_contracts():
+    from chase_cps import parse_spec
+    cs = parse_spec("""NAME: shared;
+
+proposition done;
+integer variable n;
+boolean variable unused;
+
+CONTRACT One:
+    input boolean variable req;
+    Assumptions:
+        G(F(req));
+    Guarantees:
+        G(req -> F(done & (n >= 1)));
+""")
+    c = cs["One"]
+    assert set(c.inputs) == {"req"}
+    assert c.outputs == {"done": "bool", "n": (0, 16)}   # integer without range: 0..16
+
+
+@needs_native
 def test_bad_formula_raises_instead_of_exiting():
     from chase_cps.contract import _parse_contracts
     c = Contract(name="X", inputs={"a": "bool"}, guarantees=[ltl.Var("b")])
@@ -347,7 +368,7 @@ def test_terms_outside_gr1_are_reported():
         c = Contract.from_strings(inputs=["req", "stop"], outputs=["grant"],
                                   assumptions=a, guarantees=g, name="T")
         r = is_realizable(c)
-        assert r.status == "unknown" and "Not a GR1" in r.reason
+        assert r.status == "unknown" and "not a GR(1) term" in r.reason
     # X inside a liveness term is accepted, as by slugs
     c = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               assumptions=["G F (req -> X !req)"],
@@ -464,6 +485,21 @@ def test_remove_vacuous():
     n = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               guarantees=["G (req -> F grant)"], name="N")
     assert remove_vacuous(n).reason.startswith("not a GR(1) term")
+
+
+@needs_native
+@pytest.mark.skipif(not _has_slugs(), reason="slugs not installed")
+def test_gr1_variable_roles_are_reported():
+    from chase_cps import is_realizable
+    for a, word in [(["!b | a"], "initial assumption"), (["G (a -> X b)"], "next value"),
+                    (["G (a -> b')"], "next value")]:
+        c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=a,
+                                  guarantees=["G F b"], name="T")
+        r = is_realizable(c)
+        assert r.status == "unknown" and word in r.reason
+    c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G (b -> X a)"],
+                              guarantees=["G F b"], name="T")
+    assert is_realizable(c).status == "realizable"
 
 
 def test_rename_and_signatures():

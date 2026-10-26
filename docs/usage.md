@@ -36,7 +36,9 @@ CONTRACT Spec:
 
 - `NAME: name;` names the system; `CONTRACT name:` starts a contract.
 - Variables: `input` or `output`, `boolean`, `integer (low:high)`, or `real`,
-  then `variable name;`. Constants are declared as `integer constant N 5;`,
+  then `variable name;`. An integer without a range ranges over 0 to 16.
+  Declarations outside the contracts are shared: each contract gets those it
+  uses. Constants are declared as `integer constant N 5;`,
   and propositions as `proposition p is x > 3;`.
 - `Assumptions:` and `Guarantees:` list formulas, each ending with `;`.
 - Formulas: `!` (or `~`), `&` (or `/\`), `|` (or `\/`), `->`, `<->`, `G`,

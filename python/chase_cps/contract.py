@@ -86,11 +86,13 @@ class Contract:
         return c
 
     @classmethod
-    def from_pychase(cls, pc) -> "Contract":
-        """Convert a contract of the CHASE core library."""
+    def from_pychase(cls, pc, shared=()) -> "Contract":
+        """Convert a contract of the CHASE core library. ``shared`` are the
+        declarations of the system (outside the contracts) that the contract
+        may use."""
         from ._native import representation as R
         inputs, outputs, generic, constants = {}, {}, {}, {}
-        for d in pc.declarations:
+        for d in list(shared) + list(pc.declarations):
             name = d.getName().getString()
             if type(d).__name__ == "Constant":
                 constants[name] = d.getValue().getValue()
@@ -441,7 +443,17 @@ def load_spec(path: str | os.PathLike) -> dict[str, Contract]:
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
     system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(os.fspath(path))
     contracts = {c.getName().getString(): c for c in system.getContractsSet()}
-    return {name: Contract.from_pychase(contracts[name]) for name in sorted(contracts)}
+    shared = list(system.getDeclarationsSet())
+    out = {}
+    for name in sorted(contracts):
+        c = Contract.from_pychase(contracts[name], shared)
+        # keep the shared declarations the contract uses
+        used = ltl.variables(ltl.conjunction(c.assumptions + c.guarantees))
+        local = {d.getName().getString() for d in contracts[name].declarations}
+        c.inputs = {v: t for v, t in c.inputs.items() if v in used or v in local}
+        c.outputs = {v: t for v, t in c.outputs.items() if v in used or v in local}
+        out[name] = c
+    return out
 
 
 def parse_spec(text: str) -> dict[str, Contract]:

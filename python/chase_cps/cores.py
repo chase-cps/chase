@@ -184,6 +184,39 @@ def gr1_kind(term: ltl.Node) -> Optional[str]:
     return None
 
 
+def _next_vars(node: ltl.Node, under_x: bool = False) -> set[str]:
+    """The variables read in the next step: primed, or under X."""
+    if isinstance(node, ltl.Var):
+        return {node.name} if node.primed or under_x else set()
+    if isinstance(node, ltl.Unary):
+        return _next_vars(node.arg, under_x or node.op == "X")
+    if isinstance(node, ltl.Binary):
+        return _next_vars(node.left, under_x) | _next_vars(node.right, under_x)
+    return set()
+
+
+def gr1_roles(c: Contract) -> Optional[str]:
+    """Why the contract is not a GR(1) specification for slugs, or None: each
+    term is GR(1), the initial assumptions read the inputs only, and the
+    safety assumptions read the inputs only in the next step."""
+    for t in list(c.assumptions) + list(c.guarantees):
+        if gr1_kind(t) is None:
+            return f"not a GR(1) term: {ltl.to_str(t)}"
+    for t in c.assumptions:
+        kind = gr1_kind(t)
+        if kind == "init":
+            out = ltl.variables(t) - set(c.inputs)
+            if out:
+                return (f"the initial assumption {ltl.to_str(t)} reads {sorted(out)}: initial "
+                        "assumptions can only read inputs")
+        elif kind == "safety":
+            out = _next_vars(t.arg) - set(c.inputs)
+            if out:
+                return (f"the safety assumption {ltl.to_str(t)} reads the next value of "
+                        f"{sorted(out)}: the environment cannot depend on the next outputs")
+    return None
+
+
 def unrealizable_core(guarantees, inputs=None, outputs=None, assumptions=(),
                       backend: str = "auto", **options) -> Core:
     """A minimal set of guarantees that is unrealizable under all the
@@ -205,9 +238,9 @@ def unrealizable_core(guarantees, inputs=None, outputs=None, assumptions=(),
                                   guarantees=_terms(guarantees), name="C")
         from_contract = False
     terms = list(c.guarantees)
-    for t in list(c.assumptions) + terms:
-        if gr1_kind(t) is None:
-            return Core(UNKNOWN, reason=f"not a GR(1) term: {ltl.to_str(t)}")
+    problem = gr1_roles(c)
+    if problem:
+        return Core(UNKNOWN, reason=problem)
     kinds = [gr1_kind(t) for t in terms]
     env_other = [t for t in c.assumptions if gr1_kind(t) != "justice"]
 
