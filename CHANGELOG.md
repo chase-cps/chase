@@ -32,9 +32,13 @@
   the inputs and outputs of the contracts.
 - A temporal operator applied to an operand of a relation or of arithmetic
   (`X x = 3`) is rejected with a message (write `x' = 3`).
-- Real variables and numbers with a fraction in a specification are
-  rejected. Before, a real variable was read as a Boolean one and `20.5` as
-  `20`.
+- Real variables (`"real"`, `real variable x;` in the CHASE language) and
+  numbers with a fraction (`20.5`), read exactly. The checks with the model
+  checker use the SMT engine of nuXmv for them (NuSMV has no real type).
+  Before, a real variable was read as a Boolean one and `20.5` as `20`; a
+  real constant was read as an integer (`real constant K 2.5;` gave 2).
+- nuXmv no longer waits at its prompt after an error until the timeout: the
+  error is reported at once.
 
 ## 0.1.2 (2026-10-25)
 

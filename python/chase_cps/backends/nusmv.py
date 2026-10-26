@@ -3,6 +3,9 @@
 nuXmv is used with IC3 (``check_ltlspec_ic3``), which proves or refutes the
 specification. NuSMV has no IC3: it first looks for a counterexample with
 bounded model checking, then proves the specification with BDDs.
+
+Real variables need nuXmv, which checks them with its SMT engine
+(``go_msat``, then IC3 or bounded model checking); NuSMV has no real type.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ import re
 import subprocess
 import tempfile
 import time
+from fractions import Fraction
 
 from .. import ltl
 from ..tools import find
@@ -70,9 +74,13 @@ class NuSMVAdapter(Adapter):
         lines = ["MODULE main", "VAR"]
         for v, t in variables.items():
             if v in used:
-                lines.append(f"    {v} : {'boolean' if t == 'bool' else f'{t[0]}..{t[1]}'};")
+                typ = {"bool": "boolean", "real": "real"}.get(t) or f"{t[0]}..{t[1]}"
+                lines.append(f"    {v} : {typ};")
         if len(lines) == 2:   # no variable: NuSMV needs at least one
             lines.append("    chase_dummy : boolean;")
+        if _has_reals(query) and not any(variables[v] == "real" for v in used):
+            # The SMT engine of nuXmv needs an infinite-state model.
+            lines.append("    chase_real : real;")
         lines.append(f"LTLSPEC {ltl.to_smv(spec)};")
         return "\n".join(lines) + "\n"
 
@@ -81,6 +89,13 @@ class NuSMVAdapter(Adapter):
         if found is None:
             return Result(UNKNOWN, self.name, reason="neither nuXmv nor NuSMV is installed")
         path, flavor = found
+        if _has_reals(query):
+            if flavor != "nuxmv":
+                return Result(UNKNOWN, self.name, reason="real variables need nuXmv: NuSMV "
+                              "has no real type")
+            if self.engine not in ("auto", "ic3", "bmc"):
+                return Result(UNKNOWN, self.name, reason=f"the {self.engine} engine of "
+                              "nuXmv does not check real variables; use ic3 or bmc")
         if self.engine != "auto":
             return self._run(query, path, flavor, self.engine, self.timeout)
         if flavor == "nuxmv":
@@ -100,9 +115,20 @@ class NuSMVAdapter(Adapter):
             smv = os.path.join(tmp, "query.smv")
             with open(smv, "w") as f:
                 f.write(model)
-            if flavor == "nuxmv":
-                commands = ["read_model -i query.smv", "flatten_hierarchy",
-                            "encode_variables", "build_boolean_model"]
+            if flavor == "nuxmv" and _has_reals(query):
+                commands = ["set on_failure_script_quits", "read_model -i query.smv",
+                            "go_msat"]
+                if engine == "bmc":
+                    commands.append(f"msat_check_ltlspec_bmc -k {self.bmc_bound}")
+                else:
+                    commands.append("check_ltlspec_ic3")
+                commands.append("quit")
+                with open(os.path.join(tmp, "commands"), "w") as f:
+                    f.write("\n".join(commands) + "\n")
+                args = [path, "-source", "commands"]
+            elif flavor == "nuxmv":
+                commands = ["set on_failure_script_quits", "read_model -i query.smv",
+                            "flatten_hierarchy", "encode_variables", "build_boolean_model"]
                 if engine == "ic3":
                     commands.append("check_ltlspec_ic3")
                 elif engine == "bmc":
@@ -118,8 +144,9 @@ class NuSMVAdapter(Adapter):
             else:
                 args = [path, "-dynamic", "-coi", "query.smv"]
             try:
+                # No input: after an error nuXmv would wait at its prompt.
                 proc = subprocess.run(args, cwd=tmp, capture_output=True, text=True,
-                                      timeout=timeout)
+                                      stdin=subprocess.DEVNULL, timeout=timeout)
             except subprocess.TimeoutExpired:
                 return Result(UNKNOWN, f"{flavor}/{engine}",
                               reason=f"timeout after {timeout:g} s",
@@ -128,8 +155,7 @@ class NuSMVAdapter(Adapter):
         backend = f"{flavor}/{engine}"
         verdict = re.search(r"specification .* is (true|false)", proc.stdout, re.S)
         if not verdict:
-            reason = (proc.stderr or proc.stdout).strip().splitlines()
-            reason = next((l for l in reason if "rror" in l), reason[-1] if reason else "")
+            reason = _error(proc.stderr + "\n" + proc.stdout)
             if engine == "bmc" and "no counterexample found" in proc.stdout:
                 reason = f"no counterexample up to bound {self.bmc_bound}"
             return Result(UNKNOWN, backend, reason=reason or "no verdict in the output",
@@ -143,14 +169,44 @@ class NuSMVAdapter(Adapter):
         return Result(status, backend, trace=trace, seconds=seconds)
 
 
+def _error(output: str) -> str:
+    """The most specific error message in the output of NuSMV or nuXmv: an
+    error with a line number of the model, else any error, else the last line
+    (the banners start with ***)."""
+    lines = [l.strip() for l in output.splitlines() if l.strip() and not l.startswith("***")]
+    errors = [l for l in lines if re.search(r"error", l, re.I)
+              or re.match(r"file \S+: line \d+", l)]
+    located = [l for l in errors if re.search(r"line \d+", l)]
+    return (located or errors or lines or [""])[-1]
+
+
+def _has_reals(query) -> bool:
+    """Real variables, or a number with a fraction: only the SMT engine of
+    nuXmv reads them (its finite-state engines reject 20.5 <= n)."""
+    if "real" in query.variables.values():
+        return True
+    if isinstance(query, Implies):
+        return ltl.has_fraction(query.phi) or ltl.has_fraction(query.psi)
+    return ltl.has_fraction(query.phi)
+
+
+_FRACTION = re.compile(r"^(-?)f'(-?\d+)/(\d+)$")
+
+
 def _value(text: str):
+    """A value printed by NuSMV or nuXmv: a Boolean, an int, or for a real
+    an exact number (``f'1/3`` and ``2.5`` are read as fractions)."""
     text = text.strip()
     if text == "TRUE":
         return True
     if text == "FALSE":
         return False
+    m = _FRACTION.match(text)
+    if m:
+        sign = -1 if m.group(1) else 1
+        return ltl.number(sign * Fraction(int(m.group(2)), int(m.group(3))))
     try:
-        return int(text)
+        return ltl.number(text)
     except ValueError:
         return text
 

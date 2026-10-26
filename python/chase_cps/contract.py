@@ -15,13 +15,18 @@ RESERVED = frozenset({
     "CONTRACT", "Assumptions", "Guarantees", "integer", "boolean", "real",
     "variable", "input", "output", "constant", "proposition", "is"})
 
-# A variable type: "bool", or an integer range (low, high), bounds included.
+# A variable type: "bool", "real", or an integer range (low, high), bounds
+# included.
 VarType = Union[str, tuple]
+
+_UNBOUNDED = float(2 ** 63 - 1)
 
 
 def _normalize_type(t) -> VarType:
     if t in ("bool", "boolean", bool, None):
         return "bool"
+    if t in ("real", float):
+        return "real"
     if isinstance(t, range):
         return (t.start, t.stop - 1)
     if isinstance(t, (tuple, list)) and len(t) == 2:
@@ -29,7 +34,7 @@ def _normalize_type(t) -> VarType:
         if lo > hi:
             raise ValueError(f"empty integer range {t!r}")
         return (lo, hi)
-    raise ValueError(f"unsupported variable type {t!r}: use 'bool' or (low, high)")
+    raise ValueError(f"unsupported variable type {t!r}: use 'bool', 'real', or (low, high)")
 
 
 def _normalize_vars(vs) -> dict[str, VarType]:
@@ -57,8 +62,8 @@ class Contract:
     """An assume-guarantee contract.
 
     ``assumptions`` and ``guarantees`` are lists of LTL formulas, read as
-    conjunctions. Variables are Boolean ("bool") or bounded integers
-    (low, high).
+    conjunctions. Variables are Boolean ("bool"), bounded integers
+    (low, high), or reals ("real").
     """
 
     name: str
@@ -95,13 +100,22 @@ class Contract:
         for d in list(shared) + list(pc.declarations):
             name = d.getName().getString()
             t = d.getType()
-            if type(t).__name__ not in ("Integer", "Boolean"):
-                raise ValueError(f"{name!r} has the type {type(t).__name__}: only Boolean "
-                                 "and integer variables are supported")
+            kind = type(t).__name__
+            if kind not in ("Integer", "Boolean", "Real"):
+                raise ValueError(f"{name!r} has the type {kind}: only Boolean, integer, "
+                                 "and real variables are supported")
             if type(d).__name__ == "Constant":
-                constants[name] = d.getValue().getValue()
+                constants[name] = ltl.number(d.getValue().getValue())
                 continue
-            vtype = (t.getMin(), t.getMax()) if type(t).__name__ == "Integer" else "bool"
+            # A real without a range has the bounds -+infinity of the core library
+            # (the largest int64).
+            if kind == "Real" and (t.getMin() > -_UNBOUNDED or t.getMax() < _UNBOUNDED):
+                raise ValueError(f"{name!r} is a real with a range: write the range as an "
+                                 "assumption or a guarantee instead")
+            if kind == "Integer":
+                vtype = (t.getMin(), t.getMax())
+            else:
+                vtype = "real" if kind == "Real" else "bool"
             causality = d.getCausality()
             if causality == R.causality_t.input:
                 inputs[name] = vtype
@@ -170,7 +184,7 @@ class Contract:
 
     def to_dict(self) -> dict:
         def t(v):
-            return "bool" if v == "bool" else list(v)
+            return v if v in ("bool", "real") else list(v)
         return {"name": self.name,
                 "inputs": {k: t(v) for k, v in self.inputs.items()},
                 "outputs": {k: t(v) for k, v in self.outputs.items()},
@@ -180,7 +194,9 @@ class Contract:
     @classmethod
     def from_dict(cls, d: Mapping) -> "Contract":
         def t(v):
-            return "bool" if v in ("bool", "boolean") else tuple(v)
+            if v in ("bool", "boolean", "real"):
+                return v
+            return tuple(v)
         return cls.from_strings(
             inputs={k: t(v) for k, v in (d.get("inputs") or {}).items()},
             outputs={k: t(v) for k, v in (d.get("outputs") or {}).items()},
@@ -191,7 +207,7 @@ class Contract:
         lines = [f"CONTRACT {self.name}"]
         for k, v in self.variables.items():
             kind = "input" if k in self.inputs else "output"
-            lines.append(f"  {kind} {k} : {'bool' if v == 'bool' else f'{v[0]}..{v[1]}'}")
+            lines.append(f"  {kind} {k} : {v if v in ('bool', 'real') else f'{v[0]}..{v[1]}'}")
         lines.append("  Assumptions:")
         lines += [f"    {ltl.to_str(f)}" for f in self.assumptions] or ["    true"]
         lines.append("  Guarantees:")
@@ -205,7 +221,7 @@ class Contract:
         lines = [f"CONTRACT {self.name}:"]
         for k, v in self.variables.items():
             kind = "input" if k in self.inputs else "output"
-            typ = "boolean" if v == "bool" else f"integer ({v[0]}:{v[1]})"
+            typ = {"bool": "boolean", "real": "real"}.get(v) or f"integer ({v[0]}:{v[1]})"
             lines.append(f"    {kind} {typ} variable {k};")
         lines.append("    Assumptions:")
         lines += [f"        {ltl.to_chase(f)};" for f in self.assumptions] or ["        true;"]

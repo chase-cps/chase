@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import Optional, Union
 
 
@@ -41,7 +42,43 @@ class Var:
 
 @dataclass(frozen=True)
 class Num:
-    value: int
+    value: Union[int, Fraction]    # an int, or a Fraction for a number with a fraction
+
+
+def number(value) -> Union[int, Fraction]:
+    """An exact number: an int when the value is an integer, else a Fraction.
+    Accepts ints, Fractions, floats, and decimal strings such as "20.5"."""
+    if isinstance(value, bool):
+        raise TypeError("not a number: a Boolean")
+    if isinstance(value, float):
+        value = str(value)     # the decimal written, not the binary approximation
+    f = Fraction(value)
+    return int(f) if f.denominator == 1 else f
+
+
+def number_text(value, fraction: str = "decimal") -> str:
+    """A number as text: an integer, a decimal (``fraction="decimal"``), or
+    for nuXmv ``f'p/q'`` when it has no finite decimal expansion
+    (``fraction="smv"``)."""
+    value = number(value)
+    if not isinstance(value, Fraction):
+        return str(int(value))
+    q, twos, fives = value.denominator, 0, 0
+    while q % 2 == 0:
+        q //= 2
+        twos += 1
+    while q % 5 == 0:
+        q //= 5
+        fives += 1
+    if q != 1:
+        if fraction == "smv":
+            return f"f'{value.numerator}/{value.denominator}"
+        raise ValueError(f"{value} has no finite decimal expansion")
+    digits = max(twos, fives)
+    sign = "-" if value < 0 else ""
+    scaled = abs(value) * 10 ** digits
+    whole, frac = divmod(int(scaled), 10 ** digits)
+    return f"{sign}{whole}.{frac:0{digits}d}"
 
 
 @dataclass(frozen=True)
@@ -70,7 +107,7 @@ TEMPORAL_BINARY = ("U", "R")
 
 _TOKEN_RE = re.compile(r"""
     \s*(?:
-      (?P<num>\d+)
+      (?P<num>\d+(?:\.\d+)?)
     | (?P<id>[A-Za-z_][A-Za-z0-9_]*)(?P<prime>')?
     | (?P<op><->|<=>|->|=>|==|!=|<=|>=|&&|\|\||/\\|\\/|\[\]|<>|[!~&|()<>=+\-*/])
     )""", re.VERBOSE)
@@ -166,7 +203,7 @@ class _Parser:
     def prefix(self) -> Node:
         kind, val = self.take()
         if kind == "num":
-            return Num(int(val))
+            return Num(number(val))
         if kind == "const":
             return Const(val == "true")
         if kind == "id":
@@ -224,6 +261,17 @@ def variables(node: Node) -> set[str]:
     return set()
 
 
+def has_fraction(node: Node) -> bool:
+    """Whether a number with a fraction (such as 2.5) occurs in a formula."""
+    if isinstance(node, Num):
+        return isinstance(node.value, Fraction)
+    if isinstance(node, Unary):
+        return has_fraction(node.arg)
+    if isinstance(node, Binary):
+        return has_fraction(node.left) or has_fraction(node.right)
+    return False
+
+
 def conjunction(nodes: list[Node]) -> Node:
     if not nodes:
         return Const(True)
@@ -251,7 +299,7 @@ def to_chase(node: Node) -> str:
     if isinstance(node, Var):
         return node.name + ("'" if node.primed else "")
     if isinstance(node, Num):
-        return str(node.value)
+        return number_text(node.value)
     if isinstance(node, Unary):
         if node.op == "neg":
             return f"(0 - {to_chase(node.arg)})"
@@ -269,7 +317,7 @@ def to_smv(node: Node) -> str:
     if isinstance(node, Var):
         return f"next({node.name})" if node.primed else node.name
     if isinstance(node, Num):
-        return str(node.value)
+        return number_text(node.value, "smv")
     if isinstance(node, Unary):
         if node.op == "neg":
             return f"(-{to_smv(node.arg)})"
@@ -318,11 +366,7 @@ def from_pychase(obj) -> Node:
     if name == "IntegerValue":
         return Num(int(obj.getValue()))
     if name == "RealValue":
-        value = obj.getValue()
-        if value != int(value):
-            raise ValueError(f"the number {value} is not an integer: only integer "
-                             "values are supported")
-        return Num(int(value))
+        return Num(number(obj.getValue()))
     if name == "BooleanValue":
         return Const(bool(obj.getValue()))
     if name == "UnaryBooleanFormula":

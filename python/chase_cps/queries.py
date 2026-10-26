@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from fractions import Fraction
 from typing import Any, Optional
 
 from . import ltl
@@ -62,6 +63,18 @@ SIMPLIFIED = "simplified"
 UNKNOWN = "unknown"
 
 
+def _json_value(v):
+    """A real value of a trace as a JSON number when it has a finite decimal
+    expansion (2.5), else as a string ("1/3")."""
+    if isinstance(v, Fraction):
+        try:
+            ltl.number_text(v)
+            return float(v)
+        except ValueError:
+            return str(v)
+    return v
+
+
 @dataclass
 class Trace:
     """A lasso-shaped trace: the prefix, then the loop repeated forever.
@@ -72,7 +85,9 @@ class Trace:
     loop: list[dict[str, Any]]
 
     def to_dict(self) -> dict:
-        return {"prefix": self.prefix, "loop": self.loop}
+        def state(s):
+            return {k: _json_value(v) for k, v in s.items()}
+        return {"prefix": [state(s) for s in self.prefix], "loop": [state(s) for s in self.loop]}
 
     def __str__(self) -> str:
         rows = []

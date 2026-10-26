@@ -220,15 +220,56 @@ CONTRACT One:
 
 
 @needs_native
-def test_real_variables_and_numbers_are_rejected():
+def test_real_variables_and_numbers_are_read_exactly():
     # They were read as Boolean variables and as truncated integers.
     from chase_cps import parse_spec
-    with pytest.raises(ValueError, match="only Boolean and integer"):
-        parse_spec(REAL_SPEC.format(decl="real variable n;", bound="20"))
-    with pytest.raises(ValueError, match="not an integer"):
-        parse_spec(REAL_SPEC.format(decl="integer variable n;", bound="20.5"))
+    c = parse_spec(REAL_SPEC.format(decl="real variable n;", bound="20.5"))["One"]
+    assert c.outputs == {"n": "real"}
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 20.5)"]
     c = parse_spec(REAL_SPEC.format(decl="integer variable n;", bound="20.0"))["One"]
     assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 20)"]
+    c = parse_spec(REAL_SPEC.format(decl="real constant K 2.5;\nreal variable n;",
+                                    bound="K"))["One"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 2.5)"]
+    with pytest.raises(ValueError, match="range"):
+        parse_spec(REAL_SPEC.format(decl="real (0:5) variable n;", bound="2"))
+    with pytest.raises(RuntimeError, match="integer constant"):
+        parse_spec(REAL_SPEC.format(decl="integer constant K 2.5;\ninteger variable n;",
+                                    bound="K"))
+
+
+def test_numbers_with_a_fraction():
+    from fractions import Fraction
+    assert ltl.parse("x <= 20.5") == ltl.Binary("<=", ltl.Var("x"), ltl.Num(Fraction(41, 2)))
+    assert ltl.parse("x <= 20.0") == ltl.parse("x <= 20")
+    assert ltl.parse("x < -0.25") == ltl.Binary("<", ltl.Var("x"), ltl.Num(Fraction(-1, 4)))
+    assert ltl.to_smv(ltl.Num(Fraction(1, 3))) == "f'1/3"
+    assert ltl.to_chase(ltl.parse("x <= 0.125")) == "(x <= 0.125)"
+    with pytest.raises(ValueError):
+        ltl.to_chase(ltl.Num(Fraction(1, 3)))   # no decimal for the CHASE language
+    c = Contract.from_strings(inputs={"v": "real"}, outputs={"m": "bool"},
+                              guarantees=["G (v > 2.5 -> m)"], name="Speed")
+    assert Contract.from_dict(c.to_dict()) == c
+    assert "input real variable v;" in c.to_logics()
+
+
+@needs_mc
+def test_real_variables_with_nuxmv():
+    from fractions import Fraction
+    from chase_cps import implies, is_satisfiable
+    if not ADAPTERS["nuxmv"].available():
+        pytest.skip("nuXmv not installed")
+    V = {"v": "real", "m": "bool", "n": (0, 30)}
+    assert implies("G (v > 30)", "G (v >= 20)", V).status == "valid"
+    r = implies("G (v > 0.25)", "G (v > 0.5)", V)
+    assert r.status == "invalid"
+    assert all(Fraction(1, 4) < s["v"] for s in r.trace.prefix + r.trace.loop)
+    assert any(s["v"] <= Fraction(1, 2) for s in r.trace.prefix + r.trace.loop)
+    r = is_satisfiable("G (3 * v = 1)", V)
+    assert r.status == "sat" and r.trace.loop[0]["v"] == Fraction(1, 3)
+    assert r.trace.to_dict()["loop"][0]["v"] == "1/3"
+    # a number with a fraction and no real variable: also the SMT engine
+    assert implies("G (n <= 20.5)", "G (n <= 20)", V).status == "valid"
 
 
 @needs_native
@@ -749,3 +790,17 @@ CONTRACT K:
     assert c.inputs == {"x": (0, 9)} and c.outputs == {"y": "bool"}
     assert [ltl.to_str(f) for f in c.assumptions] == ["x < 5"]
     assert [ltl.to_str(f) for f in c.guarantees] == ["G (x > 3 -> y)"]
+
+
+def test_nusmv_does_not_check_real_variables(monkeypatch):
+    from chase_cps.backends.nusmv import NuSMVAdapter
+    from chase_cps.queries import Implies
+    a = NuSMVAdapter(tool="nusmv")
+    monkeypatch.setattr(a, "binary", lambda: ("NuSMV", "nusmv"))
+    q = Implies(ltl.parse("G (v > 1)"), ltl.parse("G (v > 0)"), {"v": "real"})
+    r = a.run(q)
+    assert r.status == "unknown" and "nuXmv" in r.reason
+    q = Implies(ltl.parse("G (n <= 2.5)"), ltl.parse("G (n <= 2)"), {"n": (0, 4)})
+    assert "nuXmv" in a.run(q).reason
+    model = NuSMVAdapter().emit(q)
+    assert "chase_real : real;" in model and "n : 0..4;" in model
