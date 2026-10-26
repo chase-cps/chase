@@ -16,5 +16,8 @@ check "CPSWeek22 verify"      "cd CPSWeek22 && logics_tool -i specs.ltl -o $W/c 
 check "CPSWeek22 single model" "cd CPSWeek22 && logics_tool -i single_model.ltl -o $W/c -c singlemodel.chase && cd .. && test -s $W/c/single_model.structuredSlugs"
 printf 'NAME: x;\nCONTRACT A:\n Assumptions: []p;\n' > $W/bad.ltl
 check "syntax error reported" "logics_tool -i $W/bad.ltl -o $W/b -c /dev/null 2>&1 | grep -q 'Syntax errors'"
+printf 'NAME: shared;\ninteger variable n;\nreal variable v;\nreal constant L 2.5;\n\nCONTRACT A:\n    output boolean variable w;\n    Assumptions:\n        true;\n    Guarantees:\n        G((n > 4) -> X(w));\n        G((v > L) -> X(w));\n' > $W/shared.ltl
+printf 'refinement A A r.smv;\n' > $W/r.chase
+check "shared declarations, reals" "logics_tool -i $W/shared.ltl -o $W/sh -c $W/r.chase && grep -q 'DEFINE L := 2.5;' $W/sh/r.smv && grep -q 'v : real;' $W/sh/r.smv && grep -q 'n : 0..16;' $W/sh/r.smv"
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail

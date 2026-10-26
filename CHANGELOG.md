@@ -47,6 +47,10 @@
 - The NuSMV printer of chase-backends writes real variables (with their
   range as INVAR) and real constants for nuXmv; the slugs and gr1c printers
   report real variables instead of writing them as Boolean ones.
+- logics_tool: `refinement` (and the other operations) crashed when a
+  contract used a variable declared outside the contracts. A contract now
+  declares the declarations of the system it uses, and the NuSMV printer
+  writes the constants (`DEFINE`), which it skipped.
 - nuXmv no longer waits at its prompt after an error until the timeout: the
   error is reported at once.
 
