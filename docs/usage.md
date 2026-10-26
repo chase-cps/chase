@@ -102,6 +102,7 @@ return a new contract; the checks read as predicates (`refines(a, b)`: does
 | unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
 | unsat core | | `unsat_core(c)` | `--core` | `unsat_core` |
 | well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
+| vacuity | | `remove_vacuous(c)` | | `remove_vacuous` |
 
 Implication and coimplication are the adjoints of conjunction and
 disjunction, as the quotient and separation are of composition and merging
@@ -181,6 +182,23 @@ minimal set of assumptions that causes the problem. The check is one call
 to slugs. It detects the violations that can be forced from every initial
 state; those forced only from some reachable state need the winning region,
 which slugs does not give.
+
+## Vacuity
+
+`remove_vacuous(c)` removes the terms whose removal does not change the
+GR(1) specification: its realizability and the controllers that realize it
+(inherent vacuity, Maoz and Shalom, ESEC/FSE 2020). Each term is checked
+against a premise set that depends on its kind (initial, safety, justice)
+and on its side (assumption or guarantee), one call to nuXmv per term; a
+safety term is compared with the bodies of the other safety terms only, as
+a propositional implication over the current and next values. The terms are
+checked in order against the terms not yet removed, so of two equal terms
+one is kept. The result has the `contract`, the `removed` terms with their
+part and kind, and with `core=True` the terms that make each one vacuous.
+
+`remove_redundant(c)` instead keeps A -> G: it may remove a term that only
+follows from the others over whole traces, which can change the synthesis
+problem; `remove_vacuous` does not.
 
 ## Results
 

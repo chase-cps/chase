@@ -427,6 +427,38 @@ def test_well_separation():
     assert is_well_separated(n).status == "unknown"
 
 
+@needs_mc
+def test_remove_vacuous():
+    from chase_cps import remove_redundant, remove_vacuous
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F req"],
+                              guarantees=["G (req -> grant)", "G F grant"], name="A")
+    v = remove_vacuous(c, core=True)
+    assert [(ltl.to_str(t.term), t.part, t.kind) for t in v.removed] == \
+        [("G F grant", "guarantee", "justice")]
+    assert [ltl.to_str(t) for t in v.removed[0].core] == ["G F req", "G (req -> grant)"]
+    assert [ltl.to_str(t) for t in v.guarantees] == ["G (req -> grant)"]
+    # duplicates: one is kept; a safety term implied by a stronger one goes
+    e = Contract.from_strings(inputs=["a"], outputs=["b"],
+                              assumptions=["G (a -> X a)", "G (a -> X (a | b))", "!a", "!a"],
+                              guarantees=["G b"], name="E")
+    v = remove_vacuous(e)
+    assert [ltl.to_str(t) for t in v.assumptions] == ["G (a -> X a)", "!a"]
+    v = remove_vacuous(["G (req -> grant)", "G F grant"], inputs=["req"], outputs=["grant"],
+                       assumptions=["G F req"])
+    assert [ltl.to_str(t) for t in v.guarantees] == ["G (req -> grant)"]
+    # safety terms are compared propositionally: G (b = 3) follows from the
+    # other guarantee only over whole traces, so it is redundant, not vacuous
+    p = Contract.from_strings(inputs=["x"], outputs={"b": (0, 3)},
+                              guarantees=["G (b = 3)", "G (b < 3 -> (b < b' & b' < 3))"],
+                              name="Paper")
+    assert [ltl.to_str(t) for t in remove_redundant(p).removed_guarantees] == ["G b = 3"]
+    assert [ltl.to_str(t.term) for t in remove_vacuous(p).removed] == \
+        ["G (b < 3 -> b < b' & b' < 3)"]
+    n = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                              guarantees=["G (req -> F grant)"], name="N")
+    assert remove_vacuous(n).reason.startswith("not a GR(1) term")
+
+
 def test_rename_and_signatures():
     c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                               guarantees=["G (a -> X b')"], name="C")

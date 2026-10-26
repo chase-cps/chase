@@ -18,6 +18,9 @@
 - `is_well_separated`: whether the component can win by forcing the
   environment to violate its assumptions, with the strategy and a minimal
   set of assumptions; `chase-cps check --well-separated`.
+- `remove_vacuous`: removes the terms whose removal keeps the GR(1)
+  specification (inherent vacuity, Maoz and Shalom 2020), with the kind of
+  each term and the terms that make it vacuous.
 
 ## 0.1.1 (2026-10-25)
 

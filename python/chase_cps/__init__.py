@@ -16,7 +16,8 @@ from . import backends, ltl, tools
 from .backends import check
 from .checks import (RefinementResult, Redundancy, Verification, accepts, implements,
                      implies, is_compatible, is_consistent, is_realizable, is_satisfiable,
-                     is_well_separated, refines, remove_redundant, synthesize, verify)
+                     is_well_separated, refines, remove_redundant, remove_vacuous,
+                     synthesize, verify, Vacuity, VacuousTerm)
 from .contract import Contract, load_spec, parse_spec, to_spec
 from .cores import Core, unrealizable_core, unsat_core
 from .ltl import LTLSyntaxError
@@ -29,7 +30,8 @@ __all__ = [
     "Result", "Trace", "RefinementResult", "Verification", "Redundancy",
     "refines", "verify", "is_consistent", "is_compatible", "is_realizable", "synthesize",
     "implies", "is_satisfiable", "implements", "accepts", "remove_redundant",
-    "Core", "unsat_core", "unrealizable_core", "is_well_separated",
+    "Core", "unsat_core", "unrealizable_core", "is_well_separated", "remove_vacuous",
+    "Vacuity", "VacuousTerm",
     "check", "backends", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
 ]
