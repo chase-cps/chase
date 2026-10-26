@@ -26,7 +26,7 @@ except ImportError:
 
 needs_mc = pytest.mark.skipif(not HAS_MC, reason="nuXmv/NuSMV not installed")
 needs_native = pytest.mark.skipif(not HAS_NATIVE, reason="CHASE modules not installed")
-needs_slugs = pytest.mark.skipif(not (HAS_SLUGS and HAS_MC), reason="slugs not installed")
+needs_slugs = pytest.mark.skipif(not (HAS_SLUGS and HAS_MC), reason="slugs and nuXmv/NuSMV are needed")
 
 RUNS = int(os.environ.get("CHASE_PROPERTY_RUNS", "12"))
 INPUTS = {"a": "bool", "c": "bool"}
