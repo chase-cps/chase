@@ -3,16 +3,19 @@
 A query with real variables is answered in this order:
 
 1. regions: when every comparison of a real variable is with a constant
-   (``kias > 40``, ``kias' <= 30.5``), the variable only matters through the
-   interval of the constants it is in. With the constants c1 < ... < ck,
-   the real line is split into the 2k + 1 regions
-   ``(-inf, c1), c1, (c1, c2), ..., ck, (ck, inf)``, and the variable is
-   replaced by the integer index of its region. The answer is exact, and
-   the GR(1) back ends (realizability, synthesis) can be used.
+   (``kias > 40``, ``kias' <= 30.5``) or with another real variable of the
+   same step (``kias = kgs``), the variable only matters through the
+   interval of the constants it is in (and its order with the variables
+   it is compared with). With the constants c1 < ... < ck, the real line is
+   split into the 2k + 1 regions ``(-inf, c1), c1, (c1, c2), ..., ck,
+   (ck, inf)``, and the variable is replaced by the integer index of its
+   region (see ``Regions`` for variables compared with each other). The
+   answer is exact, and the GR(1) back ends (realizability, synthesis) can
+   be used.
 2. smt: the SMT engine of nuXmv, exact for linear arithmetic; it may not
    finish with nonlinear arithmetic. Not for realizability.
 3. predicates: each comparison is replaced by a Boolean variable (see
-   ``_predicates``). Only the answers that hold for the real variables are
+   ``chase_cps.predicates``). Only the answers that hold for the real variables are
    returned: valid for an implication, unsat for a satisfiability query;
    the others are unknown, with the trace.
 
@@ -55,7 +58,8 @@ def check(query, backend: str = "auto", **options) -> Result:
     if isinstance(query, Realizable):
         return Result(UNKNOWN, "slugs", reals=REGIONS,
                       reason=f"real variables: {regions.problem}. Realizability and synthesis "
-                      "only handle real variables compared with constants")
+                      "only handle real variables compared with constants or with "
+                      "each other, without arithmetic")
     if not isinstance(query, (Implies, Satisfiable)):
         return Result(UNKNOWN, reason=f"no back end answers {type(query).__name__} "
                       "with real variables")
@@ -111,6 +115,16 @@ def _comparison(node: ltl.Binary, reals: set) -> Optional[tuple]:
     return None
 
 
+def _pair(node: ltl.Binary, reals: set) -> Optional[tuple]:
+    """(x, y) when the relation compares two real variables of the same
+    step (``x = y``, ``x' < y'``), else None."""
+    left, right = node.left, node.right
+    if isinstance(left, ltl.Var) and isinstance(right, ltl.Var) and \
+            left.name in reals and right.name in reals and left.primed == right.primed:
+        return left.name, right.name
+    return None
+
+
 def _relations(node: ltl.Node):
     """The relations of a formula (the comparisons, outermost)."""
     if isinstance(node, ltl.Binary) and node.op in ltl.RELATIONS:
@@ -148,41 +162,71 @@ def _variables(query) -> dict:
 @dataclass
 class Regions:
     """The regions of the real variables of a query; ``problem`` says why
-    there are none (a comparison that is not with a constant)."""
-    constants: dict = field(default_factory=dict)     # real variable -> sorted constants
+    there are none.
+
+    Real variables compared with each other (``kias = kgs``) form a group;
+    the variables of a group share the constants of the group. With n
+    variables in the group, each open interval between two constants has n
+    ordered slots: n values in an interval keep their order and their
+    equalities. The index of slot s of interval g (from 0) is g (n + 1) + s,
+    the index of the constant c_j is j (n + 1) + n; with n = 1 these are the
+    regions of the module documentation."""
+    constants: dict = field(default_factory=dict)     # real variable -> constants of its group
+    size: dict = field(default_factory=dict)          # real variable -> size of its group
     problem: Optional[str] = None
 
     @classmethod
     def of(cls, query) -> "Regions":
         reals = {v for v, t in _variables(query).items() if t == "real"}
+        group = {v: v for v in reals}
+
+        def root(v):
+            while group[v] != v:
+                v = group[v]
+            return v
         constants = {v: set() for v in reals}
         for f in _formulas(query):
             for rel in _relations(f):
                 if not ltl.variables(rel) & reals:
                     continue
                 found = _comparison(rel, reals)
-                if found is None:
+                if found is not None:
+                    constants[found[0].name].add(found[2])
+                    continue
+                pair = _pair(rel, reals)
+                if pair is None:
                     return cls(problem=f"{ltl.to_str(rel)} does not compare a real "
-                               "variable with a constant")
-                constants[found[0].name].add(found[2])
-        return cls({v: sorted(cs) for v, cs in constants.items()})
+                               "variable with a constant or with another real variable")
+                group[root(pair[0])] = root(pair[1])
+        members: dict = {}
+        for v in reals:
+            members.setdefault(root(v), []).append(v)
+        out = cls()
+        for vs in members.values():
+            shared = sorted(set().union(*(constants[v] for v in vs)))
+            for v in vs:
+                out.constants[v] = shared
+                out.size[v] = len(vs)
+        return out
 
-    # The index of a region: 2i + 1 for the constant c_i (from 0), 2i for the
-    # open interval below it, 2k above the last one.
+    def _index(self, var: str, c) -> int:
+        return self.constants[var].index(c) * (self.size[var] + 1) + self.size[var]
+
+    def _top(self, var: str) -> int:
+        k, n = len(self.constants[var]), self.size[var]
+        return (k + 1) * n + k - 1
 
     def _rewrite(self, rel: ltl.Binary) -> ltl.Node:
         found = _comparison(rel, set(self.constants))
         if found is None:
-            return rel
+            return rel      # two real variables: their indices compare the same way
         var, op, c = found
-        index = ltl.Num(2 * self.constants[var.name].index(c) + 1)
-        return ltl.Binary(op, var, index)
+        return ltl.Binary(op, var, ltl.Num(self._index(var.name, c)))
 
     def finite(self, query):
         """The query with each real variable replaced by its region index."""
         def types(vs):
-            return {v: (0, 2 * len(self.constants[v])) if t == "real" else t
-                    for v, t in vs.items()}
+            return {v: (0, self._top(v)) if t == "real" else t for v, t in vs.items()}
 
         def rw(f):
             return _map_relations(f, self._rewrite)
@@ -195,33 +239,40 @@ class Regions:
                                    [rw(f) for f in c.assumptions],
                                    [rw(f) for f in c.guarantees]))
 
+    def _place(self, var: str, index: int):
+        """(interval g, slot s) of an index, or (j, None) for the constant c_j."""
+        n = self.size[var]
+        g, s = divmod(index, n + 1)
+        return (g, None) if s == n else (g, s)
+
     def value(self, var: str, index: int):
-        """A real value in the region of the given index."""
-        cs = self.constants[var]
+        """A real value in the region of the given index (the slots of an
+        interval are spread evenly, in order)."""
+        cs, n = self.constants[var], self.size[var]
+        g, s = self._place(var, index)
+        if s is None:
+            return ltl.number(cs[g])
         if not cs:
-            return 0
-        if index % 2:
-            return ltl.number(cs[index // 2])
-        i = index // 2
-        if i == 0:
-            return ltl.number(cs[0] - 1)
-        if i == len(cs):
-            return ltl.number(cs[-1] + 1)
-        return ltl.number((cs[i - 1] + cs[i]) / 2)
+            return s
+        if g == 0:
+            return ltl.number(cs[0] - (n - s))
+        if g == len(cs):
+            return ltl.number(cs[-1] + s + 1)
+        return ltl.number(cs[g - 1] + (s + 1) * Fraction(cs[g] - cs[g - 1], n + 1))
 
     def describe(self, var: str, index: int) -> str:
         """The region of the given index as a condition on the variable."""
         cs = [ltl.number_text(c, "smv").replace("f'", "") for c in self.constants[var]]
+        g, s = self._place(var, index)
+        if s is None:
+            return f"{var} = {cs[g]}"
         if not cs:
             return f"{var} any"
-        if index % 2:
-            return f"{var} = {cs[index // 2]}"
-        i = index // 2
-        if i == 0:
+        if g == 0:
             return f"{var} < {cs[0]}"
-        if i == len(cs):
+        if g == len(cs):
             return f"{var} > {cs[-1]}"
-        return f"{cs[i - 1]} < {var} < {cs[i]}"
+        return f"{cs[g - 1]} < {var} < {cs[g]}"
 
     def real_trace(self, trace: Optional[Trace]) -> Optional[Trace]:
         if trace is None:
@@ -251,6 +302,7 @@ class Regions:
                 values[var] += bit << int(parts[0])
             node["values"] = {v: self.describe(v, x) if v in self.constants else x
                               for v, x in values.items()}
-        controller["regions"] = {v: [self.describe(v, i) for i in range(2 * len(cs) + 1)]
-                                 for v, cs in self.constants.items()}
+        controller["regions"] = {v: list(dict.fromkeys(self.describe(v, i)
+                                                       for i in range(self._top(v) + 1)))
+                                 for v in self.constants}
         return controller

@@ -130,6 +130,11 @@ def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
     return r
 
 
+def _reals(*results: Result) -> str | None:
+    used = sorted({r.reals for r in results if r.reals})
+    return ", ".join(used) or None
+
+
 @dataclass
 class RefinementResult:
     """Outcome of ``refines(refined, abstract)``; the trace of a failed part is a
@@ -152,8 +157,7 @@ class RefinementResult:
     @property
     def reals(self) -> str | None:
         """How the real variables were handled (see ``Result.reals``)."""
-        used = sorted({r.reals for r in (self.assumptions, self.guarantees) if r.reals})
-        return ", ".join(used) or None
+        return _reals(self.assumptions, self.guarantees)
 
     def to_dict(self) -> dict:
         d = {"status": self.status, "failed": self.failed,
@@ -224,9 +228,17 @@ class Verification:
     def __bool__(self) -> bool:
         return self.status == SAT
 
+    @property
+    def reals(self) -> str | None:
+        """How the real variables were handled (see ``Result.reals``)."""
+        return _reals(self.compatible, self.consistent)
+
     def to_dict(self) -> dict:
-        return {"status": self.status, "compatible": self.compatible.to_dict(),
-                "consistent": self.consistent.to_dict()}
+        d = {"status": self.status, "compatible": self.compatible.to_dict(),
+             "consistent": self.consistent.to_dict()}
+        if self.reals:
+            d["reals"] = self.reals
+        return d
 
 
 def verify(contract: Contract, backend: str = "auto", **options) -> Verification:

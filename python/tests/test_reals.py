@@ -57,10 +57,22 @@ def test_regions_of_a_query():
     assert r.describe("v", 2) == "30.5 < v < 40" and r.describe("v", 6) == "v > 45"
 
 
-def test_no_regions_when_reals_are_compared_with_variables():
-    q = Implies(P("G (v > u)"), P("G (v > 0)"), {"v": "real", "u": "real"})
-    assert "does not compare" in reals.Regions.of(q).problem
+def test_regions_of_reals_compared_with_each_other():
+    q = Implies(P("G (a = b & a > 40)"), P("G (b > 30)"), {"a": "real", "b": "real", "c": "real"})
+    r = reals.Regions.of(q)
+    assert r.size == {"a": 2, "b": 2, "c": 1}
+    assert r.constants["a"] == r.constants["b"] == [30, 40]
+    f = r.finite(q)
+    assert f.variables == {"a": (0, 7), "b": (0, 7), "c": (0, 0)}
+    assert ltl.to_str(f.phi) == "G (a = b & a > 5)" and ltl.to_str(f.psi) == "G b > 2"
+    # two ordered slots in each interval
+    assert [r.value("a", i) for i in (3, 4)] == [Fraction(100, 3), Fraction(110, 3)]
+
+
+def test_no_regions_with_arithmetic_or_two_steps():
     q = Implies(P("G (v + 1 > 0)"), P("G (v > 0)"), {"v": "real"})
+    assert "does not compare" in reals.Regions.of(q).problem
+    q = Implies(P("G (v' > u)"), P("G (v > 0)"), {"v": "real", "u": "real"})
     assert reals.Regions.of(q).problem
 
 
@@ -99,9 +111,20 @@ def test_realizability_and_synthesis_with_regions():
                                             "G (kias' < 45 -> !wing')"], name="Bad")
     assert cc.is_realizable(bad).status == "unrealizable"
     two = Contract.from_strings(inputs={"a": "real", "b": "real"}, outputs={"w": "bool"},
-                                guarantees=["G (a' > b' -> w')"], name="Two")
-    r = cc.is_realizable(two)
-    assert r.status == "unknown" and "compared with constants" in r.reason
+                                guarantees=["G (a' > b' -> w')", "G (a' < b' -> !w')"], name="Two")
+    assert cc.is_realizable(two).status == "realizable"
+    both = Contract.from_strings(inputs={"a": "real", "b": "real"}, outputs={"w": "bool"},
+                                 guarantees=["G (a' > b' -> w')", "G (a' < 3 -> !w')"],
+                                 name="Both")
+    assert cc.is_realizable(both).status == "unrealizable"     # a = 2, b = 1
+    worse = Contract.from_strings(inputs={"a": "real", "b": "real"}, outputs={"w": "bool"},
+                                  guarantees=["G (a' > b' -> w')", "G (b' > 3 -> !w')"],
+                                  name="Worse")
+    assert cc.is_realizable(worse).status == "unrealizable"     # a > b > 3
+    arith = Contract.from_strings(inputs={"a": "real", "b": "real"}, outputs={"w": "bool"},
+                                  guarantees=["G (a' - b' > 1 -> w')"], name="Arith")
+    r = cc.is_realizable(arith)
+    assert r.status == "unknown" and "without arithmetic" in r.reason
 
 
 # Predicates ---------------------------------------------------------------------
@@ -183,6 +206,16 @@ def _constant_atoms(rng, k=4):
     return atoms
 
 
+def _order_atoms(rng, k=4):
+    """Comparisons with constants and between real variables."""
+    atoms = _constant_atoms(rng, k - 2)
+    for _ in range(2):
+        primed = rng.random() < 0.2
+        atoms.append(ltl.Binary(rng.choice(["<", "<=", ">", ">=", "=", "!="]),
+                                ltl.Var("x", primed), ltl.Var("y", primed)))
+    return atoms
+
+
 def _linear_atoms(rng, k=4):
     atoms = [ltl.Var("w")]
     for _ in range(k):
@@ -255,6 +288,14 @@ def test_differential_constant_comparisons():
     rng = random.Random(7)
     for _ in range(RUNS):
         q = _query(rng, _constant_atoms(rng))
+        _agree(_answers(q, with_regions=True), q)
+
+
+@needs_nuxmv
+def test_differential_order_between_reals():
+    rng = random.Random(17)
+    for _ in range(RUNS):
+        q = _query(rng, _order_atoms(rng))
         _agree(_answers(q, with_regions=True), q)
 
 
