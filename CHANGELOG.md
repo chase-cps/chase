@@ -56,6 +56,18 @@
 - logics_tool: `verify` and `refinement` say when the file they write has
   real variables or real numbers, which only nuXmv reads (`go_msat`, then
   `check_ltlspec_ic3`); the file starts with a comment that says the same.
+- The example of the README and of the page of the package on PyPI used
+  `refinement`, which is `refines` since 0.1.0. A new test runs the Python
+  examples of the README files and of docs/usage.md, and checks that the
+  names in the table of the operations exist (Python, chase-cps check, and
+  the console of logics_tool).
+- A syntax error in a specification (`load_spec`, `parse_spec`, `chase-cps
+  check`, the MCP tool `read_spec`) gives the line, the column, and the
+  token in the message; before, the parser wrote them on the standard error
+  only, and `parse_spec` named a temporary file.
+- A variable type that is not `bool`, `real`, or (low, high) with integer
+  bounds is reported with the type (`'integer'` was shown letter by letter,
+  and `[1.5, 3]` was read as `(1, 3)`).
 - New demos: Charger (unrealizable core, synthesis, well-separation,
   vacuity, and composition with discharge of an arbiter and two robots)
   and LiftPlusCruise (requirements of the FRET case study with real

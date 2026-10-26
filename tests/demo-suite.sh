@@ -24,8 +24,27 @@ check "reals: nuXmv hint"     "logics_tool -i $W/shared.ltl -o $W/sh -c $W/r.cha
 if [ -n "$NUXMV" ]; then
     printf 'set on_failure_script_quits\nread_model -i %s\ngo_msat\ncheck_ltlspec_ic3\nquit\n' $W/sh/r.smv > $W/r.cmd
     check "reals: nuXmv go_msat" "test \$($NUXMV -source $W/r.cmd </dev/null | grep -c 'is true') = 2"
+    # nuXmv on a file; prints true or false for each LTLSPEC
+    verdicts() { printf 'set on_failure_script_quits\nread_model -i %s\n%s\ncheck_ltlspec_ic3\nquit\n' "$1" "$2" > $W/v.cmd
+                 $NUXMV -source $W/v.cmd </dev/null | grep -oE 'is (true|false)$' | cut -c4- | tr '\n' ' '; }
+    charger_console() {
+        cd Charger && logics_tool -i charger.ltl -o $W/chg -c charger.chase && cd .. || return 1
+        python3 $SLUGSCOMPILER $W/chg/greedy.structuredSlugs > $W/chg/greedy.in &&
+        slugs $W/chg/greedy.in 2>&1 | grep -q 'is unrealizable' &&
+        python3 $SLUGSCOMPILER $W/chg/fair.structuredSlugs > $W/chg/fair.in &&
+        slugs $W/chg/fair.in 2>&1 | grep -q 'is realizable' &&
+        test "$(verdicts $W/chg/refinement.smv 'go
+build_boolean_model')" = "true true "
+    }
+    lpc_console() {
+        cd LiftPlusCruise && logics_tool -i lpc.ltl -o $W/lpc -c lpc.chase && cd .. || return 1
+        test "$(verdicts $W/lpc/vehicle12.smv go_msat)" = "false false " &&
+        test "$(verdicts $W/lpc/vehicle06.smv go_msat)" = "false true "
+    }
     check "Charger"               "python3 Charger/charger.py --expect"
+    check "Charger console"       "charger_console"
     check "LiftPlusCruise"        "python3 LiftPlusCruise/lpc.py --expect"
+    check "LiftPlusCruise console" "lpc_console"
 else
     echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise (no nuXmv)"
 fi

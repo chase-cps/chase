@@ -8,7 +8,7 @@ The package contains the CHASE core library (contract representation and
 algebra) and a common interface to model checkers and synthesis tools.
 
 ```python
-from chase_cps import Contract, refinement
+from chase_cps import Contract, refines
 
 spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              assumptions=["G F !req"],
@@ -16,7 +16,7 @@ spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
 impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              guarantees=["G (req -> X grant)"], name="Impl")
 
-result = refinement(impl, spec)
+result = refines(impl, spec)
 print(result.status)          # valid, or invalid with a counterexample trace
 ```
 

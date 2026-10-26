@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from typing import Iterable, Mapping, Union
@@ -30,6 +31,9 @@ def _normalize_type(t) -> VarType:
     if isinstance(t, range):
         return (t.start, t.stop - 1)
     if isinstance(t, (tuple, list)) and len(t) == 2:
+        if not all(isinstance(b, (int, float)) and not isinstance(b, bool) and b == int(b)
+                   for b in t):
+            raise ValueError(f"integer range {t!r} with a bound that is not an integer")
         lo, hi = int(t[0]), int(t[1])
         if lo > hi:
             raise ValueError(f"empty integer range {t!r}")
@@ -194,9 +198,7 @@ class Contract:
     @classmethod
     def from_dict(cls, d: Mapping) -> "Contract":
         def t(v):
-            if v in ("bool", "boolean", "real"):
-                return v
-            return tuple(v)
+            return tuple(v) if isinstance(v, list) else v
         return cls.from_strings(
             inputs={k: t(v) for k, v in (d.get("inputs") or {}).items()},
             outputs={k: t(v) for k, v in (d.get("outputs") or {}).items()},
@@ -464,13 +466,44 @@ def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
     return _Holder(system, found)
 
 
-def load_spec(path: str | os.PathLike) -> dict[str, Contract]:
+def _parse_file(path: str, name: str):
+    """The system of a specification file. The parser writes its syntax
+    errors (line:column and the token) on the standard error: they are given
+    in the message of the exception, with the file called name."""
+    from ._native import pychase_logicsLang
+    sys.stderr.flush()
+    with tempfile.TemporaryFile(mode="w+") as err:
+        saved = os.dup(2)
+        os.dup2(err.fileno(), 2)
+        failure = None
+        try:
+            system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(path)
+        except RuntimeError as e:
+            failure = e
+        finally:
+            os.dup2(saved, 2)
+            os.close(saved)
+        err.seek(0)
+        lines = err.read().splitlines()
+    syntax = [line for line in lines if line.startswith("line ")]
+    other = [line.replace(path, name) for line in lines
+             if line not in syntax or failure is None]
+    if other:
+        sys.stderr.write("\n".join(other) + "\n")
+    if failure is not None:
+        message = str(failure).replace(path, name)
+        if syntax:
+            message = message.rstrip(".") + ": " + "; ".join(syntax)
+        raise RuntimeError(message) from None
+    return system
+
+
+def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Contract]:
     """The contracts of a specification file in the logics language of CHASE,
     by name."""
-    from ._native import pychase_logicsLang
     if not os.path.isfile(path):
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
-    system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(os.fspath(path))
+    system = _parse_file(os.fspath(path), _name or os.fspath(path))
     contracts = {c.getName().getString(): c for c in system.getContractsSet()}
     shared = list(system.getDeclarationsSet())
     out = {}
@@ -491,7 +524,7 @@ def parse_spec(text: str) -> dict[str, Contract]:
     try:
         with os.fdopen(fd, "w") as f:
             f.write(text)
-        return load_spec(path)
+        return load_spec(path, "the specification")
     finally:
         os.unlink(path)
 

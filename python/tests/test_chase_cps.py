@@ -90,6 +90,19 @@ def test_input_and_output_clash_is_rejected():
         Contract.from_strings(inputs=["a"], outputs=["a"])
 
 
+@pytest.mark.parametrize("t, message", [
+    ("integer", "unsupported variable type 'integer'"),
+    (5, "unsupported variable type 5"),
+    ({"a": 1}, "unsupported variable type"),
+    ([1.5, 3], "not an integer"),
+    (["a", "b"], "not an integer"),
+    ([3, 1], "empty integer range"),
+])
+def test_bad_variable_types_are_rejected(t, message):
+    with pytest.raises(ValueError, match=message):
+        Contract.from_dict({"name": "A", "outputs": {"y": t}, "guarantees": []})
+
+
 # Checks (model checker needed) ----------------------------------------------------
 
 V = {"req": "bool", "grant": "bool", "x": (0, 4)}
@@ -278,6 +291,13 @@ def test_bad_formula_raises_instead_of_exiting():
     c = Contract(name="X", inputs={"a": "bool"}, guarantees=[ltl.Var("b")])
     with pytest.raises(RuntimeError):
         _parse_contracts([c])
+
+
+@needs_native
+def test_syntax_errors_of_a_spec_give_the_line():
+    from chase_cps import parse_spec
+    with pytest.raises(RuntimeError, match=r"in the specification: line 3:14 .*'\['"):
+        parse_spec("NAME: x;\nCONTRACT A:\n Assumptions: []p;\n")
 
 
 @needs_native

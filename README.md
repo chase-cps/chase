@@ -178,14 +178,14 @@ contracts of a specification from the command line. The details are in the
 For instance:
 
 ````
-from chase_cps import Contract, refinement
+from chase_cps import Contract, refines
 
 spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              assumptions=["G F !req"],
                              guarantees=["G (req -> F grant)"], name="Spec")
 impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
                              guarantees=["G (req -> X grant)"], name="Impl")
-print(refinement(impl, spec).status)
+print(refines(impl, spec).status)
 ````
 
 The tests are run with `pytest`. The operations of CHASE are also available
