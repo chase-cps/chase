@@ -243,6 +243,19 @@ which way answered:
 Numbers with a fraction compared with integers (`n <= 20.5`) also need the
 SMT engine of nuXmv. Without real variables none of this is used.
 
+The console of logics_tool writes the file of `verify` and `refinement`
+and does not run the model checker. When the file has real variables or
+real numbers, the console says so, and the file starts with a comment:
+NuSMV cannot read it, and nuXmv checks it with its SMT engine:
+
+````
+$> nuXmv -int refinement.smv
+nuXmv > go_msat
+nuXmv > check_ltlspec_ic3
+````
+
+`go`, followed by `check_ltlspec`, stops with an error on such a file.
+
 ## Results
 
 The checks return a result with a `status`: `valid` or `invalid` for

@@ -19,5 +19,15 @@ check "syntax error reported" "logics_tool -i $W/bad.ltl -o $W/b -c /dev/null 2>
 printf 'NAME: shared;\ninteger variable n;\nreal variable v;\nreal constant L 2.5;\n\nCONTRACT A:\n    output boolean variable w;\n    Assumptions:\n        true;\n    Guarantees:\n        G((n > 4) -> X(w));\n        G((v > L) -> X(w));\n' > $W/shared.ltl
 printf 'refinement A A r.smv;\n' > $W/r.chase
 check "shared declarations, reals" "logics_tool -i $W/shared.ltl -o $W/sh -c $W/r.chase && grep -q 'DEFINE L := 2.5;' $W/sh/r.smv && grep -q 'v : real;' $W/sh/r.smv && grep -q 'n : 0..16;' $W/sh/r.smv"
+NUXMV=$(command -v nuXmv || ls ~/.chase/bin/nuXmv 2>/dev/null)
+check "reals: nuXmv hint"     "logics_tool -i $W/shared.ltl -o $W/sh -c $W/r.chase 2>&1 | grep -q 'check it with nuXmv' && head -1 $W/sh/r.smv | grep -q 'NuSMV cannot read'"
+if [ -n "$NUXMV" ]; then
+    printf 'set on_failure_script_quits\nread_model -i %s\ngo_msat\ncheck_ltlspec_ic3\nquit\n' $W/sh/r.smv > $W/r.cmd
+    check "reals: nuXmv go_msat" "test \$($NUXMV -source $W/r.cmd </dev/null | grep -c 'is true') = 2"
+    check "Charger"               "python3 Charger/charger.py --expect"
+    check "LiftPlusCruise"        "python3 LiftPlusCruise/lpc.py --expect"
+else
+    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise (no nuXmv)"
+fi
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail

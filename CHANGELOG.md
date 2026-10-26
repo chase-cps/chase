@@ -53,6 +53,14 @@
   writes the constants (`DEFINE`), which it skipped.
 - nuXmv no longer waits at its prompt after an error until the timeout: the
   error is reported at once.
+- logics_tool: `verify` and `refinement` say when the file they write has
+  real variables or real numbers, which only nuXmv reads (`go_msat`, then
+  `check_ltlspec_ic3`); the file starts with a comment that says the same.
+- New demos: Charger (unrealizable core, synthesis, well-separation,
+  vacuity, and composition with discharge of an arbiter and two robots)
+  and LiftPlusCruise (requirements of the FRET case study with real
+  variables: consistency, a behavior, and the requirements in conflict).
+  The demo suite runs both.
 
 ## 0.1.2 (2026-10-25)
 
