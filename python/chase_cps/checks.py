@@ -14,10 +14,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from . import backends, ltl
+from . import backends, cores, ltl
 from .contract import Contract, VarType
-from .queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Implies, Realizable,
-                      Result, Satisfiable)
+from .queries import (INVALID, SAT, UNKNOWN, UNREALIZABLE, UNSAT, VALID, Implies,
+                      Realizable, Result, Satisfiable)
 
 
 def _formula(f) -> ltl.Node:
@@ -43,15 +43,24 @@ def implies(phi, psi, variables: dict[str, VarType], backend: str = "auto",
 
 
 def is_satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
-                   **options) -> Result:
-    """Is phi satisfiable? ``sat`` with a witness trace, or ``unsat``."""
-    return backends.check(Satisfiable(_formula(phi), dict(variables)), backend, **options)
+                   core: bool = False, **options) -> Result:
+    """Is phi satisfiable? ``sat`` with a witness trace, or ``unsat``. With
+    core, an unsat result carries ``unsat_core`` of the conjuncts of phi."""
+    r = backends.check(Satisfiable(_formula(phi), dict(variables)), backend, **options)
+    if core and r.status == UNSAT:
+        r.core = cores.unsat_core(_formula(phi), variables, backend, **options)
+    return r
 
 
-def is_realizable(contract: Contract, backend: str = "auto", **options) -> Result:
+def is_realizable(contract: Contract, backend: str = "auto", core: bool = False,
+                  **options) -> Result:
     """GR(1) realizability of the contract: ``realizable``, or ``unrealizable``
-    with the counter-strategy of the environment."""
-    return backends.check(Realizable(contract), backend, **options)
+    with the counter-strategy of the environment. With core, an unrealizable
+    result carries ``unrealizable_core`` of the contract."""
+    r = backends.check(Realizable(contract), backend, **options)
+    if core and r.status == UNREALIZABLE:
+        r.core = cores.unrealizable_core(contract, backend=backend, **options)
+    return r
 
 
 def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
@@ -101,14 +110,32 @@ def refines(refined: Contract, abstract: Contract, backend: str = "auto",
     return RefinementResult(status, a, g)
 
 
-def is_consistent(contract: Contract, backend: str = "auto", **options) -> Result:
-    """Is there a behavior allowed by the contract (A -> G satisfiable)?"""
-    return is_satisfiable(contract.saturated_guarantee, contract.variables, backend, **options)
+def is_consistent(contract: Contract, backend: str = "auto", core: bool = False,
+                  **options) -> Result:
+    """Is there a behavior allowed by the contract (A -> G satisfiable)? A -> G
+    is unsatisfiable only when A is valid and G unsatisfiable; with core, an
+    unsat result carries ``unsat_core`` of the guarantees."""
+    r = is_satisfiable(contract.saturated_guarantee, contract.variables, backend, **options)
+    if core and r.status == UNSAT:
+        r.core = cores.unsat_core(_only(contract, guarantees=True), backend=backend, **options)
+    return r
 
 
-def is_compatible(contract: Contract, backend: str = "auto", **options) -> Result:
-    """Is there an environment allowed by the contract (A satisfiable)?"""
-    return is_satisfiable(contract.assumption, contract.variables, backend, **options)
+def is_compatible(contract: Contract, backend: str = "auto", core: bool = False,
+                  **options) -> Result:
+    """Is there an environment allowed by the contract (A satisfiable)? With
+    core, an unsat result carries ``unsat_core`` of the assumptions."""
+    r = is_satisfiable(contract.assumption, contract.variables, backend, **options)
+    if core and r.status == UNSAT:
+        r.core = cores.unsat_core(_only(contract, guarantees=False), backend=backend, **options)
+    return r
+
+
+def _only(c: Contract, guarantees: bool) -> Contract:
+    """The contract with its guarantees only, or its assumptions only."""
+    if guarantees:
+        return Contract(c.name, dict(c.inputs), dict(c.outputs), [], list(c.guarantees))
+    return Contract(c.name, dict(c.inputs), dict(c.outputs), list(c.assumptions), [])
 
 
 @dataclass

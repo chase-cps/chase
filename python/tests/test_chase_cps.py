@@ -348,6 +348,58 @@ def test_terms_outside_gr1_are_reported():
     assert is_realizable(c).status == "realizable"
 
 
+@needs_native
+@pytest.mark.skipif(not _has_slugs(), reason="slugs not installed")
+def test_unrealizable_core():
+    from chase_cps import is_realizable, unrealizable_core
+    g = ["!grant", "G (req -> X grant)", "G (stop -> X !grant)", "G F grant"]
+    c = Contract.from_strings(inputs=["req", "stop"], outputs=["grant"],
+                              assumptions=["G F req"], guarantees=g, name="Arb")
+    expected = ["G (req -> X grant)", "G (stop -> X !grant)"]
+    r = unrealizable_core(c)
+    assert r.status == "found" and [ltl.to_str(t) for t in r.core.guarantees] == expected
+    assert [ltl.to_str(t) for t in r.core.assumptions] == ["G F req"]
+    r = unrealizable_core(g, inputs=["req", "stop"], outputs=["grant"], assumptions=["G F req"])
+    assert [ltl.to_str(t) for t in r.core] == expected
+    r = is_realizable(c, core=True)
+    assert r.status == "unrealizable" and r.core.status == "found"
+    assert r.to_dict()["core"]["core"]["guarantees"] == expected
+    ok = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F req"],
+                               guarantees=["G (req -> X grant)"], name="Ok")
+    assert unrealizable_core(ok).status == "none"
+    bad = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                                guarantees=["G (req -> F grant)"], name="Bad")
+    assert unrealizable_core(bad).status == "unknown"
+
+
+@needs_mc
+def test_unsat_core():
+    from chase_cps import is_compatible, is_consistent, is_satisfiable, unsat_core
+    v = {"p": "bool", "q": "bool", "r": "bool"}
+    expected = ["p", "G (p -> X p)", "F !p"]
+    r = unsat_core(["p", "G (p -> X p)", "G F q", "F !p", "G (q -> r)"], v)
+    assert r.status == "found" and [ltl.to_str(t) for t in r.core] == expected
+    r = is_satisfiable("p & G (p -> X p) & G F q & F !p", v, core=True)
+    assert r.status == "unsat" and [ltl.to_str(t) for t in r.core.core] == expected
+    assert unsat_core(["p", "G F q"], v).status == "none"
+    # the guarantees cannot hold when the assumptions do (A & G)
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G req"],
+                              guarantees=["G (req -> X !req)", "G grant"], name="C")
+    r = unsat_core(c)
+    assert [ltl.to_str(t) for t in r.core.assumptions] == ["G req"]
+    assert [ltl.to_str(t) for t in r.core.guarantees] == ["G (req -> X !req)"]
+    # incompatible: the core is in the assumptions; inconsistent: in the guarantees
+    c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a", "F !a", "G F a"],
+                              guarantees=["G b"], name="C")
+    r = is_compatible(c, core=True)
+    assert [ltl.to_str(t) for t in r.core.core.assumptions] == ["G a", "F !a"]
+    c = Contract.from_strings(inputs=["a"], outputs=["b"],
+                              guarantees=["G b", "G F a", "F !b"], name="C")
+    r = is_consistent(c, core=True)
+    assert r.status == "unsat"
+    assert [ltl.to_str(t) for t in r.core.core.guarantees] == ["G b", "F !b"]
+
+
 def test_rename_and_signatures():
     c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                               guarantees=["G (a -> X b')"], name="C")
@@ -460,6 +512,10 @@ def test_check_command(tmp_path, capsys):
     contracts.write_text(json.dumps({"contracts": [
         {"name": "A", "inputs": {"x": "bool"}, "assumptions": ["G x", "F !x"]}]}))
     assert main(["check", str(contracts), "--compatible"]) == 1
+    capsys.readouterr()
+    assert main(["check", str(contracts), "--compatible", "--core", "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["checks"][0]["core"]["core"]["assumptions"] == ["G x", "F !x"]
 
 
 def test_install_refusals(monkeypatch):

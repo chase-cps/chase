@@ -17,7 +17,7 @@ import platform
 import sys
 import textwrap
 
-from . import __version__, checks, tools
+from . import __version__, checks, ltl, tools
 from .backends import ADAPTERS
 from .contract import Contract, load_spec
 from .queries import REALIZABLE, SAT, VALID
@@ -136,17 +136,20 @@ def _checks(args, contracts):
         c = _contract(name, contracts)
         if args.compatible:
             out.append(("compatible", name,
-                        lambda c=c: checks.is_compatible(c, args.backend, **options)))
+                        lambda c=c: checks.is_compatible(c, args.backend, core=args.core,
+                                                         **options)))
         if args.consistent:
             out.append(("consistent", name,
-                        lambda c=c: checks.is_consistent(c, args.backend, **options)))
+                        lambda c=c: checks.is_consistent(c, args.backend, core=args.core,
+                                                         **options)))
     for refined, abstract in args.refines or []:
         r, a = _contract(refined, contracts), _contract(abstract, contracts)
         out.append(("refines", f"{refined} <= {abstract}",
                     lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
     for name in args.realizable or []:
         c = _contract(name, contracts)
-        out.append(("realizable", name, lambda c=c: checks.is_realizable(c, **options)))
+        out.append(("realizable", name,
+                    lambda c=c: checks.is_realizable(c, core=args.core, **options)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
         out.append(("synthesize", name, lambda c=c: checks.synthesize(c, **options)))
@@ -182,8 +185,23 @@ def _report(kind: str, label: str, result) -> None:
         if result.status == "unrealizable" and result.counter_strategy:
             print("  counter-strategy of the environment:")
             print(_indent(result.counter_strategy))
+        if result.core is not None:
+            # the unrealizable core keeps every assumption: show its guarantees
+            _report_core(result.core, guarantees_only=kind == "realizable")
         if result.reason:
             print(f"  {result.reason}")
+
+
+def _report_core(core, guarantees_only: bool) -> None:
+    if core.status != "found":
+        print(f"  core: {core.status}  {core.reason}".rstrip())
+        return
+    c = core.core
+    print(f"  core ({core.checks} checks):")
+    parts = [("assumption", c.assumptions)] if not guarantees_only else []
+    for part, terms in parts + [("guarantee", c.guarantees)]:
+        for t in terms:
+            print(f"    {part:10} {ltl.to_str(t)}")
 
 
 def check(args) -> int:
@@ -241,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="GR(1) realizability with slugs (may be repeated)")
     p.add_argument("--synthesize", action="append", metavar="CONTRACT",
                    help="GR(1) synthesis of a controller with slugs (may be repeated)")
+    p.add_argument("--core", action="store_true",
+                   help="when a check fails, give a minimal set of terms that explains it")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")

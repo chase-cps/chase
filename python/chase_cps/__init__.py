@@ -18,6 +18,7 @@ from .checks import (RefinementResult, Redundancy, Verification, accepts, implem
                      implies, is_compatible, is_consistent, is_realizable, is_satisfiable,
                      refines, remove_redundant, synthesize, verify)
 from .contract import Contract, load_spec, parse_spec, to_spec
+from .cores import Core, unrealizable_core, unsat_core
 from .ltl import LTLSyntaxError
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
@@ -28,6 +29,7 @@ __all__ = [
     "Result", "Trace", "RefinementResult", "Verification", "Redundancy",
     "refines", "verify", "is_consistent", "is_compatible", "is_realizable", "synthesize",
     "implies", "is_satisfiable", "implements", "accepts", "remove_redundant",
+    "Core", "unsat_core", "unrealizable_core",
     "check", "backends", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
 ]

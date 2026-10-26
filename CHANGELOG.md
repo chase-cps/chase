@@ -11,6 +11,10 @@
 - `compose(..., discharge=True)`: composition that keeps the terms of the
   contracts and drops the assumptions discharged by the other contract and
   the redundant terms (Incer, PhD thesis 2022, Algorithm 2).
+- Cores: `unrealizable_core` (with slugs, QuickCore order) and `unsat_core`
+  (of A & G, with nuXmv), from a contract or from formulas, and `core=True`
+  on `is_realizable`, `is_compatible`, `is_consistent`, and `is_satisfiable`;
+  `chase-cps check --core`.
 
 ## 0.1.1 (2026-10-25)
 

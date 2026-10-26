@@ -99,6 +99,8 @@ return a new contract; the checks read as predicates (`refines(a, b)`: does
 | compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
 | realizability | | `is_realizable(c)` | `--realizable C` | `is_realizable` |
 | synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
+| unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
+| unsat core | | `unsat_core(c)` | `--core` | `unsat_core` |
 
 Implication and coimplication are the adjoints of conjunction and
 disjunction, as the quotient and separation are of composition and merging
@@ -139,6 +141,30 @@ The Python package, the command line, and the MCP server have also:
 - `remove_redundant(c)`, which drops the terms implied by the others;
 - `load_spec(path)`, `parse_spec(text)`, and `to_spec(contracts)`, which
   read and write specification files.
+
+## Cores
+
+When a check fails, a core is a minimal set of terms that explains it:
+removing any term of the core makes the check pass.
+
+- `unrealizable_core(c)`: the guarantees that are unrealizable under all the
+  assumptions. The search minimizes the justice guarantees, then the safety,
+  then the initial ones (QuickCore, Maoz and Shalom, ICSE 2021), with one
+  call to slugs per test.
+- `unsat_core(c)`: the terms of A & G that cannot hold together. If they are
+  all assumptions, the contract is incompatible; all guarantees, the
+  guarantees contradict each other; both, the guarantees cannot hold when
+  the assumptions do. This is the consistency check of OCRA
+  (`ocra_check_consistency -j`). One call to nuXmv per test.
+
+Both also take formulas: `unsat_core(formulas, variables)` and
+`unrealizable_core(guarantees, inputs, outputs, assumptions)`, and then
+return formulas. The checks give the core of their failure with
+`core=True`: `is_realizable(c, core=True)`, `is_compatible(c, core=True)`
+(the assumptions), `is_consistent(c, core=True)` (the guarantees), and
+`is_satisfiable(phi, variables, core=True)`. The result is a `Core` with a
+`status`: `found` with the `core`, `none` when the check does not fail, or
+`unknown` with a `reason` when a test does not finish.
 
 ## Results
 
