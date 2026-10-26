@@ -280,9 +280,10 @@ class Contract:
         With ``discharge=True``, the result keeps the terms of the two
         contracts (Incer, PhD thesis 2022, Algorithm 2, without variable
         elimination). When the outputs of one contract feed the inputs of the
-        other and not the reverse, each assumption of the receiving contract
-        implied by the assumptions and guarantees of the driving one is
-        dropped; then the terms implied by the others are dropped as in
+        other, each assumption of the receiving contract implied by the
+        assumptions and guarantees of the driving one is dropped; under
+        feedback, this is done in one direction only, the one that drops more
+        assumptions. Then the terms implied by the others are dropped as in
         ``remove_redundant``. Each test is one implication check (nuXmv or
         NuSMV; ``backend`` and ``options`` as for the checks). The result is
         an abstraction of the composition: the closed form refines it, so a
@@ -392,17 +393,26 @@ def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
 
     # The guarantees of one contract simplify the assumptions of the other
     # in one direction only: in both directions at once the result can be
-    # wrong (Incer, thesis, Example 7.3.2).
+    # wrong (Incer, thesis, Example 7.3.2). The direction follows the
+    # connections; under feedback, either direction is correct (Prop. 7.3.1
+    # does not depend on the connections), and the one that discharges more
+    # assumptions is kept.
     feeds12 = bool(set(c1.outputs) & set(c2.inputs))
     feeds21 = bool(set(c2.outputs) & set(c1.inputs))
+    a1, a2 = list(c1.assumptions), list(c2.assumptions)
     if feeds12 and not feeds21:
-        assumptions = list(c1.assumptions) + refine(c2.assumptions,
-                                                    c1.assumptions + c1.guarantees)
+        assumptions = a1 + refine(a2, a1 + list(c1.guarantees))
     elif feeds21 and not feeds12:
-        assumptions = refine(c1.assumptions, c2.assumptions + c2.guarantees) \
-            + list(c2.assumptions)
+        assumptions = refine(a1, a2 + list(c2.guarantees)) + a2
+    elif feeds12 and feeds21:
+        kept2 = refine(a2, a1 + list(c1.guarantees))
+        kept1 = refine(a1, a2 + list(c2.guarantees))
+        if len(a2) - len(kept2) >= len(a1) - len(kept1):
+            assumptions = a1 + kept2
+        else:
+            assumptions = kept1 + a2
     else:
-        assumptions = list(c1.assumptions) + list(c2.assumptions)
+        assumptions = a1 + a2
     outputs = {**c1.outputs, **c2.outputs}
     inputs = {v: t for v, t in {**c1.inputs, **c2.inputs}.items() if v not in outputs}
     c = Contract(name, inputs, outputs, assumptions, list(c1.guarantees) + list(c2.guarantees))

@@ -259,6 +259,28 @@ def test_compose_with_discharge():
 
 @needs_native
 @needs_mc
+def test_compose_with_discharge_under_feedback():
+    from chase_cps import refines
+    # the arbiter grants the requests of the robot, which requests on low battery:
+    # the robot's assumption on the grants is discharged by the arbiter (one direction)
+    arb = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                                guarantees=["G F (grant | !req)", "!grant"], name="Arb")
+    rob = Contract.from_strings(inputs=["grant", "low"], outputs=["req"],
+                                assumptions=["G F (grant | !req)", "G F low"],
+                                guarantees=["G (low -> F req)", "G (req & !grant -> X req)"],
+                                name="Rob")
+    top = Contract.from_strings(inputs=["low"], outputs=["req", "grant"],
+                                assumptions=["G F low"], guarantees=["G F (grant | !req)"],
+                                name="Top")
+    for a, b in ((arb, rob), (rob, arb)):
+        c = a.compose(b, discharge=True)
+        assert [ltl.to_str(t) for t in c.assumptions] == ["G F low"]
+        assert refines(a.compose(b), c).status == "valid"
+        assert refines(c, top).status == "valid"
+
+
+@needs_native
+@needs_mc
 def test_implication_coimplication_and_reciprocal():
     from chase_cps import refines
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
