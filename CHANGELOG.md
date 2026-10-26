@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2
+## 0.1.2 (2026-10-25)
 
 - The slugs back end wrote the constants `true` and `false` as nothing, so
   `G F false` became an empty liveness condition and any term with a
