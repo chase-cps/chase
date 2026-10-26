@@ -25,7 +25,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git ca-certificates curl pkg-config \
-        python3 python3-dev python3-pytest pybind11-dev uuid-dev \
+        python3 python3-dev python3-pytest python3-z3 pybind11-dev uuid-dev \
         bison flex libboost-dev graphviz less libxml2 libedit2 xz-utils \
     && rm -rf /var/lib/apt/lists/*
 

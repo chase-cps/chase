@@ -78,7 +78,7 @@ jobs:
 
       - name: Python tests (with nuXmv and slugs)
         run: |
-          $PYTHON -m pip install pytest || $PYTHON -m pip install --break-system-packages pytest
+          $PYTHON -m pip install pytest z3-solver || $PYTHON -m pip install --break-system-packages pytest z3-solver
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests
 
   docker:

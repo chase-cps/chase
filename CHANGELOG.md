@@ -33,10 +33,20 @@
 - A temporal operator applied to an operand of a relation or of arithmetic
   (`X x = 3`) is rejected with a message (write `x' = 3`).
 - Real variables (`"real"`, `real variable x;` in the CHASE language) and
-  numbers with a fraction (`20.5`), read exactly. The checks with the model
-  checker use the SMT engine of nuXmv for them (NuSMV has no real type).
-  Before, a real variable was read as a Boolean one and `20.5` as `20`; a
-  real constant was read as an integer (`real constant K 2.5;` gave 2).
+  numbers with a fraction (`20.5`), read exactly. Before, a real variable
+  was read as a Boolean one and `20.5` as `20`; a real constant was read as
+  an integer (`real constant K 2.5;` gave 2). The checks handle real
+  variables in this order, and say which way answered (`reals`):
+  regions, exact, when the real variables are compared with constants only
+  (also for realizability and synthesis, with the controller written with
+  the conditions on the real variables); the SMT engine of nuXmv; predicate
+  abstraction, which returns only the answers that hold for the real
+  variables, refined with z3 when it is installed
+  (`pip install chase-cps[reals]`). See "Real variables" in docs/usage.md.
+  Without real variables the checks are unchanged.
+- The NuSMV printer of chase-backends writes real variables (with their
+  range as INVAR) and real constants for nuXmv; the slugs and gr1c printers
+  report real variables instead of writing them as Boolean ones.
 - nuXmv no longer waits at its prompt after an error until the timeout: the
   error is reported at once.
 

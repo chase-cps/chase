@@ -38,8 +38,10 @@ CONTRACT Spec:
 - Variables: `input` or `output`, `boolean`, `integer (low:high)`, or `real`,
   then `variable name;`. An integer without a range ranges over 0 to 16.
   Declarations outside the contracts are shared: each contract gets those it
-  uses. Constants are declared as `integer constant N 5;`,
-  and propositions as `proposition p is x > 3;`.
+  uses. A real is declared without a range (the Python package rejects
+  `real (low:high)`: write the range as an assumption). Constants are
+  declared as `integer constant N 5;` or `real constant K 2.5;`, and
+  propositions as `proposition p is x > 3;`.
 - `Assumptions:` and `Guarantees:` list formulas, each ending with `;`.
 - Formulas: `!` (or `~`), `&` (or `/\`), `|` (or `\/`), `->`, `<->`, `G`,
   `F`, `X`, `U`, `R`,
@@ -59,7 +61,8 @@ until) and the aliases `[]` (`G`), `<>` (`F`), `&&`, `||`, `=>`, `<=>`,
 have the usual precedence, from the loosest: `<->`, `->`, `|`, `&`,
 `U R W`, the unary operators, the relations, `+ -`, `* /`. So `G a -> b` is
 `(G a) -> b`. Names cannot be keywords of either syntax (`G`, `F`, `X`, `U`,
-`R`, `W`, `P`, `NAME`, `CONTRACT`, ...).
+`R`, `W`, `P`, `NAME`, `CONTRACT`, ...). Numbers may have a fraction
+(`20.5`); they are read exactly.
 
 A contract is built from strings or from a dictionary (the JSON format of
 the command line and of the MCP server):
@@ -70,7 +73,7 @@ from chase_cps import Contract
 c = Contract.from_strings(inputs=["req"], outputs=["grant"],
                           assumptions=["G F !req"],
                           guarantees=["G (req -> F grant)"], name="Spec")
-d = Contract.from_dict({"name": "Spec", "inputs": {"req": "bool", "n": [0, 3]},
+d = Contract.from_dict({"name": "Spec", "inputs": {"req": "bool", "n": [0, 3], "v": "real"},
                         "outputs": {"grant": "bool"},
                         "assumptions": ["G F !req"],
                         "guarantees": ["G (req -> F grant)"]})
@@ -201,6 +204,41 @@ part and kind, and with `core=True` the terms that make each one vacuous.
 `remove_redundant(c)` instead keeps A -> G: it may remove a term that only
 follows from the others over whole traces, which can change the synthesis
 problem; `remove_vacuous` does not.
+
+## Real variables
+
+A variable of type `"real"` (`real variable x;`) takes any real value. The
+checks handle real variables in this order, and the result says in `reals`
+which way answered:
+
+1. `regions`: when a real variable is only compared with constants
+   (`kias > 40`, `kias' <= 30.5`), only the interval between the constants
+   matters. With the constants c1 < ... < ck the variable is replaced by
+   the index of its region among (-inf, c1), c1, (c1, c2), ..., ck,
+   (ck, inf). The answer is exact, traces have real values (one in each
+   region), and realizability and synthesis work: the controller of
+   `synthesize` gives for each node the values of the variables, the real
+   ones as conditions (`30.5 < kias < 40`), and the list of the regions.
+2. `smt`: otherwise the SMT engine of nuXmv checks the formulas with the
+   real variables. It is exact for linear arithmetic; with nonlinear
+   arithmetic (`x * y`) it often does not finish, so it gets at most 30
+   seconds. NuSMV has no real type. Realizability and synthesis are
+   unknown in this case.
+3. `predicates`: when nuXmv gives no answer, each comparison becomes a
+   Boolean variable (`x <= 10` and `x > 10` are the same one, negated). The
+   abstraction allows values that are impossible (`x > 10` and `x < 5` at
+   once), so only a valid implication or an unsatisfiable formula is
+   returned as such. With z3 (`pip install chase-cps[reals]`), the
+   combinations of one or two comparisons that no values satisfy are
+   excluded first, and an invalid or sat answer is checked: z3 looks for
+   real values for every state of the trace. If it finds them, the answer
+   and the trace are those of the real variables (an irrational value, such
+   as a square root, is given as a close fraction); if not, the comparisons
+   of a core are excluded and the check is repeated. The other answers are
+   unknown, with the trace of the abstraction.
+
+Numbers with a fraction compared with integers (`n <= 20.5`) also need the
+SMT engine of nuXmv. Without real variables none of this is used.
 
 ## Results
 
