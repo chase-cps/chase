@@ -114,6 +114,7 @@ class Result:
     seconds: float = 0.0
     details: dict = field(default_factory=dict)
     core: Optional[Any] = None           # with core=True: the Core explaining a failure
+    reals: Optional[str] = None          # with real variables: regions, smt, or predicates
 
     def __bool__(self) -> bool:
         return self.status in (VALID, SAT, REALIZABLE, SEPARATED)
@@ -128,6 +129,8 @@ class Result:
             d["counter_strategy"] = self.counter_strategy
         if self.core is not None:
             d["core"] = self.core.to_dict()
+        if self.reals is not None:
+            d["reals"] = self.reals
         if self.reason:
             d["reason"] = self.reason
         if self.details:

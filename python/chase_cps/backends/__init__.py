@@ -38,8 +38,18 @@ def check(query, backend: str = "auto", **options) -> Result:
     """Answer a query with the given back end, or the first available one.
 
     With backend "auto", the environment variable CHASE_BACKEND, when set,
-    names the back end to use for the queries it answers.
+    names the back end to use for the queries it answers. A query with real
+    variables goes through ``chase_cps.reals``; the others go straight to the
+    back ends.
     """
+    from .. import reals
+    if reals.has_real_variables(query):
+        return reals.check(query, backend, **options)
+    return dispatch(query, backend, **options)
+
+
+def dispatch(query, backend: str = "auto", **options) -> Result:
+    """``check`` without the handling of real variables."""
     preferred = os.environ.get("CHASE_BACKEND")
     if backend == "auto" and preferred and preferred in ADAPTERS \
             and isinstance(query, ADAPTERS[preferred].answers):
@@ -75,5 +85,5 @@ def _configured(adapter: Adapter, options: dict) -> Adapter:
     return a
 
 
-__all__ = ["ADAPTERS", "Adapter", "NuSMVAdapter", "SlugsAdapter", "check",
+__all__ = ["ADAPTERS", "Adapter", "NuSMVAdapter", "SlugsAdapter", "check", "dispatch",
            "register", "adapters_for"]

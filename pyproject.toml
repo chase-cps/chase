@@ -24,6 +24,8 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+# z3 refines the predicate abstraction of real comparisons (chase_cps.predicates)
+reals = ["z3-solver>=4.12"]
 
 [project.scripts]
 chase-cps = "chase_cps.cli:main"

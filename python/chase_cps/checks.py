@@ -149,10 +149,19 @@ class RefinementResult:
             return "guarantees"
         return None
 
+    @property
+    def reals(self) -> str | None:
+        """How the real variables were handled (see ``Result.reals``)."""
+        used = sorted({r.reals for r in (self.assumptions, self.guarantees) if r.reals})
+        return ", ".join(used) or None
+
     def to_dict(self) -> dict:
-        return {"status": self.status, "failed": self.failed,
-                "assumptions": self.assumptions.to_dict(),
-                "guarantees": self.guarantees.to_dict()}
+        d = {"status": self.status, "failed": self.failed,
+             "assumptions": self.assumptions.to_dict(),
+             "guarantees": self.guarantees.to_dict()}
+        if self.reals:
+            d["reals"] = self.reals
+        return d
 
 
 def refines(refined: Contract, abstract: Contract, backend: str = "auto",
