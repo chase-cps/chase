@@ -12,6 +12,14 @@
   contracts and drops the assumptions discharged by the other contract and
   the redundant terms (Incer, PhD thesis 2022, Algorithm 2).
 
+## 0.1.1 (2026-10-25)
+
+- The slugs back end dropped the temporal operators F and G nested in a
+  term, so `G (req -> F grant)` was checked as `G (req -> grant)` and
+  `is_realizable` could answer unrealizable for a realizable contract (or
+  the converse for assumptions). Terms outside GR(1) are now reported:
+  `is_realizable` and `synthesize` return unknown with the term.
+
 ## 0.1.0 (2026-10-25)
 
 First release of the CHASE Python package, `chase-cps`, and of this
