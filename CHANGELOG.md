@@ -15,6 +15,9 @@
   (of A & G, with nuXmv), from a contract or from formulas, and `core=True`
   on `is_realizable`, `is_compatible`, `is_consistent`, and `is_satisfiable`;
   `chase-cps check --core`.
+- `is_well_separated`: whether the component can win by forcing the
+  environment to violate its assumptions, with the strategy and a minimal
+  set of assumptions; `chase-cps check --well-separated`.
 
 ## 0.1.1 (2026-10-25)
 

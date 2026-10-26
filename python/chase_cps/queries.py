@@ -57,6 +57,7 @@ QUERY_TYPES = (Implies, Satisfiable, Realizable, Simplify, Project)
 VALID, INVALID = "valid", "invalid"
 SAT, UNSAT = "sat", "unsat"
 REALIZABLE, UNREALIZABLE = "realizable", "unrealizable"
+SEPARATED, NOT_SEPARATED = "separated", "not_separated"
 SIMPLIFIED = "simplified"
 UNKNOWN = "unknown"
 
@@ -100,7 +101,7 @@ class Result:
     core: Optional[Any] = None           # with core=True: the Core explaining a failure
 
     def __bool__(self) -> bool:
-        return self.status in (VALID, SAT, REALIZABLE)
+        return self.status in (VALID, SAT, REALIZABLE, SEPARATED)
 
     def to_dict(self) -> dict:
         d = {"status": self.status, "backend": self.backend, "seconds": round(self.seconds, 3)}

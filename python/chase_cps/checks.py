@@ -16,8 +16,8 @@ from dataclasses import dataclass, field
 
 from . import backends, cores, ltl
 from .contract import Contract, VarType
-from .queries import (INVALID, SAT, UNKNOWN, UNREALIZABLE, UNSAT, VALID, Implies,
-                      Realizable, Result, Satisfiable)
+from .queries import (INVALID, NOT_SEPARATED, REALIZABLE, SAT, SEPARATED, UNKNOWN,
+                      UNREALIZABLE, UNSAT, VALID, Implies, Realizable, Result, Satisfiable)
 
 
 def _formula(f) -> ltl.Node:
@@ -67,6 +67,66 @@ def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
     """GR(1) synthesis: ``realizable`` with the controller, or ``unrealizable``
     with the counter-strategy of the environment."""
     return backends.check(Realizable(contract), backend, controller=True, **options)
+
+
+def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
+                      with_guarantees: bool = False, core: bool = False,
+                      backend: str = "auto", **options) -> Result:
+    """Can the component be forced to win by making the environment violate
+    its assumptions? ``separated`` when it cannot, ``not_separated`` with the
+    ``controller`` that forces the violation, or ``unknown``.
+
+    Takes a contract, or the assumptions with the inputs and the outputs.
+    The check is GR(1) realizability with slugs of the system specification
+    (true, true, {false}) (Klein and Pnueli, HVC 2010; Maoz and Ringert, FSE
+    2016, Def. 2). With ``with_guarantees`` the component must also keep its
+    initial and safety guarantees (Def. 4). Only the case where the violation
+    can be forced from every initial state is detected (P-all): slugs does
+    not give the winning region needed for the case of some reachable state.
+    With core, a ``not_separated`` result carries a minimal set of
+    assumptions that is still not separated.
+    """
+    if isinstance(assumptions, Contract):
+        c = assumptions
+    else:
+        if inputs is None or outputs is None:
+            raise TypeError("is_well_separated of formulas needs the inputs and the outputs")
+        c = Contract.from_strings(inputs=inputs, outputs=outputs,
+                                  assumptions=cores._terms(assumptions) if assumptions else [],
+                                  guarantees=cores._terms(guarantees) if guarantees else [],
+                                  name="C")
+    for t in list(c.assumptions) + (list(c.guarantees) if with_guarantees else []):
+        if cores.gr1_kind(t) is None:
+            return Result(UNKNOWN, "slugs", reason=f"not a GR(1) term: {ltl.to_str(t)}")
+    kept = [t for t in c.guarantees
+            if cores.gr1_kind(t) in ("init", "safety")] if with_guarantees else []
+    goal = kept + [ltl.Unary("G", ltl.Unary("F", ltl.Const(False)))]
+
+    def query(a, controller):
+        return backends.check(Realizable(Contract(c.name, dict(c.inputs), dict(c.outputs),
+                                                  list(a), goal)),
+                              backend, controller=controller, counter_strategy=False,
+                              **options)
+
+    r = query(c.assumptions, True)
+    if r.status == REALIZABLE:
+        r.status = NOT_SEPARATED
+    elif r.status == UNREALIZABLE:
+        r.status = SEPARATED
+    if core and r.status == NOT_SEPARATED:
+        terms = list(c.assumptions)
+        search = cores._Search(lambda idx: {REALIZABLE: True, UNREALIZABLE: False}.get(
+            query([terms[i] for i in idx], False).status))
+        found = search.ddmin(list(range(len(terms))), [])
+        if search.reason:
+            r.core = cores.Core(cores.UNKNOWN, reason=search.reason, checks=search.checks)
+        else:
+            sub = [terms[i] for i in found]
+            r.core = cores.Core(cores.FOUND, Contract(f"{c.name}_core", dict(c.inputs),
+                                                      dict(c.outputs), sub, [])
+                                if isinstance(assumptions, Contract) else sub,
+                                checks=search.checks)
+    return r
 
 
 @dataclass

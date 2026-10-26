@@ -400,6 +400,33 @@ def test_unsat_core():
     assert [ltl.to_str(t) for t in r.core.core.guarantees] == ["G b", "F !b"]
 
 
+@needs_native
+@pytest.mark.skipif(not _has_slugs(), reason="slugs not installed")
+def test_well_separation():
+    from chase_cps import is_well_separated
+    # granting forever forces the environment to stop requesting
+    c = Contract.from_strings(inputs=["req", "x"], outputs=["grant"],
+                              assumptions=["G F req", "G (grant -> X !req)", "G F x"],
+                              guarantees=["G (req -> X grant)"], name="Arb")
+    r = is_well_separated(c, core=True)
+    assert r.status == "not_separated" and not r and r.controller
+    assert [ltl.to_str(t) for t in r.core.core.assumptions] == ["G F req", "G (grant -> X !req)"]
+    r = is_well_separated(["G F req", "G (grant -> X !req)"], inputs=["req"], outputs=["grant"])
+    assert r.status == "not_separated"
+    ok = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                               assumptions=["G F req", "G ((req & grant) -> X !req)"], name="Ok")
+    assert is_well_separated(ok).status == "separated" and is_well_separated(ok)
+    # keeping the safety guarantee G !grant, the component cannot force it
+    d = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                              assumptions=["G F req", "G (grant -> X !req)"],
+                              guarantees=["G !grant"], name="D")
+    assert is_well_separated(d).status == "not_separated"
+    assert is_well_separated(d, with_guarantees=True).status == "separated"
+    n = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                              assumptions=["G (req -> F grant)"], name="N")
+    assert is_well_separated(n).status == "unknown"
+
+
 def test_rename_and_signatures():
     c = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
                               guarantees=["G (a -> X b')"], name="C")

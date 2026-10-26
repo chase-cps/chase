@@ -129,7 +129,7 @@ def _checks(args, contracts):
     out = []
     every = args.contracts or list(contracts)
     if args.verify or not (args.compatible or args.consistent or args.refines
-                           or args.realizable or args.synthesize):
+                           or args.realizable or args.synthesize or args.well_separated):
         args.compatible = args.consistent = True
     options = {"timeout": args.timeout}
     for name in every if args.compatible or args.consistent else []:
@@ -150,6 +150,10 @@ def _checks(args, contracts):
         c = _contract(name, contracts)
         out.append(("realizable", name,
                     lambda c=c: checks.is_realizable(c, core=args.core, **options)))
+    for name in args.well_separated or []:
+        c = _contract(name, contracts)
+        out.append(("separated", name,
+                    lambda c=c: checks.is_well_separated(c, core=args.core, **options)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
         out.append(("synthesize", name, lambda c=c: checks.synthesize(c, **options)))
@@ -158,7 +162,7 @@ def _checks(args, contracts):
 
 def _passed(kind: str, result) -> bool:
     return result.status == {"refines": VALID, "realizable": REALIZABLE,
-                             "synthesize": REALIZABLE}.get(kind, SAT)
+                             "synthesize": REALIZABLE, "separated": "separated"}.get(kind, SAT)
 
 
 def _indent(text) -> str:
@@ -181,7 +185,9 @@ def _report(kind: str, label: str, result) -> None:
     else:
         if result.controller is not None:
             nodes = result.controller.get("nodes", {}) if isinstance(result.controller, dict) else {}
-            print(f"  controller with {len(nodes)} states (use --json to print it)")
+            what = ("strategy forcing the environment to violate its assumptions"
+                    if kind == "separated" else "controller")
+            print(f"  {what}: {len(nodes)} states (use --json to print it)")
         if result.status == "unrealizable" and result.counter_strategy:
             print("  counter-strategy of the environment:")
             print(_indent(result.counter_strategy))
@@ -259,6 +265,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="GR(1) realizability with slugs (may be repeated)")
     p.add_argument("--synthesize", action="append", metavar="CONTRACT",
                    help="GR(1) synthesis of a controller with slugs (may be repeated)")
+    p.add_argument("--well-separated", action="append", metavar="CONTRACT",
+                   help="the component cannot win by forcing the environment to violate "
+                        "its assumptions (GR(1), slugs)")
     p.add_argument("--core", action="store_true",
                    help="when a check fails, give a minimal set of terms that explains it")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])

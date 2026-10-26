@@ -101,6 +101,7 @@ return a new contract; the checks read as predicates (`refines(a, b)`: does
 | synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
 | unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
 | unsat core | | `unsat_core(c)` | `--core` | `unsat_core` |
+| well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
 
 Implication and coimplication are the adjoints of conjunction and
 disjunction, as the quotient and separation are of composition and merging
@@ -165,6 +166,21 @@ return formulas. The checks give the core of their failure with
 `is_satisfiable(phi, variables, core=True)`. The result is a `Core` with a
 `status`: `found` with the `core`, `none` when the check does not fail, or
 `unknown` with a `reason` when a test does not finish.
+
+## Well-separation
+
+A contract is well-separated when the component cannot satisfy it by
+forcing the environment to violate the assumptions (Klein and Pnueli, HVC
+2010; Maoz and Ringert, FSE 2016). A contract that is not well-separated is
+realizable for a bad reason: the controller may break its environment
+instead of meeting the guarantees. `is_well_separated(c)` answers
+`separated` or `not_separated` with the `controller` that forces the
+violation; `with_guarantees=True` makes the component keep its initial and
+safety guarantees (Def. 4 of Maoz and Ringert), and `core=True` gives a
+minimal set of assumptions that causes the problem. The check is one call
+to slugs. It detects the violations that can be forced from every initial
+state; those forced only from some reachable state need the winning region,
+which slugs does not give.
 
 ## Results
 
