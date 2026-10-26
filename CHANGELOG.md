@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-26)
 
 - Implication and coimplication of contracts (the adjoints of conjunction
   and disjunction), the reciprocal, and the two Boolean actions that add an
@@ -38,12 +38,13 @@
   an integer (`real constant K 2.5;` gave 2). The checks handle real
   variables in this order, and say which way answered (`reals`):
   regions, exact, when the real variables are compared with constants or
-  with each other, without arithmetic (also for realizability and synthesis, with the controller written with
-  the conditions on the real variables); the SMT engine of nuXmv; predicate
-  abstraction, which returns only the answers that hold for the real
-  variables, refined with z3 when it is installed
-  (`pip install chase-cps[reals]`). See "Real variables" in docs/usage.md.
-  Without real variables the checks are unchanged.
+  with each other, without arithmetic (also for realizability and
+  synthesis, with the controller written with the conditions on the real
+  variables); the SMT engine of nuXmv; predicate abstraction, which
+  returns only the answers that hold for the real variables, refined with
+  z3 when it is installed (`pip install chase-cps[reals]`). See "Real
+  variables" in docs/usage.md. Without real variables the checks are
+  unchanged.
 - The NuSMV printer of chase-backends writes real variables (with their
   range as INVAR) and real constants for nuXmv; the slugs and gr1c printers
   report real variables instead of writing them as Boolean ones.
@@ -73,6 +74,10 @@
   and LiftPlusCruise (requirements of the FRET case study with real
   variables: consistency, a behavior, and the requirements in conflict).
   The demo suite runs both.
+
+Known issue: the operations of the core library (composition, conjunction,
+quotient, ...) do not free the memory they use, about 10 to 15 KB per
+operation (about 9 KB in 0.1.2). A later version will.
 
 ## 0.1.2 (2026-10-25)
 
