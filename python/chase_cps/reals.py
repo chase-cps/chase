@@ -53,6 +53,11 @@ def check(query, backend: str = "auto", **options) -> Result:
         result.trace = regions.real_trace(result.trace)
         if result.controller is not None:
             result.controller = regions.real_controller(result.controller)
+            from .gr1 import gr1_kind
+            c = query.contract
+            result.details["init"] = [ltl.to_str(t) for t in
+                                      list(c.assumptions) + list(c.guarantees)
+                                      if gr1_kind(t) == "init"]
         result.reals = REGIONS
         return result
     if isinstance(query, Realizable):

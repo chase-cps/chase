@@ -28,6 +28,16 @@ class Satisfiable:
 
 
 @dataclass
+class Holds:
+    """Does every behavior of the model (an SMV program, see
+    ``chase_cps.models``) satisfy phi? ``variables`` are those of the
+    model."""
+    model: str
+    phi: ltl.Node
+    variables: dict[str, VarType]
+
+
+@dataclass
 class Realizable:
     """Is there a strategy for the outputs such that A -> G holds for every
     behavior of the inputs?"""
@@ -50,7 +60,7 @@ class Project:
     keep: list[str]
 
 
-QUERY_TYPES = (Implies, Satisfiable, Realizable, Simplify, Project)
+QUERY_TYPES = (Implies, Satisfiable, Holds, Realizable, Simplify, Project)
 
 
 # Results ---------------------------------------------------------------------
@@ -59,6 +69,7 @@ VALID, INVALID = "valid", "invalid"
 SAT, UNSAT = "sat", "unsat"
 REALIZABLE, UNREALIZABLE = "realizable", "unrealizable"
 SEPARATED, NOT_SEPARATED = "separated", "not_separated"
+RECEPTIVE, NOT_RECEPTIVE = "receptive", "not_receptive"
 SIMPLIFIED = "simplified"
 UNKNOWN = "unknown"
 
@@ -117,7 +128,7 @@ class Result:
     reals: Optional[str] = None          # with real variables: regions, smt, or predicates
 
     def __bool__(self) -> bool:
-        return self.status in (VALID, SAT, REALIZABLE, SEPARATED)
+        return self.status in (VALID, SAT, REALIZABLE, SEPARATED, RECEPTIVE)
 
     def to_dict(self) -> dict:
         d = {"status": self.status, "backend": self.backend, "seconds": round(self.seconds, 3)}

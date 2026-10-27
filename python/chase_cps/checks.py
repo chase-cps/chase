@@ -4,8 +4,11 @@ Contracts are read as saturated: a contract (A, G) allows the behaviors of
 A -> G. ``refined`` refines ``abstract`` when A_abstract -> A_refined and
 (A_refined -> G_refined) -> (A_abstract -> G_abstract). A contract is
 compatible when some environment satisfies A, consistent when some
-behavior satisfies A -> G; a component M implements the contract when
-M & A -> G holds, and the contract accepts an environment E when E -> A.
+behavior satisfies A -> G, and ``verify`` checks that A & G is satisfiable;
+a component M implements the contract when M & A -> G holds, and the
+contract accepts an environment E when E -> A. M and E are LTL formulas or
+state machines (``chase_cps.models``); ``is_receptive`` checks that a state
+machine does not refuse the inputs that the assumptions allow.
 Each check is one or two queries on formulas (``chase_cps.logic``), so the
 checks hold for any theory the back ends decide.
 
@@ -246,20 +249,50 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
 
 def accepts(contract: Contract, environment, backend: str = "auto", context=None,
             **options) -> Result:
-    """Does the contract accept the environment (an LTL formula over the
-    variables of the contract), i.e. E -> A?"""
-    return implies(_formula(environment), contract.assumption, contract.variables, backend,
-                   context, **options)
+    """Does the contract accept the environment, i.e. E -> A? The environment
+    is an LTL formula over the variables of the contract, or a state machine
+    (a ``Model``, SMV text, or a state machine in JSON; see
+    ``chase_cps.models``) that declares the variables of the assumptions:
+    every behavior of the machine must satisfy A."""
+    from .models import as_model
+    m = as_model(environment, contract)
+    if m is None:
+        return implies(_formula(environment), contract.assumption, contract.variables,
+                       backend, context, **options)
+    return _holds(m, contract.assumption, contract, f"the assumptions of {contract.name}",
+                  backend, context, **options)
 
 
 def implements(implementation, contract: Contract, backend: str = "auto", context=None,
                **options) -> Result:
-    """Does the implementation (an LTL formula describing the behaviors of a
-    component) implement the contract, i.e. M & A -> G?"""
-    return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
-                   contract.guarantee, contract.variables, backend, context, **options)
+    """Does the implementation implement the contract, i.e. M & A -> G? The
+    implementation is an LTL formula that describes the behaviors of a
+    component, or a state machine: a ``Model``, SMV text, a state machine in
+    JSON, or a controller of ``synthesize`` (see ``chase_cps.models``), whose
+    every behavior must satisfy A -> G. A machine that refuses inputs can
+    implement a contract only because of that: ``is_receptive`` checks it."""
+    from .models import as_model
+    m = as_model(implementation, contract)
+    if m is None:
+        return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
+                       contract.guarantee, contract.variables, backend, context, **options)
+    return _holds(m, contract.saturated_guarantee, contract, f"the contract {contract.name}",
+                  backend, context, **options)
 
 
+def _holds(model, phi, contract: Contract, what: str, backend: str, context,
+           **options) -> Result:
+    """Does every behavior of the model satisfy phi (within the context)?"""
+    from . import backends
+    from .queries import Holds
+    k = _context(context, contract.variables)
+    spec = phi if k is None else ltl.Binary("->", k, phi)
+    model.check_variables(ltl.variables(spec), what, contract.variables)
+    return backends.check(Holds(model.smv, spec, dict(model.variables)), backend, **options)
+
+
+
+from .models import Model, is_receptive  # noqa: E402,F401
 
 # GR(1) synthesis, in chase_cps.gr1 (kept here for the code written before
 # 0.3.1).

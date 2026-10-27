@@ -19,7 +19,7 @@ from fractions import Fraction
 
 from .. import ltl
 from ..tools import find
-from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Implies, Result,
+from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Holds, Implies, Result,
                        Satisfiable, Trace)
 from .base import Adapter
 
@@ -28,7 +28,7 @@ class NuSMVAdapter(Adapter):
     """``tool`` is "nuxmv", "nusmv", or "auto" (nuXmv first, then NuSMV)."""
 
     name = "nusmv"
-    answers = (Implies, Satisfiable)
+    answers = (Implies, Satisfiable, Holds)
 
     def __init__(self, tool: str = "auto", engine: str = "auto",
                  timeout: float = 300.0, bmc_bound: int = 20):
@@ -62,6 +62,8 @@ class NuSMVAdapter(Adapter):
 
     def emit(self, query) -> str:
         """The SMV model whose LTLSPEC is valid iff the query holds."""
+        if isinstance(query, Holds):
+            return query.model.rstrip() + f"\nLTLSPEC {ltl.to_smv(query.phi)};\n"
         if isinstance(query, Implies):
             spec = ltl.Binary("->", query.phi, query.psi)
             variables = query.variables
@@ -162,7 +164,7 @@ class NuSMVAdapter(Adapter):
                           seconds=seconds, details={"model": model})
         holds = verdict.group(1) == "true"
         trace = None if holds else parse_trace(proc.stdout, query.variables)
-        if isinstance(query, Implies):
+        if isinstance(query, (Implies, Holds)):
             status = VALID if holds else INVALID
         else:   # Satisfiable: !phi valid means phi unsatisfiable
             status = UNSAT if holds else SAT

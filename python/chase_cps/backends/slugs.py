@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 
+from .. import ltl
 from ..queries import REALIZABLE, UNKNOWN, UNREALIZABLE, Realizable, Result
 from ..tools import find
 from .base import Adapter
@@ -107,6 +108,13 @@ class SlugsAdapter(Adapter):
                         result.controller = json.loads(s.stdout)
                     except json.JSONDecodeError:
                         result.controller = s.stdout
+                    # slugs does not mark the initial nodes: Model.from_controller
+                    # takes the nodes that satisfy the initial terms.
+                    from ..gr1 import gr1_kind
+                    c = query.contract
+                    result.details["init"] = [ltl.to_str(t) for t in
+                                              list(c.assumptions) + list(c.guarantees)
+                                              if gr1_kind(t) == "init"]
                 elif self.counter_strategy and status == UNREALIZABLE:
                     s = self._slugs(["--counterStrategy", "spec.slugsin"], tmp)
                     result.counter_strategy = s.stdout

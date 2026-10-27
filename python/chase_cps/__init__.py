@@ -20,10 +20,11 @@ The package has three layers:
    on a theory or a back end.
 2. Checks (``chase_cps.checks`` and ``chase_cps.logic``): the checks on
    contracts (refines, verify, is_compatible, is_consistent, implements,
-   accepts, remove_redundant) reduce to queries on formulas of a theory
+   accepts, is_receptive, remove_redundant) reduce to queries on formulas of a theory
    (implies: validity; is_satisfiable: satisfiability; unsat_core), which
    the back ends decide (nuXmv, NuSMV; real variables through
-   ``chase_cps.reals``).
+   ``chase_cps.reals``). The implementations and environments can be
+   state machines (``chase_cps.models``).
 3. GR(1) synthesis (``chase_cps.gr1``): realizability, synthesis, and the
    analyses built on them (unrealizable_core, is_well_separated,
    is_vacuous, remove_vacuous), for contracts in the GR(1) fragment of LTL, with slugs.
@@ -31,7 +32,7 @@ The package has three layers:
 All the names are also available from ``chase_cps`` itself.
 """
 
-from . import backends, checks, gr1, logic, ltl, tools
+from . import backends, checks, gr1, logic, ltl, models, tools
 from .backends import check
 # 1. Contracts and their algebra.
 from .contract import Contract, load_spec, parse_spec, to_spec
@@ -39,6 +40,7 @@ from .ltl import LTLSyntaxError
 # 2. Checks on contracts, and the queries on formulas they reduce to.
 from .checks import (RefinementResult, Redundancy, Verification, accepts, implements,
                      is_compatible, is_consistent, refines, remove_redundant, verify)
+from .models import Model, is_receptive
 from .logic import Core, implies, is_satisfiable, unsat_core
 # 3. GR(1) synthesis.
 from .gr1 import (OutputVacuity, Vacuity, VacuousOutput, VacuousTerm, is_realizable,
@@ -53,6 +55,7 @@ __all__ = [
     # 2. Checks on contracts
     "refines", "verify", "is_compatible", "is_consistent", "implements", "accepts",
     "remove_redundant", "RefinementResult", "Verification", "Redundancy",
+    "Model", "is_receptive",
     #    and on formulas
     "implies", "is_satisfiable", "unsat_core", "Core",
     # 3. GR(1) synthesis

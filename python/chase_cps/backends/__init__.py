@@ -43,7 +43,8 @@ def check(query, backend: str = "auto", **options) -> Result:
     back ends.
     """
     from .. import reals
-    if reals.has_real_variables(query):
+    from ..queries import Holds
+    if not isinstance(query, Holds) and reals.has_real_variables(query):
         return reals.check(query, backend, **options)
     return dispatch(query, backend, **options)
 
