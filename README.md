@@ -154,8 +154,9 @@ in the standard LTL syntax, in three layers:
    quotient, separation, implication, ...), which holds for any
    assume-guarantee contracts;
 2. the checks on contracts (refinement, compatibility, consistency,
-   implementation), which reduce to the validity and the satisfiability of
-   formulas, decided by [nuXmv](https://nuxmv.fbk.eu/), with their cores;
+   implementation by a formula or a state machine, receptiveness), which
+   reduce to the validity and the satisfiability of formulas, decided by
+   [nuXmv](https://nuxmv.fbk.eu/), with their cores;
 3. GR(1) synthesis with slugs: realizability, controllers, unrealizable
    cores, well-separation, and vacuity.
 

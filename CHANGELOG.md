@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.3.2 (not released yet)
+
+Changes of behavior:
+
+- `verify` checks that the assumptions and the guarantees can hold together
+  (A & G satisfiable). This implies compatibility and consistency, which it
+  still reports; before, a contract whose guarantees cannot hold when its
+  assumptions do passed `verify` (A -> G holds when A fails). With
+  `core=True` an unsat result carries the terms that conflict. On the 513
+  contracts of the ContrAgent libraries, the results are the same. The
+  console `verify` command writes a third LTLSPEC, the negation of A & G.
+  `chase-cps check` without options prints one `verify` line per contract.
+- `is_well_separated` keeps the initial and safety guarantees of the
+  component by default (`with_guarantees=True`, Maoz and Ringert, Def. 4):
+  a violation of the assumptions that the component can force only by
+  breaking its own guarantees is not a defect of the assumptions.
+  `with_guarantees=False` gives the check of before.
+
+New:
+
+- `is_vacuous`: vacuity in synthesis (Bloem, Chockler, Ebrahimi, and
+  Strichman, FMSD 2021). Can the component win without an output that a
+  liveness guarantee asks for, never or from some step on? With the
+  strategy, and with `core=True` the assumptions that allow it. The queries
+  are those of the exact vacuity checks of ACIES. `remove_vacuous` is
+  unchanged; it is now described as what it is, the removal of the terms
+  that are redundant in the GR(1) game.
+- State machines (`chase_cps.models`): a `Model` from SMV text or a file,
+  from a controller of `synthesize`, or from a state machine in JSON.
+  `implements` and `accepts` take them, and `is_receptive` checks that a
+  model does not refuse the inputs that the assumptions allow (the state
+  and the input when it does). `synthesize` keeps the initial terms of the
+  contract with the controller, since slugs does not mark the initial nodes.
+- `chase-cps check`: `--implements MODEL C`, `--receptive MODEL C`
+  (an SMV or a JSON file), and `--vacuous C`.
+- MCP server: the tools `is_vacuous` and `is_receptive`; `implements` and
+  `accepts` take a state machine (`smv`, `machine`, `controller`). The skill
+  says when to use each operation and check.
+
+Faster:
+
+- An implication check of one term against other terms uses only the terms
+  that share variables with it, directly or through other terms, when all
+  of them are satisfiable (checked once): the answer is the same.
+  Composition with discharge and `remove_redundant` give the same results.
+  RoboticJoints, composition with discharge of 8 joints: 140 s in 0.3.1,
+  21 s (demos/RoboticJoints/results/discharge_speedup.csv).
+
 ## 0.3.1 (2026-10-27)
 
 - The Python package, its documentation, the command line, and the tools of

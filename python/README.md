@@ -31,12 +31,15 @@ layers:
 2. **Checks** (`chase_cps.checks`, `chase_cps.logic`). The checks on
    contracts are `refines`, `verify` (A & G satisfiable, which implies
    `is_compatible` and `is_consistent`),
-   `implements` (a component satisfies the contract), `accepts`, and
-   `remove_redundant`. They reduce to queries on formulas: `implies`
+   `implements` (a component satisfies the contract), `accepts`,
+   `is_receptive`, and `remove_redundant`; the components and environments
+   can be LTL formulas or state machines (`Model`: SMV, JSON, or a
+   synthesized controller). They reduce to queries on formulas: `implies`
    (validity), `is_satisfiable` (satisfiability of a formula), and
    `unsat_core`. A `context` gives formulas that every behavior satisfies.
 3. **GR(1) synthesis** (`chase_cps.gr1`): `is_realizable`, `synthesize`,
-   `unrealizable_core`, `is_well_separated`, and `remove_vacuous`, for
+   `unrealizable_core`, `is_well_separated`, `is_vacuous` (vacuity in
+   synthesis), and `remove_vacuous` (redundancy in the GR(1) game), for
    contracts in the GR(1) fragment of LTL.
 
 All the names are also in `chase_cps`. `load_spec` and `parse_spec` read the
@@ -93,6 +96,7 @@ logics language of CHASE, or of a JSON file, and prints the counterexamples:
 $> chase-cps check specs.ltl                                    # verify every contract
 $> chase-cps check specs.ltl --refines Joint1+Joint2 Joints      # composition refines Joints
 $> chase-cps check specs.ltl --realizable Joint1 --json
+$> chase-cps check specs.ltl --implements joint1.smv Joint1 --receptive joint1.smv Joint1
 ````
 
 The exit status is 0 when every check passes, and 1 when a check fails.

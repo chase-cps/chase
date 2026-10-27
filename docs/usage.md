@@ -159,8 +159,9 @@ same name are the same variable, and `c.rename({...})` renames them.
 | A and G hold together (implies compatibility and consistency) | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
 | compatibility | | `is_compatible(c)` | | `is_compatible` |
 | consistency | | `is_consistent(c)` | | `is_consistent` |
-| implementation M ⊨ C | | `implements(m, c)` | | `implements` |
+| implementation M ⊨ C | | `implements(m, c)` | `--implements MODEL C` | `implements` |
 | acceptance of an environment E | | `accepts(c, e)` | | `accepts` |
+| receptiveness of a state machine | | `is_receptive(m, c)` | `--receptive MODEL C` | `is_receptive` |
 | redundant terms | | `remove_redundant(c)` | | `remove_redundant` |
 
 A contract (A, G) is read saturated, as A -> G. `refines(c1, c2)` checks
@@ -176,7 +177,8 @@ to tell whether the assumptions alone cannot hold, and with `core=True`
 gives the terms that conflict. A component M satisfies
 the contract (`implements(m, c)`) when M & A -> G is valid, and the contract
 accepts an environment E (`accepts(c, e)`) when E -> A is valid; M and E are
-LTL formulas over the variables of the contract. `remove_redundant(c)` drops
+LTL formulas over the variables of the contract, or state machines (see
+below). `remove_redundant(c)` drops
 the assumptions implied by the other assumptions, and the guarantees implied
 by the assumptions and the other guarantees.
 
@@ -184,6 +186,57 @@ The console writes the input file of nuXmv for `verify` and `refines`, to
 be run by hand (for `verify`, three LTLSPEC: the negations of A, of the
 guarantees, and of A & G; each one false means that the property holds); the Python package, the command line, and the MCP server run
 nuXmv and return the result.
+
+### State machines
+
+An implementation or an environment can be a state machine, a `Model`
+(`chase_cps.models`): a program in SMV, the input language of nuXmv, with
+its variables, initial states, and transitions. It describes discrete
+behaviors, one step at a time, like the traces of the contracts. A model
+comes from SMV text or a file (`Model.from_smv`), from a controller of
+`synthesize` (`Model.from_controller`), or from a state machine in JSON
+(`Model.from_dict`): at each step, in its state, the machine takes a
+transition whose `when` holds, sets the outputs of that step, and moves to
+the next state. `implements(m, c)` checks that every behavior of m satisfies
+A -> G, and `accepts(c, e)` that every behavior of e satisfies A; the model
+declares the variables of the contract (inputs as IVAR or VAR).
+
+A machine that refuses an input has no behavior with it: it may implement a
+contract only because the input never happens. `is_receptive(m, c)` checks
+that in every reachable state, every next value of the inputs that the
+safety assumptions allow has a transition from which the machine can go on
+forever, and that every initial value allowed by the initial assumptions
+starts a behavior (a CTL check with BDDs; the inputs must be finite). The
+other assumptions are not used, which asks for more inputs than OCRA does.
+`not_receptive` comes with the state and the input refused.
+
+```python
+from chase_cps import Contract, Model, implements, is_receptive
+
+spec = Contract.from_strings(inputs=["req"], outputs=["grant"], name="Spec",
+                             guarantees=["G (req -> X grant)"])
+blocking = Model.from_smv('''MODULE main
+IVAR
+  req : boolean;
+VAR
+  grant : boolean;
+ASSIGN
+  init(grant) := FALSE;
+TRANS
+  next(grant) = req
+TRANS
+  !(grant & req)
+''', name="Blocking")
+r = is_receptive(blocking, spec)
+print(implements(blocking, spec).status, r.status, r.details["input"])
+```
+
+```
+valid not_receptive {'req': True}
+```
+
+The machine implements the contract only because, while it grants, it
+refuses a request.
 
 ### Queries on formulas
 
@@ -314,7 +367,8 @@ nuXmv > check_ltlspec_ic3
 | synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
 | unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
 | well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
-| vacuity | | `remove_vacuous(c)` | | `remove_vacuous` |
+| vacuity | | `is_vacuous(c)` | `--vacuous C` | `is_vacuous` |
+| redundancy in the GR(1) game | | `remove_vacuous(c)` | | `remove_vacuous` |
 
 These analyses are about reactive synthesis from contracts in the GR(1)
 fragment of LTL, with slugs, in `chase_cps.gr1`. A contract is realizable
@@ -361,16 +415,60 @@ which slugs does not give.
 
 ### Vacuity
 
+A contract is vacuous when the component can win without an output that a
+liveness guarantee asks for: the guarantee is discharged by the assumptions
+and obliges nothing. `is_vacuous(c)` checks it as a strengthening of the
+guarantees (Bloem, Chockler, Ebrahimi, and Strichman, FMSD 2021), with at
+most two calls to slugs per output y:
+
+- never: Real(A, G + {G !y}), a winning strategy never sets y;
+- eventually: Real(A, G + {!p, G (p -> X p), G (p -> !y), G F p}) with a
+  fresh output p, a winning strategy stops setting y from some step on.
+
+The outputs checked are those that occur only positively in a justice
+guarantee, or the `outputs` given. The result is `vacuous` with each vacuous
+output, its mode and the strategy, `not_vacuous`, `unrealizable` when the
+contract itself is, or `unknown`; with `core=True`, each vacuous output has
+a minimal set of the temporal assumptions under which the component still
+wins without it (one deletion pass). Two weaker formulations are not used:
+the test on a controller M & A -> phi[y <- false] (Kupferman and Vardi) and
+the rewrite Real(A, G[y <- false]) both call a good controller vacuous when
+an assumption ties the release of the environment to y, such as
+G ((req & grant) -> X !req): the controller grants, the release follows,
+and phi[grant <- false] holds because it granted. Forcing y false in the
+behavior asks the right question.
+
+```python
+from chase_cps import Contract, is_vacuous, ltl
+
+trusting = Contract.from_strings(
+    inputs=["req"], outputs=["grant"], name="Trusting",
+    assumptions=["!req", "G F !req"],
+    guarantees=["!grant", "G (grant -> req)", "G F (!req | grant)"])
+r = is_vacuous(trusting, core=True)
+v = r.vacuous[0]
+print(r.status, v.output, v.mode, [ltl.to_str(t) for t in v.core.core])
+```
+
+```
+vacuous grant never ['G F !req']
+```
+
+The assumption G F !req makes G F (!req | grant) hold without any grant.
+
+### Redundancy in the GR(1) game
+
 `remove_vacuous(c)` removes the terms whose removal does not change the
 GR(1) specification: its realizability and the controllers that realize it
-(inherent vacuity, Maoz and Shalom, ESEC/FSE 2020). Each term is checked
+(the inherent vacuity of Maoz and Shalom, ESEC/FSE 2020, which is a
+redundancy: a term implied by others in the game). Each term is checked
 against a premise set that depends on its kind (initial, safety, justice)
 and on its side (assumption or guarantee), one call to nuXmv per term; a
 safety term is compared with the bodies of the other safety terms only, as
 a propositional implication over the current and next values. The terms are
 checked in order against the terms not yet removed, so of two equal terms
 one is kept. The result has the `contract`, the `removed` terms with their
-part and kind, and with `core=True` the terms that make each one vacuous.
+part and kind, and with `core=True` the terms that imply each one.
 
 `remove_redundant(c)` (layer 2) instead keeps A -> G: it may remove a term
 that only follows from the others over whole traces, which can change the
@@ -380,8 +478,10 @@ synthesis problem; `remove_vacuous` does not.
 
 The checks return a result with a `status`: `valid` or `invalid` for
 implications and refinement, `sat` or `unsat` for satisfiability,
-compatibility, consistency, and verify, `realizable` or `unrealizable` for
-realizability and synthesis, and `unknown` with a `reason` when the check
+compatibility, consistency, and verify, `receptive` or `not_receptive` for
+receptiveness, `realizable` or `unrealizable` for realizability and
+synthesis, `separated` or `not_separated` for well-separation, `vacuous` or
+`not_vacuous` for vacuity, and `unknown` with a `reason` when the check
 does not finish or no tool is installed. A failed check comes with a
 `trace`: the states of `prefix`, then the states of `loop` repeated forever.
 `synthesize` returns the `controller`, and both `is_realizable` and
