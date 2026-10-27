@@ -177,6 +177,45 @@ def test_composition_with_discharge_is_an_abstraction():
         assert holds(front.compose(back), front.compose(back, discharge=True))
 
 
+@needs_mc
+def test_the_checks_on_related_terms_give_the_same_answers(monkeypatch):
+    # remove_redundant uses, for each term, only the terms that share
+    # variables with it (logic._Implications); with every term it must drop
+    # the same terms. Many variables and short terms, so that the terms fall
+    # into several groups.
+    from chase_cps import logic, remove_redundant
+    rnd = random.Random(10)
+    inputs = {v: "bool" for v in "acegik"}
+    outputs = {v: "bool" for v in "bdfhjl"}
+
+    def terms(names, n):
+        return [_ltl(rnd, rnd.sample(names, 2), 1) for _ in range(n)]
+
+    def removed(c):
+        r = remove_redundant(c)
+        return ([ltl.to_str(t) for t in r.removed_assumptions],
+                [ltl.to_str(t) for t in r.removed_guarantees], r.unknown)
+
+    whole = logic._Implications.__init__
+
+    def without_slicing(self, *args, **kwargs):
+        whole(self, *args, **kwargs)
+        self.slice = False
+
+    sliced = 0
+    for i in range(RUNS):
+        names = list(inputs) + list(outputs)
+        c = Contract.from_strings(inputs=inputs, outputs=outputs, name=f"R{i}",
+                                  assumptions=terms(list(inputs), rnd.randint(2, 4)),
+                                  guarantees=terms(names, rnd.randint(3, 6)))
+        first = removed(c)
+        with monkeypatch.context() as m:
+            m.setattr(logic._Implications, "__init__", without_slicing)
+            assert removed(c) == first, c
+        sliced += bool(first[0] or first[1])
+    assert sliced > 0
+
+
 # Cores -----------------------------------------------------------------------
 
 @needs_mc

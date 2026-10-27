@@ -412,14 +412,16 @@ def _single_term(c: Contract, formula, assumption: bool) -> Contract:
 def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
                    **options) -> Contract:
     """Composition keeping the terms (see Contract.compose)."""
-    from .checks import VALID, _merge_vars, implies, remove_redundant
+    from .checks import VALID, _merge_vars, remove_redundant
+    from .logic import _Implications
     variables = _merge_vars(c1, c2)
 
     def refine(terms, context):
-        # The terms not implied by the context (RefineWithSupport).
-        ctx = ltl.conjunction(context)
-        return [t for t in terms
-                if implies(ctx, t, variables, backend, **options).status != VALID]
+        # The terms not implied by the context (RefineWithSupport). Each
+        # check uses the terms of the context that share variables with the
+        # term, when the context is satisfiable (see logic._Implications).
+        check = _Implications(context, variables, backend, **options)
+        return [t for t in terms if check(context, t).status != VALID]
 
     # The guarantees of one contract simplify the assumptions of the other
     # in one direction only: in both directions at once the result can be

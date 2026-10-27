@@ -73,6 +73,60 @@ def implies(phi, psi, variables: dict[str, VarType], backend: str = "auto",
                           backend, **options)
 
 
+def _related(premises: list[ltl.Node], term: ltl.Node) -> list[ltl.Node]:
+    """The premises connected to the term by the variables they share,
+    directly or through other premises, in their order."""
+    want = set(ltl.variables(term))
+    rest = list(range(len(premises)))
+    chosen: set[int] = set()
+    grown = True
+    while grown:
+        grown = False
+        for i in list(rest):
+            vs = ltl.variables(premises[i])
+            if vs & want or not vs:
+                chosen.add(i)
+                rest.remove(i)
+                want |= vs
+                grown = True
+    return [premises[i] for i in sorted(chosen)]
+
+
+class _Implications:
+    """Checks premises -> term that use only the premises related to the term
+    (``_related``), with their variables.
+
+    This gives the answer of the whole check when ``whole`` (every premise
+    of the checks, and the context) is satisfiable. The other premises have
+    none of the variables of the term and of the related premises, so a
+    counterexample of the smaller check, completed on the other variables by
+    a behavior that satisfies them, is a counterexample of the whole check;
+    and a valid smaller check is valid with more premises. ``whole`` is
+    checked once; when it is not satisfiable (or the check does not finish),
+    every check uses all the premises.
+    """
+
+    def __init__(self, whole, variables: dict[str, VarType], backend: str = "auto",
+                 context=None, **options):
+        self.variables, self.backend, self.options = dict(variables), backend, options
+        k = _context(context, variables)
+        self.context = ltl.conjuncts(k) if k is not None else []
+        r = backends.check(Satisfiable(ltl.conjunction(self.context + list(whole)),
+                                       dict(variables)), backend, **options)
+        self.slice = r.status == SAT
+
+    def __call__(self, premises, term) -> Result:
+        premises = self.context + list(premises)
+        variables = self.variables
+        if self.slice:
+            premises = _related(premises, term)
+            names = ltl.variables(term).union(*(ltl.variables(p) for p in premises))
+            if names:
+                variables = {v: t for v, t in variables.items() if v in names}
+        return backends.check(Implies(ltl.conjunction(premises), term, variables),
+                              self.backend, **self.options)
+
+
 def is_satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
                    core: bool = False, context=None, **options) -> Result:
     """Is phi satisfiable? ``sat`` with a witness trace, or ``unsat``. With

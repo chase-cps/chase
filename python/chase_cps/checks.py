@@ -26,7 +26,8 @@ from typing import Optional
 
 from . import ltl
 from .contract import Contract, VarType
-from .logic import _context, _formula, _within, implies, is_satisfiable, unsat_core  # noqa: F401
+from .logic import (_context, _formula, _Implications, _within, implies,  # noqa: F401
+                    is_satisfiable, unsat_core)
 from .queries import INVALID, SAT, UNKNOWN, UNSAT, VALID, Result  # noqa: F401
 
 
@@ -211,28 +212,29 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
 
     An assumption is dropped when the other assumptions imply it; a guarantee
     when the assumptions and the other guarantees imply it. Each test is one
-    implication check; a term whose check does not finish is kept.
+    implication check, with the terms that share variables with the term
+    (see ``logic._Implications``); a term whose check does not finish is
+    kept.
     """
     c = contract
-    variables = c.variables
     out = Redundancy(Contract(c.name, dict(c.inputs), dict(c.outputs),
                                   list(c.assumptions), list(c.guarantees)))
+    check = _Implications(list(c.assumptions) + list(c.guarantees), c.variables, backend,
+                          context, **options)
     kept = list(c.assumptions)
     for term in list(kept):
         others = [t for t in kept if t is not term]
-        r = implies(ltl.conjunction(others), term, variables, backend, context, **options)
+        r = check(others, term)
         if r.status == VALID:
             kept.remove(term)
             out.removed_assumptions.append(term)
         elif r.status == UNKNOWN:
             out.unknown.append(term)
     out.contract.assumptions = kept
-    assumed = ltl.conjunction(kept)
     kept_g = list(c.guarantees)
     for term in list(kept_g):
         others = [t for t in kept_g if t is not term]
-        r = implies(ltl.conjunction([assumed] + others), term, variables, backend, context,
-                    **options)
+        r = check(kept + others, term)
         if r.status == VALID:
             kept_g.remove(term)
             out.removed_guarantees.append(term)
