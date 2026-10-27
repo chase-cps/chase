@@ -122,8 +122,10 @@ jobs:
 
       - name: Install the back ends with chase-cps install
         run: |
-          # chase_cps loads the modules built with AddressSanitizer.
-          export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+          # chase_cps loads the modules built with AddressSanitizer. libstdc++
+          # is preloaded too, so that AddressSanitizer finds __cxa_throw (the
+          # parser throws on syntax errors).
+          export LD_PRELOAD="$(gcc -print-file-name=libasan.so) $(gcc -print-file-name=libstdc++.so)"
           export CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python
           if [ ! -x ~/.chase/bin/nuXmv ]; then python3 -m chase_cps install nuxmv --accept-license; fi
           if [ ! -e ~/.chase/bin/slugs ]; then python3 -m chase_cps install slugs; fi
@@ -146,7 +148,7 @@ jobs:
 
       - name: Python tests
         run: |
-          export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+          export LD_PRELOAD="$(gcc -print-file-name=libasan.so) $(gcc -print-file-name=libstdc++.so)"
           # The reports go to files: pytest would hide those of a test that crashes.
           export ASAN_OPTIONS=detect_leaks=0:log_path=$RUNNER_TEMP/asan
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python \
