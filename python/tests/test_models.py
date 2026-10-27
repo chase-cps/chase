@@ -179,3 +179,27 @@ def test_a_controller_with_integers():
                                 "outputs": {"o": "bool", "k": [0, 2]},
                                 "guarantees": ["G ((n > 4) -> (k = 1))"]})
     assert implements(m, wrong).status == "invalid"
+
+
+@needs_slugs
+def test_the_command_line(tmp_path, capsys):
+    from chase_cps.cli import main
+    (tmp_path / "blocking.smv").write_text(BLOCKING)
+    (tmp_path / "slow.json").write_text(json.dumps(MACHINE))
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({"contracts": [
+        SPEC.to_dict(),
+        {"name": "Trusting", "inputs": {"req": "bool"}, "outputs": {"grant": "bool"},
+         "assumptions": ["G F !req"], "guarantees": ["G F (!req | grant)"]}]}))
+    assert main(["check", str(spec), "--implements", str(tmp_path / "blocking.smv"),
+                 "Spec"]) == 0
+    assert main(["check", str(spec), "--receptive", str(tmp_path / "blocking.smv"),
+                 "Spec"]) == 1
+    assert "refuses the input" in capsys.readouterr().out
+    assert main(["check", str(spec), "--implements", str(tmp_path / "slow.json"),
+                 "Spec"]) == 1
+    capsys.readouterr()
+    assert main(["check", str(spec), "--vacuous", "Trusting", "--core", "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["checks"][0]["vacuous"][0]["core"]["core"] == ["G F !req"]
+    assert main(["check", str(spec), "--implements", str(tmp_path / "none.smv"), "Spec"]) == 2

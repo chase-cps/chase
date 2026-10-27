@@ -17,7 +17,7 @@ import platform
 import sys
 import textwrap
 
-from . import __version__, checks, gr1, ltl, tools
+from . import __version__, checks, gr1, ltl, models, tools
 from .backends import ADAPTERS
 from .contract import Contract, load_spec
 from .queries import REALIZABLE, SAT, VALID
@@ -25,9 +25,10 @@ from .queries import REALIZABLE, SAT, VALID
 # What each back end is needed for.
 NEEDED_FOR = {
     "nuxmv": "refines, verify, is_consistent, is_compatible, implies, is_satisfiable, "
-             "implements, accepts, remove_redundant",
+             "implements, accepts, is_receptive, remove_redundant",
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
-    "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis)",
+    "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis), "
+             "is_well_separated, is_vacuous",
 }
 
 
@@ -129,7 +130,8 @@ def _checks(args, contracts):
     out = []
     every = args.contracts or list(contracts)
     if not (args.verify or args.compatible or args.consistent or args.refines
-            or args.realizable or args.synthesize or args.well_separated):
+            or args.implements or args.receptive or args.realizable or args.synthesize
+            or args.well_separated or args.vacuous):
         args.verify = True
     options = {"timeout": args.timeout}
     for name in every if args.verify or args.compatible or args.consistent else []:
@@ -149,6 +151,16 @@ def _checks(args, contracts):
         r, a = _contract(refined, contracts), _contract(abstract, contracts)
         out.append(("refines", f"{refined} <= {abstract}",
                     lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
+    for path, name in args.implements or []:
+        c = _contract(name, contracts)
+        m = _model(path, c)
+        out.append(("implements", f"{m.name} |= {name}",
+                    lambda m=m, c=c: checks.implements(m, c, args.backend, **options)))
+    for path, name in args.receptive or []:
+        c = _contract(name, contracts)
+        m = _model(path, c)
+        out.append(("receptive", f"{m.name} for {name}",
+                    lambda m=m, c=c: models.is_receptive(m, c, args.backend, **options)))
     for name in args.realizable or []:
         c = _contract(name, contracts)
         out.append(("realizable", name,
@@ -157,15 +169,35 @@ def _checks(args, contracts):
         c = _contract(name, contracts)
         out.append(("separated", name,
                     lambda c=c: gr1.is_well_separated(c, core=args.core, **options)))
+    for name in args.vacuous or []:
+        c = _contract(name, contracts)
+        out.append(("vacuous", name,
+                    lambda c=c: gr1.is_vacuous(c, core=args.core, **options)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
         out.append(("synthesize", name, lambda c=c: gr1.synthesize(c, **options)))
     return out
 
 
+def _model(path: str, contract):
+    """The model in an SMV file, or in a JSON file: a state machine, or a
+    controller of slugs (synthesized from the contract)."""
+    if not os.path.exists(path):
+        raise ValueError(f"no file {path}")
+    if path.endswith(".json"):
+        with open(path) as f:
+            data = json.load(f)
+        if "nodes" in data:
+            return models.Model.from_controller(data, contract,
+                                                name=os.path.splitext(os.path.basename(path))[0])
+        return models.Model.from_dict(data)
+    return models.Model.from_smv(path)
+
+
 def _passed(kind: str, result) -> bool:
-    return result.status == {"refines": VALID, "realizable": REALIZABLE,
-                             "synthesize": REALIZABLE, "separated": "separated"}.get(kind, SAT)
+    return result.status == {"refines": VALID, "implements": VALID, "realizable": REALIZABLE,
+                             "synthesize": REALIZABLE, "separated": "separated",
+                             "receptive": "receptive", "vacuous": "not_vacuous"}.get(kind, SAT)
 
 
 def _indent(text) -> str:
@@ -185,6 +217,18 @@ def _report(kind: str, label: str, result) -> None:
         for p in (result.assumptions, result.guarantees):
             if p.reason:
                 print(f"  {p.reason}")
+    elif kind == "vacuous":
+        for v in result.vacuous:
+            print(f"  {v.output}: a winning strategy "
+                  + ("never sets it" if v.mode == "never" else "stops setting it"))
+            if v.core is not None and v.core.status == "found":
+                for t in v.core.core:
+                    print(f"    assumption {ltl.to_str(t)}")
+        if result.reason:
+            print(f"  {result.reason}")
+    elif kind == "receptive" and result.status == "not_receptive":
+        print(f"  refuses the input {result.details.get('input')} after the state "
+              f"{result.details.get('state')}")
     elif kind == "verify":
         if result.status != SAT and result.feasible is not None:
             for part, r in (("compatible", result.compatible), ("consistent", result.consistent)):
@@ -276,6 +320,12 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
     g.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="REFINED refines ABSTRACT (may be repeated)")
+    g.add_argument("--implements", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+                   help="the state machine in MODEL (an SMV file, or a JSON file: a state "
+                        "machine or a controller of slugs) implements CONTRACT")
+    g.add_argument("--receptive", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+                   help="the state machine in MODEL accepts every input that the "
+                        "assumptions of CONTRACT allow")
     g = p.add_argument_group("GR(1) synthesis (slugs)")
     g.add_argument("--realizable", action="append", metavar="CONTRACT",
                    help="GR(1) realizability (may be repeated)")
@@ -284,6 +334,9 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--well-separated", action="append", metavar="CONTRACT",
                    help="the component cannot win by forcing the environment to violate "
                         "its assumptions")
+    g.add_argument("--vacuous", action="append", metavar="CONTRACT",
+                   help="the component can win without an output that a liveness guarantee "
+                        "asks for (vacuity in synthesis)")
     p.add_argument("--core", action="store_true",
                    help="when a check fails, give a minimal set of terms that explains it")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])

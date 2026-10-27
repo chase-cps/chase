@@ -27,6 +27,7 @@ These checks read every behavior: they do not take a context.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -291,13 +292,14 @@ class OutputVacuity:
     vacuous: list[VacuousOutput] = field(default_factory=list)
     checked: list[str] = field(default_factory=list)
     reason: str = ""
+    seconds: float = 0.0
 
     def __bool__(self) -> bool:
         return self.status == VACUOUS
 
     def to_dict(self) -> dict:
         d = {"status": self.status, "vacuous": [v.to_dict() for v in self.vacuous],
-             "checked": list(self.checked)}
+             "checked": list(self.checked), "seconds": round(self.seconds, 3)}
         if self.reason:
             d["reason"] = self.reason
         return d
@@ -379,9 +381,10 @@ def is_vacuous(contract: Contract, outputs=None, core: bool = False, backend: st
         for y in targets:
             if y not in c.outputs:
                 raise ValueError(f"{y} is not an output of {c.name}")
+    start = time.monotonic()
     base = is_realizable(c, backend, **options)
     if base.status != REALIZABLE:
-        return OutputVacuity(base.status, checked=targets,
+        return OutputVacuity(base.status, checked=targets, seconds=time.monotonic() - start,
                              reason=base.reason or ("the contract is unrealizable"
                                                     if base.status == UNREALIZABLE else ""))
     out = OutputVacuity(NOT_VACUOUS, checked=targets)
@@ -419,6 +422,7 @@ def is_vacuous(contract: Contract, outputs=None, core: bool = False, backend: st
         out.status = VACUOUS
     elif unknown:
         out.status, out.reason = UNKNOWN, "; ".join(unknown)
+    out.seconds = time.monotonic() - start
     return out
 
 
