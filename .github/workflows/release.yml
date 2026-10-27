@@ -1,19 +1,41 @@
 name: Release
 
 # Builds the wheels of the chase-cps Python package.
-# - Manual run: the wheels are uploaded to TestPyPI, with the version
-#   X.Y.Z.devN (N is the number of the run), so that each run can be uploaded.
-# - Tag v*: the wheels are uploaded to PyPI.
-# Both use trusted publishing: the PyPI (and TestPyPI) project must list this
-# repository, this workflow (release.yml), and the environment (pypi, testpypi).
+# - Tag v*: the wheels are built once and uploaded to TestPyPI. Once they
+#   are checked (pip install from TestPyPI), the same files are published to
+#   PyPI by a manual run with publish_run set to the number of that run:
+#     gh workflow run release.yml -f publish_run=<run id>
+# - Manual run without publish_run: a rehearsal, uploaded to TestPyPI with
+#   the version X.Y.Z.devN (N is the number of the run), so that each run can
+#   be uploaded.
+# - Manual run with publish_run and index testpypi: publishes the files of
+#   that run to TestPyPI again (the files already there are skipped), which
+#   tests this path without a release.
+# Both indexes use trusted publishing: the PyPI (and TestPyPI) project must
+# list this repository, this workflow (release.yml), and the environment
+# (pypi, testpypi).
+#
+# ccache keeps the objects of the C++ code between the builds of the Python
+# versions on one machine: only the Python modules depend on the version.
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish_run:
+        description: "Publish the files of this run (its number) instead of building"
+        required: false
+        default: ""
+      index:
+        description: "Where publish_run publishes the files"
+        type: choice
+        options: [pypi, testpypi]
+        default: pypi
 
 jobs:
   wheels:
+    if: inputs.publish_run == ''
     name: Wheels on ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -38,12 +60,27 @@ jobs:
               open(f, "w").write(s)
           PY
 
+      - name: Install ccache (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ccache
+
       - uses: pypa/cibuildwheel@v4.3.4
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
           CIBW_SKIP: "*-musllinux_*"
-          CIBW_BEFORE_ALL_LINUX: "yum install -y libuuid-devel || dnf install -y libuuid-devel"
-          CIBW_ENVIRONMENT_MACOS: "MACOSX_DEPLOYMENT_TARGET=11.0"
+          CIBW_BEFORE_ALL_LINUX: >
+            (yum install -y libuuid-devel || dnf install -y libuuid-devel) &&
+            (yum install -y epel-release || dnf install -y epel-release) &&
+            (yum install -y ccache || dnf install -y ccache)
+          # The statistics before each build show the objects found in the cache.
+          CIBW_BEFORE_BUILD: "ccache --show-stats"
+          CIBW_ENVIRONMENT_LINUX: >
+            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache
+            CCACHE_DIR=/tmp/ccache CCACHE_BASEDIR=/project CCACHE_NOHASHDIR=true
+          CIBW_ENVIRONMENT_MACOS: >
+            MACOSX_DEPLOYMENT_TARGET=11.0
+            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache
+            CCACHE_DIR=$HOME/.ccache CCACHE_BASEDIR=$GITHUB_WORKSPACE CCACHE_NOHASHDIR=true
           CIBW_TEST_REQUIRES: "pytest"
           CIBW_TEST_COMMAND: "pytest -q {project}/python/tests"
 
@@ -53,6 +90,7 @@ jobs:
           path: wheelhouse/*.whl
 
   sdist:
+    if: inputs.publish_run == ''
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -82,8 +120,9 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
+  # The tag and the rehearsals: the files go to TestPyPI.
   testpypi:
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.publish_run == ''
     needs: [wheels, sdist]
     runs-on: ubuntu-22.04
     environment: testpypi
@@ -99,16 +138,52 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
 
-  pypi:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [wheels, sdist]
+  # The files of an earlier run, already checked from TestPyPI.
+  publish:
+    if: inputs.publish_run != ''
     runs-on: ubuntu-22.04
-    environment: pypi
+    environment: ${{ inputs.index }}
     permissions:
       id-token: write
+      actions: read
     steps:
+      - name: Check the run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ inputs.publish_run }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/runs/$RUN \
+            --jq '"\(.event) \(.head_branch) \(.conclusion) \(.path)"' > run.txt
+          cat run.txt
+          read event ref conclusion path < run.txt
+          test "$conclusion" = success
+          test "$path" = .github/workflows/release.yml
+          if [ "${{ inputs.index }}" = pypi ]; then
+            # PyPI takes only the files built for a tag.
+            test "$event" = push
+            case "$ref" in v[0-9]*) ;; *) echo "not a tag: $ref"; exit 1 ;; esac
+            echo "VERSION=${ref#v}" >> "$GITHUB_ENV"
+          fi
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@release/v1
+          run-id: ${{ inputs.publish_run }}
+          github-token: ${{ github.token }}
+      - name: Check the files
+        run: |
+          ls dist
+          test -n "$(ls dist/*.whl)" && test -n "$(ls dist/*.tar.gz)"
+          if [ -n "$VERSION" ]; then
+            for f in dist/*; do
+              case "$(basename $f)" in chase_cps-$VERSION-*.whl|chase_cps-$VERSION.tar.gz) ;;
+                *) echo "$f does not have the version $VERSION"; exit 1 ;; esac
+            done
+          fi
+      - if: inputs.index == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+      - if: inputs.index == 'pypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
