@@ -86,6 +86,10 @@ jobs:
   # is freed twice or used after it was freed.
   asan:
     runs-on: ubuntu-24.04
+    env:
+      # Errors only: the tests and the programs keep some objects until they
+      # end, which LeakSanitizer would report.
+      ASAN_OPTIONS: detect_leaks=0
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,8 +127,6 @@ jobs:
           if [ ! -e ~/.chase/bin/slugs ]; then python3 -m chase_cps install slugs; fi
 
       - name: Console scripts of the demos
-        env:
-          ASAN_OPTIONS: detect_leaks=0
         run: |
           export PATH=$RUNNER_TEMP/chase/chase/bin:$PATH
           cd demos
@@ -141,8 +143,6 @@ jobs:
           (cd LiftPlusCruise && logics_tool -i lpc.ltl -o $RUNNER_TEMP/lpc -c lpc.chase)
 
       - name: Python tests
-        env:
-          ASAN_OPTIONS: detect_leaks=0
         run: |
           export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python python3 -m pytest -q python/tests
