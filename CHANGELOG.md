@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (2026-10-26)
 
 - `context=`: formulas that every behavior satisfies (the axiom of an
   encoding of finite traces, a physical law), for the checks built on
@@ -28,6 +28,9 @@
   result instead of copies of them; saturating a contract with assumptions
   and no guarantees crashed (logics_tool `saturate`); the simplification
   turned a `LargeOr` of two formulas into an `and`.
+- DSL_tool: computing the precision of the timings read one value past the
+  end of an array (found by AddressSanitizer); the result was not used, and
+  the specifications it writes are the same.
 - CI: a job builds CHASE with AddressSanitizer and runs the Python tests
   and the console scripts of the demos.
 

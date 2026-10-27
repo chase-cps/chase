@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "chase-cps"
-version = "0.2.0"
+version = "0.3.0"
 description = "CHASE: Contract-based Heterogeneous Analysis and Systems Exploration"
 readme = "python/README.md"
 license = "BSD-3-Clause"

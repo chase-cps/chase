@@ -23,7 +23,7 @@ from .cores import Core, unrealizable_core, unsat_core
 from .ltl import LTLSyntaxError
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
