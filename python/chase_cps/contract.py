@@ -277,9 +277,13 @@ class Contract:
         (temporal_operators): G f & G g becomes G (f & g), F f | F g becomes
         F (f | g), X f & X g becomes X (f & g). The contract is equivalent."""
         from ._native import utilities
-        pc = self.to_pychase()
-        utilities.simplify(pc, utilities.simplify_options(nots, temporal_operators))
-        out = Contract.from_pychase(pc)
+        holder = _parse_contracts([self])
+        try:
+            pc = holder[self.name]
+            utilities.simplify(pc, utilities.simplify_options(nots, temporal_operators))
+            out = Contract.from_pychase(pc)
+        finally:
+            holder.free()
         out.name = name or self.name
         out.inputs = {v: t for v, t in out.variables.items() if v in self.inputs}
         out.outputs = {v: t for v, t in out.variables.items() if v not in self.inputs}
@@ -364,8 +368,12 @@ class Contract:
         from ._native import representation as R
         c = self.saturate()
         holder = _parse_contracts([c])
-        out = Contract.from_pychase(R.Contract.reciprocal(holder[c.name],
-                                                          name or f"{self.name}_inv"))
+        try:
+            result = R.Contract.reciprocal(holder[c.name], name or f"{self.name}_inv")
+            holder.results.append(result)
+            out = Contract.from_pychase(result)
+        finally:
+            holder.free()
         variables = {**out.inputs, **out.outputs}
         out.inputs = {v: t for v, t in variables.items() if v in self.outputs}
         out.outputs = {v: t for v, t in variables.items() if v not in self.outputs}
@@ -441,14 +449,24 @@ def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
 
 
 class _Holder:
-    """Keeps the pychase System alive while its contracts are in use."""
+    """Keeps the pychase System alive while its contracts are in use.
+    free() frees the system and the results of the operations (the
+    contracts made from the contracts of the system)."""
 
     def __init__(self, system, contracts):
         self.system = system
         self.contracts = contracts
+        self.results = []
 
     def __getitem__(self, name):
         return self.contracts[name]
+
+    def free(self) -> None:
+        from ._native import utilities
+        objects = self.results + [self.system]
+        self.contracts, self.results, self.system = {}, [], None
+        for obj in objects:
+            utilities.destroy(obj)
 
 
 def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
@@ -503,18 +521,22 @@ def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Co
     by name."""
     if not os.path.isfile(path):
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
+    from ._native import utilities
     system = _parse_file(os.fspath(path), _name or os.fspath(path))
-    contracts = {c.getName().getString(): c for c in system.getContractsSet()}
-    shared = list(system.getDeclarationsSet())
-    out = {}
-    for name in sorted(contracts):
-        c = Contract.from_pychase(contracts[name], shared)
-        # keep the shared declarations the contract uses
-        used = ltl.variables(ltl.conjunction(c.assumptions + c.guarantees))
-        local = {d.getName().getString() for d in contracts[name].declarations}
-        c.inputs = {v: t for v, t in c.inputs.items() if v in used or v in local}
-        c.outputs = {v: t for v, t in c.outputs.items() if v in used or v in local}
-        out[name] = c
+    try:
+        contracts = {c.getName().getString(): c for c in system.getContractsSet()}
+        shared = list(system.getDeclarationsSet())
+        out = {}
+        for name in sorted(contracts):
+            c = Contract.from_pychase(contracts[name], shared)
+            # keep the shared declarations the contract uses
+            used = ltl.variables(ltl.conjunction(c.assumptions + c.guarantees))
+            local = {d.getName().getString() for d in contracts[name].declarations}
+            c.inputs = {v: t for v, t in c.inputs.items() if v in used or v in local}
+            c.outputs = {v: t for v, t in c.outputs.items() if v in used or v in local}
+            out[name] = c
+    finally:
+        utilities.destroy(system)
     return out
 
 
@@ -546,16 +568,20 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
             raise ValueError(f"variable {v} has type {c1.variables[v]} in {c1.name} "
                              f"and {c2.variables[v]} in {c2.name}")
         shared[v] = v
-    holder = _parse_contracts([c1, c2])
-    p1, p2 = holder[c1.name], holder[c2.name]
     fn = getattr(R.Contract, operation, None)
     if fn is None:
         raise NotImplementedError(f"the CHASE core library does not provide {operation}")
-    if operation == "quotient":
-        result = fn(p1, p2, shared, name, False)
-    else:
-        result = fn(p1, p2, shared, name)
-    out = Contract.from_pychase(result)
+    holder = _parse_contracts([c1, c2])
+    try:
+        p1, p2 = holder[c1.name], holder[c2.name]
+        if operation == "quotient":
+            result = fn(p1, p2, shared, name, False)
+        else:
+            result = fn(p1, p2, shared, name)
+        holder.results.append(result)
+        out = Contract.from_pychase(result)
+    finally:
+        holder.free()
     if operation == "quotient":
         # The quotient controls the outputs of c1 not provided by c2 and the
         # inputs of c2 not provided by the environment of c1 (as in Pacti).

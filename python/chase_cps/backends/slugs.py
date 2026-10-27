@@ -50,12 +50,16 @@ class SlugsAdapter(Adapter):
     def emit(self, query: Realizable) -> str:
         """The structured-slugs specification, written by the CHASE back end."""
         from .._native import pychase_backends
-        pc = query.contract.to_pychase()
-        with tempfile.TemporaryDirectory(prefix="chase_cps_") as tmp:
-            path = os.path.join(tmp, "spec.structuredSlugs")
-            pychase_backends.SlugsPrinter().print(pc, path)
-            with open(path) as f:
-                return f.read()
+        from ..contract import _parse_contracts
+        holder = _parse_contracts([query.contract])
+        try:
+            with tempfile.TemporaryDirectory(prefix="chase_cps_") as tmp:
+                path = os.path.join(tmp, "spec.structuredSlugs")
+                pychase_backends.SlugsPrinter().print(holder[query.contract.name], path)
+                with open(path) as f:
+                    return f.read()
+        finally:
+            holder.free()
 
     def _slugs(self, args: list[str], cwd: str) -> subprocess.CompletedProcess:
         return subprocess.run([self.binary()] + args, cwd=cwd, capture_output=True,

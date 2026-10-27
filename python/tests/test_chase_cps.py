@@ -219,6 +219,66 @@ CONTRACT One:
     assert c.outputs == {"done": "bool", "n": (0, 16)}   # integer without range: 0..16
 
 
+@needs_native
+def test_shared_proposition_with_a_relation():
+    # A proposition of the system defined by a relation, used twice in a
+    # contract and in two contracts: each use gets its own copy.
+    from chase_cps import parse_spec
+    cs = parse_spec("""NAME: shared;
+
+integer (0:30) variable n;
+proposition big is n > 20;
+
+CONTRACT One:
+    input boolean variable req;
+    Assumptions:
+        G(F(req));
+    Guarantees:
+        G(req -> big);
+        G(big -> X(big));
+
+CONTRACT Two:
+    Guarantees:
+        F(big);
+""")
+    assert cs["One"].outputs == {"n": (0, 30)} and cs["Two"].outputs == {"n": (0, 30)}
+    assert cs["One"].guarantees == [ltl.parse("G (req -> n > 20)"),
+                                    ltl.parse("G (n > 20 -> X (n > 20))")]
+    assert cs["Two"].guarantees == [ltl.parse("F (n > 20)")]
+    both = cs["One"].conjoin(cs["Two"])
+    assert ltl.variables(both.guarantee) == {"req", "n"}
+
+
+@needs_native
+def test_operations_free_their_memory():
+    # The objects that the core library makes for an operation are freed:
+    # the memory does not grow with the number of operations (it grew by
+    # 2 to 16 KB per operation in 0.2.0, depending on the contracts).
+    import resource
+    import sys
+    a = Contract.from_strings(inputs=["a"], outputs=["b"], name="A",
+                              assumptions=["G F a"], guarantees=["G (a -> F b)", "G (b -> X !b)"])
+    b = Contract.from_strings(inputs=["b"], outputs=["c"], name="B",
+                              assumptions=["G (b -> X !b)"], guarantees=["G (b -> X c)"])
+
+    def run(n):
+        for _ in range(n):
+            a.compose(b)
+            a.conjoin(b)
+            a.divide(b)
+            a.invert()
+            a.simplify()
+
+    def peak():   # bytes
+        r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return r if sys.platform == "darwin" else r * 1024
+
+    run(50)
+    before = peak()
+    run(1000)
+    assert (peak() - before) / 5000 < 1000   # bytes per operation
+
+
 REAL_SPEC = """NAME: reals;
 
 {decl}

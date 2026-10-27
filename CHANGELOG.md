@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- The operations no longer leak memory. Before, every operation in Python
+  (and every contract read from a file) kept the objects of the core
+  library for good, 2 to 16 KB per operation. Now a contract owns its
+  declarations and formulas, and a formula its operands, and `chase_cps`
+  frees the objects of the core library once it has read the result
+  (`pychase.utilities.destroy`). logics_tool: a proposition defined by a
+  relation (`proposition p is x > 3;`) gets its own copy of the relation
+  at each use, and a contract its own copy of the declarations of the
+  system it uses.
+- Core library: `refinement` put the formulas of the two contracts in the
+  result instead of copies of them; saturating a contract with assumptions
+  and no guarantees crashed (logics_tool `saturate`); the simplification
+  turned a `LargeOr` of two formulas into an `and`.
+- CI: a job builds CHASE with AddressSanitizer and runs the Python tests
+  and the console scripts of the demos.
+
 ## 0.2.0 (2026-10-26)
 
 - Implication and coimplication of contracts (the adjoints of conjunction

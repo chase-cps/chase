@@ -81,6 +81,71 @@ jobs:
           $PYTHON -m pip install pytest z3-solver || $PYTHON -m pip install --break-system-packages pytest z3-solver
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests
 
+  # The CHASE objects are freed by their owner (the contract owns its
+  # formulas, a formula its operands). AddressSanitizer finds an object that
+  # is freed twice or used after it was freed.
+  asan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev pybind11-dev uuid-dev libboost-dev libxml2 libedit2
+          $(command -v python3) -m pip install --break-system-packages pytest z3-solver
+
+      - name: Build and install
+        env:
+          CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+          CXXFLAGS: -fsanitize=address -fno-omit-frame-pointer
+          LDFLAGS: -fsanitize=address
+        run: |
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$RUNNER_TEMP/chase \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPython_EXECUTABLE=$(command -v python3) \
+            -DCHASE_BUILD_TESTS=ON -Dpybind11_DIR=/usr/lib/cmake/pybind11
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+      - name: Cache the back ends
+        uses: actions/cache@v4
+        with:
+          path: ~/.chase
+          key: chase-tools-asan-${{ hashFiles('python/chase_cps/tools.py') }}
+
+      - name: Install the back ends with chase-cps install
+        run: |
+          export CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python
+          if [ ! -x ~/.chase/bin/nuXmv ]; then python3 -m chase_cps install nuxmv --accept-license; fi
+          if [ ! -e ~/.chase/bin/slugs ]; then python3 -m chase_cps install slugs; fi
+
+      - name: Console scripts of the demos
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: |
+          export PATH=$RUNNER_TEMP/chase/chase/bin:$PATH
+          cd demos
+          for f in DATE21/specs/template_0_unrealizable.txt DATE18/template_0_realizable.txt FDL2024/dsl_factory_realizable.txt; do
+            dsl_tool -i $f -o $RUNNER_TEMP/dsl -b gr1c
+            dsl_tool -i $f -o $RUNNER_TEMP/dsl
+          done
+          (cd DATE21 && logics_tool -i specs/robotic_arm.ltl -o $RUNNER_TEMP/d21 -c solution.script)
+          (cd RoboticJoints && logics_tool -i specs.ltl -o $RUNNER_TEMP/rj -c verification.chase &&
+                               logics_tool -i specs.ltl -o $RUNNER_TEMP/rj -c synthesis.chase)
+          (cd CPSWeek22 && logics_tool -i specs.ltl -o $RUNNER_TEMP/c -c verification.chase &&
+                           logics_tool -i single_model.ltl -o $RUNNER_TEMP/c -c singlemodel.chase)
+          (cd Charger && logics_tool -i charger.ltl -o $RUNNER_TEMP/chg -c charger.chase)
+          (cd LiftPlusCruise && logics_tool -i lpc.ltl -o $RUNNER_TEMP/lpc -c lpc.chase)
+
+      - name: Python tests
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: |
+          export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+          CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python python3 -m pytest -q python/tests
+
   docker:
     runs-on: ubuntu-24.04
     steps:
