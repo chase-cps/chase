@@ -293,6 +293,7 @@ CONTRACT One:
 
 
 @needs_native
+@pytest.mark.filterwarnings("ignore:.*outside its range")
 def test_real_variables_and_numbers_are_read_exactly():
     # They were read as Boolean variables and as truncated integers.
     from chase_cps import parse_spec
@@ -884,3 +885,86 @@ def test_nusmv_does_not_check_real_variables(monkeypatch):
     assert "nuXmv" in a.run(q).reason
     model = NuSMVAdapter().emit(q)
     assert "chase_real : real;" in model and "n : 0..4;" in model
+
+
+# Context -----------------------------------------------------------------------
+
+# Finite traces encoded with alive: true for the length of the trace, then
+# false for ever.
+FINITE = "alive & (alive U G !alive)"
+
+
+@needs_mc
+def test_context_leaves_out_the_behaviors_that_violate_it():
+    from chase_cps import verify
+    c = Contract.from_strings(inputs=["alive"], outputs=["a"], name="C",
+                              guarantees=["G (alive -> a)", "G (alive -> !a)"])
+    # Without the context, the words where alive is false from the start
+    # satisfy both guarantees.
+    assert verify(c).status == "sat"
+    r = verify(c, context=FINITE)
+    assert r.status == "unsat" and r.compatible.status == "sat"
+    # The axiom as an assumption does not help: A -> G holds when A fails.
+    assert verify(c.assume(FINITE)).status == "sat"
+
+
+@needs_mc
+def test_context_in_refinement_implication_and_redundancy():
+    from chase_cps import implies, refines, remove_redundant
+    impl = Contract.from_strings(inputs=["a"], outputs=["b"], name="Impl", guarantees=["G a"])
+    spec = Contract.from_strings(inputs=["a"], outputs=["b"], name="Spec", guarantees=["G b"])
+    law = "G (a -> b)"
+    assert refines(impl, spec).status == "invalid"
+    assert refines(impl, spec, context=law).status == "valid"
+    assert implies("G a", "G b", {"a": "bool", "b": "bool"}, context=[law]).status == "valid"
+    both = Contract.from_strings(inputs=["a"], outputs=["b"], name="Both",
+                                 guarantees=["G a", "G b"])
+    r = remove_redundant(both, context=law)
+    assert r.contract.guarantees == [ltl.parse("G a")]
+
+
+@needs_mc
+def test_context_in_cores():
+    from chase_cps import is_consistent, unsat_core
+    variables = {"a": "bool", "b": "bool", "c": "bool"}
+    assert unsat_core(["F a", "G b", "G c"], variables).status == "none"
+    core = unsat_core(["F a", "G b", "G c"], variables, context="G (a -> !b)")
+    assert core.status == "found" and core.core == [ltl.parse("F a"), ltl.parse("G b")]
+    c = Contract.from_strings(outputs=["a", "b", "c"], name="C",
+                              guarantees=["F a", "G b", "G c"])
+    r = is_consistent(c, core=True, context="G (a -> !b)")
+    assert r.status == "unsat" and r.core.core.guarantees == [ltl.parse("F a"),
+                                                               ltl.parse("G b")]
+
+
+def test_context_errors():
+    from chase_cps import is_realizable, unrealizable_core, verify
+    c = Contract.from_strings(inputs=["a"], outputs=["b"], name="C", guarantees=["G b"])
+    with pytest.raises(ValueError, match="undeclared variables \\['x'\\] in the context"):
+        verify(c, context="G x")
+    with pytest.raises(TypeError, match="is_realizable does not take a context"):
+        is_realizable(c, context="G a")
+    with pytest.raises(TypeError, match="unrealizable_core does not take a context"):
+        unrealizable_core(c, context="G a")
+
+
+@needs_native
+def test_comparison_outside_the_range_is_reported():
+    from chase_cps import parse_spec
+    text = """NAME: ranges;
+
+CONTRACT Credits:
+    input integer variable credits;
+    input integer (0:100) variable score;
+    output boolean variable ok;
+    Guarantees:
+        G((credits >= 90) -> ok);
+        G((score > 50) -> ok);
+"""
+    with pytest.warns(UserWarning, match="credits is compared with 90, outside its range "
+                                         "0..16 \\(the range of an integer declared"):
+        parse_spec(text)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        parse_spec(text.replace("integer variable credits", "integer (0:200) variable credits"))

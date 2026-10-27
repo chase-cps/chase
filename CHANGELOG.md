@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- `context=`: formulas that every behavior satisfies (the axiom of an
+  encoding of finite traces, a physical law), for the checks built on
+  implication and satisfiability: `implies`, `is_satisfiable`,
+  `is_compatible`, `is_consistent`, `verify`, `refines`,
+  `remove_redundant`, `accepts`, `implements`, and `unsat_core`, also in
+  the MCP server. The behaviors that violate the context are left out; as
+  an assumption, the context would not help, since a behavior that
+  violates an assumption satisfies the contract. See "Context" in
+  docs/usage.md.
+- `load_spec` and `parse_spec` warn when an integer is compared with a
+  constant outside its range (e.g. `credits >= 90` with `credits` declared
+  without a range, so 0 to 16): the comparison has the same value at every
+  step.
 - The operations no longer leak memory. Before, every operation in Python
   (and every contract read from a file) kept the objects of the core
   library for good, 2 to 16 KB per operation. Now a contract owns its

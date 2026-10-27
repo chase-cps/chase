@@ -36,7 +36,10 @@ CONTRACT Spec:
 
 - `NAME: name;` names the system; `CONTRACT name:` starts a contract.
 - Variables: `input` or `output`, `boolean`, `integer (low:high)`, or `real`,
-  then `variable name;`. An integer without a range ranges over 0 to 16.
+  then `variable name;`. An integer without a range ranges over 0 to 16;
+  `load_spec` and `parse_spec` warn when an integer is compared with a
+  constant outside its range, since the comparison then has the same value
+  at every step.
   Declarations outside the contracts are shared: each contract gets those it
   uses. A real is declared without a range (the Python package rejects
   `real (low:high)`: write the range as an assumption). Constants are
@@ -148,6 +151,42 @@ The Python package, the command line, and the MCP server have also:
 - `remove_redundant(c)`, which drops the terms implied by the others;
 - `load_spec(path)`, `parse_spec(text)`, and `to_spec(contracts)`, which
   read and write specification files.
+
+## Context
+
+Some formulas are not an assumption of a component nor a guarantee: they
+hold for every behavior that can happen at all. Examples are the axiom of
+an encoding of finite traces (`alive & (alive U G !alive)`, where `alive`
+is true for the length of the trace), a physical law, or "one tool call at
+each step". The checks built on implication and satisfiability take them
+as `context`, a formula or a list of formulas, and leave out the behaviors
+that violate them:
+
+```python
+from chase_cps import Contract, verify
+
+FINITE = "alive & (alive U G !alive)"
+c = Contract.from_strings(inputs=["alive"], outputs=["a"], name="C",
+                          guarantees=["G (alive -> a)", "G (alive -> !a)"])
+assert verify(c).status == "sat"     # alive false from the start
+assert verify(c, context=FINITE).status == "unsat"
+```
+
+A context is not an assumption. A behavior that violates an assumption
+satisfies the contract (A -> G); one that violates the context does not
+count. So `verify(c.assume(FINITE))` is still sat. The checks are:
+
+- `implies(phi, psi, variables, context=k)`: k & phi -> psi;
+- `is_satisfiable(phi, variables, context=k)`: k & phi;
+- `is_compatible`, `is_consistent`, `verify`, `refines`, `remove_redundant`,
+  `accepts`, `implements`, and `unsat_core` (the context is in every test of
+  the search and never in the core).
+
+The variables of the context must be variables of the check. The
+realizability checks (`is_realizable`, `synthesize`, `is_well_separated`,
+`remove_vacuous`, `unrealizable_core`) do not take a context: whether a
+formula constrains the environment or the component is a question of
+roles, which a context does not say.
 
 ## Cores
 

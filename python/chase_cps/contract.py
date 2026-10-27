@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+import warnings
 from dataclasses import dataclass, field
 from typing import Iterable, Mapping, Union
 
@@ -537,7 +538,38 @@ def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Co
             out[name] = c
     finally:
         utilities.destroy(system)
+    for c in out.values():
+        _warn_outside_ranges(c, _name or os.fspath(path))
     return out
+
+
+def _warn_outside_ranges(c: Contract, source: str) -> None:
+    """Warns when an integer variable is compared with a constant outside its
+    range: the comparison then has the same value at every step, which is
+    rarely meant (e.g. a range left out, 0..16 by default)."""
+    found = {}
+
+    def walk(node):
+        if isinstance(node, ltl.Binary):
+            if node.op in ltl.RELATIONS:
+                for v, k in ((node.left, node.right), (node.right, node.left)):
+                    if isinstance(v, ltl.Var) and isinstance(k, ltl.Num):
+                        t = c.variables.get(v.name)
+                        if isinstance(t, tuple) and not t[0] <= k.value <= t[1]:
+                            found.setdefault((v.name, t), set()).add(k.value)
+            walk(node.left)
+            walk(node.right)
+        elif isinstance(node, ltl.Unary):
+            walk(node.arg)
+
+    for f in c.assumptions + c.guarantees:
+        walk(f)
+    for (v, (lo, hi)), constants in sorted(found.items()):
+        default = " (the range of an integer declared without one)" if (lo, hi) == (0, 16) \
+            else ""
+        warnings.warn(f"{source}, contract {c.name}: {v} is compared with "
+                      f"{', '.join(str(k) for k in sorted(constants))}, outside its range "
+                      f"{lo}..{hi}{default}", stacklevel=3)
 
 
 def parse_spec(text: str) -> dict[str, Contract]:

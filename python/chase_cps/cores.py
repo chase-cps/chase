@@ -113,7 +113,7 @@ def _terms(formulas) -> list[ltl.Node]:
 
 
 def unsat_core(formulas, variables: Optional[dict[str, VarType]] = None,
-               backend: str = "auto", **options) -> Core:
+               backend: str = "auto", context=None, **options) -> Core:
     """A minimal set of terms that cannot hold together.
 
     ``unsat_core(contract)`` searches the assumptions and the guarantees of
@@ -121,7 +121,9 @@ def unsat_core(formulas, variables: Optional[dict[str, VarType]] = None,
     its assumptions alone mean the contract is incompatible, its guarantees
     alone that they contradict each other, both that the guarantees cannot
     hold when the assumptions do. ``unsat_core(formulas, variables)`` takes
-    a list of formulas, or one formula split at its conjunctions.
+    a list of formulas, or one formula split at its conjunctions. The
+    context (see ``chase_cps.checks``) holds in every check and is not part
+    of the core: an empty core means that the context alone cannot hold.
     """
     if isinstance(formulas, Contract):
         c = formulas
@@ -133,9 +135,13 @@ def unsat_core(formulas, variables: Optional[dict[str, VarType]] = None,
         c = None
         terms = _terms(formulas)
 
+    from .checks import _context
+    k = _context(context, variables)
+
     def fails(idx):
-        r = backends.check(Satisfiable(ltl.conjunction([terms[i] for i in idx]),
-                                       dict(variables)), backend, **options)
+        selected = [terms[i] for i in idx] + ([k] if k is not None else [])
+        r = backends.check(Satisfiable(ltl.conjunction(selected), dict(variables)), backend,
+                           **options)
         return {UNSAT: True, SAT: False}.get(r.status)
 
     search = _Search(fails)
@@ -228,6 +234,9 @@ def unrealizable_core(guarantees, inputs=None, outputs=None, assumptions=(),
     core; inputs and outputs are needed, since realizability depends on who
     controls each variable.
     """
+    if "context" in options:
+        raise TypeError("unrealizable_core does not take a context: the realizability "
+                        "checks read every behavior")
     if isinstance(guarantees, Contract):
         c, from_contract = guarantees, True
     else:
