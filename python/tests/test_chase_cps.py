@@ -249,7 +249,14 @@ CONTRACT Two:
     assert ltl.variables(both.guarantee) == {"req", "n"}
 
 
+# AddressSanitizer and Guard Malloc keep the freed memory for a while, to
+# catch its later use: the memory of the process grows under them.
+CHECKED_MALLOC = any(k in os.environ.get(v, "") for v in ("LD_PRELOAD", "DYLD_INSERT_LIBRARIES")
+                     for k in ("asan", "gmalloc"))
+
+
 @needs_native
+@pytest.mark.skipif(CHECKED_MALLOC, reason="the allocator keeps the freed memory")
 def test_operations_free_their_memory():
     # The objects that the core library makes for an operation are freed:
     # the memory does not grow with the number of operations (it grew by
