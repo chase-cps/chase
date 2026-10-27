@@ -99,12 +99,13 @@ jobs:
 
       - name: Build and install
         env:
-          CFLAGS: -fsanitize=address -fno-omit-frame-pointer
-          CXXFLAGS: -fsanitize=address -fno-omit-frame-pointer
+          # The modules add -fPIC to the flags of the Release build only.
+          CFLAGS: -fsanitize=address -fno-omit-frame-pointer -g -fPIC
+          CXXFLAGS: -fsanitize=address -fno-omit-frame-pointer -g -fPIC
           LDFLAGS: -fsanitize=address
         run: |
           cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$RUNNER_TEMP/chase \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPython_EXECUTABLE=$(command -v python3) \
+            -DCMAKE_BUILD_TYPE=Release -DPython_EXECUTABLE=$(command -v python3) \
             -DCHASE_BUILD_TESTS=ON -Dpybind11_DIR=/usr/lib/cmake/pybind11
           cmake --build build
           ctest --test-dir build --output-on-failure
