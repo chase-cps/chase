@@ -147,7 +147,12 @@ jobs:
       - name: Python tests
         run: |
           export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
-          CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python python3 -m pytest -q python/tests
+          # The reports go to files: pytest would hide those of a test that crashes.
+          export ASAN_OPTIONS=detect_leaks=0:log_path=$RUNNER_TEMP/asan
+          CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python \
+            python3 -m pytest -q -x -rA --tb=short python/tests || status=$?
+          cat $RUNNER_TEMP/asan.* 2>/dev/null || true
+          exit ${status:-0}
 
   docker:
     runs-on: ubuntu-24.04
