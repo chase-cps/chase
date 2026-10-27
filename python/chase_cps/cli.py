@@ -128,12 +128,15 @@ def _checks(args, contracts):
     """(kind, label, function) for each check asked, in order."""
     out = []
     every = args.contracts or list(contracts)
-    if args.verify or not (args.compatible or args.consistent or args.refines
-                           or args.realizable or args.synthesize or args.well_separated):
-        args.compatible = args.consistent = True
+    if not (args.verify or args.compatible or args.consistent or args.refines
+            or args.realizable or args.synthesize or args.well_separated):
+        args.verify = True
     options = {"timeout": args.timeout}
-    for name in every if args.compatible or args.consistent else []:
+    for name in every if args.verify or args.compatible or args.consistent else []:
         c = _contract(name, contracts)
+        if args.verify:
+            out.append(("verify", name,
+                        lambda c=c: checks.verify(c, args.backend, core=args.core, **options)))
         if args.compatible:
             out.append(("compatible", name,
                         lambda c=c: checks.is_compatible(c, args.backend, core=args.core,
@@ -182,6 +185,16 @@ def _report(kind: str, label: str, result) -> None:
         for p in (result.assumptions, result.guarantees):
             if p.reason:
                 print(f"  {p.reason}")
+    elif kind == "verify":
+        if result.status != SAT and result.feasible is not None:
+            for part, r in (("compatible", result.compatible), ("consistent", result.consistent)):
+                print(f"  {part:10} {r.status}")
+            if result.feasible.core is not None:
+                _report_core(result.feasible.core, guarantees_only=False)
+        for r in (result.feasible, result.compatible, result.consistent):
+            if r is not None and r.reason:
+                print(f"  {r.reason}")
+                break
     else:
         if result.controller is not None:
             nodes = result.controller.get("nodes", {}) if isinstance(result.controller, dict) else {}
@@ -248,16 +261,17 @@ def main(argv: list[str] | None = None) -> int:
         "check", help="check the contracts of a specification",
         description="Check the contracts of a specification in the logics language of "
         "CHASE, or of a JSON file, as the commands verify, refines, and synthesize of "
-        "logics_tool. Without options, verifies (compatibility and consistency) every "
-        "contract. A contract argument can be NAME or NAME+NAME+... "
+        "logics_tool. Without options, verifies every contract: its assumptions and "
+        "guarantees can hold together (A & G satisfiable). A contract argument can be NAME or NAME+NAME+... "
         "for the composition of the contracts. The exit status is 0 when every check "
         "passes, 1 when a check fails or does not finish, and 2 on an error in the input.")
     p.add_argument("file")
     p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
-                   help="the contracts for --compatible and --consistent (default: all)")
+                   help="the contracts for --verify, --compatible, and --consistent (default: all)")
     g = p.add_argument_group("checks on contracts (nuXmv)")
     g.add_argument("--verify", action="store_true",
-                   help="compatibility and consistency (the default)")
+                   help="the assumptions and the guarantees can hold together, A & G "
+                        "satisfiable (the default)")
     g.add_argument("--compatible", action="store_true", help="some environment satisfies A")
     g.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
     g.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),

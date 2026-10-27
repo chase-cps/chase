@@ -59,7 +59,7 @@ def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
 
 
 def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
-                      with_guarantees: bool = False, core: bool = False,
+                      with_guarantees: bool = True, core: bool = False,
                       backend: str = "auto", **options) -> Result:
     """Can the component be forced to win by making the environment violate
     its assumptions? ``separated`` when it cannot, ``not_separated`` with the
@@ -67,9 +67,12 @@ def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
 
     Takes a contract, or the assumptions with the inputs and the outputs.
     The check is GR(1) realizability with slugs of the system specification
-    (true, true, {false}) (Klein and Pnueli, HVC 2010; Maoz and Ringert, FSE
-    2016, Def. 2). With ``with_guarantees`` the component must also keep its
-    initial and safety guarantees (Def. 4). Only the case where the violation
+    (safe(G), {false}): the component must keep its initial and safety
+    guarantees while it forces the violation (Klein and Pnueli, HVC 2010;
+    Maoz and Ringert, FSE 2016, Def. 4). A violation that the component can
+    force only by breaking its own guarantees is not a defect of the
+    assumptions. With ``with_guarantees=False`` the guarantees are left out,
+    as in Def. 2 (the default before 0.3.2). Only the case where the violation
     can be forced from every initial state is detected (P-all): slugs does
     not give the winning region needed for the case of some reachable state.
     With core, a ``not_separated`` result carries a minimal set of

@@ -156,7 +156,7 @@ same name are the same variable, and `c.rename({...})` renames them.
 | Check | logics_tool | Python | chase-cps check | MCP tool |
 |---|---|---|---|---|
 | refinement ⪯ | `refines C1 C2 file` | `refines(c1, c2)` | `--refines C1 C2` | `refines` |
-| compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
+| A and G hold together (implies compatibility and consistency) | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
 | compatibility | | `is_compatible(c)` | | `is_compatible` |
 | consistency | | `is_consistent(c)` | | `is_consistent` |
 | implementation M ⊨ C | | `implements(m, c)` | | `implements` |
@@ -166,7 +166,14 @@ same name are the same variable, and `c.rename({...})` renames them.
 A contract (A, G) is read saturated, as A -> G. `refines(c1, c2)` checks
 that A2 -> A1 and (A1 -> G1) -> (A2 -> G2) are valid. A contract is
 compatible when some environment satisfies A, and consistent when some
-behavior satisfies A -> G; `verify` checks both. A component M satisfies
+behavior satisfies A -> G. The two can hold with different behaviors: a
+contract can be compatible and consistent although its guarantees cannot
+hold when its assumptions do. `verify` checks that A & G is satisfiable:
+some environment meets the assumptions and some component the guarantees,
+on the same behavior. This implies compatibility and consistency (with the
+same witness); when A & G is unsatisfiable, `verify` also checks the two,
+to tell whether the assumptions alone cannot hold, and with `core=True`
+gives the terms that conflict. A component M satisfies
 the contract (`implements(m, c)`) when M & A -> G is valid, and the contract
 accepts an environment E (`accepts(c, e)`) when E -> A is valid; M and E are
 LTL formulas over the variables of the contract. `remove_redundant(c)` drops
@@ -174,7 +181,8 @@ the assumptions implied by the other assumptions, and the guarantees implied
 by the assumptions and the other guarantees.
 
 The console writes the input file of nuXmv for `verify` and `refines`, to
-be run by hand; the Python package, the command line, and the MCP server run
+be run by hand (for `verify`, three LTLSPEC: the negations of A, of the
+guarantees, and of A & G; each one false means that the property holds); the Python package, the command line, and the MCP server run
 nuXmv and return the result.
 
 ### Queries on formulas
@@ -230,7 +238,10 @@ assert verify(c, context=FINITE).status == "unsat"
 
 A context is not an assumption. A behavior that violates an assumption
 satisfies the contract (A -> G); one that violates the context does not
-count. So `verify(c.assume(FINITE))` is still sat. The checks are:
+count. So `is_consistent(c.assume(FINITE))` is still sat, and a refinement
+check with the axiom as an assumption of both contracts compares other
+contracts. (`verify(c.assume(FINITE))` is unsat, since it checks A & G.)
+The checks are:
 
 - `implies(phi, psi, variables, context=k)`: k & phi -> psi;
 - `is_satisfiable(phi, variables, context=k)`: k & phi;
@@ -338,8 +349,11 @@ forcing the environment to violate the assumptions (Klein and Pnueli, HVC
 realizable for a bad reason: the controller may break its environment
 instead of meeting the guarantees. `is_well_separated(c)` answers
 `separated` or `not_separated` with the `controller` that forces the
-violation; `with_guarantees=True` makes the component keep its initial and
-safety guarantees (Def. 4 of Maoz and Ringert), and `core=True` gives a
+violation. The component must keep its initial and safety guarantees while
+it forces the violation (Def. 4 of Maoz and Ringert): a violation it can
+force only by breaking its own guarantees is not a defect of the
+assumptions. `with_guarantees=False` leaves the guarantees out (Def. 2, the
+default before 0.3.2). `core=True` gives a
 minimal set of assumptions that causes the problem. The check is one call
 to slugs. It detects the violations that can be forced from every initial
 state; those forced only from some reachable state need the winning region,

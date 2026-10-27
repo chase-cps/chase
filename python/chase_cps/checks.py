@@ -21,7 +21,8 @@ before 0.3.1.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from typing import Optional
 
 from . import ltl
 from .contract import Contract, VarType
@@ -128,12 +129,19 @@ def _only(c: Contract, guarantees: bool) -> Contract:
 
 @dataclass
 class Verification:
-    """Outcome of ``verify``: compatibility and consistency of a contract."""
+    """Outcome of ``verify``. The status is that of ``feasible``: some
+    behavior satisfies A & G, so the assumptions and the guarantees can hold
+    together. ``compatible`` (A satisfiable) and ``consistent`` (A -> G
+    satisfiable) follow from it, with the same witness; when A & G is
+    unsatisfiable they say whether the assumptions alone cannot hold."""
     compatible: Result
     consistent: Result
+    feasible: Optional[Result] = None
 
     @property
     def status(self) -> str:
+        if self.feasible is not None:
+            return self.feasible.status
         statuses = {self.compatible.status, self.consistent.status}
         if statuses == {SAT}:
             return SAT
@@ -143,24 +151,43 @@ class Verification:
         return self.status == SAT
 
     @property
+    def seconds(self) -> float:
+        return sum(r.seconds for r in (self.feasible, self.compatible, self.consistent) if r)
+
+    @property
     def reals(self) -> str | None:
         """How the real variables were handled (see ``Result.reals``)."""
-        return _reals(self.compatible, self.consistent)
+        return _reals(*(r for r in (self.feasible, self.compatible, self.consistent) if r))
 
     def to_dict(self) -> dict:
-        d = {"status": self.status, "compatible": self.compatible.to_dict(),
-             "consistent": self.consistent.to_dict()}
+        d = {"status": self.status}
+        if self.feasible is not None:
+            d["feasible"] = self.feasible.to_dict()
+        d["compatible"] = self.compatible.to_dict()
+        d["consistent"] = self.consistent.to_dict()
         if self.reals:
             d["reals"] = self.reals
         return d
 
 
-def verify(contract: Contract, backend: str = "auto", context=None,
+def verify(contract: Contract, backend: str = "auto", context=None, core: bool = False,
            **options) -> Verification:
-    """Compatibility and consistency of the contract (the verify command of
-    logics_tool). The status is sat when both hold."""
-    return Verification(is_compatible(contract, backend, context=context, **options),
-                        is_consistent(contract, backend, context=context, **options))
+    """Can the assumptions and the guarantees of the contract hold together
+    (A & G satisfiable)? This implies that the contract is compatible and
+    consistent; when A & G is unsatisfiable, the two are checked to tell
+    whether the assumptions alone cannot hold. With core, an unsat result
+    carries ``unsat_core`` of the contract (the terms that conflict)."""
+    both = ltl.Binary("&", contract.assumption, contract.guarantee)
+    feasible = is_satisfiable(both, contract.variables, backend, context=context, **options)
+    if feasible.status == SAT:
+        def implied():
+            return replace(feasible, seconds=0.0, details={"implied by": "A & G"})
+        return Verification(implied(), implied(), feasible)
+    if core and feasible.status == UNSAT:
+        feasible.core = unsat_core(contract, backend=backend, context=context, **options)
+    return Verification(is_compatible(contract, backend, core=core, context=context, **options),
+                        is_consistent(contract, backend, core=core, context=context, **options),
+                        feasible)
 
 
 @dataclass

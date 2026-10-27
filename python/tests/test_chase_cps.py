@@ -624,8 +624,10 @@ def test_well_separation():
     d = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               assumptions=["G F req", "G (grant -> X !req)"],
                               guarantees=["G !grant"], name="D")
-    assert is_well_separated(d).status == "not_separated"
+    assert is_well_separated(d).status == "separated"
     assert is_well_separated(d, with_guarantees=True).status == "separated"
+    # without the guarantees (Def. 2), granting forever forces the violation
+    assert is_well_separated(d, with_guarantees=False).status == "not_separated"
     n = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               assumptions=["G (req -> F grant)"], name="N")
     assert is_well_separated(n).status == "unknown"
@@ -777,8 +779,10 @@ def test_check_command(tmp_path, capsys):
     spec.write_text(ARBITER_SPEC)
     assert main(["check", str(spec)]) == 0
     out = capsys.readouterr().out
-    assert out.count("sat") == 4
+    assert out.count("sat") == 2 and out.count("verify") == 2
     assert main(["check", str(spec), "--verify", "--contracts", "Spec"]) == 0
+    assert capsys.readouterr().out.count("sat") == 1
+    assert main(["check", str(spec), "--compatible", "--consistent", "--contracts", "Spec"]) == 0
     assert capsys.readouterr().out.count("sat") == 2
     assert main(["check", str(spec), "--refines", "Impl", "Spec"]) == 0
     assert "valid" in capsys.readouterr().out
@@ -855,9 +859,36 @@ def test_verify_is_compatibility_and_consistency():
     r = verify(ok)
     assert r and r.status == "sat"
     assert r.compatible.status == "sat" and r.consistent.status == "sat"
+    assert r.feasible.status == "sat" and r.compatible.trace is r.feasible.trace
     bad = Contract.from_strings(inputs=["a"], assumptions=["G a", "F !a"], name="Bad")
     r = verify(bad)
     assert not r and r.status == "unsat" and r.compatible.status == "unsat"
+
+
+@needs_mc
+def test_verify_checks_that_the_assumptions_and_the_guarantees_hold_together():
+    from chase_cps import verify
+    # Compatible (A holds when grant is false) and consistent (A -> G holds
+    # when A fails), but granting forever stops the requests that A needs.
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"], name="C",
+                              assumptions=["G (grant -> X !req)", "G F req"],
+                              guarantees=["G grant"])
+    r = verify(c, core=True)
+    assert r.status == "unsat" and not r
+    assert r.compatible.status == "sat" and r.consistent.status == "sat"
+    k = r.feasible.core.core
+    assert [ltl.to_str(t) for t in k.assumptions] == ["G (grant -> X !req)", "G F req"]
+    assert [ltl.to_str(t) for t in k.guarantees] == ["G grant"]
+    d = r.to_dict()
+    assert d["status"] == "unsat" and d["feasible"]["core"]["status"] == "found"
+    # the command line reports it too
+    from chase_cps.cli import main
+    import json, tempfile, os
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "c.json")
+        with open(path, "w") as f:
+            json.dump(c.to_dict(), f)
+        assert main(["check", path]) == 1
 
 
 @needs_native
@@ -911,8 +942,11 @@ def test_context_leaves_out_the_behaviors_that_violate_it():
     assert verify(c).status == "sat"
     r = verify(c, context=FINITE)
     assert r.status == "unsat" and r.compatible.status == "sat"
-    # The axiom as an assumption does not help: A -> G holds when A fails.
-    assert verify(c.assume(FINITE)).status == "sat"
+    # As an assumption, the axiom makes consistency (A -> G) hold, since
+    # A -> G holds when A fails; verify checks A & G, which fails.
+    from chase_cps import is_consistent
+    assert is_consistent(c.assume(FINITE)).status == "sat"
+    assert verify(c.assume(FINITE)).status == "unsat"
 
 
 @needs_mc

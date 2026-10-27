@@ -260,7 +260,8 @@ def test_well_separation_core_is_minimal():
             continue
         found += 1
         core = r.core.core.assumptions
-        sub = lambda a: Contract(c.name, c.inputs, c.outputs, a, [])  # noqa: E731
+        # the core is minimal with the guarantees kept (with_guarantees)
+        sub = lambda a: Contract(c.name, c.inputs, c.outputs, a, list(c.guarantees))  # noqa: E731
         assert is_well_separated(sub(core)).status == "not_separated"
         for i in range(len(core)):
             assert is_well_separated(sub(core[:i] + core[i + 1:])).status == "separated"

@@ -29,7 +29,8 @@ layers:
    `assume`, `ensure`, `saturate`, and `simplify`, which return new
    contracts. They hold for any assume-guarantee contracts.
 2. **Checks** (`chase_cps.checks`, `chase_cps.logic`). The checks on
-   contracts are `refines`, `verify` (`is_compatible` and `is_consistent`),
+   contracts are `refines`, `verify` (A & G satisfiable, which implies
+   `is_compatible` and `is_consistent`),
    `implements` (a component satisfies the contract), `accepts`, and
    `remove_redundant`. They reduce to queries on formulas: `implies`
    (validity), `is_satisfiable` (satisfiability of a formula), and

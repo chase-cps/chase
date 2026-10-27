@@ -38,8 +38,8 @@ build_boolean_model')" = "true true "
     }
     lpc_console() {
         cd LiftPlusCruise && logics_tool -i lpc.ltl -o $W/lpc -c lpc.chase && cd .. || return 1
-        test "$(verdicts $W/lpc/vehicle12.smv go_msat)" = "false false " &&
-        test "$(verdicts $W/lpc/vehicle06.smv go_msat)" = "false true "
+        test "$(verdicts $W/lpc/vehicle12.smv go_msat)" = "false false false " &&
+        test "$(verdicts $W/lpc/vehicle06.smv go_msat)" = "false true true "
     }
     check "Charger"               "python3 Charger/charger.py --expect"
     check "Charger console"       "charger_console"
