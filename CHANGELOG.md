@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.1 (2026-10-27)
+
+- The Python package, its documentation, the command line, and the tools of
+  the MCP server are organized in three layers:
+  1. contracts and their algebra (`chase_cps.contract`), which hold for any
+     assume-guarantee contracts;
+  2. checks: on contracts (`chase_cps.checks`: refines, verify,
+     is_compatible, is_consistent, implements, accepts, remove_redundant),
+     and the queries on formulas they reduce to (`chase_cps.logic`:
+     implies, is_satisfiable, unsat_core);
+  3. GR(1) synthesis with slugs (`chase_cps.gr1`: is_realizable,
+     synthesize, unrealizable_core, is_well_separated, remove_vacuous).
+
+  All the names are still in `chase_cps`, and the modules of 0.3.0
+  (`chase_cps.checks`, `chase_cps.cores`) still give them: no code has to
+  change. docs/usage.md has a section and a table for each layer.
+- The documentation says what each query checks: `implies` the validity of
+  an implication, `is_satisfiable` the satisfiability of a formula, which is
+  not the satisfaction of a contract by a component (`implements`).
+- `chase-cps check --help` groups the options: checks on contracts (nuXmv),
+  GR(1) synthesis (slugs).
+- Release: ccache keeps the C++ objects between the builds of the Python
+  versions, and a tag builds the wheels once and uploads them to TestPyPI;
+  once they are checked, a manual run publishes the same files to PyPI.
+
 ## 0.3.0 (2026-10-26)
 
 - `context=`: formulas that every behavior satisfies (the axiom of an

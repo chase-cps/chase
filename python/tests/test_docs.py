@@ -45,10 +45,13 @@ def python_blocks():
 
 
 def table(path):
-    """The rows of the table of the operations of usage.md, as lists of cells."""
+    """The rows of the tables of the operations of usage.md (one per layer),
+    as lists of cells, without the header rows."""
     rows = []
-    for line in open(path):
-        if line.startswith("| ") and "---" not in line and "Contract theory" not in line:
+    lines = open(path).read().splitlines()
+    for i, line in enumerate(lines):
+        header = i + 1 < len(lines) and lines[i + 1].startswith("|---")
+        if line.startswith("| ") and not header:
             rows.append([c.strip() for c in line.strip().strip("|").split("|")])
     return rows
 

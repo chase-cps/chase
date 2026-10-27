@@ -310,7 +310,7 @@ def _install_slugs(log) -> str:
 
 def _verify(tool: str, path: str, log) -> str:
     """Run a small query with the installed tool."""
-    from . import checks
+    from . import gr1, logic
     from .contract import Contract
     from .queries import REALIZABLE, VALID
     env = {"nuxmv": "CHASE_NUXMV", "nusmv": "CHASE_NUSMV", "slugs": "CHASE_SLUGS"}[tool]
@@ -320,10 +320,10 @@ def _verify(tool: str, path: str, log) -> str:
         if tool == "slugs":
             c = Contract.from_strings(inputs=["r"], outputs=["g"], guarantees=["G (r -> X g)"],
                                       name="Check")
-            r = checks.is_realizable(c, "slugs", timeout=60)
+            r = gr1.is_realizable(c, "slugs", timeout=60)
             ok = r.status == REALIZABLE
         else:
-            r = checks.implies("G a", "F a", {"a": "bool"}, tool, timeout=60)
+            r = logic.implies("G a", "F a", {"a": "bool"}, tool, timeout=60)
             ok = r.status == VALID
     finally:
         if old is None:

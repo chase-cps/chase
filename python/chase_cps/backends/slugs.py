@@ -70,7 +70,7 @@ class SlugsAdapter(Adapter):
             return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed; run "
                           "`chase-cps doctor` to see how to install it")
         start = time.monotonic()
-        from ..cores import gr1_roles
+        from ..gr1 import gr1_roles
         problem = gr1_roles(query.contract)
         if problem:
             return Result(UNKNOWN, self.name, reason=f"cannot encode for slugs: {problem}")

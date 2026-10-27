@@ -1,65 +1,32 @@
-"""Checks on contracts, all built on implication and satisfiability.
+"""Checks on contracts, built on implication and satisfiability.
 
 Contracts are read as saturated: a contract (A, G) allows the behaviors of
 A -> G. ``refined`` refines ``abstract`` when A_abstract -> A_refined and
-(A_refined -> G_refined) -> (A_abstract -> G_abstract).
+(A_refined -> G_refined) -> (A_abstract -> G_abstract). A contract is
+compatible when some environment satisfies A, consistent when some
+behavior satisfies A -> G; a component M implements the contract when
+M & A -> G holds, and the contract accepts an environment E when E -> A.
+Each check is one or two queries on formulas (``chase_cps.logic``), so the
+checks hold for any theory the back ends decide.
 
 The checks take the back end (``"auto"``, ``"nuxmv"``, ``"nusmv"``) and
 options of the back end as keywords: ``timeout`` in seconds (300 by
 default), and for NuSMV ``engine`` (``"auto"``, ``"bdd"``, ``"bmc"``) and
-``bmc_bound``.
+``bmc_bound``. They also take a ``context`` (see ``chase_cps.logic``).
 
-The checks built on implication and satisfiability take a ``context``: a
-formula, or a list of formulas, that every behavior satisfies (e.g. an
-axiom of the encoding of finite traces, or the physical range of a
-signal). The behaviors that violate it are left out: an implication
-phi -> psi is checked as context & phi -> psi, the satisfiability of phi as
-that of context & phi. A context is not an assumption: a behavior that
-violates an assumption satisfies the saturated contract, one that violates
-the context does not count. The realizability checks do not take a
-context.
+The checks of GR(1) synthesis (realizability and the analyses built on it)
+are in ``chase_cps.gr1``; they are imported here too, as in the versions
+before 0.3.1.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
-from . import backends, cores, ltl
+from . import ltl
 from .contract import Contract, VarType
-from .queries import (INVALID, NOT_SEPARATED, REALIZABLE, SAT, SEPARATED, UNKNOWN,
-                      UNREALIZABLE, UNSAT, VALID, Implies, Realizable, Result, Satisfiable)
-
-
-def _formula(f) -> ltl.Node:
-    return ltl.parse(f) if isinstance(f, str) else f
-
-
-def _context(context, variables) -> Optional[ltl.Node]:
-    """The context as one formula (None when there is none); its variables
-    must be among the variables of the check."""
-    if context is None:
-        return None
-    terms = [_formula(context)] if isinstance(context, (str, ltl.Node)) \
-        else [_formula(f) for f in context]
-    if not terms:
-        return None
-    k = ltl.conjunction(terms)
-    missing = ltl.variables(k) - set(variables)
-    if missing:
-        raise ValueError(f"undeclared variables {sorted(missing)} in the context "
-                         f"{ltl.to_str(k)!r}")
-    return k
-
-
-def _within(context: Optional[ltl.Node], phi: ltl.Node) -> ltl.Node:
-    return phi if context is None else ltl.Binary("&", context, phi)
-
-
-def _no_context(options: dict, check: str) -> None:
-    if "context" in options:
-        raise TypeError(f"{check} does not take a context: the realizability checks "
-                        "read every behavior")
+from .logic import _context, _formula, _within, implies, is_satisfiable, unsat_core  # noqa: F401
+from .queries import INVALID, SAT, UNKNOWN, UNSAT, VALID, Result  # noqa: F401
 
 
 def _merge_vars(*contracts: Contract) -> dict[str, VarType]:
@@ -70,107 +37,6 @@ def _merge_vars(*contracts: Contract) -> dict[str, VarType]:
                 raise ValueError(f"variable {k} has types {out[k]} and {v}")
             out[k] = v
     return out
-
-
-def implies(phi, psi, variables: dict[str, VarType], backend: str = "auto",
-            context=None, **options) -> Result:
-    """Is phi -> psi valid? ``valid``, or ``invalid`` with a counterexample trace
-    (a behavior satisfying phi and violating psi)."""
-    k = _context(context, variables)
-    return backends.check(Implies(_within(k, _formula(phi)), _formula(psi), dict(variables)),
-                          backend, **options)
-
-
-def is_satisfiable(phi, variables: dict[str, VarType], backend: str = "auto",
-                   core: bool = False, context=None, **options) -> Result:
-    """Is phi satisfiable? ``sat`` with a witness trace, or ``unsat``. With
-    core, an unsat result carries ``unsat_core`` of the conjuncts of phi."""
-    k = _context(context, variables)
-    r = backends.check(Satisfiable(_within(k, _formula(phi)), dict(variables)), backend,
-                       **options)
-    if core and r.status == UNSAT:
-        r.core = cores.unsat_core(_formula(phi), variables, backend, context=k, **options)
-    return r
-
-
-def is_realizable(contract: Contract, backend: str = "auto", core: bool = False,
-                  **options) -> Result:
-    """GR(1) realizability of the contract: ``realizable``, or ``unrealizable``
-    with the counter-strategy of the environment. With core, an unrealizable
-    result carries ``unrealizable_core`` of the contract."""
-    _no_context(options, "is_realizable")
-    r = backends.check(Realizable(contract), backend, **options)
-    if core and r.status == UNREALIZABLE:
-        r.core = cores.unrealizable_core(contract, backend=backend, **options)
-    return r
-
-
-def synthesize(contract: Contract, backend: str = "auto", **options) -> Result:
-    """GR(1) synthesis: ``realizable`` with the controller, or ``unrealizable``
-    with the counter-strategy of the environment."""
-    _no_context(options, "synthesize")
-    return backends.check(Realizable(contract), backend, controller=True, **options)
-
-
-def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
-                      with_guarantees: bool = False, core: bool = False,
-                      backend: str = "auto", **options) -> Result:
-    """Can the component be forced to win by making the environment violate
-    its assumptions? ``separated`` when it cannot, ``not_separated`` with the
-    ``controller`` that forces the violation, or ``unknown``.
-
-    Takes a contract, or the assumptions with the inputs and the outputs.
-    The check is GR(1) realizability with slugs of the system specification
-    (true, true, {false}) (Klein and Pnueli, HVC 2010; Maoz and Ringert, FSE
-    2016, Def. 2). With ``with_guarantees`` the component must also keep its
-    initial and safety guarantees (Def. 4). Only the case where the violation
-    can be forced from every initial state is detected (P-all): slugs does
-    not give the winning region needed for the case of some reachable state.
-    With core, a ``not_separated`` result carries a minimal set of
-    assumptions that is still not separated.
-    """
-    _no_context(options, "is_well_separated")
-    if isinstance(assumptions, Contract):
-        c = assumptions
-    else:
-        if inputs is None or outputs is None:
-            raise TypeError("is_well_separated of formulas needs the inputs and the outputs")
-        c = Contract.from_strings(inputs=inputs, outputs=outputs,
-                                  assumptions=cores._terms(assumptions) if assumptions else [],
-                                  guarantees=cores._terms(guarantees) if guarantees else [],
-                                  name="C")
-    for t in list(c.assumptions) + (list(c.guarantees) if with_guarantees else []):
-        if cores.gr1_kind(t) is None:
-            return Result(UNKNOWN, "slugs", reason=f"not a GR(1) term: {ltl.to_str(t)}")
-    kept = [t for t in c.guarantees
-            if cores.gr1_kind(t) in ("init", "safety")] if with_guarantees else []
-    goal = kept + [ltl.Unary("G", ltl.Unary("F", ltl.Const(False)))]
-
-    def query(a, controller):
-        return backends.check(Realizable(Contract(c.name, dict(c.inputs), dict(c.outputs),
-                                                  list(a), goal)),
-                              backend, controller=controller, counter_strategy=False,
-                              **options)
-
-    r = query(c.assumptions, True)
-    if r.status == REALIZABLE:
-        r.status = NOT_SEPARATED
-    elif r.status == UNREALIZABLE:
-        r.status = SEPARATED
-    if core and r.status == NOT_SEPARATED:
-        terms = list(c.assumptions)
-        search = cores._Search(lambda idx: {REALIZABLE: True, UNREALIZABLE: False}.get(
-            query([terms[i] for i in idx], False).status))
-        found = search.ddmin(list(range(len(terms))), [])
-        if search.reason:
-            r.core = cores.Core(cores.UNKNOWN, reason=search.reason, checks=search.checks)
-        else:
-            sub = [terms[i] for i in found]
-            r.core = cores.Core(cores.FOUND, Contract(f"{c.name}_core", dict(c.inputs),
-                                                      dict(c.outputs), sub, [])
-                                if isinstance(assumptions, Contract) else sub,
-                                checks=search.checks)
-    return r
 
 
 def _reals(*results: Result) -> str | None:
@@ -236,7 +102,7 @@ def is_consistent(contract: Contract, backend: str = "auto", core: bool = False,
     r = is_satisfiable(contract.saturated_guarantee, contract.variables, backend,
                        context=context, **options)
     if core and r.status == UNSAT:
-        r.core = cores.unsat_core(_only(contract, guarantees=True), backend=backend,
+        r.core = unsat_core(_only(contract, guarantees=True), backend=backend,
                                   context=context, **options)
     return r
 
@@ -248,7 +114,7 @@ def is_compatible(contract: Contract, backend: str = "auto", core: bool = False,
     r = is_satisfiable(contract.assumption, contract.variables, backend, context=context,
                        **options)
     if core and r.status == UNSAT:
-        r.core = cores.unsat_core(_only(contract, guarantees=False), backend=backend,
+        r.core = unsat_core(_only(contract, guarantees=False), backend=backend,
                                   context=context, **options)
     return r
 
@@ -349,135 +215,6 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
     return out
 
 
-@dataclass
-class VacuousTerm:
-    """A term removed by ``remove_vacuous``: ``part`` is assumption or
-    guarantee, ``kind`` init, safety, or justice; ``core`` (with core=True)
-    the terms that make it vacuous."""
-    term: ltl.Node
-    part: str
-    kind: str
-    core: Optional[list] = None
-
-    def to_dict(self) -> dict:
-        d = {"term": ltl.to_str(self.term), "part": self.part, "kind": self.kind}
-        if self.core is not None:
-            d["core"] = [ltl.to_str(t) for t in self.core]
-        return d
-
-
-@dataclass
-class Vacuity:
-    """Outcome of ``remove_vacuous``: the contract without the vacuous terms,
-    the terms removed in order, the terms whose check did not finish (kept),
-    and the reason when nothing could be checked."""
-    contract: Contract
-    removed: list[VacuousTerm] = field(default_factory=list)
-    unknown: list[ltl.Node] = field(default_factory=list)
-    reason: str = ""
-
-    @property
-    def assumptions(self) -> list[ltl.Node]:
-        return self.contract.assumptions
-
-    @property
-    def guarantees(self) -> list[ltl.Node]:
-        return self.contract.guarantees
-
-    def to_dict(self) -> dict:
-        d = {"contract": self.contract.to_dict(),
-             "removed": [t.to_dict() for t in self.removed],
-             "unknown": [ltl.to_str(f) for f in self.unknown]}
-        if self.reason:
-            d["reason"] = self.reason
-        return d
-
-
-def remove_vacuous(guarantees, inputs=None, outputs=None, assumptions=(), core: bool = False,
-                   backend: str = "auto", **options) -> Vacuity:
-    """Remove the terms whose removal does not change the GR(1)
-    specification: its realizability and the controllers that realize it
-    (inherent vacuity, Maoz and Shalom, ESEC/FSE 2020, Table 1).
-
-    A term is vacuous when its premise set implies it, one check with nuXmv:
-    an initial term, by the other initial terms (and, for a guarantee, the
-    initial assumptions); a safety term G t, by the bodies of the other
-    safety terms of its side (and, for a guarantee, of the safety
-    assumptions), as a propositional implication over the current and next
-    values; a justice term G F j, by the initial and safety terms of both
-    sides and the other justice terms (for a guarantee, also the justice
-    assumptions). The terms are checked one at a time, in order, against the
-    terms not yet removed. Unlike ``remove_redundant``, which keeps A -> G,
-    this keeps realizability: a guarantee implied only with the help of an
-    initial or a justice term is not removed when that would change the game.
-
-    Takes a contract, or the guarantees with the inputs, the outputs, and the
-    assumptions. With core, each removed term carries a minimal subset of its
-    premise set that implies it.
-    """
-    _no_context(options, "remove_vacuous")
-    if isinstance(guarantees, Contract):
-        c = guarantees
-    else:
-        if inputs is None or outputs is None:
-            raise TypeError("remove_vacuous of formulas needs the inputs and the outputs")
-        c = Contract.from_strings(inputs=inputs, outputs=outputs,
-                                  assumptions=cores._terms(assumptions) if assumptions else [],
-                                  guarantees=cores._terms(guarantees), name="C")
-    terms = [("assumption", t) for t in c.assumptions] + [("guarantee", t) for t in c.guarantees]
-    kinds = [cores.gr1_kind(t) for _, t in terms]
-    out = Vacuity(Contract(c.name, dict(c.inputs), dict(c.outputs),
-                           list(c.assumptions), list(c.guarantees)))
-    for (_, t), k in zip(terms, kinds):
-        if k is None:
-            out.reason = f"not a GR(1) term: {ltl.to_str(t)}"
-            return out
-    variables = c.variables
-    alive = list(range(len(terms)))
-
-    def body(i):     # the formula a premise contributes
-        t = terms[i][1]
-        return t.arg if kinds[i] == "safety" else t
-
-    def premises(i):
-        part, kind = terms[i][0], kinds[i]
-        env = part == "assumption"
-        same_side = lambda j: terms[j][0] == part
-        if kind == "init":
-            return [j for j in alive if j != i and kinds[j] == "init" and (same_side(j) or not env)]
-        if kind == "safety":
-            return [j for j in alive if j != i and kinds[j] == "safety" and (same_side(j) or not env)]
-        return [j for j in alive if j != i and (kinds[j] in ("init", "safety") or
-                                                (kinds[j] == "justice" and (same_side(j) or not env)))]
-
-    def implied(prem, i):
-        if kinds[i] == "safety":   # propositional parts: the bodies of the G
-            phi, psi = ltl.conjunction([body(j) for j in prem]), body(i)
-        else:
-            phi, psi = ltl.conjunction([terms[j][1] for j in prem]), terms[i][1]
-        return {VALID: True, INVALID: False}.get(
-            implies(phi, psi, variables, backend, **options).status)
-
-    for i in list(alive):
-        prem = premises(i)
-        verdict = implied(prem, i)
-        if verdict is None:
-            out.unknown.append(terms[i][1])
-            continue
-        if not verdict:
-            continue
-        alive.remove(i)
-        found = None
-        if core:
-            search = cores._Search(lambda idx: implied([prem[k] for k in idx], i))
-            idx = search.ddmin(list(range(len(prem))), [])
-            found = None if search.reason else [terms[prem[k]][1] for k in idx]
-        out.removed.append(VacuousTerm(terms[i][1], terms[i][0], kinds[i], found))
-    out.contract.assumptions = [t for j, (p, t) in enumerate(terms) if p == "assumption" and j in alive]
-    out.contract.guarantees = [t for j, (p, t) in enumerate(terms) if p == "guarantee" and j in alive]
-    return out
-
-
 def accepts(contract: Contract, environment, backend: str = "auto", context=None,
             **options) -> Result:
     """Does the contract accept the environment (an LTL formula over the
@@ -493,3 +230,9 @@ def implements(implementation, contract: Contract, backend: str = "auto", contex
     return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
                    contract.guarantee, contract.variables, backend, context, **options)
 
+
+
+# GR(1) synthesis, in chase_cps.gr1 (kept here for the code written before
+# 0.3.1).
+from .gr1 import (Vacuity, VacuousTerm, is_realizable, is_well_separated,  # noqa: E402,F401
+                  remove_vacuous, synthesize)

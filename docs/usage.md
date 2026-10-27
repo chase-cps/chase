@@ -82,13 +82,33 @@ d = Contract.from_dict({"name": "Spec", "inputs": {"req": "bool", "n": [0, 3], "
                         "guarantees": ["G (req -> F grant)"]})
 ````
 
-## Operations
+## Three layers
 
-The operations are named with verbs. The operations of the contract algebra
-return a new contract; the checks read as predicates (`refines(a, b)`: does
-`a` refine `b`?).
+The operations of CHASE are in three layers:
 
-| Contract theory | logics_tool | Python | chase-cps check | MCP tool |
+1. **Contracts and their algebra.** The operations that build a contract
+   from contracts (composition, conjunction, quotient, ...). They hold for
+   any assume-guarantee contracts and are computed by the core library, in
+   closed form, without a solver.
+2. **Checks.** The checks on contracts (refinement, compatibility,
+   consistency, implementation) reduce to queries on formulas of a theory:
+   validity (`implies`) and satisfiability (`is_satisfiable`), with their
+   cores. The back ends decide them: nuXmv, or NuSMV, for LTL over Boolean,
+   integer, and real variables.
+3. **GR(1) synthesis.** Realizability, synthesis, and the analyses built on
+   them (unrealizable cores, well-separation, vacuity). They are about one
+   way of using contracts, reactive synthesis from the GR(1) fragment of
+   LTL with slugs, not about contracts in general.
+
+In Python the layers are the modules `chase_cps.contract` (the `Contract`
+and its methods), `chase_cps.checks` and `chase_cps.logic`, and
+`chase_cps.gr1`; all the names are also in `chase_cps`. The operations are
+named with verbs: the operations of the algebra return a new contract, the
+checks read as predicates (`refines(a, b)`: does `a` refine `b`?).
+
+## 1. Contracts and their algebra
+
+| Operation | logics_tool | Python | chase-cps check | MCP tool |
 |---|---|---|---|---|
 | composition ∥ | `compose C1 C2 R` | `c1.compose(c2)` | `C1+C2` in a contract argument | `compose` |
 | conjunction ∧ | `conjoin C1 C2 R` | `c1.conjoin(c2)` | | `conjoin` |
@@ -103,14 +123,6 @@ return a new contract; the checks read as predicates (`refines(a, b)`: does
 | adding a guarantee C·b | | `c.ensure(b)` | | `ensure` |
 | saturation | `saturate C` | `c.saturate()` | | `saturate` |
 | (formula simplification) | `simplify C` | `c.simplify()` | | `simplify` |
-| refinement ⪯ | `refines C1 C2 file` | `refines(c1, c2)` | `--refines C1 C2` | `refines` |
-| compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
-| realizability | | `is_realizable(c)` | `--realizable C` | `is_realizable` |
-| synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
-| unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
-| unsat core | | `unsat_core(c)` | `--core` | `unsat_core` |
-| well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
-| vacuity | | `remove_vacuous(c)` | | `remove_vacuous` |
 
 Implication and coimplication are the adjoints of conjunction and
 disjunction, as the quotient and separation are of composition and merging
@@ -123,9 +135,10 @@ gives (b -> A, b & G), which refines c.
 `c1.compose(c2, discharge=True)` keeps the terms of the two contracts instead
 of the closed form (Incer, PhD thesis 2022, Algorithm 2). When c1 drives the
 inputs of c2 and not the reverse, the assumptions of c2 implied by the
-assumptions and guarantees of c1 are dropped, then the redundant terms. Each
-test is one call to nuXmv. The result is an abstraction of the composition:
-a refinement proved on it holds for the composition; a failed one may not.
+assumptions and guarantees of c1 are dropped, then the redundant terms. This
+variant uses the checks of layer 2 (one implication per test), so it needs
+nuXmv. The result is an abstraction of the composition: a refinement proved
+on it holds for the composition; a failed one may not.
 
 The console also accepts the names of its first version: `conjunction` for
 `conjoin`, `quotient` for `divide`, and `refinement` for `refines`. It has
@@ -136,23 +149,66 @@ default), by a map entered by hand (`manual` as last argument), or by a map
 read from a file (its name as last argument). In Python, variables with the
 same name are the same variable, and `c.rename({...})` renames them.
 
-`is_realizable` checks GR(1) realizability with slugs and gives the
-counter-strategy of the environment when the contract is unrealizable;
-`synthesize` also builds the controller. The console writes the input file of
-slugs or gr1c, which decide realizability and build the controller.
+## 2. Checks
 
-The Python package, the command line, and the MCP server have also:
+### Checks on contracts
 
-- `is_compatible(c)` and `is_consistent(c)`, the two checks of `verify`;
-- `implies(phi, psi, variables)` and `is_satisfiable(phi, variables)` on
-  formulas;
-- `accepts(c, e)`: the contract accepts the environment E (E -> A), and
-  `implements(m, c)`: M is an implementation of the contract (M & A -> G);
-- `remove_redundant(c)`, which drops the terms implied by the others;
-- `load_spec(path)`, `parse_spec(text)`, and `to_spec(contracts)`, which
-  read and write specification files.
+| Check | logics_tool | Python | chase-cps check | MCP tool |
+|---|---|---|---|---|
+| refinement ⪯ | `refines C1 C2 file` | `refines(c1, c2)` | `--refines C1 C2` | `refines` |
+| compatibility and consistency | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
+| compatibility | | `is_compatible(c)` | | `is_compatible` |
+| consistency | | `is_consistent(c)` | | `is_consistent` |
+| implementation M ⊨ C | | `implements(m, c)` | | `implements` |
+| acceptance of an environment E | | `accepts(c, e)` | | `accepts` |
+| redundant terms | | `remove_redundant(c)` | | `remove_redundant` |
 
-## Context
+A contract (A, G) is read saturated, as A -> G. `refines(c1, c2)` checks
+that A2 -> A1 and (A1 -> G1) -> (A2 -> G2) are valid. A contract is
+compatible when some environment satisfies A, and consistent when some
+behavior satisfies A -> G; `verify` checks both. A component M satisfies
+the contract (`implements(m, c)`) when M & A -> G is valid, and the contract
+accepts an environment E (`accepts(c, e)`) when E -> A is valid; M and E are
+LTL formulas over the variables of the contract. `remove_redundant(c)` drops
+the assumptions implied by the other assumptions, and the guarantees implied
+by the assumptions and the other guarantees.
+
+The console writes the input file of nuXmv for `verify` and `refines`, to
+be run by hand; the Python package, the command line, and the MCP server run
+nuXmv and return the result.
+
+### Queries on formulas
+
+| Query | logics_tool | Python | chase-cps check | MCP tool |
+|---|---|---|---|---|
+| validity of phi -> psi | | `implies(phi, psi, variables)` | | `implies` |
+| satisfiability of phi | | `is_satisfiable(phi, variables)` | | `is_satisfiable` |
+| unsat core | | `unsat_core(c)` | `--core` | `unsat_core` |
+
+The checks on contracts reduce to these queries, in `chase_cps.logic`.
+`implies` checks validity: phi -> psi holds for every behavior; the answer
+is `valid`, or `invalid` with a counterexample (a behavior that satisfies
+phi and violates psi). `is_satisfiable` checks that some behavior (a value
+of each variable at each step) satisfies the formula; the answer is `sat`
+with such a behavior, or `unsat`. This satisfiability of a formula is not
+the satisfaction of a contract by a component, which is `implements`.
+
+When a check fails, a core is a minimal set of terms that explains it:
+removing any term of the core makes the check pass. `unsat_core(c)` gives
+the terms of A & G that cannot hold together. If they are all assumptions,
+the contract is incompatible; all guarantees, the guarantees contradict
+each other; both, the guarantees cannot hold when the assumptions do. This
+is the consistency check of OCRA (`ocra_check_consistency -j`). The search
+is delta debugging (Zeller and Hildebrandt, TSE 2002), one call to nuXmv per
+test. `unsat_core(formulas, variables)` takes formulas and returns formulas.
+The checks give the core of their failure with `core=True`:
+`is_compatible(c, core=True)` (the assumptions), `is_consistent(c,
+core=True)` (the guarantees), and `is_satisfiable(phi, variables,
+core=True)`. The result is a `Core` with a `status`: `found` with the
+`core`, `none` when the check does not fail, or `unknown` with a `reason`
+when a test does not finish.
+
+### Context
 
 Some formulas are not an assumption of a component nor a guarantee: they
 hold for every behavior that can happen at all. Examples are the axiom of
@@ -188,63 +244,7 @@ realizability checks (`is_realizable`, `synthesize`, `is_well_separated`,
 formula constrains the environment or the component is a question of
 roles, which a context does not say.
 
-## Cores
-
-When a check fails, a core is a minimal set of terms that explains it:
-removing any term of the core makes the check pass.
-
-- `unrealizable_core(c)`: the guarantees that are unrealizable under all the
-  assumptions. The search minimizes the justice guarantees, then the safety,
-  then the initial ones (QuickCore, Maoz and Shalom, ICSE 2021), with one
-  call to slugs per test.
-- `unsat_core(c)`: the terms of A & G that cannot hold together. If they are
-  all assumptions, the contract is incompatible; all guarantees, the
-  guarantees contradict each other; both, the guarantees cannot hold when
-  the assumptions do. This is the consistency check of OCRA
-  (`ocra_check_consistency -j`). One call to nuXmv per test.
-
-Both also take formulas: `unsat_core(formulas, variables)` and
-`unrealizable_core(guarantees, inputs, outputs, assumptions)`, and then
-return formulas. The checks give the core of their failure with
-`core=True`: `is_realizable(c, core=True)`, `is_compatible(c, core=True)`
-(the assumptions), `is_consistent(c, core=True)` (the guarantees), and
-`is_satisfiable(phi, variables, core=True)`. The result is a `Core` with a
-`status`: `found` with the `core`, `none` when the check does not fail, or
-`unknown` with a `reason` when a test does not finish.
-
-## Well-separation
-
-A contract is well-separated when the component cannot satisfy it by
-forcing the environment to violate the assumptions (Klein and Pnueli, HVC
-2010; Maoz and Ringert, FSE 2016). A contract that is not well-separated is
-realizable for a bad reason: the controller may break its environment
-instead of meeting the guarantees. `is_well_separated(c)` answers
-`separated` or `not_separated` with the `controller` that forces the
-violation; `with_guarantees=True` makes the component keep its initial and
-safety guarantees (Def. 4 of Maoz and Ringert), and `core=True` gives a
-minimal set of assumptions that causes the problem. The check is one call
-to slugs. It detects the violations that can be forced from every initial
-state; those forced only from some reachable state need the winning region,
-which slugs does not give.
-
-## Vacuity
-
-`remove_vacuous(c)` removes the terms whose removal does not change the
-GR(1) specification: its realizability and the controllers that realize it
-(inherent vacuity, Maoz and Shalom, ESEC/FSE 2020). Each term is checked
-against a premise set that depends on its kind (initial, safety, justice)
-and on its side (assumption or guarantee), one call to nuXmv per term; a
-safety term is compared with the bodies of the other safety terms only, as
-a propositional implication over the current and next values. The terms are
-checked in order against the terms not yet removed, so of two equal terms
-one is kept. The result has the `contract`, the `removed` terms with their
-part and kind, and with `core=True` the terms that make each one vacuous.
-
-`remove_redundant(c)` instead keeps A -> G: it may remove a term that only
-follows from the others over whole traces, which can change the synthesis
-problem; `remove_vacuous` does not.
-
-## Real variables
+### Real variables
 
 A variable of type `"real"` (`real variable x;`) takes any real value. The
 checks handle real variables in this order, and the result says in `reals`
@@ -294,6 +294,73 @@ nuXmv > check_ltlspec_ic3
 ````
 
 `go`, followed by `check_ltlspec`, stops with an error on such a file.
+
+## 3. GR(1) synthesis
+
+| Analysis | logics_tool | Python | chase-cps check | MCP tool |
+|---|---|---|---|---|
+| realizability | | `is_realizable(c)` | `--realizable C` | `is_realizable` |
+| synthesis | `synthesize C file solver` | `synthesize(c)` | `--synthesize C` | `synthesize` |
+| unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
+| well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
+| vacuity | | `remove_vacuous(c)` | | `remove_vacuous` |
+
+These analyses are about reactive synthesis from contracts in the GR(1)
+fragment of LTL, with slugs, in `chase_cps.gr1`. A contract is realizable
+when a component that controls the outputs can satisfy A -> G against every
+environment that controls the inputs; this depends on the synthesis
+approach, and is not a property of contracts in general. The terms must be
+GR(1): initial (no temporal operator), safety (G f, with X only in f), or
+justice (G F f). The checks do not take a context: whether a formula
+constrains the environment or the component is a question of roles, which a
+context does not say.
+
+`is_realizable` gives the counter-strategy of the environment when the
+contract is unrealizable; `synthesize` also builds the controller. The
+console writes the input file of slugs or gr1c, which decide realizability
+and build the controller.
+
+### Unrealizable cores
+
+`unrealizable_core(c)` gives a minimal set of guarantees that is
+unrealizable under all the assumptions. The search minimizes the justice
+guarantees, then the safety, then the initial ones (QuickCore, Maoz and
+Shalom, ICSE 2021), with one call to slugs per test.
+`unrealizable_core(guarantees, inputs, outputs, assumptions)` takes formulas
+and returns formulas, and `is_realizable(c, core=True)` gives the core of an
+unrealizable result.
+
+### Well-separation
+
+A contract is well-separated when the component cannot satisfy it by
+forcing the environment to violate the assumptions (Klein and Pnueli, HVC
+2010; Maoz and Ringert, FSE 2016). A contract that is not well-separated is
+realizable for a bad reason: the controller may break its environment
+instead of meeting the guarantees. `is_well_separated(c)` answers
+`separated` or `not_separated` with the `controller` that forces the
+violation; `with_guarantees=True` makes the component keep its initial and
+safety guarantees (Def. 4 of Maoz and Ringert), and `core=True` gives a
+minimal set of assumptions that causes the problem. The check is one call
+to slugs. It detects the violations that can be forced from every initial
+state; those forced only from some reachable state need the winning region,
+which slugs does not give.
+
+### Vacuity
+
+`remove_vacuous(c)` removes the terms whose removal does not change the
+GR(1) specification: its realizability and the controllers that realize it
+(inherent vacuity, Maoz and Shalom, ESEC/FSE 2020). Each term is checked
+against a premise set that depends on its kind (initial, safety, justice)
+and on its side (assumption or guarantee), one call to nuXmv per term; a
+safety term is compared with the bodies of the other safety terms only, as
+a propositional implication over the current and next values. The terms are
+checked in order against the terms not yet removed, so of two equal terms
+one is kept. The result has the `contract`, the `removed` terms with their
+part and kind, and with `core=True` the terms that make each one vacuous.
+
+`remove_redundant(c)` (layer 2) instead keeps A -> G: it may remove a term
+that only follows from the others over whole traces, which can change the
+synthesis problem; `remove_vacuous` does not.
 
 ## Results
 

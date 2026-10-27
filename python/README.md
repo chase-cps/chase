@@ -20,15 +20,27 @@ result = refines(impl, spec)
 print(result.status)          # valid, or invalid with a counterexample trace
 ```
 
-The operations have the names of the commands of `logics_tool`. A contract
-`c` has the methods `compose`, `conjoin`, `disjoin`, `merge`, `divide`
-(quotient), `separate`, `saturate`, and `simplify`, which return new
-contracts. The checks on contracts are `refines`, `verify` (`is_compatible`
-and `is_consistent`), `is_realizable`, `accepts`, and `implements`;
-`synthesize` builds a controller. The checks on formulas are `implies` and
-`is_satisfiable`. `remove_redundant` drops the terms implied by the others. `load_spec` and
-`parse_spec` read the contracts of a specification written in the logics
-language of CHASE, and `to_spec` writes one.
+The operations have the names of the commands of `logics_tool`, in three
+layers:
+
+1. **Contracts and their algebra** (`chase_cps.contract`). A contract `c`
+   has the methods `compose`, `conjoin`, `disjoin`, `merge`, `divide`
+   (quotient), `separate`, `imply`, `coimply`, `invert` (reciprocal),
+   `assume`, `ensure`, `saturate`, and `simplify`, which return new
+   contracts. They hold for any assume-guarantee contracts.
+2. **Checks** (`chase_cps.checks`, `chase_cps.logic`). The checks on
+   contracts are `refines`, `verify` (`is_compatible` and `is_consistent`),
+   `implements` (a component satisfies the contract), `accepts`, and
+   `remove_redundant`. They reduce to queries on formulas: `implies`
+   (validity), `is_satisfiable` (satisfiability of a formula), and
+   `unsat_core`. A `context` gives formulas that every behavior satisfies.
+3. **GR(1) synthesis** (`chase_cps.gr1`): `is_realizable`, `synthesize`,
+   `unrealizable_core`, `is_well_separated`, and `remove_vacuous`, for
+   contracts in the GR(1) fragment of LTL.
+
+All the names are also in `chase_cps`. `load_spec` and `parse_spec` read the
+contracts of a specification written in the logics language of CHASE, and
+`to_spec` writes one.
 
 ## Installation
 
@@ -43,10 +55,9 @@ supported: use WSL or the CHASE Docker image.
 The package contains the CHASE library. The checks call external tools,
 which are not installed with the package:
 
-- [nuXmv][NUXMV] for `refines`, `verify`, `implies`, `is_satisfiable`,
-  `remove_redundant`, `accepts`, and `implements`. nuXmv is free for academic and non-commercial
-  use.
-- [slugs][SLUGS] for `is_realizable` and `synthesize`.
+- [nuXmv][NUXMV] for the checks (layer 2) and `remove_vacuous`. nuXmv is
+  free for academic and non-commercial use.
+- [slugs][SLUGS] for the other analyses of GR(1) synthesis (layer 3).
 
 The command `chase-cps install` downloads nuXmv from its site, and builds
 slugs from its sources, into `~/.chase`:

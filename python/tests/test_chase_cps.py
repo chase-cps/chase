@@ -975,3 +975,28 @@ CONTRACT Credits:
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         parse_spec(text.replace("integer variable credits", "integer (0:200) variable credits"))
+
+
+# Layers --------------------------------------------------------------------------
+
+def test_layers_and_the_names_before_0_3_1():
+    # The checks on contracts (chase_cps.checks), the queries on formulas
+    # (chase_cps.logic), and GR(1) synthesis (chase_cps.gr1); the names
+    # imported from chase_cps, chase_cps.checks, and chase_cps.cores before
+    # 0.3.1 are the same objects.
+    import chase_cps
+    from chase_cps import checks, cores, gr1, logic
+    for name in ("refines", "verify", "is_compatible", "is_consistent", "implements",
+                 "accepts", "remove_redundant"):
+        assert getattr(chase_cps, name) is getattr(checks, name)
+    for name in ("implies", "is_satisfiable", "unsat_core", "Core"):
+        assert getattr(chase_cps, name) is getattr(logic, name)
+    for name in ("is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
+                 "remove_vacuous", "Vacuity", "VacuousTerm"):
+        assert getattr(chase_cps, name) is getattr(gr1, name)
+    for name in ("implies", "is_satisfiable", "is_realizable", "synthesize",
+                 "is_well_separated", "remove_vacuous"):
+        assert getattr(checks, name) is getattr(chase_cps, name)
+    for name in ("unsat_core", "unrealizable_core", "gr1_kind", "gr1_roles", "Core"):
+        assert getattr(cores, name) is getattr(logic, name, None) or \
+            getattr(cores, name) is getattr(gr1, name)

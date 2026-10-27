@@ -17,7 +17,7 @@ import platform
 import sys
 import textwrap
 
-from . import __version__, checks, ltl, tools
+from . import __version__, checks, gr1, ltl, tools
 from .backends import ADAPTERS
 from .contract import Contract, load_spec
 from .queries import REALIZABLE, SAT, VALID
@@ -149,14 +149,14 @@ def _checks(args, contracts):
     for name in args.realizable or []:
         c = _contract(name, contracts)
         out.append(("realizable", name,
-                    lambda c=c: checks.is_realizable(c, core=args.core, **options)))
+                    lambda c=c: gr1.is_realizable(c, core=args.core, **options)))
     for name in args.well_separated or []:
         c = _contract(name, contracts)
         out.append(("separated", name,
-                    lambda c=c: checks.is_well_separated(c, core=args.core, **options)))
+                    lambda c=c: gr1.is_well_separated(c, core=args.core, **options)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
-        out.append(("synthesize", name, lambda c=c: checks.synthesize(c, **options)))
+        out.append(("synthesize", name, lambda c=c: gr1.synthesize(c, **options)))
     return out
 
 
@@ -255,19 +255,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("file")
     p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
                    help="the contracts for --compatible and --consistent (default: all)")
-    p.add_argument("--verify", action="store_true",
+    g = p.add_argument_group("checks on contracts (nuXmv)")
+    g.add_argument("--verify", action="store_true",
                    help="compatibility and consistency (the default)")
-    p.add_argument("--compatible", action="store_true", help="some environment satisfies A")
-    p.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
-    p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
+    g.add_argument("--compatible", action="store_true", help="some environment satisfies A")
+    g.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
+    g.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="REFINED refines ABSTRACT (may be repeated)")
-    p.add_argument("--realizable", action="append", metavar="CONTRACT",
-                   help="GR(1) realizability with slugs (may be repeated)")
-    p.add_argument("--synthesize", action="append", metavar="CONTRACT",
-                   help="GR(1) synthesis of a controller with slugs (may be repeated)")
-    p.add_argument("--well-separated", action="append", metavar="CONTRACT",
+    g = p.add_argument_group("GR(1) synthesis (slugs)")
+    g.add_argument("--realizable", action="append", metavar="CONTRACT",
+                   help="GR(1) realizability (may be repeated)")
+    g.add_argument("--synthesize", action="append", metavar="CONTRACT",
+                   help="GR(1) synthesis of a controller (may be repeated)")
+    g.add_argument("--well-separated", action="append", metavar="CONTRACT",
                    help="the component cannot win by forcing the environment to violate "
-                        "its assumptions (GR(1), slugs)")
+                        "its assumptions")
     p.add_argument("--core", action="store_true",
                    help="when a check fails, give a minimal set of terms that explains it")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])

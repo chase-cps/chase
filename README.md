@@ -148,10 +148,18 @@ are available at the following locations:
 ## Python package
 
 The `chase_cps` package, in the `python` directory, provides contracts written
-in the standard LTL syntax, the contract algebra of the core library, and a
-common interface to the external tools: implication, satisfiability,
-refinement, consistency, and compatibility checks with
-[nuXmv](https://nuxmv.fbk.eu/), and GR(1) realizability with slugs. A failed check returns a counterexample trace.
+in the standard LTL syntax, in three layers:
+
+1. the contract algebra of the core library (composition, conjunction,
+   quotient, separation, implication, ...), which holds for any
+   assume-guarantee contracts;
+2. the checks on contracts (refinement, compatibility, consistency,
+   implementation), which reduce to the validity and the satisfiability of
+   formulas, decided by [nuXmv](https://nuxmv.fbk.eu/), with their cores;
+3. GR(1) synthesis with slugs: realizability, controllers, unrealizable
+   cores, well-separation, and vacuity.
+
+A failed check returns a counterexample trace.
 
 The package, together with the compiled CHASE modules, is installed with:
 
@@ -168,8 +176,7 @@ $>  pip install .
 ````
 
 The checks call external tools, which are installed separately: nuXmv for
-the implication, refinement, consistency, and compatibility checks, and slugs
-for realizability. `chase-cps install nuxmv --accept-license` and
+the checks of layer 2, and slugs for GR(1) synthesis. `chase-cps install nuxmv --accept-license` and
 `chase-cps install slugs` install them, and `chase-cps doctor` shows the
 tools found. `chase-cps check` checks the
 contracts of a specification from the command line. The details are in the
