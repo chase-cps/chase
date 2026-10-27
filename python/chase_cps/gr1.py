@@ -15,8 +15,12 @@ or justice (G F f).
 - ``is_well_separated``: whether the component can win by forcing the
   environment to violate its assumptions (Klein and Pnueli, HVC 2010; Maoz
   and Ringert, FSE 2016);
-- ``remove_vacuous``: the terms whose removal keeps the synthesis problem
-  (inherent vacuity, Maoz and Shalom, ESEC/FSE 2020).
+- ``is_vacuous``: whether the component can win without an output that a
+  liveness guarantee asks for (vacuity in synthesis, Bloem, Chockler,
+  Ebrahimi, and Strichman, FMSD 2021);
+- ``remove_vacuous``: the terms implied by others in the GR(1) game, whose
+  removal keeps the synthesis problem (GR(1) redundancy, the inherent
+  vacuity of Maoz and Shalom, ESEC/FSE 2020).
 
 These checks read every behavior: they do not take a context.
 """
@@ -249,6 +253,191 @@ def remove_vacuous(guarantees, inputs=None, outputs=None, assumptions=(), core: 
     out.contract.assumptions = [t for j, (p, t) in enumerate(terms) if p == "assumption" and j in alive]
     out.contract.guarantees = [t for j, (p, t) in enumerate(terms) if p == "guarantee" and j in alive]
     return out
+
+
+VACUOUS, NOT_VACUOUS = "vacuous", "not_vacuous"
+
+
+@dataclass
+class VacuousOutput:
+    """An output that the contract does not oblige the component to use
+    (``is_vacuous``). ``mode`` is ``never`` (a winning strategy never sets
+    it) or ``eventually`` (a winning strategy stops setting it from some step
+    on); ``guarantees`` are the justice guarantees that name it;
+    ``controller`` is that strategy; with core, ``core`` is a minimal set of
+    assumptions under which it still wins."""
+    output: str
+    mode: str
+    guarantees: list[ltl.Node] = field(default_factory=list)
+    controller: Optional[dict] = None
+    core: Optional[Core] = None
+
+    def to_dict(self) -> dict:
+        d = {"output": self.output, "mode": self.mode,
+             "guarantees": [ltl.to_str(t) for t in self.guarantees]}
+        if self.controller is not None:
+            d["controller"] = self.controller
+        if self.core is not None:
+            d["core"] = self.core.to_dict()
+        return d
+
+
+@dataclass
+class OutputVacuity:
+    """Outcome of ``is_vacuous``: ``vacuous`` with the vacuous outputs,
+    ``not_vacuous``, ``unrealizable`` (the contract itself), or ``unknown``
+    with the reason. ``checked`` are the outputs that were checked."""
+    status: str
+    vacuous: list[VacuousOutput] = field(default_factory=list)
+    checked: list[str] = field(default_factory=list)
+    reason: str = ""
+
+    def __bool__(self) -> bool:
+        return self.status == VACUOUS
+
+    def to_dict(self) -> dict:
+        d = {"status": self.status, "vacuous": [v.to_dict() for v in self.vacuous],
+             "checked": list(self.checked)}
+        if self.reason:
+            d["reason"] = self.reason
+        return d
+
+
+def _polarity(node: ltl.Node, positive: bool = True, out=None) -> dict[str, set[bool]]:
+    """For each variable, the polarities of its occurrences: True under an
+    even number of negations, False under an odd one, both inside an
+    equivalence or a relation."""
+    out = {} if out is None else out
+    if isinstance(node, ltl.Var):
+        out.setdefault(node.name, set()).add(positive)
+    elif isinstance(node, ltl.Unary):
+        _polarity(node.arg, not positive if node.op == "!" else positive, out)
+    elif isinstance(node, ltl.Binary):
+        if node.op == "->":
+            _polarity(node.left, not positive, out)
+            _polarity(node.right, positive, out)
+        elif node.op in ("&", "|", "U", "R", "W"):
+            _polarity(node.left, positive, out)
+            _polarity(node.right, positive, out)
+        else:      # <->, relations, arithmetic
+            for side in (node.left, node.right):
+                _polarity(side, True, out)
+                _polarity(side, False, out)
+    return out
+
+
+def _liveness_outputs(c: Contract) -> dict[str, list[ltl.Node]]:
+    """The outputs that occur only positively in a justice guarantee, with
+    those guarantees: the outputs that the guarantee asks to set."""
+    found: dict[str, list[ltl.Node]] = {}
+    for t in c.guarantees:
+        if gr1_kind(t) != "justice":
+            continue
+        for y, signs in _polarity(t).items():
+            if y in c.outputs and signs == {True}:
+                found.setdefault(y, []).append(t)
+    return found
+
+
+def is_vacuous(contract: Contract, outputs=None, core: bool = False, backend: str = "auto",
+               **options) -> OutputVacuity:
+    """Does the contract let the component win without using an output that
+    a liveness guarantee asks for? Vacuity in synthesis, as a strengthening
+    of the guarantees (Bloem, Chockler, Ebrahimi, and Strichman, FMSD 2021):
+
+    - never: Real(A, G + {G !y}), a winning strategy never sets y, so the
+      guarantee that names y is discharged by the assumptions;
+    - eventually: Real(A, G + {!p, G (p -> X p), G (p -> !y), G F p}) with a
+      fresh output p, a winning strategy stops setting y forever from some
+      step on (checked only when ``never`` fails).
+
+    Two weaker formulations are not used. The test on a controller M of
+    Kupferman and Vardi, M & A -> phi[y <- false], and the rewrite
+    Real(A, G[y <- false]) both call a good controller vacuous when an
+    assumption ties the release of the environment to y, such as
+    G ((req & grant) -> X !req): the controller grants, the release
+    follows, and phi[grant <- false] holds because it granted. Forcing y to
+    be false in the behavior asks the right question.
+
+    The outputs checked are ``outputs``, or by default those that occur
+    only positively in a justice guarantee. ``vacuous`` gives each vacuous
+    output with the strategy that wins without it; with core, also a
+    minimal set of the temporal assumptions under which it still wins (the
+    initial assumptions are always kept). The contract must be GR(1) and
+    realizable: otherwise the status is ``unknown`` or ``unrealizable``.
+    """
+    _no_context(options, "is_vacuous")
+    c = contract
+    why = gr1_roles(c)
+    if why:
+        return OutputVacuity(UNKNOWN, reason=why)
+    named = _liveness_outputs(c)
+    if outputs is None:
+        targets = list(named)
+    else:
+        targets = [outputs] if isinstance(outputs, str) else list(outputs)
+        for y in targets:
+            if y not in c.outputs:
+                raise ValueError(f"{y} is not an output of {c.name}")
+    base = is_realizable(c, backend, **options)
+    if base.status != REALIZABLE:
+        return OutputVacuity(base.status, checked=targets,
+                             reason=base.reason or ("the contract is unrealizable"
+                                                    if base.status == UNREALIZABLE else ""))
+    out = OutputVacuity(NOT_VACUOUS, checked=targets)
+    unknown = []
+
+    def strengthened(y, mode, assumptions):
+        if mode == "never":
+            return Contract(c.name, dict(c.inputs), dict(c.outputs), list(assumptions),
+                            list(c.guarantees) + [ltl.parse(f"G !{y}")])
+        p = f"parked_{y}"
+        while p in c.variables:
+            p = "_" + p
+        extra = [f"!{p}", f"G ({p} -> X {p})", f"G ({p} -> !{y})", f"G F {p}"]
+        return Contract(c.name, dict(c.inputs), {**c.outputs, p: "bool"}, list(assumptions),
+                        list(c.guarantees) + [ltl.parse(f) for f in extra])
+
+    def realizable(y, mode, assumptions, controller=False):
+        return backends.check(Realizable(strengthened(y, mode, assumptions)), backend,
+                              controller=controller, counter_strategy=False, **options)
+
+    for y in targets:
+        for mode in ("never", "eventually"):
+            r = realizable(y, mode, c.assumptions, controller=True)
+            if r.status == REALIZABLE:
+                v = VacuousOutput(y, mode, named.get(y, []), r.controller)
+                if core:
+                    v.core = _assumption_core(c, lambda a, y=y, mode=mode:
+                                              realizable(y, mode, a).status)
+                out.vacuous.append(v)
+                break
+            if r.status != UNREALIZABLE:
+                unknown.append(f"{y}: {r.reason or r.status}")
+                break
+    if out.vacuous:
+        out.status = VACUOUS
+    elif unknown:
+        out.status, out.reason = UNKNOWN, "; ".join(unknown)
+    return out
+
+
+def _assumption_core(c: Contract, status) -> Core:
+    """A minimal set of the temporal assumptions with which the strengthened
+    contract is still realizable, by one deletion pass (more assumptions
+    only help the component); the initial assumptions are kept."""
+    pinned = [t for t in c.assumptions if gr1_kind(t) == "init"]
+    kept = [t for t in c.assumptions if gr1_kind(t) != "init"]
+    checks = 0
+    for t in list(kept):
+        rest = [k for k in kept if k is not t]
+        r = status(pinned + rest)
+        checks += 1
+        if r == REALIZABLE:
+            kept = rest
+        elif r != UNREALIZABLE:
+            return Core(UNKNOWN, reason=f"a check did not finish ({r})", checks=checks)
+    return Core(FOUND, kept, checks=checks)
 
 
 def _temporal(node: ltl.Node, allow_next: bool) -> bool:

@@ -26,7 +26,7 @@ The package has three layers:
    ``chase_cps.reals``).
 3. GR(1) synthesis (``chase_cps.gr1``): realizability, synthesis, and the
    analyses built on them (unrealizable_core, is_well_separated,
-   remove_vacuous), for contracts in the GR(1) fragment of LTL, with slugs.
+   is_vacuous, remove_vacuous), for contracts in the GR(1) fragment of LTL, with slugs.
 
 All the names are also available from ``chase_cps`` itself.
 """
@@ -41,8 +41,8 @@ from .checks import (RefinementResult, Redundancy, Verification, accepts, implem
                      is_compatible, is_consistent, refines, remove_redundant, verify)
 from .logic import Core, implies, is_satisfiable, unsat_core
 # 3. GR(1) synthesis.
-from .gr1 import (Vacuity, VacuousTerm, is_realizable, is_well_separated, remove_vacuous,
-                  synthesize, unrealizable_core)
+from .gr1 import (OutputVacuity, Vacuity, VacuousOutput, VacuousTerm, is_realizable,
+                  is_vacuous, is_well_separated, remove_vacuous, synthesize, unrealizable_core)
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
 __version__ = "0.3.1"
@@ -57,7 +57,7 @@ __all__ = [
     "implies", "is_satisfiable", "unsat_core", "Core",
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
-    "remove_vacuous", "Vacuity", "VacuousTerm",
+    "is_vacuous", "OutputVacuity", "VacuousOutput", "remove_vacuous", "Vacuity", "VacuousTerm",
     # Results and back ends
     "Result", "Trace", "check", "backends", "checks", "logic", "gr1", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
