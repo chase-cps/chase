@@ -144,6 +144,13 @@ class Model:
         return cls(name or "M", text, variables, ivars)
 
     @classmethod
+    def from_verilog(cls, files, top: str, **options) -> "Model":
+        """The module ``top`` of Verilog or SystemVerilog files, read with
+        Yosys (see ``chase_cps.rtl.from_verilog`` for the options)."""
+        from .rtl import from_verilog
+        return from_verilog(files, top, **options)
+
+    @classmethod
     def from_dict(cls, d: dict) -> "Model":
         """A model from a state machine in JSON::
 

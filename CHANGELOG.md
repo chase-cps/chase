@@ -2,6 +2,15 @@
 
 ## 0.4.1 (not released yet)
 
+New:
+
+- RTL (`chase_cps.rtl`): `Model.from_verilog(files, top)` reads a Verilog or
+  SystemVerilog module with Yosys as a state machine, for `implements`,
+  `accepts`, and `is_receptive`. The ports are the variables of the
+  contracts (1 bit: Boolean, more: words); `reset` holds the reset in the
+  first step; `names` renames ports. `pip install chase-cps[rtl]` installs
+  Yosys (yowasp-yosys, ISC license).
+
 Fix:
 
 - `parse_sva` read the assertions inside generate blocks, those of both

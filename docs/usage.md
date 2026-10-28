@@ -379,6 +379,39 @@ valid not_receptive {'req': True}
 The machine implements the contract only because, while it grants, it
 refuses a request.
 
+### RTL
+
+A Verilog or SystemVerilog module is a state machine too.
+`Model.from_verilog(files, top)` reads it with
+[Yosys](https://yosyshq.net/yosys/) (`pip install chase-cps[rtl]` installs
+it, compiled to WebAssembly; a `yosys` in the path is used first): Yosys
+flattens the design, maps the memories to registers, and writes it in SMV.
+The ports are the variables of the contracts: a 1-bit port is a Boolean, a
+wider one a word. One step is one cycle of the clock, and the clock inputs
+(`clk`, `clk_i`, `clock`, or `clocks=[...]`) are left out.
+
+````
+from chase_cps import Contract, Model, implements
+
+m = Model.from_verilog(["bsg_dff_reset.sv", "bsg_dff_en.sv", "bsg_one_fifo.sv"],
+                       "bsg_one_fifo", parameters={"width_p": 4}, reset="reset_i",
+                       names={"ready_and_o": "ready_o"})
+slot = Contract.from_dict({"name": "Slot",
+                           "inputs": {"v_i": "bool", "data_i": "word[4]", "yumi_i": "bool"},
+                           "outputs": {"v_o": "bool", "data_o": "word[4]", "ready_o": "bool"},
+                           "assumptions": ["G (yumi_i -> v_o)"],
+                           "guarantees": ["G X (v_o & !yumi_i -> X v_o)"]})
+print(implements(m, slot).status)
+````
+
+`parameters` sets parameters of the top module, and `names` renames ports
+as the variables of the contracts. With `reset` (`"reset_i"`, or `"!rst_n"`
+for an active-low reset) the reset holds in the first step only, and the
+registers start with any value; the reset is then not an input of the
+model, so the contracts do not list it as an input. Without `reset` it is
+an input like the others. The checks are those of nuXmv: they suit small
+and medium designs.
+
 ### Queries on formulas
 
 | Query | logics_tool | Python | chase-cps check | MCP tool |
