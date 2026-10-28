@@ -435,6 +435,49 @@ def test_compose_with_discharge_under_feedback():
 
 @needs_native
 @needs_mc
+def test_merge_and_divide_with_discharge():
+    from chase_cps import refines
+
+    def same(x, y):
+        return refines(x, y).status == "valid" == refines(y, x).status
+
+    def strs(terms):
+        return sorted(ltl.to_str(t) for t in terms)
+    grant = Contract.from_strings(inputs=["r"], outputs=["g"], guarantees=["G F (g | !r)"],
+                                  name="Grant")
+    lock = Contract.from_strings(inputs=["r", "l"], outputs=["g"], assumptions=["G (l -> r)"],
+                                 guarantees=["G (l -> g)", "G F (l -> g)"], name="Lock")
+    m = grant.merge(lock, discharge=True)
+    # the terms of both; G F (l -> g) is implied by G (l -> g)
+    assert strs(m.assumptions) == ["G (l -> r)"]
+    assert strs(m.guarantees) == ["G (l -> g)", "G F (g | !r)"]
+    assert (set(m.inputs), set(m.outputs)) == ({"r", "l"}, {"g"})
+    assert same(m, grant.merge(lock))
+    # the system by a part that drives b; its assumption G a is implied by the
+    # system's, so its guarantee is assumed as it is
+    system = Contract.from_strings(inputs=["a"], outputs=["b", "c"], assumptions=["G a"],
+                                   guarantees=["G c"], name="Sys")
+    part = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
+                                 guarantees=["G (a -> b)"], name="Part")
+    q = system.divide(part, discharge=True)
+    assert strs(q.assumptions) == ["G (a -> b)", "G a"]
+    assert strs(q.guarantees) == ["G c"]
+    assert (set(q.inputs), set(q.outputs)) == ({"a", "b"}, {"c"})
+    assert same(q, system.divide(part))
+    # an assumption of the part that the system does not give: it stays the
+    # premise of the guarantees of the part, and a guarantee of the quotient
+    other = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G F a"],
+                                  guarantees=["G F b"], name="Other")
+    loose = Contract.from_strings(inputs=["a"], outputs=["b", "c"], guarantees=["G c"],
+                                  name="Loose")
+    q = loose.divide(other, discharge=True)
+    assert strs(q.assumptions) == ["G F a -> G F b"]
+    assert strs(q.guarantees) == ["G F a", "G c"]
+    assert same(q, loose.divide(other))
+
+
+@needs_native
+@needs_mc
 def test_implication_coimplication_and_reciprocal():
     from chase_cps import refines
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],

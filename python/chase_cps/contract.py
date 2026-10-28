@@ -348,15 +348,42 @@ class Contract:
         """Least upper bound: (A1 & A2, G1 | G2)."""
         return _algebra("disjunction", self, other, name or f"{self.name}_or_{other.name}")
 
-    def merge(self, other: "Contract", name: str | None = None) -> "Contract":
+    def merge(self, other: "Contract", name: str | None = None, discharge: bool = False,
+              backend: str = "auto", **options) -> "Contract":
         """Merging of two viewpoints of the same component:
-        (A1 & A2, (G1 & G2) | !(A1 & A2))."""
-        return _algebra("merging", self, other, name or f"{self.name}_merge_{other.name}")
+        (A1 & A2, (G1 & G2) | !(A1 & A2)).
 
-    def divide(self, other: "Contract", name: str | None = None) -> "Contract":
+        With ``discharge=True``, the result keeps the terms of the two
+        contracts: (A1 & A2, G1 & G2), whose saturation is the merge, so the
+        two are the same contract. Then the terms implied by the others are
+        dropped as in ``remove_redundant`` (one implication check each, with
+        nuXmv or NuSMV; ``backend`` and ``options`` as for the checks).
+        """
+        name = name or f"{self.name}_merge_{other.name}"
+        if discharge:
+            return _merge_terms(self, other, name, backend, **options)
+        return _algebra("merging", self, other, name)
+
+    def divide(self, other: "Contract", name: str | None = None, discharge: bool = False,
+               backend: str = "auto", **options) -> "Contract":
         """Largest C such that other || C refines self:
-        (A1 & G2, (G1 & A2) | !(A1 & G2)) (Incer et al., MEMOCODE 2018)."""
-        return _algebra("quotient", self, other, name or f"{self.name}_div_{other.name}")
+        (A1 & G2, (G1 & A2) | !(A1 & G2)), with the contracts saturated
+        (Incer et al., MEMOCODE 2018).
+
+        With ``discharge=True``, the result keeps the terms of the two
+        contracts: the assumptions are those of self and, for each guarantee
+        g of other, A2 -> g; the guarantees are those of self and the
+        assumptions of other. The assumptions of other implied by those of
+        self are discharged first: when all of them are, the guarantees of
+        other are kept as they are. This is the same contract as the
+        quotient. Then the terms implied by the others are dropped as in
+        ``remove_redundant``. Each test is one implication check (nuXmv or
+        NuSMV; ``backend`` and ``options`` as for the checks).
+        """
+        name = name or f"{self.name}_div_{other.name}"
+        if discharge:
+            return _divide_terms(self, other, name, backend, **options)
+        return _algebra("quotient", self, other, name)
 
     def separate(self, other: "Contract", name: str | None = None) -> "Contract":
         """Smallest C such that self refines other . C (merging):
@@ -465,6 +492,52 @@ def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
     inputs = {v: t for v, t in {**c1.inputs, **c2.inputs}.items() if v not in outputs}
     c = Contract(name, inputs, outputs, assumptions, list(c1.guarantees) + list(c2.guarantees))
     return remove_redundant(c, backend, **options).contract
+
+
+def _merge_terms(c1: Contract, c2: Contract, name: str, backend: str,
+                 **options) -> Contract:
+    """Merging keeping the terms (see Contract.merge)."""
+    from .checks import _merge_vars, remove_redundant
+    variables = _merge_vars(c1, c2)
+    outputs = _outputs("merging", c1, c2)
+    c = Contract(name, {v: t for v, t in variables.items() if v not in outputs},
+                 {v: t for v, t in variables.items() if v in outputs},
+                 list(c1.assumptions) + list(c2.assumptions),
+                 list(c1.guarantees) + list(c2.guarantees))
+    return remove_redundant(c, backend, **options).contract
+
+
+def _divide_terms(c1: Contract, c2: Contract, name: str, backend: str,
+                  **options) -> Contract:
+    """The quotient c1 / c2 keeping the terms (see Contract.divide)."""
+    from .checks import VALID, _merge_vars, remove_redundant
+    from .logic import _Implications
+    variables = _merge_vars(c1, c2)
+    outputs = _outputs("quotient", c1, c2)
+    # Under A1, A2 is the conjunction of its terms that A1 does not imply,
+    # so A1 & (A2 -> G2) is A1 & (A2' -> G2).
+    context = list(c1.assumptions)
+    check = _Implications(context, variables, backend, **options)
+    left = [a for a in c2.assumptions if check(context, a).status != VALID]
+    if left:
+        premise = ltl.conjunction(left)
+        given = [ltl.Binary("->", premise, g) for g in c2.guarantees]
+    else:
+        given = list(c2.guarantees)
+    c = Contract(name, {v: t for v, t in variables.items() if v not in outputs},
+                 {v: t for v, t in variables.items() if v in outputs},
+                 list(c1.assumptions) + given,
+                 list(c1.guarantees) + list(c2.assumptions))
+    return remove_redundant(c, backend, **options).contract
+
+
+def _outputs(operation: str, c1: Contract, c2: Contract) -> set[str]:
+    if operation == "quotient":
+        # The quotient controls the outputs of c1 not provided by c2 and the
+        # inputs of c2 not provided by the environment of c1 (as in Pacti).
+        return (set(c1.outputs) - set(c2.outputs)) | (set(c2.inputs) - set(c1.inputs))
+    # A variable that is an output of one operand stays an output.
+    return set(c1.outputs) | set(c2.outputs)
 
 
 class _Holder:
@@ -634,13 +707,7 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
         out = abstraction.restore(Contract.from_pychase(result))
     finally:
         holder.free()
-    if operation == "quotient":
-        # The quotient controls the outputs of c1 not provided by c2 and the
-        # inputs of c2 not provided by the environment of c1 (as in Pacti).
-        outputs = (set(c1.outputs) - set(c2.outputs)) | (set(c2.inputs) - set(c1.inputs))
-    else:
-        # A variable that is an output of one operand stays an output.
-        outputs = set(c1.outputs) | set(c2.outputs)
+    outputs = _outputs(operation, c1, c2)
     variables = {**out.inputs, **out.outputs}
     out.inputs = {v: t for v, t in variables.items() if v not in outputs}
     out.outputs = {v: t for v, t in variables.items() if v in outputs}

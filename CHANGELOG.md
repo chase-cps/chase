@@ -10,6 +10,15 @@ New:
   contracts (1 bit: Boolean, more: words); `reset` holds the reset in the
   first step; `names` renames ports. `pip install chase-cps[rtl]` installs
   Yosys (yowasp-yosys, ISC license).
+- `merge(..., discharge=True)` and `divide(..., discharge=True)`: the result
+  keeps the terms of the contracts and is the same contract as the closed
+  form, then the redundant terms are dropped. The merge is (A1 & A2,
+  G1 & G2); the quotient assumes A1 and the guarantees of the part (under
+  the assumptions of the part that A1 does not imply), and guarantees G1
+  and the assumptions of the part. The results can go to `is_realizable`
+  and `synthesize`, which do not take the closed forms.
+- Demos: LMFSM (the state machine of the Ten Lockheed Martin Cyber-Physical
+  Challenges) and AHB (the arbiter of the AMBA AHB bus as two viewpoints).
 
 Fix:
 

@@ -177,6 +177,24 @@ def test_composition_with_discharge_is_an_abstraction():
         assert holds(front.compose(back), front.compose(back, discharge=True))
 
 
+@needs_native
+@needs_mc
+def test_merge_and_quotient_with_discharge_are_the_same_contracts():
+    rnd = random.Random(11)
+    for _ in range(RUNS):
+        c1 = contract(rnd, "Cone")
+        c2 = contract(rnd, "Ctwo")
+        assert same(c1.merge(c2), c1.merge(c2, discharge=True))
+        # the system and a part of it, which drives b; in the second part the
+        # assumptions of the system imply those of the part
+        system = contract(rnd, "Sys", {"a": "bool"}, {"b": "bool", "d": "bool"})
+        part = contract(rnd, "Part", {"a": "bool"}, {"b": "bool"})
+        covered = Contract("Covered", dict(part.inputs), dict(part.outputs),
+                           list(system.assumptions)[:1], list(part.guarantees))
+        for p in (part, covered):
+            assert same(system.divide(p), system.divide(p, discharge=True))
+
+
 @needs_mc
 def test_the_checks_on_related_terms_give_the_same_answers(monkeypatch):
     # remove_redundant uses, for each term, only the terms that share
