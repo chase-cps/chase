@@ -47,11 +47,13 @@ def python_blocks():
 def table(path):
     """The rows of the tables of the operations of usage.md (one per layer),
     as lists of cells, without the header rows."""
-    rows = []
+    rows, ours = [], False
     lines = open(path).read().splitlines()
     for i, line in enumerate(lines):
         header = i + 1 < len(lines) and lines[i + 1].startswith("|---")
-        if line.startswith("| ") and not header:
+        if header:      # the tables of the operations have a column Python
+            ours = "| Python |" in line
+        elif line.startswith("| ") and ours:
             rows.append([c.strip() for c in line.strip().strip("|").split("|")])
     return rows
 

@@ -38,9 +38,10 @@ layers:
    (validity), `is_satisfiable` (satisfiability of a formula), and
    `unsat_core`. A `context` gives formulas that every behavior satisfies.
 3. **GR(1) synthesis** (`chase_cps.gr1`): `is_realizable`, `synthesize`,
-   `unrealizable_core`, `is_well_separated`, `is_vacuous` (vacuity in
-   synthesis), and `remove_vacuous` (redundancy in the GR(1) game), for
-   contracts in the GR(1) fragment of LTL.
+   `unrealizable_core`, `is_well_separated`, and `is_vacuous` (vacuity in
+   synthesis), for contracts in the GR(1) fragment of LTL.
+   `remove_redundant(c, synth=True)` drops the terms that are redundant in
+   the GR(1) game, before synthesis.
 
 All the names are also in `chase_cps`. `load_spec` and `parse_spec` read the
 contracts of a specification written in the logics language of CHASE, and
@@ -59,7 +60,7 @@ supported: use WSL or the CHASE Docker image.
 The package contains the CHASE library. The checks call external tools,
 which are not installed with the package:
 
-- [nuXmv][NUXMV] for the checks (layer 2) and `remove_vacuous`. nuXmv is
+- [nuXmv][NUXMV] for the checks (layer 2) and `remove_redundant`. nuXmv is
   free for academic and non-commercial use.
 - [slugs][SLUGS] for the other analyses of GR(1) synthesis (layer 3).
 

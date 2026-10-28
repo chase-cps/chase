@@ -12,7 +12,7 @@ import random
 import pytest
 
 from chase_cps import (Contract, is_realizable, is_satisfiable, is_well_separated, ltl,
-                       refines, remove_vacuous, unrealizable_core, unsat_core)
+                       refines, remove_redundant, unrealizable_core, unsat_core)
 from chase_cps.backends import ADAPTERS
 from chase_cps.cores import gr1_kind
 
@@ -269,12 +269,12 @@ def test_unrealizable_core_is_minimal():
 
 @needs_native
 @needs_slugs
-def test_remove_vacuous_keeps_realizability():
+def test_remove_redundant_for_synthesis_keeps_realizability():
     rnd = random.Random(8)
     removed = 0
     for _ in range(RUNS * 2):
         c = gr1_contract(rnd, "Spec", n_assumptions=(2, 4), n_guarantees=(3, 6))
-        v = remove_vacuous(c)
+        v = remove_redundant(c, synth=True)
         assert not v.reason and not v.unknown
         removed += len(v.removed)
         before = is_realizable(c).status

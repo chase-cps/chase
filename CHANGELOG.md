@@ -24,9 +24,15 @@ New:
   Strichman, FMSD 2021). Can the component win without an output that a
   liveness guarantee asks for, never or from some step on? With the
   strategy, and with `core=True` the assumptions that allow it. The queries
-  are those of the exact vacuity checks of ACIES. `remove_vacuous` is
-  unchanged; it is now described as what it is, the removal of the terms
-  that are redundant in the GR(1) game.
+  are those of the exact vacuity checks of ACIES.
+- `remove_vacuous` is removed: it is a removal of redundant terms, and is
+  now `remove_redundant(c, synth=True)`, which keeps realizability and the
+  controllers (`remove_redundant(c)` keeps A -> G, as before). The result
+  is a `Redundancy`, with the `removed` terms (`RedundantTerm`: part, and
+  kind with synth). `Vacuity` and `VacuousTerm` are removed. "Vacuity" is
+  now only `is_vacuous`.
+- `remove_redundant(c, core=True)`: each removed term comes with a minimal
+  set of the terms that imply it.
 - State machines (`chase_cps.models`): a `Model` from SMV text or a file,
   from a controller of `synthesize`, or from a state machine in JSON.
   `implements` and `accepts` take them, and `is_receptive` checks that a

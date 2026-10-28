@@ -27,7 +27,8 @@ The package has three layers:
    state machines (``chase_cps.models``).
 3. GR(1) synthesis (``chase_cps.gr1``): realizability, synthesis, and the
    analyses built on them (unrealizable_core, is_well_separated,
-   is_vacuous, remove_vacuous), for contracts in the GR(1) fragment of LTL, with slugs.
+   is_vacuous, and remove_redundant with synth=True), for contracts in the
+   GR(1) fragment of LTL, with slugs.
 
 All the names are also available from ``chase_cps`` itself.
 """
@@ -38,13 +39,14 @@ from .backends import check
 from .contract import Contract, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
 # 2. Checks on contracts, and the queries on formulas they reduce to.
-from .checks import (RefinementResult, Redundancy, Verification, accepts, implements,
-                     is_compatible, is_consistent, refines, remove_redundant, verify)
+from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, accepts,
+                     implements, is_compatible, is_consistent, refines, remove_redundant,
+                     verify)
 from .models import Model, is_receptive
 from .logic import Core, implies, is_satisfiable, unsat_core
 # 3. GR(1) synthesis.
-from .gr1 import (OutputVacuity, Vacuity, VacuousOutput, VacuousTerm, is_realizable,
-                  is_vacuous, is_well_separated, remove_vacuous, synthesize, unrealizable_core)
+from .gr1 import (OutputVacuity, VacuousOutput, is_realizable, is_vacuous, is_well_separated,
+                  synthesize, unrealizable_core)
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
 __version__ = "0.3.1"
@@ -54,13 +56,13 @@ __all__ = [
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
     # 2. Checks on contracts
     "refines", "verify", "is_compatible", "is_consistent", "implements", "accepts",
-    "remove_redundant", "RefinementResult", "Verification", "Redundancy",
+    "remove_redundant", "RefinementResult", "Verification", "Redundancy", "RedundantTerm",
     "Model", "is_receptive",
     #    and on formulas
     "implies", "is_satisfiable", "unsat_core", "Core",
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
-    "is_vacuous", "OutputVacuity", "VacuousOutput", "remove_vacuous", "Vacuity", "VacuousTerm",
+    "is_vacuous", "OutputVacuity", "VacuousOutput",
     # Results and back ends
     "Result", "Trace", "check", "backends", "checks", "logic", "gr1", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",

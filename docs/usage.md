@@ -180,7 +180,18 @@ accepts an environment E (`accepts(c, e)`) when E -> A is valid; M and E are
 LTL formulas over the variables of the contract, or state machines (see
 below). `remove_redundant(c)` drops
 the assumptions implied by the other assumptions, and the guarantees implied
-by the assumptions and the other guarantees.
+by the assumptions and the other guarantees. Which terms it may drop depends
+on what the contract is for next:
+
+| Next | Call | Keeps |
+|---|---|---|
+| the algebra and the checks (compose, refines, verify, ...) | `remove_redundant(c)` | A -> G |
+| synthesis (is_realizable, synthesize, ...) | `remove_redundant(c, synth=True)` | realizability and the controllers |
+
+The two differ only when the assumptions are wrong, for instance
+unsatisfiable, or constrain the outputs; each one keeps what the other may
+change (see "Redundancy in the GR(1) game" below). With `core=True`, each
+removed term comes with a minimal set of the terms that imply it.
 
 The console writes the input file of nuXmv for `verify` and `refines`, to
 be run by hand (for `verify`, three LTLSPEC: the negations of A, of the
@@ -304,7 +315,8 @@ The checks are:
 
 The variables of the context must be variables of the check. The
 realizability checks (`is_realizable`, `synthesize`, `is_well_separated`,
-`remove_vacuous`, `unrealizable_core`) do not take a context: whether a
+`is_vacuous`, `unrealizable_core`, and `remove_redundant` with `synth=True`)
+do not take a context: whether a
 formula constrains the environment or the component is a question of
 roles, which a context does not say.
 
@@ -368,7 +380,7 @@ nuXmv > check_ltlspec_ic3
 | unrealizable core | | `unrealizable_core(c)` | `--realizable C --core` | `unrealizable_core` |
 | well-separation | | `is_well_separated(c)` | `--well-separated C` | `is_well_separated` |
 | vacuity | | `is_vacuous(c)` | `--vacuous C` | `is_vacuous` |
-| redundancy in the GR(1) game | | `remove_vacuous(c)` | | `remove_vacuous` |
+| redundancy in the GR(1) game | | `remove_redundant(c, synth=True)` | | `remove_redundant` with `synth` |
 
 These analyses are about reactive synthesis from contracts in the GR(1)
 fragment of LTL, with slugs, in `chase_cps.gr1`. A contract is realizable
@@ -458,10 +470,10 @@ The assumption G F !req makes G F (!req | grant) hold without any grant.
 
 ### Redundancy in the GR(1) game
 
-`remove_vacuous(c)` removes the terms whose removal does not change the
-GR(1) specification: its realizability and the controllers that realize it
-(the inherent vacuity of Maoz and Shalom, ESEC/FSE 2020, which is a
-redundancy: a term implied by others in the game). Each term is checked
+`remove_redundant(c, synth=True)` removes the terms whose removal does not
+change the GR(1) specification: its realizability and the controllers that
+realize it (the inherent vacuity of Maoz and Shalom, ESEC/FSE 2020, which is
+a redundancy: a term implied by others in the game). Each term is checked
 against a premise set that depends on its kind (initial, safety, justice)
 and on its side (assumption or guarantee), one call to nuXmv per term; a
 safety term is compared with the bodies of the other safety terms only, as
@@ -470,9 +482,18 @@ checked in order against the terms not yet removed, so of two equal terms
 one is kept. The result has the `contract`, the `removed` terms with their
 part and kind, and with `core=True` the terms that imply each one.
 
-`remove_redundant(c)` (layer 2) instead keeps A -> G: it may remove a term
-that only follows from the others over whole traces, which can change the
-synthesis problem; `remove_vacuous` does not.
+`remove_redundant(c)` without `synth` keeps A -> G instead. The two differ
+when the assumptions are wrong:
+
+| Contract | `remove_redundant(c)` | `remove_redundant(c, synth=True)` |
+|---|---|---|
+| A: G F (x & !x); G: G g, G !g | drops both guarantees (A is unsatisfiable): realizable | drops nothing: unrealizable, as c |
+| A: G F g; G: G g | drops nothing | drops G F g: the component keeps G g anyway, but the contract is stronger |
+
+In the game, the component must keep its safety guarantees even when the
+environment breaks its justice assumptions, so these do not imply them; an
+assumption that the guarantees make hold does not matter in the game, but
+it does for A -> G.
 
 ## Results
 

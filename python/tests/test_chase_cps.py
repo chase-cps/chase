@@ -634,35 +634,67 @@ def test_well_separation():
 
 
 @needs_mc
-def test_remove_vacuous():
-    from chase_cps import remove_redundant, remove_vacuous
+def test_remove_redundant_for_synthesis():
+    from chase_cps import remove_redundant
     c = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F req"],
                               guarantees=["G (req -> grant)", "G F grant"], name="A")
-    v = remove_vacuous(c, core=True)
+    v = remove_redundant(c, synth=True, core=True)
     assert [(ltl.to_str(t.term), t.part, t.kind) for t in v.removed] == \
         [("G F grant", "guarantee", "justice")]
     assert [ltl.to_str(t) for t in v.removed[0].core] == ["G F req", "G (req -> grant)"]
-    assert [ltl.to_str(t) for t in v.guarantees] == ["G (req -> grant)"]
+    assert [ltl.to_str(t) for t in v.contract.guarantees] == ["G (req -> grant)"]
+    assert [ltl.to_str(t) for t in v.removed_guarantees] == ["G F grant"]
+    assert v.to_dict()["removed"] == [{"term": "G F grant", "part": "guarantee",
+                                       "kind": "justice",
+                                       "core": ["G F req", "G (req -> grant)"]}]
     # duplicates: one is kept; a safety term implied by a stronger one goes
     e = Contract.from_strings(inputs=["a"], outputs=["b"],
                               assumptions=["G (a -> X a)", "G (a -> X (a | b))", "!a", "!a"],
                               guarantees=["G b"], name="E")
-    v = remove_vacuous(e)
-    assert [ltl.to_str(t) for t in v.assumptions] == ["G (a -> X a)", "!a"]
-    v = remove_vacuous(["G (req -> grant)", "G F grant"], inputs=["req"], outputs=["grant"],
-                       assumptions=["G F req"])
-    assert [ltl.to_str(t) for t in v.guarantees] == ["G (req -> grant)"]
+    v = remove_redundant(e, synth=True)
+    assert [ltl.to_str(t) for t in v.contract.assumptions] == ["G (a -> X a)", "!a"]
+    assert [ltl.to_str(t) for t in v.removed_assumptions] == ["G (a -> X (a | b))", "!a"]
     # safety terms are compared propositionally: G (b = 3) follows from the
-    # other guarantee only over whole traces, so it is redundant, not vacuous
+    # other guarantee only over whole traces
     p = Contract.from_strings(inputs=["x"], outputs={"b": (0, 3)},
                               guarantees=["G (b = 3)", "G (b < 3 -> (b < b' & b' < 3))"],
                               name="Paper")
     assert [ltl.to_str(t) for t in remove_redundant(p).removed_guarantees] == ["G b = 3"]
-    assert [ltl.to_str(t.term) for t in remove_vacuous(p).removed] == \
+    assert [ltl.to_str(t.term) for t in remove_redundant(p, synth=True).removed] == \
         ["G (b < 3 -> b < b' & b' < 3)"]
     n = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               guarantees=["G (req -> F grant)"], name="N")
-    assert remove_vacuous(n).reason.startswith("not a GR(1) term")
+    v = remove_redundant(n, synth=True)
+    assert v.reason.startswith("not a GR(1) term") and v.contract.guarantees == n.guarantees
+    with pytest.raises(TypeError):
+        remove_redundant(c, synth=True, context="G req")
+    # the two differ when the assumptions are wrong: unsatisfiable, an
+    # assumption on the outputs
+    bad = Contract.from_strings(inputs=["x"], outputs=["g"], assumptions=["G F (x & !x)"],
+                                guarantees=["G g", "G !g"], name="Bad")
+    assert remove_redundant(bad).contract.guarantees == []
+    assert len(remove_redundant(bad, synth=True).contract.guarantees) == 2
+    out = Contract.from_strings(inputs=["x"], outputs=["g"], assumptions=["G F g"],
+                                guarantees=["G g"], name="Out")
+    assert remove_redundant(out).contract.assumptions == out.assumptions
+    assert remove_redundant(out, synth=True).contract.assumptions == []
+
+
+@needs_mc
+def test_remove_redundant_with_cores():
+    from chase_cps import remove_redundant
+    c = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                              assumptions=["G F !req", "F !req"],
+                              guarantees=["G (req -> X grant)", "G (req -> F grant)", "G grant"],
+                              name="Red")
+    out = remove_redundant(c, core=True)
+    assert out.to_dict()["removed"] == [
+        {"term": "F !req", "part": "assumption", "core": ["G F !req"]},
+        {"term": "G (req -> X grant)", "part": "guarantee", "core": ["G grant"]},
+        {"term": "G (req -> F grant)", "part": "guarantee", "core": ["G grant"]}]
+    assert [ltl.to_str(t) for t in out.contract.guarantees] == ["G grant"]
+    # without core, the terms removed are the same
+    assert [t.term for t in remove_redundant(c).removed] == [t.term for t in out.removed]
 
 
 @needs_native
@@ -1026,10 +1058,10 @@ def test_layers_and_the_names_before_0_3_1():
     for name in ("implies", "is_satisfiable", "unsat_core", "Core"):
         assert getattr(chase_cps, name) is getattr(logic, name)
     for name in ("is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
-                 "remove_vacuous", "Vacuity", "VacuousTerm"):
+                 "is_vacuous"):
         assert getattr(chase_cps, name) is getattr(gr1, name)
     for name in ("implies", "is_satisfiable", "is_realizable", "synthesize",
-                 "is_well_separated", "remove_vacuous"):
+                 "is_well_separated"):
         assert getattr(checks, name) is getattr(chase_cps, name)
     for name in ("unsat_core", "unrealizable_core", "gr1_kind", "gr1_roles", "Core"):
         assert getattr(cores, name) is getattr(logic, name, None) or \

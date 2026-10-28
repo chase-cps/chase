@@ -18,8 +18,8 @@ or justice (G F f).
 - ``is_vacuous``: whether the component can win without an output that a
   liveness guarantee asks for (vacuity in synthesis, Bloem, Chockler,
   Ebrahimi, and Strichman, FMSD 2021);
-- ``remove_vacuous``: the terms implied by others in the GR(1) game, whose
-  removal keeps the synthesis problem (GR(1) redundancy, the inherent
+- the terms implied by others in the GR(1) game, whose removal keeps the
+  synthesis problem, for ``remove_redundant(c, synth=True)`` (the inherent
   vacuity of Maoz and Shalom, ESEC/FSE 2020).
 
 These checks read every behavior: they do not take a context.
@@ -127,91 +127,34 @@ def is_well_separated(assumptions, inputs=None, outputs=None, guarantees=(),
     return r
 
 
-@dataclass
-class VacuousTerm:
-    """A term removed by ``remove_vacuous``: ``part`` is assumption or
-    guarantee, ``kind`` init, safety, or justice; ``core`` (with core=True)
-    the terms that make it vacuous."""
-    term: ltl.Node
-    part: str
-    kind: str
-    core: Optional[list] = None
+def _redundant_in_game(c: Contract, core: bool, backend: str, **options):
+    """The terms of c implied by others in the GR(1) game, for
+    ``remove_redundant(c, synth=True)``: removing them keeps realizability
+    and the controllers (the inherent vacuity of Maoz and Shalom, ESEC/FSE
+    2020, Table 1).
 
-    def to_dict(self) -> dict:
-        d = {"term": ltl.to_str(self.term), "part": self.part, "kind": self.kind}
-        if self.core is not None:
-            d["core"] = [ltl.to_str(t) for t in self.core]
-        return d
-
-
-@dataclass
-class Vacuity:
-    """Outcome of ``remove_vacuous``: the contract without the vacuous terms,
-    the terms removed in order, the terms whose check did not finish (kept),
-    and the reason when nothing could be checked."""
-    contract: Contract
-    removed: list[VacuousTerm] = field(default_factory=list)
-    unknown: list[ltl.Node] = field(default_factory=list)
-    reason: str = ""
-
-    @property
-    def assumptions(self) -> list[ltl.Node]:
-        return self.contract.assumptions
-
-    @property
-    def guarantees(self) -> list[ltl.Node]:
-        return self.contract.guarantees
-
-    def to_dict(self) -> dict:
-        d = {"contract": self.contract.to_dict(),
-             "removed": [t.to_dict() for t in self.removed],
-             "unknown": [ltl.to_str(f) for f in self.unknown]}
-        if self.reason:
-            d["reason"] = self.reason
-        return d
-
-
-def remove_vacuous(guarantees, inputs=None, outputs=None, assumptions=(), core: bool = False,
-                   backend: str = "auto", **options) -> Vacuity:
-    """Remove the terms whose removal does not change the GR(1)
-    specification: its realizability and the controllers that realize it
-    (inherent vacuity, Maoz and Shalom, ESEC/FSE 2020, Table 1).
-
-    A term is vacuous when its premise set implies it, one check with nuXmv:
-    an initial term, by the other initial terms (and, for a guarantee, the
-    initial assumptions); a safety term G t, by the bodies of the other
+    A term is redundant when its premise set implies it, one check with
+    nuXmv: an initial term, by the other initial terms (and, for a guarantee,
+    the initial assumptions); a safety term G t, by the bodies of the other
     safety terms of its side (and, for a guarantee, of the safety
     assumptions), as a propositional implication over the current and next
     values; a justice term G F j, by the initial and safety terms of both
     sides and the other justice terms (for a guarantee, also the justice
     assumptions). The terms are checked one at a time, in order, against the
-    terms not yet removed. Unlike ``remove_redundant``, which keeps A -> G,
-    this keeps realizability: a guarantee implied only with the help of an
-    initial or a justice term is not removed when that would change the game.
+    terms not yet removed.
 
-    Takes a contract, or the guarantees with the inputs, the outputs, and the
-    assumptions. With core, each removed term carries a minimal subset of its
-    premise set that implies it.
+    Returns the removed terms as (part, term, kind, core), the terms whose
+    check did not finish, the reason when nothing could be checked, and the
+    indices of the terms kept in ``c.assumptions + c.guarantees``.
     """
-    _no_context(options, "remove_vacuous")
-    if isinstance(guarantees, Contract):
-        c = guarantees
-    else:
-        if inputs is None or outputs is None:
-            raise TypeError("remove_vacuous of formulas needs the inputs and the outputs")
-        c = Contract.from_strings(inputs=inputs, outputs=outputs,
-                                  assumptions=_terms(assumptions) if assumptions else [],
-                                  guarantees=_terms(guarantees), name="C")
     terms = [("assumption", t) for t in c.assumptions] + [("guarantee", t) for t in c.guarantees]
     kinds = [gr1_kind(t) for _, t in terms]
-    out = Vacuity(Contract(c.name, dict(c.inputs), dict(c.outputs),
-                           list(c.assumptions), list(c.guarantees)))
+    alive = list(range(len(terms)))
     for (_, t), k in zip(terms, kinds):
         if k is None:
-            out.reason = f"not a GR(1) term: {ltl.to_str(t)}"
-            return out
+            return [], [], f"not a GR(1) term: {ltl.to_str(t)}", alive
     variables = c.variables
-    alive = list(range(len(terms)))
+    removed, unknown = [], []
 
     def body(i):     # the formula a premise contributes
         t = terms[i][1]
@@ -240,7 +183,7 @@ def remove_vacuous(guarantees, inputs=None, outputs=None, assumptions=(), core: 
         prem = premises(i)
         verdict = implied(prem, i)
         if verdict is None:
-            out.unknown.append(terms[i][1])
+            unknown.append(terms[i][1])
             continue
         if not verdict:
             continue
@@ -250,10 +193,8 @@ def remove_vacuous(guarantees, inputs=None, outputs=None, assumptions=(), core: 
             search = _Search(lambda idx: implied([prem[k] for k in idx], i))
             idx = search.ddmin(list(range(len(prem))), [])
             found = None if search.reason else [terms[prem[k]][1] for k in idx]
-        out.removed.append(VacuousTerm(terms[i][1], terms[i][0], kinds[i], found))
-    out.contract.assumptions = [t for j, (p, t) in enumerate(terms) if p == "assumption" and j in alive]
-    out.contract.guarantees = [t for j, (p, t) in enumerate(terms) if p == "guarantee" and j in alive]
-    return out
+        removed.append((terms[i][0], terms[i][1], kinds[i], found))
+    return removed, unknown, "", alive
 
 
 VACUOUS, NOT_VACUOUS = "vacuous", "not_vacuous"

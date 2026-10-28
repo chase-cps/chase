@@ -29,8 +29,8 @@ from typing import Optional
 
 from . import ltl
 from .contract import Contract, VarType
-from .logic import (_context, _formula, _Implications, _within, implies,  # noqa: F401
-                    is_satisfiable, unsat_core)
+from .logic import (_context, _formula, _Implications, _Search, _within,  # noqa: F401
+                    implies, is_satisfiable, unsat_core)
 from .queries import INVALID, SAT, UNKNOWN, UNSAT, VALID, Result  # noqa: F401
 
 
@@ -195,54 +195,118 @@ def verify(contract: Contract, backend: str = "auto", context=None, core: bool =
 
 
 @dataclass
+class RedundantTerm:
+    """A term removed by ``remove_redundant``: ``part`` is assumption or
+    guarantee; ``kind`` (with synth=True) init, safety, or justice; ``core``
+    (with core=True) a minimal set of the other terms that imply it."""
+    term: ltl.Node
+    part: str
+    kind: Optional[str] = None
+    core: Optional[list] = None
+
+    def to_dict(self) -> dict:
+        d = {"term": ltl.to_str(self.term), "part": self.part}
+        if self.kind is not None:
+            d["kind"] = self.kind
+        if self.core is not None:
+            d["core"] = [ltl.to_str(t) for t in self.core]
+        return d
+
+
+@dataclass
 class Redundancy:
-    """Outcome of ``remove_redundant``."""
+    """Outcome of ``remove_redundant``: the contract without the redundant
+    terms, the terms removed (in order, and by part), the terms whose check
+    did not finish (kept), and the reason when nothing could be checked."""
     contract: Contract
     removed_assumptions: list[ltl.Node] = field(default_factory=list)
     removed_guarantees: list[ltl.Node] = field(default_factory=list)
     unknown: list[ltl.Node] = field(default_factory=list)   # checks that did not finish
+    removed: list[RedundantTerm] = field(default_factory=list)
+    reason: str = ""
 
     def to_dict(self) -> dict:
-        return {"contract": self.contract.to_dict(),
-                "removed_assumptions": [ltl.to_str(f) for f in self.removed_assumptions],
-                "removed_guarantees": [ltl.to_str(f) for f in self.removed_guarantees],
-                "unknown": [ltl.to_str(f) for f in self.unknown]}
+        d = {"contract": self.contract.to_dict(),
+             "removed_assumptions": [ltl.to_str(f) for f in self.removed_assumptions],
+             "removed_guarantees": [ltl.to_str(f) for f in self.removed_guarantees],
+             "removed": [t.to_dict() for t in self.removed],
+             "unknown": [ltl.to_str(f) for f in self.unknown]}
+        if self.reason:
+            d["reason"] = self.reason
+        return d
 
 
 def remove_redundant(contract: Contract, backend: str = "auto", context=None,
-                     **options) -> Redundancy:
+                     synth: bool = False, core: bool = False, **options) -> Redundancy:
     """Drop each term implied by the other terms and the context.
 
     An assumption is dropped when the other assumptions imply it; a guarantee
     when the assumptions and the other guarantees imply it. Each test is one
     implication check, with the terms that share variables with the term
     (see ``logic._Implications``); a term whose check does not finish is
-    kept.
+    kept. This keeps the contract, A -> G: use it before the algebra and the
+    checks (compose, refines, verify, implements, ...).
+
+    With synth=True, a term is dropped only when it is implied in the GR(1)
+    game, which keeps realizability and the controllers: use it before
+    synthesis (is_realizable, synthesize, is_well_separated, is_vacuous,
+    unrealizable_core). The terms must be GR(1), and there is no context.
+    Each kind of term is implied only by some kinds of terms (see
+    ``chase_cps.gr1``): a safety guarantee is not dropped because a justice
+    assumption implies it, since the component must keep its safety
+    guarantees even when the environment breaks its justice assumptions.
+    The two differ only when the assumptions are wrong, for instance
+    unsatisfiable, or constrain the outputs; each keeps what the other may
+    change.
+
+    With core, each removed term carries a minimal set of the terms that
+    imply it.
     """
     c = contract
     out = Redundancy(Contract(c.name, dict(c.inputs), dict(c.outputs),
                                   list(c.assumptions), list(c.guarantees)))
+    if synth:
+        if context is not None:
+            raise TypeError("remove_redundant with synth=True does not take a context: "
+                            "the realizability checks read every behavior")
+        from .gr1 import _redundant_in_game
+        removed, out.unknown, out.reason, alive = _redundant_in_game(c, core, backend, **options)
+        out.removed = [RedundantTerm(t, part, kind, found) for part, t, kind, found in removed]
+        n = len(c.assumptions)
+        out.contract.assumptions = [t for j, t in enumerate(c.assumptions) if j in alive]
+        out.contract.guarantees = [t for j, t in enumerate(c.guarantees) if j + n in alive]
+        out.removed_assumptions = [t.term for t in out.removed if t.part == "assumption"]
+        out.removed_guarantees = [t.term for t in out.removed if t.part == "guarantee"]
+        return out
     check = _Implications(list(c.assumptions) + list(c.guarantees), c.variables, backend,
                           context, **options)
+
+    def drop(premises, term, part):
+        r = check(premises, term)
+        if r.status == UNKNOWN:
+            out.unknown.append(term)
+        if r.status != VALID:
+            return False
+        found = None
+        if core:
+            search = _Search(lambda idx: {VALID: True, INVALID: False}.get(
+                check([premises[k] for k in idx], term).status))
+            idx = search.ddmin(list(range(len(premises))), [])
+            found = None if search.reason else [premises[k] for k in idx]
+        out.removed.append(RedundantTerm(term, part, None, found))
+        return True
+
     kept = list(c.assumptions)
     for term in list(kept):
-        others = [t for t in kept if t is not term]
-        r = check(others, term)
-        if r.status == VALID:
+        if drop([t for t in kept if t is not term], term, "assumption"):
             kept.remove(term)
             out.removed_assumptions.append(term)
-        elif r.status == UNKNOWN:
-            out.unknown.append(term)
     out.contract.assumptions = kept
     kept_g = list(c.guarantees)
     for term in list(kept_g):
-        others = [t for t in kept_g if t is not term]
-        r = check(kept + others, term)
-        if r.status == VALID:
+        if drop(kept + [t for t in kept_g if t is not term], term, "guarantee"):
             kept_g.remove(term)
             out.removed_guarantees.append(term)
-        elif r.status == UNKNOWN:
-            out.unknown.append(term)
     out.contract.guarantees = kept_g
     return out
 
@@ -296,5 +360,4 @@ from .models import Model, is_receptive  # noqa: E402,F401
 
 # GR(1) synthesis, in chase_cps.gr1 (kept here for the code written before
 # 0.3.1).
-from .gr1 import (Vacuity, VacuousTerm, is_realizable, is_well_separated,  # noqa: E402,F401
-                  remove_vacuous, synthesize)
+from .gr1 import is_realizable, is_well_separated, synthesize  # noqa: E402,F401
