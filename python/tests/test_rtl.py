@@ -6,7 +6,7 @@ import pytest
 
 from chase_cps import Contract, Model, implements, is_receptive
 from chase_cps.backends import ADAPTERS
-from chase_cps.rtl import RTLError, from_verilog, yosys
+from chase_cps.rtl import RTLError, from_rtl, yosys
 
 pytestmark = pytest.mark.skipif(yosys() is None or not ADAPTERS["nuxmv"].available(),
                                 reason="Yosys or nuXmv not installed")
@@ -76,7 +76,7 @@ def write(tmp_path, name, text):
 
 
 def test_a_buffer_implements_its_contract(tmp_path):
-    m = Model.from_verilog(write(tmp_path, "buf1", BUF1), "buf1", reset="reset_i")
+    m = Model.from_rtl(write(tmp_path, "buf1", BUF1), "buf1", reset="reset_i")
     assert m.variables == {"reset_i": "bool", "v_i": "bool", "data_i": "word[4]",
                            "ready_o": "bool", "v_o": "bool", "data_o": "word[4]",
                            "yumi_i": "bool"} or set(m.variables) >= {"v_i", "data_o"}
@@ -95,20 +95,20 @@ def test_a_buffer_implements_its_contract(tmp_path):
 
 def test_memories_names_and_parameters(tmp_path):
     f = write(tmp_path, "buf2", BUF2)
-    m = from_verilog(f, "buf2", reset="reset_i", names={"ready_param_o": "ready_o"})
+    m = from_rtl(f, "buf2", reset="reset_i", names={"ready_param_o": "ready_o"})
     assert implements(m, Contract.from_dict(SLOT)).status == "valid"
     # two entries: ready again after one value is in
     # two entries: empty, one value in and none taken, still ready (one entry: not)
     two = Contract.from_dict({**SLOT, "guarantees": ["G (!v_o & v_i & !yumi_i -> X ready_o)"]})
     assert implements(m, two).status == "valid"
-    one = from_verilog(write(tmp_path, "buf1", BUF1), "buf1", reset="reset_i")
+    one = from_rtl(write(tmp_path, "buf1", BUF1), "buf1", reset="reset_i")
     assert implements(one, two).status == "invalid"
-    m8 = from_verilog(f, "buf2", parameters={"W": 8}, reset="reset_i")
+    m8 = from_rtl(f, "buf2", parameters={"W": 8}, reset="reset_i")
     assert m8.variables["data_o"] == "word[8]"
 
 
 def test_active_low_reset(tmp_path):
-    m = from_verilog(write(tmp_path, "counter", COUNTER), "counter", reset="!rst_n")
+    m = from_rtl(write(tmp_path, "counter", COUNTER), "counter", reset="!rst_n")
     c = Contract.from_dict({"name": "Count", "inputs": {"en": "bool"},
                             "outputs": {"n": "word[4]"},
                             "guarantees": ["n = 0", "G (en -> n' = n + 1)",
@@ -117,18 +117,18 @@ def test_active_low_reset(tmp_path):
     assert implements(m, Contract.from_dict({**c.to_dict(), "guarantees": ["G (n < 15)"]})) \
         .status == "invalid"
     # without the reset the counter starts anywhere
-    free = from_verilog(write(tmp_path, "counter", COUNTER), "counter")
+    free = from_rtl(write(tmp_path, "counter", COUNTER), "counter")
     assert free.start == 0 and "rst_n" in free.ivars
 
 
 def test_errors(tmp_path, monkeypatch):
     with pytest.raises(RTLError, match="could not read"):
-        from_verilog(write(tmp_path, "bad", "module bad(input a; endmodule"), "bad")
+        from_rtl(write(tmp_path, "bad", "module bad(input a; endmodule"), "bad")
     with pytest.raises(RTLError, match="not ports"):
-        from_verilog(write(tmp_path, "buf1", BUF1), "buf1", names={"nope": "x"})
+        from_rtl(write(tmp_path, "buf1", BUF1), "buf1", names={"nope": "x"})
     with pytest.raises(RTLError, match="no file"):
-        from_verilog(str(tmp_path / "missing.sv"), "missing")
+        from_rtl(str(tmp_path / "missing.sv"), "missing")
     import chase_cps.rtl as rtl
     monkeypatch.setattr(rtl, "yosys", lambda: None)
     with pytest.raises(RTLError, match="not installed"):
-        rtl.from_verilog(write(tmp_path, "buf1", BUF1), "buf1")
+        rtl.from_rtl(write(tmp_path, "buf1", BUF1), "buf1")

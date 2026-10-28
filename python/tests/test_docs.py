@@ -73,7 +73,7 @@ def test_python_examples_run(text, tmp_path, monkeypatch):
             "unrealizable_core(", "synth=True")
     if any(n in text for n in game) and not chase_cps.backends.ADAPTERS["slugs"].available():
         pytest.skip("slugs not installed")
-    if "from_verilog(" in text:
+    if "from_rtl(" in text:
         pytest.skip("needs the RTL files of the example (see the demos)")
     monkeypatch.chdir(tmp_path)
     with contextlib.redirect_stdout(io.StringIO()):

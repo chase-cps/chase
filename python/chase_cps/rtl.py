@@ -1,6 +1,6 @@
 """RTL as state machines: Verilog and SystemVerilog read with Yosys.
 
-``from_verilog(files, top)`` gives the module ``top`` as a ``Model``, which
+``from_rtl(files, top)`` gives the module ``top`` as a ``Model``, which
 the checks take as an implementation (``implements``) or an environment
 (``accepts``), and ``is_receptive``. Yosys (ISC license) reads the design,
 flattens it, maps the memories to registers, and writes it in SMV; CHASE
@@ -51,10 +51,10 @@ def yosys() -> Optional[list[str]]:
     return None
 
 
-def from_verilog(files, top: str, parameters: Optional[dict] = None,
-                 reset: Optional[str] = None, clocks=("clk", "clk_i", "clock"),
-                 names: Optional[dict] = None, defines: Optional[dict] = None,
-                 timeout: float = 300) -> Model:
+def from_rtl(files, top: str, parameters: Optional[dict] = None,
+             reset: Optional[str] = None, clocks=("clk", "clk_i", "clock"),
+             names: Optional[dict] = None, defines: Optional[dict] = None,
+             timeout: float = 300) -> Model:
     """The module ``top`` of the Verilog or SystemVerilog ``files`` as a
     state machine. ``parameters`` sets parameters of ``top``; ``clocks``
     names the clock inputs; ``reset`` holds in the first step only (it is
@@ -206,4 +206,4 @@ def _model(top, smv, module, reset, clocks, names) -> Model:
     return Model(top, text, variables, ivars, start=1 if reset else 0)
 
 
-__all__ = ["RTLError", "from_verilog", "yosys"]
+__all__ = ["RTLError", "from_rtl", "yosys"]

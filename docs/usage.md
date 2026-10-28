@@ -382,7 +382,7 @@ refuses a request.
 ### RTL
 
 A Verilog or SystemVerilog module is a state machine too.
-`Model.from_verilog(files, top)` reads it with
+`Model.from_rtl(files, top)` reads it with
 [Yosys](https://yosyshq.net/yosys/) (`pip install chase-cps[rtl]` installs
 it, compiled to WebAssembly; a `yosys` in the path is used first): Yosys
 flattens the design, maps the memories to registers, and writes it in SMV.
@@ -393,9 +393,9 @@ wider one a word. One step is one cycle of the clock, and the clock inputs
 ````
 from chase_cps import Contract, Model, implements
 
-m = Model.from_verilog(["bsg_dff_reset.sv", "bsg_dff_en.sv", "bsg_one_fifo.sv"],
-                       "bsg_one_fifo", parameters={"width_p": 4}, reset="reset_i",
-                       names={"ready_and_o": "ready_o"})
+m = Model.from_rtl(["bsg_dff_reset.sv", "bsg_dff_en.sv", "bsg_one_fifo.sv"],
+                   "bsg_one_fifo", parameters={"width_p": 4}, reset="reset_i",
+                   names={"ready_and_o": "ready_o"})
 slot = Contract.from_dict({"name": "Slot",
                            "inputs": {"v_i": "bool", "data_i": "word[4]", "yumi_i": "bool"},
                            "outputs": {"v_o": "bool", "data_o": "word[4]", "ready_o": "bool"},

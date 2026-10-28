@@ -4,7 +4,7 @@
 
 New:
 
-- RTL (`chase_cps.rtl`): `Model.from_verilog(files, top)` reads a Verilog or
+- RTL (`chase_cps.rtl`): `Model.from_rtl(files, top)` reads a Verilog or
   SystemVerilog module with Yosys as a state machine, for `implements`,
   `accepts`, and `is_receptive`. The ports are the variables of the
   contracts (1 bit: Boolean, more: words); `reset` holds the reset in the
