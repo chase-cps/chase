@@ -11,8 +11,10 @@ statements of a text (a module, a bind file, or the statements alone) as a
 contract: the assumptions and the guarantees. The properties that cannot be
 written in LTL are listed in ``skipped``, with the reason.
 
-Meaning (IEEE 1800-2017, chapter 16), with one clock: one step of LTL is one
-cycle of the clock.
+Meaning: that of IEEE 1800-2017 (chapter 16, and Annex F for ``disable
+iff``), not that of a tool; tools may differ in corner cases (a reset that
+comes while a sequence is still running, after the failure is decided). One
+clock: one step of LTL is one cycle of the clock.
 
 - A concurrent assertion is checked at every cycle: ``assert property (p)``
   is the guarantee ``G p``; ``initial assert property (p)`` is ``p``.

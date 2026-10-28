@@ -200,9 +200,16 @@ variables cannot be written. `reset` disables the properties while it holds
 (`"rst"`, `"!rst_n"`), and `bind` adds a bind statement that puts the
 checker in a design module, its ports connected by name.
 
-The reading is tested against a reference interpreter of the standard on
-random properties and traces, and against Verilator; a contract written and
-read back is equivalent (nuXmv).
+The meaning is that of the standard, IEEE 1800-2017 (chapter 16, and Annex F
+for `disable iff`), not that of a tool. Tools may differ in corner cases: when
+the failure of an attempt is already decided by the values before a reset,
+but a sequence of the attempt is still running when the reset comes, the
+standard gives a failure and some tools (Jasper) give a disabled attempt. To
+compare with a tool, run its checks on the SVA. The reading is tested against
+a reference interpreter of the standard on random properties and traces,
+against Verilator, and against Jasper (each property and the SVA written back
+from its contract proved equivalent); a contract written and read back is
+equivalent (nuXmv).
 
 ## Three layers
 
