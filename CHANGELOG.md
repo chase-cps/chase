@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.2 (not released yet)
+## 0.3.2 (2026-10-27)
 
 Changes of behavior:
 
@@ -17,6 +17,12 @@ Changes of behavior:
   a violation of the assumptions that the component can force only by
   breaking its own guarantees is not a defect of the assumptions.
   `with_guarantees=False` gives the check of before.
+- `remove_vacuous` is removed: it is a removal of redundant terms, and is
+  now `remove_redundant(c, synth=True)`, which keeps realizability and the
+  controllers (`remove_redundant(c)` keeps A -> G, as before). The result
+  is a `Redundancy`, with the `removed` terms (`RedundantTerm`: part, and
+  kind with synth). `Vacuity` and `VacuousTerm` are removed. "Vacuity" is
+  now only `is_vacuous`.
 
 New:
 
@@ -25,12 +31,6 @@ New:
   liveness guarantee asks for, never or from some step on? With the
   strategy, and with `core=True` the assumptions that allow it. The queries
   are those of the exact vacuity checks of ACIES.
-- `remove_vacuous` is removed: it is a removal of redundant terms, and is
-  now `remove_redundant(c, synth=True)`, which keeps realizability and the
-  controllers (`remove_redundant(c)` keeps A -> G, as before). The result
-  is a `Redundancy`, with the `removed` terms (`RedundantTerm`: part, and
-  kind with synth). `Vacuity` and `VacuousTerm` are removed. "Vacuity" is
-  now only `is_vacuous`.
 - `remove_redundant(c, core=True)`: each removed term comes with a minimal
   set of the terms that imply it.
 - State machines (`chase_cps.models`): a `Model` from SMV text or a file,
@@ -42,8 +42,9 @@ New:
 - `chase-cps check`: `--implements MODEL C`, `--receptive MODEL C`
   (an SMV or a JSON file), and `--vacuous C`.
 - MCP server: the tools `is_vacuous` and `is_receptive`; `implements` and
-  `accepts` take a state machine (`smv`, `machine`, `controller`). The skill
-  says when to use each operation and check.
+  `accepts` take a state machine (`smv`, `machine`, `controller`);
+  `remove_redundant` takes `synth` and `core`, and the tool `remove_vacuous`
+  is removed. The skill says when to use each operation and check.
 
 Faster:
 
