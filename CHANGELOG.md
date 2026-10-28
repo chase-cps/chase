@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0 (not released yet)
+
+New:
+
+- Words (`chase_cps.words`): unsigned and signed bit vectors of a fixed
+  width, `"word[8]"` and `"signed word[8]"`, as in nuXmv and SystemVerilog,
+  with the arithmetic modulo 2^n. Operators: `+ - * / mod`, the bitwise
+  `& | xor !`, the shifts `<< >>`, the concatenation `::`, and the bits
+  `x[7:0]`, `x[3]` (a single bit is a Boolean). A formula whose operands do
+  not have the same width and signedness, or a constant that does not fit,
+  is refused when the contract is built. The checks give the words to nuXmv;
+  the values of the traces are integers. The contract algebra works on
+  contracts with words: each comparison over words goes to the core library
+  as a Boolean variable and comes back after the operation (the results are
+  the same as on integers). State machines may declare words. Not in the
+  logics language (`to_spec`) and not for slugs. MCP server: the types
+  `"word[n]"` and `"signed word[n]"`.
+
+Change:
+
+- `mod` and `xor` are keywords of the formulas: they cannot be names.
+
 ## 0.3.2 (2026-10-27)
 
 Changes of behavior:

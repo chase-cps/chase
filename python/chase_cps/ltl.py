@@ -8,11 +8,18 @@ parenthesized before being handed to CHASE.
 
 Precedence, from the loosest to the tightest binding::
 
-    <->    ->    |    &    U R W    ! G F X    relations    + -    * /
+    <->    ->    | xor    &    U R W    ! G F X    relations    << >>    + -
+    * / mod    ::    x[h:l]
 
 ``->`` is right-associative, the other binary operators are left-associative.
 Primed variables (``x'``) denote the value of ``x`` in the next step.
 ``[]`` and ``<>`` are accepted as aliases of ``G`` and ``F``.
+
+The operators of words (``chase_cps.words``) are those of nuXmv: ``x[7:0]``
+and ``x[3]`` select bits, ``::`` concatenates, ``<<`` and ``>>`` shift,
+``mod`` is the remainder, and ``&``, ``|``, ``xor``, ``!`` are bitwise on
+words. A bitwise operation inside a relation needs parentheses:
+``(x & y) = 0``.
 """
 
 from __future__ import annotations
@@ -83,7 +90,7 @@ def number_text(value, fraction: str = "decimal") -> str:
 
 @dataclass(frozen=True)
 class Unary:
-    op: str            # '!', 'G', 'F', 'X', 'neg' (arithmetic minus)
+    op: str            # '!', 'G', 'F', 'X', 'neg' (arithmetic minus), '[h:l]' (bits of a word)
     arg: "Node"
 
 
@@ -98,6 +105,7 @@ Node = Union[Const, Var, Num, Unary, Binary]
 
 RELATIONS = ("=", "!=", "<", "<=", ">", ">=")
 ARITHMETIC = ("+", "-", "*", "/")
+WORD_OPS = ("mod", "<<", ">>", "::")
 BOOLEAN_BINARY = ("&", "|", "->", "<->")
 TEMPORAL_UNARY = ("G", "F", "X")
 TEMPORAL_BINARY = ("U", "R")
@@ -109,12 +117,12 @@ _TOKEN_RE = re.compile(r"""
     \s*(?:
       (?P<num>\d+(?:\.\d+)?)
     | (?P<id>[A-Za-z_][A-Za-z0-9_]*)(?P<prime>')?
-    | (?P<op><->|<=>|->|=>|==|!=|<=|>=|&&|\|\||/\\|\\/|\[\]|<>|[!~&|()<>=+\-*/])
+    | (?P<op><->|<=>|->|=>|==|!=|<<|>>|<=|>=|::|&&|\|\||/\\|\\/|\[\]|<>|[!~&|()<>=+\-*/\[\]:])
     )""", re.VERBOSE)
 
 _OP_ALIASES = {"<=>": "<->", "=>": "->", "==": "=", "&&": "&", "||": "|",
                "/\\": "&", "\\/": "|", "~": "!", "[]": "G", "<>": "F"}
-_KEYWORDS = {"G", "F", "X", "U", "R", "W"}
+_KEYWORDS = {"G", "F", "X", "U", "R", "W", "mod", "xor"}
 
 
 def _tokenize(text: str) -> list[tuple[str, str]]:
@@ -149,11 +157,13 @@ def _tokenize(text: str) -> list[tuple[str, str]]:
 
 # Binary operators: (precedence, right associative)
 _BINARY = {
-    "<->": (1, False), "->": (2, True), "|": (3, False), "&": (4, False),
+    "<->": (1, False), "->": (2, True), "|": (3, False), "xor": (3, False), "&": (4, False),
     "U": (5, True), "R": (5, True), "W": (5, True),
     "=": (7, False), "!=": (7, False), "<": (7, False), "<=": (7, False),
     ">": (7, False), ">=": (7, False),
-    "+": (8, False), "-": (8, False), "*": (9, False), "/": (9, False),
+    "<<": (8, False), ">>": (8, False),
+    "+": (9, False), "-": (9, False), "*": (10, False), "/": (10, False), "mod": (10, False),
+    "::": (11, False),
 }
 _UNARY_PRECEDENCE = 6
 
@@ -207,19 +217,50 @@ class _Parser:
         if kind == "const":
             return Const(val == "true")
         if kind == "id":
-            return Var(val)
+            return self.bits(Var(val))
         if kind == "primed":
-            return Var(val, primed=True)
+            return self.bits(Var(val, primed=True))
         if kind == "op" and val == "(":
             node = self.expression(0)
             self.expect(")")
-            return node
+            return self.bits(node)
         if kind == "op" and val in ("!", "G", "F", "X"):
             return Unary(val, self.expression(_UNARY_PRECEDENCE))
         if kind == "op" and val == "-":
             arg = self.expression(_BINARY["*"][0] + 1)
             return Num(-arg.value) if isinstance(arg, Num) else Unary("neg", arg)
         raise LTLSyntaxError(f"unexpected {val or 'end of formula'!r} in {self.text!r}")
+
+    def bits(self, node: Node) -> Node:
+        """Bit selections after an operand: x[7:0], x[3]."""
+        while self.peek() == ("op", "["):
+            self.take()
+            high = self.index()
+            low = high
+            if self.peek() == ("op", ":"):
+                self.take()
+                low = self.index()
+            self.expect("]")
+            if low > high:
+                raise LTLSyntaxError(f"bits [{high}:{low}]: the high bit comes first, "
+                                     f"in {self.text!r}")
+            node = Unary(f"[{high}:{low}]", node)
+        return node
+
+    def index(self) -> int:
+        kind, val = self.take()
+        if kind != "num" or not val.isdigit():
+            raise LTLSyntaxError(f"a bit index is a number, not {val or 'end of formula'!r}, "
+                                 f"in {self.text!r}")
+        return int(val)
+
+
+def bits(node: Node) -> Optional[tuple[int, int]]:
+    """(high, low) when the node selects bits of a word, else None."""
+    if isinstance(node, Unary) and node.op.startswith("["):
+        high, low = node.op[1:-1].split(":")
+        return int(high), int(low)
+    return None
 
 
 def parse(text: str) -> Node:
@@ -243,7 +284,7 @@ def _check_terms(node: Node, relation: Optional[str]) -> None:
     elif isinstance(node, Binary):
         if relation and node.op in TEMPORAL_BINARY:
             raise LTLSyntaxError(f"{node.op} inside an operand of '{relation}'")
-        inner = node.op if node.op in RELATIONS + ARITHMETIC else relation
+        inner = node.op if node.op in RELATIONS + ARITHMETIC + WORD_OPS else relation
         _check_terms(node.left, inner)
         _check_terms(node.right, inner)
 
@@ -303,10 +344,18 @@ def to_chase(node: Node) -> str:
     if isinstance(node, Unary):
         if node.op == "neg":
             return f"(0 - {to_chase(node.arg)})"
+        if bits(node):
+            raise ValueError(f"bits of a word ({to_str(node)}) are not in the logics "
+                             "language of CHASE")
         # In the CHASE grammar G, F and X bind more loosely than the binary
         # Boolean operators (G a -> b is G (a -> b)): always parenthesize.
         return f"({node.op} ({to_chase(node.arg)}))"
     op = node.op
+    if op in WORD_OPS:
+        raise ValueError(f"the operator {op} of words ({to_str(node)}) is not in the logics "
+                         "language of CHASE")
+    if op == "xor":
+        return f"(! ({to_chase(node.left)} <-> {to_chase(node.right)}))"
     return f"({to_chase(node.left)} {op} {to_chase(node.right)})"
 
 
@@ -321,6 +370,8 @@ def to_smv(node: Node) -> str:
     if isinstance(node, Unary):
         if node.op == "neg":
             return f"(-{to_smv(node.arg)})"
+        if bits(node):
+            return f"{to_smv(node.arg)}{node.op}"
         return f"{node.op} ({to_smv(node.arg)})"
     op = "V" if node.op == "R" else node.op
     return f"({to_smv(node.left)} {op} {to_smv(node.right)})"
@@ -336,7 +387,9 @@ def _pretty(node: Node, outer: int) -> str:
         return to_chase(node)
     if isinstance(node, Unary):
         if node.op == "neg":
-            return f"-{_pretty(node.arg, 10)}"
+            return f"-{_pretty(node.arg, _BINARY['*'][0] + 1)}"
+        if bits(node):
+            return f"{_pretty(node.arg, 99)}{node.op}"
         sep = "" if node.op == "!" else " "
         return f"{node.op}{sep}{_pretty(node.arg, _UNARY_PRECEDENCE)}"
     prec, right_assoc = _BINARY[node.op]

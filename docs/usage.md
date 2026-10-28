@@ -61,11 +61,12 @@ The Python package, the command line (JSON files), and the MCP server read
 formulas in the standard LTL syntax: the same operators, plus `W` (weak
 until) and the aliases `[]` (`G`), `<>` (`F`), `&&`, `||`, `=>`, `<=>`,
 `==`. They
-have the usual precedence, from the loosest: `<->`, `->`, `|`, `&`,
-`U R W`, the unary operators, the relations, `+ -`, `* /`. So `G a -> b` is
-`(G a) -> b`. Names cannot be keywords of either syntax (`G`, `F`, `X`, `U`,
-`R`, `W`, `P`, `NAME`, `CONTRACT`, ...). Numbers may have a fraction
-(`20.5`); they are read exactly.
+have the usual precedence, from the loosest: `<->`, `->`, `|` `xor`, `&`,
+`U R W`, the unary operators, the relations, `<< >>`, `+ -`, `* / mod`,
+`::`, the bits `x[7:0]`. So `G a -> b` is `(G a) -> b`. Names cannot be
+keywords of either syntax (`G`, `F`, `X`, `U`, `R`, `W`, `P`, `NAME`,
+`CONTRACT`, `mod`, `xor`, ...). Numbers may have a fraction (`20.5`); they
+are read exactly. The operators of words are below (Words).
 
 A contract is built from strings or from a dictionary (the JSON format of
 the command line and of the MCP server):
@@ -370,6 +371,52 @@ nuXmv > check_ltlspec_ic3
 ````
 
 `go`, followed by `check_ltlspec`, stops with an error on such a file.
+
+### Words
+
+A word is a bit vector of a fixed width, as a register of a circuit:
+`"word[8]"` is unsigned (0..255), `"signed word[8]"` is in two's complement
+(-128..127). They are the words of nuXmv (`unsigned word[8]`) and the
+vectors of SystemVerilog (`logic [7:0]`, `logic signed [7:0]`). Their
+arithmetic wraps around: for a `word[8]` x equal to 255, x + 1 = 0. The
+operators:
+
+| Operator | Meaning |
+|---|---|
+| `+ - * / mod` | arithmetic modulo 2^n (`/` and `mod` truncate towards 0 for signed words) |
+| `& \| xor !` | bitwise; in a relation, parenthesize them: `(x & y) = 0` |
+| `<< >>` | shifts by a number (`>>` keeps the sign of a signed word) |
+| `x :: y` | concatenation: x on the high bits, unsigned, the sum of the widths |
+| `x[7:4]`, `x[3]` | bits, unsigned; a single bit can be used as a Boolean |
+| `= != < <= > >=` | comparisons, signed or unsigned as the operands |
+
+Both operands of an operation or a comparison have the same width and
+signedness; an integer constant takes the type of the other operand
+(`x = 5`) and must fit in it. Change a width with bits (`y[7:0]`) or a
+concatenation of words (`x :: y`). A formula that does not type is refused
+when the contract is built.
+
+````
+from chase_cps import Contract, refines
+
+inc = Contract.from_dict({"name": "Inc", "inputs": {"a": "word[8]"},
+                          "outputs": {"b": "word[8]"},
+                          "guarantees": ["G (b = a + 1)"]})
+odd = Contract.from_dict({"name": "Odd", "inputs": {"a": "word[8]"},
+                          "outputs": {"b": "word[8]"},
+                          "assumptions": ["G (a[0] = 0)"],
+                          "guarantees": ["G (b[0] = 1)"]})
+print(refines(inc, odd).status)     # valid: a even, so a + 1 is odd
+````
+
+The checks give the words to nuXmv (and NuSMV) as they are; the values in
+the traces are integers. The contract algebra of the core library reads the
+logics language, which has no words: each comparison over words goes to it
+as a Boolean variable and comes back after the operation, which only
+combines the formulas, so the result is the one of the formulas. For the
+same reason a contract with words cannot be written in the logics language
+(`to_spec`). State machines (`Model`) may declare words. slugs does not
+take them: GR(1) synthesis needs integer ranges.
 
 ## 3. GR(1) synthesis
 

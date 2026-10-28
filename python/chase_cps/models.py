@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from itertools import product
 from typing import Any, Optional
 
-from . import ltl
+from . import ltl, words
 from .contract import Contract, VarType
 from .queries import NOT_RECEPTIVE, RECEPTIVE, UNKNOWN, Result
 
@@ -70,7 +70,9 @@ def _vartype(smv_type: str) -> VarType:
     m = re.fullmatch(r"(-?\d+)\s*\.\.\s*(-?\d+)", t)
     if m:
         return (int(m.group(1)), int(m.group(2)))
-    return t     # integer, an enumeration, a word...
+    if words.word_type(t):
+        return words.normalize(t)
+    return t     # integer, an enumeration...
 
 
 def _smvtype(t: VarType) -> str:
@@ -80,6 +82,8 @@ def _smvtype(t: VarType) -> str:
         return "real"
     if isinstance(t, tuple):
         return f"{t[0]}..{t[1]}"
+    if words.word_type(t):
+        return words.smv_type(t)
     return str(t)
 
 
@@ -89,14 +93,18 @@ def _values(t: VarType) -> Optional[list]:
         return [False, True]
     if isinstance(t, tuple) and t[1] - t[0] < 4096:
         return list(range(t[0], t[1] + 1))
+    if words.word_type(t):
+        return words.values(t)
     return None
 
 
-def _smv_value(v) -> str:
+def _smv_value(v, t: Optional[VarType] = None) -> str:
     if v is True:
         return "TRUE"
     if v is False:
         return "FALSE"
+    if words.word_type(t):
+        return words.literal(v, *words.word_type(t))
     return str(v)
 
 
@@ -185,11 +193,11 @@ class Model:
                     raise ValueError(f"transition {i}: undeclared variables {sorted(bad)}")
                 if _has_temporal(when):
                     raise ValueError(f"transition {i}: when must not have temporal operators")
-                parts.append(ltl.to_smv(when))
+                parts.append(words.to_smv(when, variables))
             for o, v in t.get("outputs", {}).items():
                 if o not in outputs:
                     raise ValueError(f"transition {i}: {o} is not an output")
-                parts.append(f"{o} = {_smv_value(v)}")
+                parts.append(f"{o} = {_smv_value(v, variables.get(o))}")
             parts.append(f"next(chase_state) = {dst}")
             cases.append("(" + " & ".join(parts) + ")")
         lines = ["MODULE main", "VAR", f"    chase_state : {{{', '.join(states)}}};"]
@@ -261,7 +269,7 @@ class Model:
                          + (f"next(chase_node) in {target};" if target else "FALSE;"))
         lines.append("TRANS case " + " ".join(trans) + " esac;")
         init_f = ltl.conjunction([ltl.parse(t) for t in init])
-        lines.append(f"INIT {ltl.to_smv(init_f)};")
+        lines.append(f"INIT {words.to_smv(init_f, variables)};")
         model = cls(name or "Controller", "\n".join(lines) + "\n", dict(variables), set())
         model.variables["chase_node"] = (0, max(len(order) - 1, 0))
         return model
@@ -276,7 +284,9 @@ class Model:
         kind = lambda t: "integer" if isinstance(t, tuple) or t == "int" else t  # noqa: E731
         for v in needed:
             mine, theirs = self.variables[v], (types or {}).get(v)
-            if theirs is None or mine == "define" or kind(mine) not in ("bool", "integer", "real"):
+            if theirs is None or mine == "define" or (
+                    kind(mine) not in ("bool", "integer", "real")
+                    and not words.word_type(mine)):
                 continue
             if kind(mine) != kind(theirs):
                 raise ValueError(f"{v} is {kind(theirs)} in {what} and {kind(mine)} in the "
@@ -314,8 +324,10 @@ def as_model(x, contract: Optional[Contract] = None) -> Optional[Model]:
 
 # Receptiveness ----------------------------------------------------------------
 
-def _evaluate(node: ltl.Node, v: dict):
+def _evaluate(node: ltl.Node, v: dict, variables=None):
     """The value of a formula without temporal operators."""
+    if variables and words.has_words(variables):
+        return words.evaluate(node, v, variables)
     if isinstance(node, ltl.Const):
         return node.value
     if isinstance(node, ltl.Num):
@@ -421,7 +433,8 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
     lines = [text.rstrip(), "FROZENVAR"]
     lines += [f"    {probe(x)} : {_smvtype(contract.inputs[x])};" for x in inputs]
     same = " & ".join(f"{x} = {probe(x)}" for x in inputs) or "TRUE"
-    allowed = ltl.to_smv(ltl.conjunction(step)) if step else "TRUE"
+    probes = {**contract.variables, **{probe(x): t for x, t in contract.inputs.items()}}
+    allowed = words.to_smv(ltl.conjunction(step), probes) if step else "TRUE"
     lines.append(f"SPEC AG (({allowed}) -> EX ({same}));")
     starts = []
     count = 1
@@ -430,9 +443,10 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
     if count <= 1024:
         for combo in product(*(domains[x] for x in inputs)):
             v = dict(zip(inputs, combo))
-            if all(_evaluate(t, v) for t in initial):
+            if all(_evaluate(t, v, contract.variables) for t in initial):
                 starts.append(v)
-                lines.append("SPEC !(" + (" & ".join(f"{x} = {_smv_value(v[x])}" for x in inputs)
+                lines.append("SPEC !(" + (" & ".join(f"{x} = {_smv_value(v[x], contract.inputs[x])}"
+                                                     for x in inputs)
                                           or "TRUE") + ");")
     smv = "\n".join(lines) + "\n"
     start = time.monotonic()
@@ -498,6 +512,9 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
 
 
 def _value(text: str):
+    w = words.value(text)
+    if w is not None:
+        return w
     return {"TRUE": True, "FALSE": False}.get(text, int(text) if re.fullmatch(r"-?\d+", text)
                                               else text)
 

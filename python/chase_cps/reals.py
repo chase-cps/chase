@@ -47,6 +47,10 @@ def has_real_variables(query) -> bool:
 
 def check(query, backend: str = "auto", **options) -> Result:
     from .backends import dispatch
+    from .words import has_words
+    if has_words(_variables(query)):
+        return Result(UNKNOWN, reason="real variables and words in the same query are not "
+                      "supported")
     regions = Regions.of(query)
     if regions.problem is None:
         result = dispatch(regions.finite(query), backend, **options)

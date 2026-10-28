@@ -17,7 +17,7 @@ import tempfile
 import time
 from fractions import Fraction
 
-from .. import ltl
+from .. import ltl, words
 from ..tools import find
 from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Holds, Implies, Result,
                        Satisfiable, Trace)
@@ -63,7 +63,8 @@ class NuSMVAdapter(Adapter):
     def emit(self, query) -> str:
         """The SMV model whose LTLSPEC is valid iff the query holds."""
         if isinstance(query, Holds):
-            return query.model.rstrip() + f"\nLTLSPEC {ltl.to_smv(query.phi)};\n"
+            return query.model.rstrip() + \
+                f"\nLTLSPEC {words.to_smv(query.phi, query.variables)};\n"
         if isinstance(query, Implies):
             spec = ltl.Binary("->", query.phi, query.psi)
             variables = query.variables
@@ -76,14 +77,15 @@ class NuSMVAdapter(Adapter):
         lines = ["MODULE main", "VAR"]
         for v, t in variables.items():
             if v in used:
-                typ = {"bool": "boolean", "real": "real"}.get(t) or f"{t[0]}..{t[1]}"
+                typ = {"bool": "boolean", "real": "real"}.get(t) or \
+                    (words.smv_type(t) if words.word_type(t) else f"{t[0]}..{t[1]}")
                 lines.append(f"    {v} : {typ};")
         if len(lines) == 2:   # no variable: NuSMV needs at least one
             lines.append("    chase_dummy : boolean;")
         if _has_reals(query) and not any(variables[v] == "real" for v in used):
             # The SMT engine of nuXmv needs an infinite-state model.
             lines.append("    chase_real : real;")
-        lines.append(f"LTLSPEC {ltl.to_smv(spec)};")
+        lines.append(f"LTLSPEC {words.to_smv(spec, variables)};")
         return "\n".join(lines) + "\n"
 
     def run(self, query) -> Result:
@@ -203,6 +205,9 @@ def _value(text: str):
         return True
     if text == "FALSE":
         return False
+    w = words.value(text)
+    if w is not None:
+        return w
     m = _FRACTION.match(text)
     if m:
         sign = -1 if m.group(1) else 1

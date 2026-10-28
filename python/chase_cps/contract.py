@@ -9,16 +9,16 @@ import warnings
 from dataclasses import dataclass, field
 from typing import Iterable, Mapping, Union
 
-from . import ltl
+from . import ltl, words
 
 # Words that cannot be used as contract or variable names.
 RESERVED = frozenset({
     "G", "F", "X", "U", "R", "W", "P", "true", "false", "TRUE", "FALSE", "NAME",
     "CONTRACT", "Assumptions", "Guarantees", "integer", "boolean", "real",
-    "variable", "input", "output", "constant", "proposition", "is"})
+    "variable", "input", "output", "constant", "proposition", "is", "mod", "xor"})
 
-# A variable type: "bool", "real", or an integer range (low, high), bounds
-# included.
+# A variable type: "bool", "real", an integer range (low, high), bounds
+# included, or a word: "word[8]" (unsigned), "signed word[8]" (chase_cps.words).
 VarType = Union[str, tuple]
 
 _UNBOUNDED = float(2 ** 63 - 1)
@@ -29,6 +29,8 @@ def _normalize_type(t) -> VarType:
         return "bool"
     if t in ("real", float):
         return "real"
+    if words.word_type(t):
+        return words.normalize(t)
     if isinstance(t, range):
         return (t.start, t.stop - 1)
     if isinstance(t, (tuple, list)) and len(t) == 2:
@@ -39,7 +41,8 @@ def _normalize_type(t) -> VarType:
         if lo > hi:
             raise ValueError(f"empty integer range {t!r}")
         return (lo, hi)
-    raise ValueError(f"unsupported variable type {t!r}: use 'bool', 'real', or (low, high)")
+    raise ValueError(f"unsupported variable type {t!r}: use 'bool', 'real', (low, high), "
+                     "or 'word[n]' ('signed word[n]')")
 
 
 def _normalize_vars(vs) -> dict[str, VarType]:
@@ -165,6 +168,13 @@ class Contract:
             if missing:
                 raise ValueError(f"undeclared variables {sorted(missing)} in "
                                  f"{ltl.to_str(f)!r} (contract {self.name})")
+        if words.has_words(declared):
+            for f in self.assumptions + self.guarantees:
+                try:
+                    words.check(f, declared)
+                except words.WordTypeError as e:
+                    raise ValueError(f"{e} (in {ltl.to_str(f)!r}, contract {self.name})") \
+                        from None
 
     # Views -------------------------------------------------------------------
 
@@ -189,7 +199,7 @@ class Contract:
 
     def to_dict(self) -> dict:
         def t(v):
-            return v if v in ("bool", "real") else list(v)
+            return v if isinstance(v, str) else list(v)
         return {"name": self.name,
                 "inputs": {k: t(v) for k, v in self.inputs.items()},
                 "outputs": {k: t(v) for k, v in self.outputs.items()},
@@ -210,7 +220,7 @@ class Contract:
         lines = [f"CONTRACT {self.name}"]
         for k, v in self.variables.items():
             kind = "input" if k in self.inputs else "output"
-            lines.append(f"  {kind} {k} : {v if v in ('bool', 'real') else f'{v[0]}..{v[1]}'}")
+            lines.append(f"  {kind} {k} : {v if isinstance(v, str) else f'{v[0]}..{v[1]}'}")
         lines.append("  Assumptions:")
         lines += [f"    {ltl.to_str(f)}" for f in self.assumptions] or ["    true"]
         lines.append("  Guarantees:")
@@ -221,6 +231,10 @@ class Contract:
 
     def to_logics(self) -> str:
         """The contract in the logics language of CHASE (as read by logics_tool)."""
+        found = sorted(v for v, t in self.variables.items() if words.word_type(t))
+        if found:
+            raise ValueError(f"word variables ({', '.join(found)}) are not in the logics "
+                             f"language of CHASE (contract {self.name})")
         lines = [f"CONTRACT {self.name}:"]
         for k, v in self.variables.items():
             kind = "input" if k in self.inputs else "output"
@@ -278,11 +292,12 @@ class Contract:
         (temporal_operators): G f & G g becomes G (f & g), F f | F g becomes
         F (f | g), X f & X g becomes X (f & g). The contract is equivalent."""
         from ._native import utilities
-        holder = _parse_contracts([self])
+        abstraction = words.Abstraction()
+        holder = _parse_contracts([abstraction.contract(self)])
         try:
             pc = holder[self.name]
             utilities.simplify(pc, utilities.simplify_options(nots, temporal_operators))
-            out = Contract.from_pychase(pc)
+            out = abstraction.restore(Contract.from_pychase(pc))
         finally:
             holder.free()
         out.name = name or self.name
@@ -368,11 +383,12 @@ class Contract:
         inputs become outputs and the outputs inputs."""
         from ._native import representation as R
         c = self.saturate()
-        holder = _parse_contracts([c])
+        abstraction = words.Abstraction()
+        holder = _parse_contracts([abstraction.contract(c)])
         try:
             result = R.Contract.reciprocal(holder[c.name], name or f"{self.name}_inv")
             holder.results.append(result)
-            out = Contract.from_pychase(result)
+            out = abstraction.restore(Contract.from_pychase(result))
         finally:
             holder.free()
         variables = {**out.inputs, **out.outputs}
@@ -596,16 +612,18 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     c1 = c1.saturate()
     c2 = c2.saturate(c2.name + "_2" if c1.name == c2.name else None)
     # Variables with the same name are the same variable (connected ports).
-    shared = {}
     for v in set(c1.variables) & set(c2.variables):
         if c1.variables[v] != c2.variables[v]:
             raise ValueError(f"variable {v} has type {c1.variables[v]} in {c1.name} "
                              f"and {c2.variables[v]} in {c2.name}")
-        shared[v] = v
     fn = getattr(R.Contract, operation, None)
     if fn is None:
         raise NotImplementedError(f"the CHASE core library does not provide {operation}")
-    holder = _parse_contracts([c1, c2])
+    # The relations over words go to the core library as Boolean variables.
+    abstraction = words.Abstraction()
+    a1, a2 = abstraction.contract(c1), abstraction.contract(c2)
+    shared = {v: v for v in set(a1.variables) & set(a2.variables)}
+    holder = _parse_contracts([a1, a2])
     try:
         p1, p2 = holder[c1.name], holder[c2.name]
         if operation == "quotient":
@@ -613,7 +631,7 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
         else:
             result = fn(p1, p2, shared, name)
         holder.results.append(result)
-        out = Contract.from_pychase(result)
+        out = abstraction.restore(Contract.from_pychase(result))
     finally:
         holder.free()
     if operation == "quotient":

@@ -71,6 +71,11 @@ class SlugsAdapter(Adapter):
             return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed; run "
                           "`chase-cps doctor` to see how to install it")
         start = time.monotonic()
+        from ..words import word_type
+        found = sorted(v for v, t in query.contract.variables.items() if word_type(t))
+        if found:
+            return Result(UNKNOWN, self.name, reason=f"slugs does not take words ({', '.join(found)}): "
+                          "use integer ranges")
         from ..gr1 import gr1_roles
         problem = gr1_roles(query.contract)
         if problem:
