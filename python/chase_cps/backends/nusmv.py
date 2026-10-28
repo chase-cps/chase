@@ -101,6 +101,19 @@ class NuSMVAdapter(Adapter):
         return "\n".join(lines) + "\n"
 
     def run(self, query) -> Result:
+        """The answer; variables named as keywords of SMV are renamed in the
+        model (and back in the trace)."""
+        query, back = _rename(query)
+        result = self._answer(query)
+        if back and result.trace is not None:
+            for states in (result.trace.prefix, result.trace.loop):
+                for st in states:
+                    for new, old in back.items():
+                        if new in st:
+                            st[old] = st.pop(new)
+        return result
+
+    def _answer(self, query) -> Result:
         if self.engine not in ENGINES:
             raise ValueError(f"unknown engine {self.engine!r}; known: {list(ENGINES)}")
         found = self.binary()
@@ -116,7 +129,16 @@ class NuSMVAdapter(Adapter):
                 return Result(UNKNOWN, f"{flavor}/{self.engine}", reason=f"the "
                               f"{self.engine} engine of nuXmv does not check real "
                               "variables; use ic3 or bmc")
-        if flavor == "nusmv" and self.engine == "ic3":
+        engine = self.engine
+        if flavor == "nuxmv" and not reals and _casts(query):
+            # IC3 of nuXmv 2.2.0 gives wrong answers with signed() and unsigned():
+            # G X (s < signed(x)) -> X G (s < signed(x)) is false for it. BDDs are right.
+            if engine == "ic3":
+                return Result(UNKNOWN, "nuxmv/ic3", reason="IC3 of nuXmv gives wrong answers "
+                              "with signed() and unsigned(); use bdd")
+            if engine in ("auto", "portfolio"):
+                return self._run(query, path, flavor, "bdd", self.timeout)
+        if flavor == "nusmv" and engine == "ic3":
             return Result(UNKNOWN, "nusmv/ic3", reason="NuSMV has no IC3; use bdd or bmc, "
                           "or install nuXmv")
         if self.engine == "portfolio":
@@ -249,6 +271,64 @@ def _error(output: str) -> str:
               or re.match(r"file \S+: line \d+", l)]
     located = [l for l in errors if re.search(r"line \d+", l)]
     return (located or errors or lines or [""])[-1]
+
+
+# Keywords and functions of NuSMV and nuXmv, which cannot name a variable.
+SMV_KEYWORDS = frozenset("""
+MODULE DEFINE MDEFINE CONSTANTS VAR IVAR FROZENVAR INIT TRANS INVAR SPEC CTLSPEC LTLSPEC
+PSLSPEC COMPUTE NAME INVARSPEC FAIRNESS JUSTICE COMPASSION ISA ASSIGN CONSTRAINT SIMPWFF
+CTLWFF LTLWFF PSLWFF COMPWFF IN MIN MAX MIRROR PRED PREDICATES process array of boolean
+integer real word word1 bool signed unsigned extend resize sizeof uwconst swconst EX AX EF
+AF EG AG E F O G H X Y Z A U S V T BU EBF ABF EBG ABG case esac mod next init union in xor
+xnor self TRUE FALSE count toint floor abs max min READ WRITE CONSTARRAY typeof pi ln exp
+sin cos tan asin acos atan pow sqrt clock time
+""".split())
+
+
+def _rename(query):
+    """The query with the variables that are SMV keywords renamed, and the
+    map back. Models (Holds) are written by the user and kept."""
+    if isinstance(query, Holds):
+        return query, {}
+    clash = {v for v in query.variables if v in SMV_KEYWORDS}
+    if not clash:
+        return query, {}
+    taken = set(query.variables)
+    names = {}
+    for v in sorted(clash):
+        new = f"chase_{v}"
+        while new in taken:
+            new += "_"
+        taken.add(new)
+        names[v] = new
+
+    def sub(node):
+        if isinstance(node, ltl.Var) and node.name in names:
+            return ltl.Var(names[node.name], node.primed)
+        if isinstance(node, ltl.Unary):
+            return ltl.Unary(node.op, sub(node.arg))
+        if isinstance(node, ltl.Binary):
+            return ltl.Binary(node.op, sub(node.left), sub(node.right))
+        return node
+    import dataclasses
+    variables = {names.get(v, v): t for v, t in query.variables.items()}
+    fields = {"phi": sub(query.phi), "variables": variables}
+    if isinstance(query, Implies):
+        fields["psi"] = sub(query.psi)
+    return dataclasses.replace(query, **fields), {new: old for old, new in names.items()}
+
+
+def _casts(query) -> bool:
+    """Whether a formula of the query reads a word as signed or unsigned."""
+    def walk(node):
+        if isinstance(node, ltl.Unary):
+            return ltl.function(node) in ("signed", "unsigned") or walk(node.arg)
+        if isinstance(node, ltl.Binary):
+            return walk(node.left) or walk(node.right)
+        return False
+    if isinstance(query, Holds):
+        return walk(query.phi) or bool(re.search(r"\b(signed|unsigned)\s*\(", query.model))
+    return walk(query.phi) or (isinstance(query, Implies) and walk(query.psi))
 
 
 def _has_reals(query) -> bool:

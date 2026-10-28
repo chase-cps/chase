@@ -126,3 +126,23 @@ def test_the_command_line(tmp_path, capsys):
          "assumptions": ["G F a"], "guarantees": ["G (a -> b)"]}]}))
     assert main(["check", str(spec), "--engine", "bdd", "--json"]) == 0
     assert "nuxmv/bdd" in capsys.readouterr().out
+
+
+@needs_mc
+def test_casts_are_checked_with_bdds():
+    # IC3 of nuXmv 2.2.0 finds this valid formula false
+    v = {"x": "word[4]", "s": "signed word[4]"}
+    r = implies("G X (s < signed(x))", "X G (s < signed(x))", v)
+    assert r.status == "valid" and r.backend == "nuxmv/bdd"
+    assert implies("G X (s < signed(x))", "X G (s < signed(x))", v, "nuxmv/portfolio").status \
+        == "valid"
+    r = implies("G X (s < signed(x))", "X G (s < signed(x))", v, "nuxmv/ic3")
+    assert r.status == "unknown" and "signed()" in r.reason
+
+
+@needs_mc
+def test_variables_named_as_smv_keywords():
+    v = {"count": (0, 3), "abs": (0, 5), "next": "bool", "E": "bool"}
+    r = implies("G (count = 1 | abs > 2)", "count = 1", v)
+    assert r.status == "invalid" and set(r.trace.prefix[0]) == {"count", "abs"}
+    assert is_satisfiable("next & !E & X !next", v).status == "sat"
