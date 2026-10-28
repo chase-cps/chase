@@ -352,6 +352,8 @@ def _holds(model, phi, contract: Contract, what: str, backend: str, context,
     from .queries import Holds
     k = _context(context, contract.variables)
     spec = phi if k is None else ltl.Binary("->", k, phi)
+    for _ in range(getattr(model, "start", 0)):      # the steps of a reset come first
+        spec = ltl.Unary("X", spec)
     model.check_variables(ltl.variables(spec), what, contract.variables)
     return backends.check(Holds(model.smv, spec, dict(model.variables)), backend, **options)
 

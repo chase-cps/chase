@@ -2809,9 +2809,11 @@ class _Writer:
     def prop(self, f) -> str:
         """A formula as an SVA property."""
         if isinstance(f, ltl.Binary) and f.op == "->" and not _temporal(f) \
-                and not _primed(f.left) and _primed(f.right):
-            # a -> b' is a |=> b, b with $past for the values of now
-            return f"{self.boolean(f.left)} |=> ({self.expr(f.right, past=True)})"
+                and not _primed(f.left):
+            if _primed(f.right):
+                # a -> b' is a |=> b, b with $past for the values of now
+                return f"{self.boolean(f.left)} |=> ({self.expr(f.right, past=True)})"
+            return f"{self.boolean(f.left)} |-> ({self.boolean(f.right)})"
         if not _temporal(f):
             return self.boolean(f)
         if isinstance(f, ltl.Unary):

@@ -400,16 +400,17 @@ slot = Contract.from_dict({"name": "Slot",
                            "inputs": {"v_i": "bool", "data_i": "word[4]", "yumi_i": "bool"},
                            "outputs": {"v_o": "bool", "data_o": "word[4]", "ready_o": "bool"},
                            "assumptions": ["G (yumi_i -> v_o)"],
-                           "guarantees": ["G X (v_o & !yumi_i -> X v_o)"]})
+                           "guarantees": ["G (v_o & !yumi_i -> X v_o)"]})
 print(implements(m, slot).status)
 ````
 
-`parameters` sets parameters of the top module, and `names` renames ports
-as the variables of the contracts. With `reset` (`"reset_i"`, or `"!rst_n"`
-for an active-low reset) the reset holds in the first step only, and the
-registers start with any value; the reset is then not an input of the
-model, so the contracts do not list it as an input. Without `reset` it is
-an input like the others. The checks are those of nuXmv: they suit small
+`parameters` sets parameters of the top module, `names` renames ports as
+the variables of the contracts, and `defines` gives macros. With `reset`
+(`"reset_i"`, or `"!rst_n"` for an active-low reset) the reset holds in the
+first step only, and the contracts are checked from the next step, the
+first one after the reset; the reset is then not an input of the model, so
+the contracts do not list it as an input. Without `reset` it is an input
+like the others, and the registers start with any value. The checks are those of nuXmv: they suit small
 and medium designs.
 
 ### Queries on formulas

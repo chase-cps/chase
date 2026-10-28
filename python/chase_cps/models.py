@@ -117,6 +117,7 @@ class Model:
     smv: str
     variables: dict[str, VarType] = field(default_factory=dict)
     ivars: set[str] = field(default_factory=set)
+    start: int = 0      # the steps of a reset: the contracts are checked after them
 
     @classmethod
     def from_smv(cls, source: str, name: Optional[str] = None) -> "Model":

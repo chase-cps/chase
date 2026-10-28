@@ -9,8 +9,10 @@ Boolean, a wider one a word.
 
 One step is one cycle of the clock: the clock inputs are left out. With
 ``reset`` (an input such as ``"reset_i"``, or ``"!rst_n"`` for an active-low
-one), the reset holds in the first step and not after; the registers start
-with any value. Without it the reset is an input like the others.
+one), the reset holds in the first step and not after, and the contracts are
+checked from the step after the reset (``start`` of the model is 1). Without
+it the reset is an input like the others, and the registers start with any
+value.
 
 Yosys is found as ``yosys`` in the path, as ``yowasp-yosys`` (``pip install
 chase-cps[rtl]``, Yosys compiled to WebAssembly), or with the environment
@@ -68,6 +70,8 @@ def from_verilog(files, top: str, parameters: Optional[dict] = None,
         if not os.path.exists(f):
             raise RTLError(f"no file {f}")
     defs = " ".join(f"-D{k}={v}" for k, v in (defines or {}).items())
+    # `include finds the files next to the sources
+    defs += "".join(f' -I"{d}"' for d in dict.fromkeys(os.path.dirname(f) for f in files))
     chparam = " ".join(f"-chparam {k} {v}" for k, v in (parameters or {}).items())
     with tempfile.TemporaryDirectory(prefix="chase_rtl_") as tmp:
         script = "\n".join([
@@ -87,8 +91,12 @@ def from_verilog(files, top: str, parameters: Optional[dict] = None,
         p = subprocess.run(command + ["-q", "-s", "script.ys"], cwd=tmp, capture_output=True,
                            text=True, timeout=timeout)
         if p.returncode or not os.path.exists(os.path.join(tmp, "design.smv")):
-            raise RTLError(f"Yosys could not read {top}: "
-                           f"{(p.stderr + p.stdout).strip()[-2000:]}")
+            output = (p.stdout + "\n" + p.stderr).splitlines()
+            errors = [l for l in output if "ERROR" in l]
+            if not errors:      # the WebAssembly build may stop without an ERROR line
+                errors = [l for l in output if "Executing" in l][-1:] + \
+                    ["Yosys stopped (an exception) while reading that file"]
+            raise RTLError(f"Yosys could not read {top}: " + "\n".join(errors)[-2000:])
         with open(os.path.join(tmp, "design.smv")) as f:
             smv = f.read()
         with open(os.path.join(tmp, "ports.json")) as f:
@@ -183,7 +191,7 @@ def _model(top, smv, module, reset, clocks, names) -> Model:
             else:
                 define.append(f"    {name} := _{port};")
     text = "\n".join(out + (["IVAR"] + ivar if ivar else []) + ["DEFINE"] + define + extra) + "\n"
-    return Model(top, text, variables, ivars)
+    return Model(top, text, variables, ivars, start=1 if reset else 0)
 
 
 __all__ = ["RTLError", "from_verilog", "yosys"]
