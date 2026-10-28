@@ -66,16 +66,28 @@ def from_verilog(files, top: str, parameters: Optional[dict] = None,
     if isinstance(files, (str, os.PathLike)):
         files = [files]
     files = [os.path.abspath(f) for f in files]
+    # the headers next to the sources are copied too, for `include
+    headers = [os.path.join(d, f) for d in dict.fromkeys(os.path.dirname(f) for f in files)
+               for f in sorted(os.listdir(d)) if f.endswith((".svh", ".vh"))]
     for f in files:
         if not os.path.exists(f):
             raise RTLError(f"no file {f}")
+    names_seen = {}
+    for f in files:
+        base = os.path.basename(f)
+        if base in names_seen and names_seen[base] != f:
+            raise RTLError(f"two files named {base}: {names_seen[base]} and {f}")
+        names_seen[base] = f
     defs = " ".join(f"-D{k}={v}" for k, v in (defines or {}).items())
-    # `include finds the files next to the sources
-    defs += "".join(f' -I"{d}"' for d in dict.fromkeys(os.path.dirname(f) for f in files))
     chparam = " ".join(f"-chparam {k} {v}" for k, v in (parameters or {}).items())
     with tempfile.TemporaryDirectory(prefix="chase_rtl_") as tmp:
+        # the sources are copied next to the script: Yosys compiled to
+        # WebAssembly sees only its directory, and `include finds them there
+        for f in headers + files:
+            shutil.copy(f, os.path.join(tmp, os.path.basename(f)))
         script = "\n".join([
-            f"read_verilog -sv {defs} " + " ".join(f'"{f}"' for f in files),
+            f"read_verilog -sv -I. {defs} "
+            + " ".join(f'"{os.path.basename(f)}"' for f in files),
             f"hierarchy -check -top {top} {chparam}",
             f"prep -top {top}",
             "flatten",
