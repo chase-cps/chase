@@ -190,7 +190,8 @@ Reading:
 
 Not read, and listed in `skipped` with the reason: local variables, `[->n]`
 and `[=n]`, unbounded repetition, unpacked arrays, `x` and `z` digits,
-immediate assertions.
+immediate assertions, and the assertions inside generate blocks (`generate`,
+`if`, `for` at the level of the module).
 
 Writing: a formula `G p` is checked at every cycle, any other formula once,
 at the first cycle (`initial`); `past(x, n)` is `$past(x, n)`, the same

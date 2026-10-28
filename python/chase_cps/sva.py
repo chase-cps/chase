@@ -46,7 +46,8 @@ Values one cycle apart in a comparison are written with x', values further
 apart with ``past(x, n)`` (``y == $past(x, 2)``).
 
 Not read: local variables, ``[->n]`` and ``[=n]``, unbounded repetition,
-``$past`` with a gating clock, ``x`` and ``z`` digits, unpacked arrays. A
+``$past`` with a gating clock, ``x`` and ``z`` digits, unpacked arrays, and
+the assertions inside generate blocks (``generate``, ``if``, ``for``). A
 contract has one clock: the properties of the other clocks are skipped.
 """
 
@@ -567,6 +568,9 @@ class _Scanner:
         self.default_disable = None
         self.module = None
         self.notes: list[Skipped] = []
+        self.generate = 0          # depth of generate ... endgenerate
+        self.blocks: list = []     # begin ... end: "generate" or "plain"
+        self.single = False        # the next statement is the body of a generate if or for
 
     def run(self):
         p = self.p
@@ -577,6 +581,24 @@ class _Scanner:
             try:
                 if kind == "attr":
                     attr = p.take()[1]
+                    continue
+                if kind == "id" and val in ("generate", "endgenerate"):
+                    p.take()
+                    self.generate = self.generate + 1 if val == "generate" \
+                        else max(self.generate - 1, 0)
+                    continue
+                if kind == "id" and val in ("if", "for", "else"):
+                    self.generate_header()
+                    continue
+                if kind == "id" and val in ("begin", "end"):
+                    p.take()
+                    if val == "begin":
+                        self.blocks.append("plain")
+                    elif self.blocks:
+                        self.blocks.pop()
+                    if p.at(":"):        # begin : name, end : name
+                        p.take()
+                        p.take()
                     continue
                 if kind == "id" and val == "module":
                     self.module_header()
@@ -608,6 +630,7 @@ class _Scanner:
                 self.notes.append(Skipped(None, self.source(start, p.i), str(e)))
                 self.recover()
             attr = None
+            self.single = False
 
     def source(self, start, end):
         return " ".join(t[1] for t in self.p.t[start:end] if t[0] != "end").strip()
@@ -624,7 +647,7 @@ class _Scanner:
 
     def skip(self):
         """A statement that is not read: up to its ';', not into an
-        assertion that follows."""
+        assertion that follows, nor into a begin, end, or generate."""
         p = self.p
         depth = 0
         first = True
@@ -633,7 +656,8 @@ class _Scanner:
             if not first and depth == 0 and kind == "id" and val in (
                     "assert", "assume", "cover", "restrict", "property", "sequence",
                     "module", "endmodule", "default", "assign", "input", "output",
-                    "parameter", "localparam", "initial"):
+                    "parameter", "localparam", "initial", "begin", "end", "generate",
+                    "endgenerate"):
                 return
             first = False
             p.take()
@@ -643,8 +667,33 @@ class _Scanner:
                 depth = max(depth - 1, 0)
             elif val == ";" and depth == 0:
                 return
-            elif val in ("begin", "end", "endmodule", "endgenerate", "generate"):
+            elif val == "endmodule":
+                self.blocks, self.generate = [], 0
                 return
+
+    def generate_header(self):
+        """if (...), for (...), else at the level of the module: the body is
+        a generate block (its assertions are not read)."""
+        p = self.p
+        val = p.take()[1]
+        if val in ("if", "for") and p.at("("):
+            depth = 0
+            while p.peek()[0] != "end":
+                v = p.take()[1]
+                depth += v == "("
+                depth -= v == ")"
+                if depth == 0:
+                    break
+        if val == "else" and p.at("if"):
+            return
+        if p.at("begin"):
+            p.take()
+            self.blocks.append("generate")
+            if p.at(":"):
+                p.take()
+                p.take()
+        else:
+            self.single = True
 
     def module_header(self):
         p = self.p
@@ -869,6 +918,10 @@ class _Scanner:
                 depth -= v == ")"
         text = self.source(start, p.i)
         self.action()
+        if self.generate or "generate" in self.blocks or self.single:
+            self.notes.append(Skipped(label, text, "inside a generate block (generate, if, "
+                                      "for): not read"))
+            return
         self.asserts.append((label, kind, initial, spec, text))
 
     def action(self):

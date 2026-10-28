@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 (not released yet)
+
+Fix:
+
+- `parse_sva` read the assertions inside generate blocks, those of both
+  branches of a `generate if`; they are skipped, with the reason.
+
 ## 0.4.0 (2026-10-28)
 
 New:

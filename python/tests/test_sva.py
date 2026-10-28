@@ -462,3 +462,26 @@ def test_past_two_cycles_back():
     assert implies("G (q' = d)", c.guarantees[0], v).status == "invalid"
     back = parse_sva(to_sva(c))
     assert back.contract.guarantees == c.guarantees
+
+
+def test_generate_blocks_are_not_read():
+    text = """module m #(parameter P = 1) (input logic clk, input logic a, b, output logic c);
+      A: assert property (@(posedge clk) a |-> c);
+      generate if (P) begin : g1
+        B: assert property (@(posedge clk) b |-> c);
+      end else begin
+        C: assert property (@(posedge clk) !c);
+      end endgenerate
+      if (P) D: assert property (@(posedge clk) a);
+      for (genvar i = 0; i < 2; i++) begin : f
+        E: assert property (@(posedge clk) b);
+      end
+      always @(posedge clk) begin
+        if (a) x <= 1; else x <= 0;
+      end
+      F: assert property (@(posedge clk) b |=> c);
+    endmodule"""
+    r = parse_sva(text)
+    assert [p.label for p in r.properties] == ["A", "F"]
+    assert [s.label for s in r.skipped] == ["B", "C", "D", "E"]
+    assert all("generate" in s.reason for s in r.skipped)
