@@ -420,7 +420,8 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
     if infinite:
         return Result(UNKNOWN, "nusmv", reason=f"the inputs {infinite} are not finite: "
                       "receptiveness is checked with BDDs")
-    tools = [n for n in (["nuxmv", "nusmv"] if backend == "auto" else [backend])
+    tool = backend.partition("/")[0]   # CTL is checked with BDDs whatever the engine
+    tools = [n for n in (["nuxmv", "nusmv"] if tool == "auto" else [tool])
              if n in ADAPTERS and hasattr(ADAPTERS[n], "binary")]
     found = next((ADAPTERS[n].binary() for n in tools if ADAPTERS[n].available()), None)
     if found is None:

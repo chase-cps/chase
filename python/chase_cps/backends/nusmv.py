@@ -6,6 +6,12 @@ bounded model checking, then proves the specification with BDDs.
 
 Real variables need nuXmv, which checks them with its SMT engine
 (``go_msat``, then IC3 or bounded model checking); NuSMV has no real type.
+
+The option ``engine`` picks another engine: "ic3", "bdd" (BDDs, fast when a
+counterexample needs a long loop, slow on large state spaces), "bmc"
+(bounded model checking: counterexamples up to ``bmc_bound`` steps, no
+proofs), or "portfolio" (IC3 and BDDs at the same time; the first verdict
+wins).
 """
 
 from __future__ import annotations
@@ -24,8 +30,14 @@ from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Holds, Implies, Resu
 from .base import Adapter
 
 
+# auto: IC3 with nuXmv; with NuSMV, BMC for a counterexample, then BDDs.
+# portfolio: two engines at the same time, the first verdict wins.
+ENGINES = ("auto", "ic3", "bdd", "bmc", "portfolio")
+
+
 class NuSMVAdapter(Adapter):
-    """``tool`` is "nuxmv", "nusmv", or "auto" (nuXmv first, then NuSMV)."""
+    """``tool`` is "nuxmv", "nusmv", or "auto" (nuXmv first, then NuSMV);
+    ``engine`` is one of ENGINES."""
 
     name = "nusmv"
     answers = (Implies, Satisfiable, Holds)
@@ -89,17 +101,28 @@ class NuSMVAdapter(Adapter):
         return "\n".join(lines) + "\n"
 
     def run(self, query) -> Result:
+        if self.engine not in ENGINES:
+            raise ValueError(f"unknown engine {self.engine!r}; known: {list(ENGINES)}")
         found = self.binary()
         if found is None:
             return Result(UNKNOWN, self.name, reason="neither nuXmv nor NuSMV is installed")
         path, flavor = found
-        if _has_reals(query):
+        reals = _has_reals(query)
+        if reals:
             if flavor != "nuxmv":
                 return Result(UNKNOWN, self.name, reason="real variables need nuXmv: NuSMV "
                               "has no real type")
-            if self.engine not in ("auto", "ic3", "bmc"):
-                return Result(UNKNOWN, self.name, reason=f"the {self.engine} engine of "
-                              "nuXmv does not check real variables; use ic3 or bmc")
+            if self.engine not in ("auto", "ic3", "bmc", "portfolio"):
+                return Result(UNKNOWN, f"{flavor}/{self.engine}", reason=f"the "
+                              f"{self.engine} engine of nuXmv does not check real "
+                              "variables; use ic3 or bmc")
+        if flavor == "nusmv" and self.engine == "ic3":
+            return Result(UNKNOWN, "nusmv/ic3", reason="NuSMV has no IC3; use bdd or bmc, "
+                          "or install nuXmv")
+        if self.engine == "portfolio":
+            engines = ("ic3", "bmc") if reals else \
+                ("ic3", "bdd") if flavor == "nuxmv" else ("bdd", "bmc")
+            return self._portfolio(query, path, flavor, engines)
         if self.engine != "auto":
             return self._run(query, path, flavor, self.engine, self.timeout)
         if flavor == "nuxmv":
@@ -112,41 +135,37 @@ class NuSMVAdapter(Adapter):
         result.seconds += first.seconds
         return result
 
+    def _command(self, query, path: str, flavor: str, engine: str, tmp: str) -> list[str]:
+        """Write the model (and the commands for nuXmv) in tmp; the command line."""
+        with open(os.path.join(tmp, "query.smv"), "w") as f:
+            f.write(self.emit(query))
+        if flavor == "nuxmv" and _has_reals(query):
+            commands = ["set on_failure_script_quits", "read_model -i query.smv", "go_msat"]
+            if engine == "bmc":
+                commands.append(f"msat_check_ltlspec_bmc -k {self.bmc_bound}")
+            else:
+                commands.append("check_ltlspec_ic3")
+        elif flavor == "nuxmv":
+            commands = ["set on_failure_script_quits", "read_model -i query.smv",
+                        "flatten_hierarchy", "encode_variables", "build_boolean_model"]
+            if engine == "ic3":
+                commands.append("check_ltlspec_ic3")
+            elif engine == "bmc":
+                commands += ["bmc_setup", f"check_ltlspec_bmc -k {self.bmc_bound}"]
+            else:
+                commands += ["build_model", "check_ltlspec"]
+        elif engine == "bmc":
+            return [path, "-bmc", "-bmc_length", str(self.bmc_bound), "query.smv"]
+        else:
+            return [path, "-dynamic", "-coi", "query.smv"]
+        with open(os.path.join(tmp, "commands"), "w") as f:
+            f.write("\n".join(commands + ["quit"]) + "\n")
+        return [path, "-source", "commands"]
+
     def _run(self, query, path: str, flavor: str, engine: str, timeout: float) -> Result:
-        model = self.emit(query)
         start = time.monotonic()
         with tempfile.TemporaryDirectory(prefix="chase_cps_") as tmp:
-            smv = os.path.join(tmp, "query.smv")
-            with open(smv, "w") as f:
-                f.write(model)
-            if flavor == "nuxmv" and _has_reals(query):
-                commands = ["set on_failure_script_quits", "read_model -i query.smv",
-                            "go_msat"]
-                if engine == "bmc":
-                    commands.append(f"msat_check_ltlspec_bmc -k {self.bmc_bound}")
-                else:
-                    commands.append("check_ltlspec_ic3")
-                commands.append("quit")
-                with open(os.path.join(tmp, "commands"), "w") as f:
-                    f.write("\n".join(commands) + "\n")
-                args = [path, "-source", "commands"]
-            elif flavor == "nuxmv":
-                commands = ["set on_failure_script_quits", "read_model -i query.smv",
-                            "flatten_hierarchy", "encode_variables", "build_boolean_model"]
-                if engine == "ic3":
-                    commands.append("check_ltlspec_ic3")
-                elif engine == "bmc":
-                    commands += ["bmc_setup", f"check_ltlspec_bmc -k {self.bmc_bound}"]
-                else:
-                    commands += ["build_model", "check_ltlspec"]
-                commands.append("quit")
-                with open(os.path.join(tmp, "commands"), "w") as f:
-                    f.write("\n".join(commands) + "\n")
-                args = [path, "-source", "commands"]
-            elif engine == "bmc":
-                args = [path, "-bmc", "-bmc_length", str(self.bmc_bound), "query.smv"]
-            else:
-                args = [path, "-dynamic", "-coi", "query.smv"]
+            args = self._command(query, path, flavor, engine, tmp)
             try:
                 # No input: after an error nuXmv would wait at its prompt.
                 proc = subprocess.run(args, cwd=tmp, capture_output=True, text=True,
@@ -155,17 +174,65 @@ class NuSMVAdapter(Adapter):
                 return Result(UNKNOWN, f"{flavor}/{engine}",
                               reason=f"timeout after {timeout:g} s",
                               seconds=time.monotonic() - start)
-        seconds = time.monotonic() - start
+        return self._verdict(query, flavor, engine, proc.stdout, proc.stderr,
+                             time.monotonic() - start)
+
+    def _portfolio(self, query, path: str, flavor: str, engines) -> Result:
+        """Run the engines at the same time; the first verdict wins and the
+        other runs are stopped."""
+        start = time.monotonic()
+        with tempfile.TemporaryDirectory(prefix="chase_cps_") as tmp:
+            running = {}
+            for engine in engines:
+                d = os.path.join(tmp, engine)
+                os.mkdir(d)
+                args = self._command(query, path, flavor, engine, d)
+                out = open(os.path.join(d, "out"), "w")
+                err = open(os.path.join(d, "err"), "w")
+                proc = subprocess.Popen(args, cwd=d, stdout=out, stderr=err,
+                                        stdin=subprocess.DEVNULL)
+                running[engine] = (proc, d, out, err)
+            unknown = []
+            try:
+                while running and time.monotonic() - start < self.timeout:
+                    done = [e for e, (p, *_) in running.items() if p.poll() is not None]
+                    if not done:
+                        time.sleep(0.01)
+                        continue
+                    for engine in done:
+                        proc, d, out, err = running.pop(engine)
+                        out.close()
+                        err.close()
+                        with open(os.path.join(d, "out")) as f, \
+                                open(os.path.join(d, "err")) as g:
+                            result = self._verdict(query, flavor, engine, f.read(),
+                                                   g.read(), time.monotonic() - start)
+                        if result.status != UNKNOWN:
+                            return result
+                        unknown.append(f"{engine}: {result.reason}")
+            finally:
+                for proc, d, out, err in running.values():
+                    proc.kill()
+                    proc.wait()
+                    out.close()
+                    err.close()
+        if running:
+            unknown += [f"{e}: timeout after {self.timeout:g} s" for e in running]
+        return Result(UNKNOWN, f"{flavor}/portfolio", reason="; ".join(unknown),
+                      seconds=time.monotonic() - start)
+
+    def _verdict(self, query, flavor: str, engine: str, stdout: str, stderr: str,
+                 seconds: float) -> Result:
         backend = f"{flavor}/{engine}"
-        verdict = re.search(r"specification .* is (true|false)", proc.stdout, re.S)
+        verdict = re.search(r"specification .* is (true|false)", stdout, re.S)
         if not verdict:
-            reason = _error(proc.stderr + "\n" + proc.stdout)
-            if engine == "bmc" and "no counterexample found" in proc.stdout:
+            reason = _error(stderr + "\n" + stdout)
+            if engine == "bmc" and "no counterexample found" in stdout:
                 reason = f"no counterexample up to bound {self.bmc_bound}"
             return Result(UNKNOWN, backend, reason=reason or "no verdict in the output",
-                          seconds=seconds, details={"model": model})
+                          seconds=seconds, details={"model": self.emit(query)})
         holds = verdict.group(1) == "true"
-        trace = None if holds else parse_trace(proc.stdout, query.variables)
+        trace = None if holds else parse_trace(stdout, query.variables)
         if isinstance(query, (Implies, Holds)):
             status = VALID if holds else INVALID
         else:   # Satisfiable: !phi valid means phi unsatisfiable

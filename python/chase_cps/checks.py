@@ -12,9 +12,10 @@ machine does not refuse the inputs that the assumptions allow.
 Each check is one or two queries on formulas (``chase_cps.logic``), so the
 checks hold for any theory the back ends decide.
 
-The checks take the back end (``"auto"``, ``"nuxmv"``, ``"nusmv"``) and
-options of the back end as keywords: ``timeout`` in seconds (300 by
-default), and for NuSMV ``engine`` (``"auto"``, ``"bdd"``, ``"bmc"``) and
+The checks take the back end (``"auto"``, ``"nuxmv"``, ``"nusmv"``, or with
+an engine, e.g. ``"nuxmv/bdd"``) and options of the back end as keywords:
+``timeout`` in seconds (300 by default), ``engine`` (``"auto"``, ``"ic3"``,
+``"bdd"``, ``"bmc"``, ``"portfolio"``, see ``chase_cps.backends.nusmv``) and
 ``bmc_bound``. They also take a ``context`` (see ``chase_cps.logic``).
 
 The checks of GR(1) synthesis (realizability and the analyses built on it)

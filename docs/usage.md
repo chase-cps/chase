@@ -571,5 +571,34 @@ $> chase-cps install slugs
 $> chase-cps doctor
 ````
 
+### Engines
+
+nuXmv checks the formulas with IC3 by default. Another engine can be
+chosen with `engine`, or in the name of the back end, as the results name
+it:
+
+| Engine | Proves | Finds counterexamples | Good for |
+| --- | --- | --- | --- |
+| `ic3` (default with nuXmv) | yes | yes | large state spaces, words, reals |
+| `bdd` | yes | yes | a counterexample that needs a long loop (a counter that goes around) |
+| `bmc` | no | up to `bmc_bound` steps (20) | short counterexamples |
+| `portfolio` | yes | yes | IC3 and BDDs at the same time; the first verdict wins |
+
+````
+from chase_cps import implies
+
+r = implies("cnt = 254 & G (cnt' = cnt + 1)", "X (cnt = 0)", {"cnt": "word[8]"},
+            "nuxmv/bdd")
+print(r.status, r.backend)      # invalid nuxmv/bdd
+````
+
+The counterexample is a loop of 256 steps: BDDs find it at once, IC3 takes
+minutes. On the command line the option is `--engine`; the environment
+variable `CHASE_BACKEND` may also name an engine (`nuxmv/portfolio`).
+NuSMV has no IC3: without nuXmv, the default first looks for a
+counterexample with BMC, then proves with BDDs. The SMT engine of nuXmv
+(real variables with arithmetic) works with `ic3` and `bmc` only.
+Receptiveness is a CTL check and always uses BDDs.
+
 The full API of the Python package is in the
 [API reference](https://chase-cps.github.io/api/).

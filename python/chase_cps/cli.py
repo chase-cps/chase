@@ -134,6 +134,9 @@ def _checks(args, contracts):
             or args.well_separated or args.vacuous):
         args.verify = True
     options = {"timeout": args.timeout}
+    game = dict(options)   # slugs has no engine to choose
+    if args.engine != "auto":
+        options["engine"] = args.engine
     for name in every if args.verify or args.compatible or args.consistent else []:
         c = _contract(name, contracts)
         if args.verify:
@@ -164,18 +167,18 @@ def _checks(args, contracts):
     for name in args.realizable or []:
         c = _contract(name, contracts)
         out.append(("realizable", name,
-                    lambda c=c: gr1.is_realizable(c, core=args.core, **options)))
+                    lambda c=c: gr1.is_realizable(c, core=args.core, **game)))
     for name in args.well_separated or []:
         c = _contract(name, contracts)
         out.append(("separated", name,
-                    lambda c=c: gr1.is_well_separated(c, core=args.core, **options)))
+                    lambda c=c: gr1.is_well_separated(c, core=args.core, **game)))
     for name in args.vacuous or []:
         c = _contract(name, contracts)
         out.append(("vacuous", name,
-                    lambda c=c: gr1.is_vacuous(c, core=args.core, **options)))
+                    lambda c=c: gr1.is_vacuous(c, core=args.core, **game)))
     for name in args.synthesize or []:
         c = _contract(name, contracts)
-        out.append(("synthesize", name, lambda c=c: gr1.synthesize(c, **options)))
+        out.append(("synthesize", name, lambda c=c: gr1.synthesize(c, **game)))
     return out
 
 
@@ -340,6 +343,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--core", action="store_true",
                    help="when a check fails, give a minimal set of terms that explains it")
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
+    p.add_argument("--engine", default="auto",
+                   choices=["auto", "ic3", "bdd", "bmc", "portfolio"],
+                   help="engine of nuXmv or NuSMV: auto is IC3 with nuXmv; bdd is fast when "
+                        "a counterexample needs a long loop; portfolio runs IC3 and BDDs at "
+                        "the same time")
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")
     p.set_defaults(run=check)

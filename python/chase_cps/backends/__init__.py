@@ -38,7 +38,8 @@ def check(query, backend: str = "auto", **options) -> Result:
     """Answer a query with the given back end, or the first available one.
 
     With backend "auto", the environment variable CHASE_BACKEND, when set,
-    names the back end to use for the queries it answers. A query with real
+    names the back end to use for the queries it answers. A back end may name
+    its engine, as in "nuxmv/bdd" (see ``chase_cps.backends.nusmv``). A query with real
     variables goes through ``chase_cps.reals``; the others go straight to the
     back ends.
     """
@@ -52,9 +53,12 @@ def check(query, backend: str = "auto", **options) -> Result:
 def dispatch(query, backend: str = "auto", **options) -> Result:
     """``check`` without the handling of real variables."""
     preferred = os.environ.get("CHASE_BACKEND")
-    if backend == "auto" and preferred and preferred in ADAPTERS \
-            and isinstance(query, ADAPTERS[preferred].answers):
+    if backend == "auto" and preferred and split(preferred)[0] in ADAPTERS \
+            and isinstance(query, ADAPTERS[split(preferred)[0]].answers):
         backend = preferred
+    backend, engine = split(backend)
+    if engine:
+        options = {**options, "engine": engine}
     if backend != "auto":
         if backend not in ADAPTERS:
             raise ValueError(f"unknown back end {backend!r}; known: {sorted(ADAPTERS)}")
@@ -72,6 +76,13 @@ def dispatch(query, backend: str = "auto", **options) -> Result:
     return Result(UNKNOWN, reason="no installed back end answers "
                   f"{type(query).__name__}; tried {candidates}. Run `chase-cps doctor` "
                   "to see how to install them")
+
+
+def split(backend: str) -> tuple[str, str | None]:
+    """"nuxmv/bdd" -> ("nuxmv", "bdd"): a back end and its engine, as the
+    results name them."""
+    name, _, engine = backend.partition("/")
+    return name, engine or None
 
 
 def _configured(adapter: Adapter, options: dict) -> Adapter:

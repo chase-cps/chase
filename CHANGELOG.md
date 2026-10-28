@@ -17,6 +17,12 @@ New:
   the same as on integers). State machines may declare words. Not in the
   logics language (`to_spec`) and not for slugs. MCP server: the types
   `"word[n]"` and `"signed word[n]"`.
+- The engine of nuXmv can be chosen: `engine="ic3"` (the default), `"bdd"`,
+  `"bmc"`, or `"portfolio"` (IC3 and BDDs at the same time, the first
+  verdict wins), or in the back end, `"nuxmv/bdd"`, as the results name it.
+  BDDs are much faster than IC3 when a counterexample needs a long loop.
+  Command line: `--engine`. `engine="ic3"` with NuSMV and an unknown engine
+  are refused (before, they ran BDDs).
 
 Change:
 
