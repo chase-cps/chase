@@ -1,17 +1,19 @@
 """NuSMV and nuXmv adapter: implication and satisfiability of LTL formulas.
 
-nuXmv is used with IC3 (``check_ltlspec_ic3``), which proves or refutes the
-specification. NuSMV has no IC3: it first looks for a counterexample with
-bounded model checking, then proves the specification with BDDs.
+nuXmv runs IC3 (``check_ltlspec_ic3``) and BDDs at the same time, and the
+first verdict wins: IC3 is fast on large state spaces, BDDs when a
+counterexample needs a long loop. Both prove or refute the specification,
+so the verdict does not depend on which one answers (the counterexample
+may). NuSMV has no IC3: it first looks for a counterexample with bounded
+model checking, then proves the specification with BDDs.
 
 Real variables need nuXmv, which checks them with its SMT engine
 (``go_msat``, then IC3 or bounded model checking); NuSMV has no real type.
 
-The option ``engine`` picks another engine: "ic3", "bdd" (BDDs, fast when a
+The option ``engine`` picks one engine: "ic3", "bdd" (BDDs, fast when a
 counterexample needs a long loop, slow on large state spaces), "bmc"
 (bounded model checking: counterexamples up to ``bmc_bound`` steps, no
-proofs), or "portfolio" (IC3 and BDDs at the same time; the first verdict
-wins).
+proofs), or "portfolio" (the default with nuXmv).
 """
 
 from __future__ import annotations
@@ -30,8 +32,9 @@ from ..queries import (INVALID, SAT, UNKNOWN, UNSAT, VALID, Holds, Implies, Resu
 from .base import Adapter
 
 
-# auto: IC3 with nuXmv; with NuSMV, BMC for a counterexample, then BDDs.
-# portfolio: two engines at the same time, the first verdict wins.
+# auto: the portfolio with nuXmv; with NuSMV, BMC for a counterexample, then BDDs.
+# portfolio: two engines at the same time (IC3 and BDDs; IC3 and BMC for
+# reals), the first verdict wins.
 ENGINES = ("auto", "ic3", "bdd", "bmc", "portfolio")
 
 
@@ -75,8 +78,9 @@ class NuSMVAdapter(Adapter):
     def emit(self, query) -> str:
         """The SMV model whose LTLSPEC is valid iff the query holds."""
         if isinstance(query, Holds):
-            return query.model.rstrip() + \
-                f"\nLTLSPEC {words.to_smv(query.phi, query.variables)};\n"
+            return query.model.rstrip() + "\n" + \
+                "".join(l + "\n" for l in _history(query.phi, query.variables)) + \
+                f"LTLSPEC {words.to_smv(query.phi, query.variables)};\n"
         if isinstance(query, Implies):
             spec = ltl.Binary("->", query.phi, query.psi)
             variables = query.variables
@@ -89,14 +93,13 @@ class NuSMVAdapter(Adapter):
         lines = ["MODULE main", "VAR"]
         for v, t in variables.items():
             if v in used:
-                typ = {"bool": "boolean", "real": "real"}.get(t) or \
-                    (words.smv_type(t) if words.word_type(t) else f"{t[0]}..{t[1]}")
-                lines.append(f"    {v} : {typ};")
+                lines.append(f"    {v} : {_smv_type(t)};")
         if len(lines) == 2:   # no variable: NuSMV needs at least one
             lines.append("    chase_dummy : boolean;")
         if _has_reals(query) and not any(variables[v] == "real" for v in used):
             # The SMT engine of nuXmv needs an infinite-state model.
             lines.append("    chase_real : real;")
+        lines += _history(spec, variables)
         lines.append(f"LTLSPEC {words.to_smv(spec, variables)};")
         return "\n".join(lines) + "\n"
 
@@ -141,14 +144,14 @@ class NuSMVAdapter(Adapter):
         if flavor == "nusmv" and engine == "ic3":
             return Result(UNKNOWN, "nusmv/ic3", reason="NuSMV has no IC3; use bdd or bmc, "
                           "or install nuXmv")
-        if self.engine == "portfolio":
+        if engine == "auto" and flavor == "nuxmv":
+            engine = "portfolio"
+        if engine == "portfolio":
             engines = ("ic3", "bmc") if reals else \
                 ("ic3", "bdd") if flavor == "nuxmv" else ("bdd", "bmc")
             return self._portfolio(query, path, flavor, engines)
-        if self.engine != "auto":
-            return self._run(query, path, flavor, self.engine, self.timeout)
-        if flavor == "nuxmv":
-            return self._run(query, path, flavor, "ic3", self.timeout)
+        if engine != "auto":
+            return self._run(query, path, flavor, engine, self.timeout)
         # NuSMV has no IC3: BMC finds counterexamples quickly, BDD proves validity.
         first = self._run(query, path, flavor, "bmc", min(self.timeout, 30.0))
         if first.status in (INVALID, SAT):
@@ -316,6 +319,32 @@ def _rename(query):
     if isinstance(query, Implies):
         fields["psi"] = sub(query.psi)
     return dataclasses.replace(query, **fields), {new: old for old, new in names.items()}
+
+
+def _smv_type(t) -> str:
+    return {"bool": "boolean", "real": "real"}.get(t) or \
+        (words.smv_type(t) if words.word_type(t) else f"{t[0]}..{t[1]}")
+
+
+def _history(spec, variables) -> list[str]:
+    """The history variables of the past(x, n) of a formula: chase_past1_x
+    holds the value of x one step before, chase_pastk_x that of
+    chase_past(k-1)_x; free in the first steps."""
+    depth: dict = {}
+    for v, n in ltl.pasts(spec):
+        depth[v] = max(depth.get(v, 0), n)
+    if not depth:
+        return []
+    lines = ["VAR"]
+    for v, n in sorted(depth.items()):
+        for k in range(1, n + 1):
+            lines.append(f"    chase_past{k}_{v} : {_smv_type(variables.get(v, 'bool'))};")
+    lines.append("ASSIGN")
+    for v, n in sorted(depth.items()):
+        for k in range(1, n + 1):
+            source = v if k == 1 else f"chase_past{k - 1}_{v}"
+            lines.append(f"    next(chase_past{k}_{v}) := {source};")
+    return lines
 
 
 def _casts(query) -> bool:

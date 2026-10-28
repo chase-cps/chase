@@ -106,10 +106,10 @@ def test_checks():
     assert implies("s = -1", "s < 0", V).status == "valid"
     assert implies("x = 15", "x > 0", V).status == "valid"
     r = implies("x = 15", "x + 1 > x", V)
-    assert r.status == "invalid" and r.trace.prefix[0]["x"] == 15
+    assert r.status == "invalid" and (r.trace.prefix + r.trace.loop)[0]["x"] == 15
     r = is_satisfiable("x + y = 0 & x != 0", V)
     assert r.status == "sat"
-    state = r.trace.prefix[0]
+    state = (r.trace.prefix + r.trace.loop)[0]
     assert (state["x"] + state["y"]) % 16 == 0 and state["x"] != 0
 
 
@@ -244,3 +244,19 @@ def test_functions():
         ltl.to_chase(ltl.parse("signed(x) < 0"))
     # a variable may still be called signed
     assert ltl.parse("signed & b") == ltl.Binary("&", ltl.Var("signed"), ltl.Var("b"))
+
+
+@needs_mc
+def test_past():
+    assert ltl.to_str(ltl.parse("G X X (y = past(x, 2))")) == "G X X y = past(x, 2)"
+    with pytest.raises(ltl.LTLSyntaxError, match="takes a variable"):
+        ltl.parse("past(x + 1, 2) = 0")
+    with pytest.raises(ltl.LTLSyntaxError, match="steps n > 0"):
+        ltl.parse("past(x, 0) = 0")
+    v = {"x": "word[4]", "y": "word[4]", "a": "bool", "b": "bool", "n": (0, 7)}
+    assert implies("G (y = past(x, 2)) & G (x' = x)", "G X X (y = x)", v).status == "valid"
+    assert implies("G (y = past(x, 2))", "G (y = x)", v).status == "invalid"
+    assert implies("G (b <-> past(a, 1))", "G (a -> X b)", v).status == "valid"
+    assert implies("G (n = past(n, 3))", "G (n = n')", v).status == "invalid"
+    # the first steps: any value
+    assert is_satisfiable("y = past(y, 1) + 1 & y = 0", v).status == "sat"

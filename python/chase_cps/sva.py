@@ -40,9 +40,12 @@ cycle of the clock.
   s_until_with strong weak``, named properties and sequences (with
   arguments), ``assign`` and ``wire x = e`` definitions (put in place).
 
-Not read: several clocks, local variables, ``[->n]`` and ``[=n]``,
-unbounded repetition, ``$past`` with a gating clock, values of two cycles
-apart in one comparison, ``x`` and ``z`` digits, unpacked arrays.
+Values one cycle apart in a comparison are written with x', values further
+apart with ``past(x, n)`` (``y == $past(x, 2)``).
+
+Not read: local variables, ``[->n]`` and ``[=n]``, unbounded repetition,
+``$past`` with a gating clock, ``x`` and ``z`` digits, unpacked arrays. A
+contract has one clock: the properties of the other clocks are skipped.
 """
 
 from __future__ import annotations
@@ -176,6 +179,7 @@ _STOP = {"endproperty", "endsequence", "else", "endmodule"}
 class _Parser:
     def __init__(self, tokens, text=""):
         self.t, self.i, self.text = tokens, 0, text
+        self.names: dict = {}          # a__b -> a.b (hierarchical names)
 
     def peek(self, k=0):
         return self.t[min(self.i + k, len(self.t) - 1)]
@@ -397,8 +401,14 @@ class _Parser:
                 else:
                     node = N("idx", [node, first])
                 self.expect("]")
+            elif self.at(".") and node.k == "id" and self.peek(1)[0] == "id":
+                self.take()
+                part = self.take()[1]
+                joined = f"{node.v}__{part}"
+                self.names[joined] = f"{self.names.get(node.v, node.v)}.{part}"
+                node = N("id", v=joined)
             elif self.at("."):
-                raise SVAError("hierarchical names (a.b) are not read")
+                raise SVAError("a hierarchical name after an expression")
             else:
                 return node
 
@@ -513,6 +523,7 @@ class SVAReading:
     covers: list = field(default_factory=list)
     clock: Optional[str] = None
     undeclared: list = field(default_factory=list)
+    names: dict = field(default_factory=dict)       # a__b -> a.b (hierarchical names)
 
 
 @dataclass
@@ -521,9 +532,15 @@ class _Decl:
     lsb: int
     signed: bool
     direction: Optional[str] = None     # "input" or "output" of the contract
+    dims: tuple = ()                    # packed dimensions [msb:lsb], the first outermost
 
     @property
     def width(self):
+        if self.dims:
+            w = 1
+            for m, l in self.dims:
+                w *= abs(m - l) + 1
+            return w
         return abs(self.msb - self.lsb) + 1
 
 
@@ -685,7 +702,9 @@ class _Scanner:
             p.expect("]")
             ranges.append((msb, lsb))
         if len(ranges) > 1:
-            raise SVAError("packed arrays of more than one dimension are not read")
+            dims = tuple((self.constant(m), self.constant(l)) for m, l in ranges)
+            d = _Decl(0, 0, signed, dims=dims)
+            return _Decl(d.width - 1, 0, signed, dims=dims)
         if ranges:
             msb, lsb = (self.constant(x) for x in ranges[0])
             return _Decl(msb, lsb, signed)
@@ -711,7 +730,8 @@ class _Scanner:
             name = p.take()[1]
             if p.at("["):
                 raise SVAError(f"{name}: unpacked arrays are not read")
-            self.declare(name, _Decl(decl.msb, decl.lsb, decl.signed), direction, attr)
+            self.declare(name, _Decl(decl.msb, decl.lsb, decl.signed, dims=decl.dims),
+                         direction, attr)
             if p.at("="):
                 p.take()
                 self.defs[name] = (p.parse(0), self.decls[name])
@@ -1127,6 +1147,8 @@ class _Meaning:
             return (sum(self.self_type(x)[0] for x in e.a), False)
         if k == "repl":
             return (self.const(e.a[0]) * self.self_type(e.a[1])[0], False)
+        if k in ("idx", "sel", "ipsel") and self.packed(e) is not None:
+            return (self.packed(e)[2], False)
         if k == "idx":
             base = self.self_type(e.a[0])
             return (1, False) if base[0] > 1 or e.a[0].k == "id" else base
@@ -1626,7 +1648,63 @@ class _Meaning:
             return self.bit_term(self.formula(e, d), w, s)
         raise SVAError(f"a {k} where an expression is expected")
 
+    def packed(self, e):
+        """(name, low bit, width) of a select into a packed array of several
+        dimensions (x[i], x[i][j], x[i][3:0], ...), with constant indices;
+        None for other selects."""
+        chain, node = [], e
+        while node.k in ("idx", "sel", "ipsel"):
+            chain.insert(0, node)
+            node = node.a[0]
+        if node.k != "id" or node.v in self.scan.defs:
+            return None
+        dec = self.types.get(node.v)
+        if dec is None or len(dec.dims) < 2:
+            if len(chain) > 1:
+                raise SVAError(f"{node.v}: a select of a select")
+            return None
+        dims, low = list(dec.dims), 0
+        for sel in chain:
+            if not dims:
+                raise SVAError(f"{node.v}: more selects than dimensions")
+            (m, l), rest = dims[0], dims[1:]
+            element = 1
+            for mm, ll in rest:
+                element *= abs(mm - ll) + 1
+
+            def phys(i):
+                if not min(m, l) <= i <= max(m, l):
+                    raise SVAError(f"index {i} of {node.v}, declared [{m}:{l}]")
+                return i - l if m >= l else l - i
+            if sel.k == "idx":
+                i = self.try_const(sel.a[1])
+                if i is None:
+                    raise SVAError(f"a variable index into {node.v}, a packed array of "
+                                   "several dimensions")
+                low += phys(i) * element
+                dims = rest
+            else:
+                if sel.k == "sel":
+                    a, b = self.const(sel.a[1]), self.const(sel.a[2])
+                else:
+                    start, w = self.const(sel.a[1]), self.const(sel.a[2])
+                    a, b = (start + w - 1, start) if sel.v == "+:" else (start, start - w + 1)
+                pa, pb = phys(a), phys(b)
+                low += min(pa, pb) * element
+                dims = [(abs(pa - pb), 0)] + rest
+        width = 1
+        for m, l in dims:
+            width *= abs(m - l) + 1
+        return node.v, low, width
+
     def select(self, e, d):
+        shape = self.packed(e)
+        if shape is not None:
+            name, low, width = shape
+            dec = self.types[name]
+            ts = self.term(N("id", v=name), dec.width, dec.signed, d)
+            return [(g, ltl.Unary(f"[{low + width - 1}:{low}]", _as_unsigned(t, dec.signed)))
+                    for g, t in ts]
         base = e.a[0]
         if base.k != "id":
             raise SVAError("a bit select of an expression")
@@ -2266,9 +2344,25 @@ def _render(f):
             return ltl.Unary("!", _render(f.arg))
         return ltl.Binary(f.op, _render(f.left), _render(f.right))
     if hi - lo > 1:
-        raise SVAError("a comparison of values more than one cycle apart (such as "
-                       "y == $past(x, 2))")
+        # values two cycles apart or more: at the latest cycle, with past(x, k)
+        return _x(_with_past(f, hi), hi)
     return _x(_name(_shift(f, -lo), True), lo)
+
+
+def _with_past(f, at):
+    """Placeholders x@d read at cycle `at`: x, or past(x, at - d)."""
+    if isinstance(f, ltl.Var):
+        m = _PLACE.match(f.name)
+        if m:
+            k = at - int(m.group(2))
+            v = ltl.Var(m.group(1))
+            return v if k == 0 else ltl.Unary(f"past {k}", v)
+        return f
+    if isinstance(f, ltl.Unary):
+        return ltl.Unary(f.op, _with_past(f.arg, at))
+    if isinstance(f, ltl.Binary):
+        return ltl.Binary(f.op, _with_past(f.left, at), _with_past(f.right, at))
+    return f
 
 
 def _is_formula_xor(f):
@@ -2345,10 +2439,12 @@ def parse_sva(text: str, inputs=None, outputs=None, name: Optional[str] = None,
     """Read the assumptions and assertions of SVA text as a contract.
 
     ``inputs`` and ``outputs`` (lists of names, or dicts of types) say which
-    signals the environment controls; without them the directions of the
-    module ports are used (the attribute ``(* chase = "output" *)``, written
-    by ``to_sva``, overrides them). Only one of them is needed: the other
-    signals are of the other kind. Types: the declarations of the text, then
+    signals the environment controls; for the other signals the directions
+    of the module ports are used (the attribute ``(* chase = "output" *)``,
+    written by ``to_sva``, overrides them), and the signals that are not
+    ports are of the other kind than the list given. Hierarchical names
+    (``u1.state``) are read as ``u1__state``; ``names`` of the result maps
+    them back. Types: the declarations of the text, then
     the values of the dicts ("bool", "word[8]", "signed word[8]"), else
     Booleans. ``parameters`` gives the values of parameters (they override
     those of the text). ``assume property`` and ``restrict property`` give
@@ -2369,6 +2465,11 @@ def parse_sva(text: str, inputs=None, outputs=None, name: Optional[str] = None,
     reading = SVAReading(Contract(name or scan.module or "C"), skipped=list(scan.notes))
     types = {k: v for k, v in scan.decls.items()}
     given = {}
+    flat = lambda v: v.replace(".", "__")      # noqa: E731  hierarchical names
+    inputs = {flat(v): t for v, t in inputs.items()} if isinstance(inputs, dict) else \
+        [flat(v) for v in inputs] if inputs is not None else None
+    outputs = {flat(v): t for v, t in outputs.items()} if isinstance(outputs, dict) else \
+        [flat(v) for v in outputs] if outputs is not None else None
     for group, direction in ((inputs, "input"), (outputs, "output")):
         if isinstance(group, dict):
             for v, t in group.items():
@@ -2394,6 +2495,7 @@ def parse_sva(text: str, inputs=None, outputs=None, name: Optional[str] = None,
         else:
             reading.properties.append(item)
     reading.clock = main_clock
+    reading.names = {v: scan.p.names[v] for v in sorted(meaning.used) if v in scan.p.names}
     reading.undeclared = sorted(v for v in meaning.used if v not in meaning.declared)
 
     used = sorted(meaning.used)
@@ -2404,11 +2506,10 @@ def parse_sva(text: str, inputs=None, outputs=None, name: Optional[str] = None,
             variables[v] = "bool"
         else:
             variables[v] = f"{'signed ' if dec.signed else ''}word[{dec.width}]"
-    directions = {v: given.get(v) or meaning.types[v].direction for v in used}
-    if inputs is not None and outputs is None:
-        directions = {v: given.get(v, "output") for v in used}
-    elif outputs is not None and inputs is None:
-        directions = {v: given.get(v, "input") for v in used}
+    # what is given, then the ports of the module, then the other kind of signal
+    other = "output" if inputs is not None and outputs is None else \
+        "input" if outputs is not None and inputs is None else None
+    directions = {v: given.get(v) or meaning.types[v].direction or other for v in used}
     unknown = [v for v, dirn in directions.items() if dirn not in ("input", "output")]
     if unknown:
         raise SVAError(f"say whether these signals are inputs or outputs: {unknown} "
@@ -2565,7 +2666,7 @@ wire with within wor xnor xor""".split())
 
 def to_sva(contract: Contract, clock: str = "clk", edge: str = "posedge",
            reset: Optional[str] = None, module: Optional[str] = None,
-           bind: Optional[str] = None) -> str:
+           bind: Optional[str] = None, names: Optional[dict] = None) -> str:
     """The contract as a SystemVerilog checker module.
 
     Assumptions become ``assume property``, guarantees ``assert property``,
@@ -2576,7 +2677,10 @@ def to_sva(contract: Contract, clock: str = "clk", edge: str = "posedge",
     ranges ``int`` with their range assumed (inputs) or asserted (outputs).
     With ``bind``, the name of a design module, a bind statement puts the
     checker in every instance of it; its ports connect by name (``.*``).
-    Real variables cannot be written.
+    ``names`` gives the names of the signals in the design where they
+    differ, such as the hierarchical names of ``parse_sva`` (its
+    ``names``): the bind statement connects them. Real variables cannot be
+    written.
     """
     module = module or f"{contract.name}_sva"
     variables = contract.variables
@@ -2625,7 +2729,9 @@ def to_sva(contract: Contract, clock: str = "clk", edge: str = "posedge",
             lines.append(statement("assert", f"G{i}", f))
     lines.append("endmodule")
     if bind:
-        lines += ["", f"bind {bind} {module} {module}_i (.*);"]
+        extra = "".join(f", .{v}({n})" for v, n in sorted((names or {}).items())
+                        if v in variables)
+        lines += ["", f"bind {bind} {module} {module}_i (.*{extra});"]
     return "\n".join(lines) + "\n"
 
 
@@ -2688,6 +2794,8 @@ class _Writer:
             return "1'b1" if f.value else "1'b0"
         if isinstance(f, ltl.Var) and self.variables.get(f.name, "bool") == "bool":
             return self.name(f, past)
+        if ltl.function(f) == "past" and self.variables.get(f.arg.name, "bool") == "bool":
+            return self.term(f, past)
         t = self.type(f)
         if isinstance(t, words._W) and not (isinstance(f, ltl.Unary) and f.op == "!"):
             return self.term(f, past)                       # a word of one bit
@@ -2735,6 +2843,9 @@ class _Writer:
                     inner = f"({inner} >> {b[1]})"
                 return f"{b[0] - b[1] + 1}'({inner})"
             f = ltl.function(t)
+            if f == "past":
+                n = ltl.extension(t) + (1 if past else 0)
+                return f"$past({t.arg.name}, {n})"
             if f == "extend":
                 inner_t = self.type(t.arg)
                 inner = self.term(t.arg, past)

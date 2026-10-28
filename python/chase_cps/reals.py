@@ -51,6 +51,11 @@ def check(query, backend: str = "auto", **options) -> Result:
     if has_words(_variables(query)):
         return Result(UNKNOWN, reason="real variables and words in the same query are not "
                       "supported")
+    if any(ltl.has_past(f) for f in _formulas(query)):
+        # history variables: straight to the SMT engine of nuXmv
+        result = dispatch(query, backend, **options)
+        result.reals = SMT
+        return result
     regions = Regions.of(query)
     if regions.problem is None:
         result = dispatch(regions.finite(query), backend, **options)

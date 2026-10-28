@@ -144,5 +144,5 @@ def test_casts_are_checked_with_bdds():
 def test_variables_named_as_smv_keywords():
     v = {"count": (0, 3), "abs": (0, 5), "next": "bool", "E": "bool"}
     r = implies("G (count = 1 | abs > 2)", "count = 1", v)
-    assert r.status == "invalid" and set(r.trace.prefix[0]) == {"count", "abs"}
+    assert r.status == "invalid" and set((r.trace.prefix + r.trace.loop)[0]) == {"count", "abs"}
     assert is_satisfiable("next & !E & X !next", v).status == "sat"

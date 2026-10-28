@@ -75,6 +75,11 @@ def test_past_and_the_first_cycle():
     assert read("$rose(a) |-> b") == "G (X a & !a -> X b)"
     assert read("$stable(x)") == "G x' = x"
     assert read("$changed(x)") == "G x' != x"
+    # values two cycles apart: past(x, n)
+    r = parse_sva("P: assert property (@(posedge clk) x == $past(y, 2));", inputs=TYPES)
+    p = r.properties[0]
+    assert ltl.to_str(p.formula) == "G X X x = past(y, 2)" and p.from_cycle == 2
+    assert read("a |=> x == $past(y, 3)") == "G (X X a -> X X X x = past(y, 3))"
 
 
 def test_widths_of_verilog():
@@ -139,7 +144,7 @@ def test_what_is_not_read():
     assert "never fails" in skipped("a |-> ##[1:$] b")
     assert "s_eventually" in skipped("a |-> ##[1:$] b")
     assert "repetition [->" in skipped("a[->1] |-> b")
-    assert "more than one cycle apart" in skipped("x == $past(y, 2)")
+    assert "[->" in skipped("a ##1 b[->1] |-> c")
     assert "x or z" in skipped("x == 4'bxx00")
     assert "width is not declared" in parse_sva(
         "P: assert property (@(posedge clk) q[3]);", outputs=[]).skipped[0].reason
@@ -179,7 +184,9 @@ def gen_expr(r, depth=0, past2=True):
                           "(x % 3) == 1", "-x == y", "x == (1 << y[1:0])"]),
         lambda: r.choice(["x == $past(x)", "y == $past(x) + 1", "$rose(a)", "$fell(b)",
                           "$stable(x)", "$changed(y)", "a == $past(b)"]
-                         + (["$past(a, 2)"] if past2 else [])),
+                         + (["$past(a, 2)", "x != $past(y, 2)", "$past(x, 3) == y + 1",
+                             "a |-> $past(b, 2)"[:0] or "$past(x, 2) < $past(y)"]
+                            if past2 else [])),
     ]
     if depth > 1:
         return r.choice(simple)()
@@ -283,7 +290,9 @@ def gen_formula(r, depth=0):
             return f"{term(True)} {r.choice(['<', '>', '=', '<='])} " \
                    f"{r.choice([term(True), str(r.randrange(-8, 8))])}"
         return r.choice(["x' = x + 1", "a' -> b", "y' != y", "s' < s", "x[0]", "x[3]",
-                         "(x :: y)[4]", "x'[1:0] = y[3:2]"])
+                         "(x :: y)[4]", "x'[1:0] = y[3:2]", "X X (x = past(y, 2))",
+                         "X (past(a, 1) -> b)", "X X X (past(s, 3) < t)",
+                         "X X (x' = past(x, 2) + 1)"])
 
     if depth > 2:
         return atom()
@@ -413,3 +422,43 @@ def test_same_as_verilator(tmp_path):
         ours = {t + prop.from_cycle for t in range(len(trace) - prop.from_cycle)
                 if vals[t] is False}
         assert ours == {k for j, k in theirs if j == i and k >= prop.from_cycle}, props[i]
+
+
+def test_packed_arrays_and_hierarchical_names():
+    text = """module m (input logic clk, input logic [3:0][7:0] data,
+                        input logic [1:0][2:0][3:0] cube, output logic [7:0] o, output logic ok);
+      P0: assert property (@(posedge clk) o == data[2]);
+      P1: assert property (@(posedge clk) data[0][7] |-> ok);
+      P2: assert property (@(posedge clk) data[3:2] == 16'hABCD);
+      P3: assert property (@(posedge clk) cube[1][2] == 4'd5 && cube[0][0][3]);
+      P4: assert property (@(posedge clk) u1.state == 2'd3 |=> u1.busy);
+    endmodule"""
+    r = parse_sva(text, inputs={"u1.state": "word[2]", "u1.busy": "bool"})
+    assert not r.skipped
+    assert [ltl.to_str(p.formula) for p in r.properties] == [
+        "G o = data[23:16]", "G (data[7:7] -> ok)", "G data[31:16] = 43981",
+        "G (cube[23:20] = 5 & cube[3:3])", "G (u1__state != 3 | X u1__busy)"]
+    assert r.contract.inputs["data"] == "word[32]" and r.contract.inputs["cube"] == "word[24]"
+    assert r.names == {"u1__busy": "u1.busy", "u1__state": "u1.state"}
+    sv = to_sva(r.contract, bind="m", names=r.names)
+    assert sv.rstrip().endswith("bind m m_sva m_sva_i (.*, .u1__busy(u1.busy), "
+                                ".u1__state(u1.state));")
+    assert "index 4 of data" in parse_sva(
+        "module m (input logic clk, input logic [3:0][7:0] data);\n"
+        "P: assert property (@(posedge clk) data[4] == 0); endmodule").skipped[0].reason
+
+
+@needs_mc
+def test_past_two_cycles_back():
+    text = """module sync (input logic clk, input logic [7:0] d, output logic [7:0] q);
+      P: assert property (@(posedge clk) q == $past(d, 2));
+    endmodule"""
+    c = parse_sva(text).contract
+    v = c.variables
+    assert ltl.to_str(c.guarantees[0]) == "G X X q = past(d, 2)"
+    # two flip-flops: q is d two cycles before
+    assert implies("G (m' = d & q' = m)", c.guarantees[0], {**v, "m": "word[8]"}).status \
+        == "valid"
+    assert implies("G (q' = d)", c.guarantees[0], v).status == "invalid"
+    back = parse_sva(to_sva(c))
+    assert back.contract.guarantees == c.guarantees

@@ -68,6 +68,14 @@ keywords of either syntax (`G`, `F`, `X`, `U`, `R`, `W`, `P`, `NAME`,
 `CONTRACT`, `mod`, `xor`, ...). Numbers may have a fraction (`20.5`); they
 are read exactly. The operators of words are below (Words).
 
+`x'` is the value of `x` at the next step, and `past(x, n)` its value n
+steps before, for a variable of any type: `G X X (y = past(x, 2))` says that
+y is x delayed by two steps. In the first n steps `past(x, n)` is any value
+of the type, so write it under `X` as here. The model checkers keep the
+past values in history variables; the contract algebra treats a formula
+with `past` as one proposition. GR(1) synthesis (slugs) and the logics
+language do not take it.
+
 A contract is built from strings or from a dictionary (the JSON format of
 the command line and of the MCP server):
 
@@ -157,7 +165,9 @@ Reading:
 - `$past(e, n)`, `$rose`, `$fell`, `$stable`, `$changed`, `$onehot`,
   `$onehot0`, `$countones`. A property that looks before the first cycle is
   checked from the cycle where the past exists (`from_cycle` of the
-  property): `x == $past(x)` from cycle 1.
+  property): `x == $past(x)` from cycle 1. Values one cycle apart are
+  written with `x'`, values further apart with `past(x, n)`:
+  `y == $past(x, 2)` is `G X X y = past(x, 2)`, from cycle 2.
 - Sequences of bounded length: `##n`, `##[m:n]`, `[*m:n]`, `and`, `or`,
   `intersect`, `throughout`, `within`, `first_match`. `##[m:$]` is read in
   an antecedent and in a strong sequence. In a consequent, as in
@@ -170,17 +180,21 @@ Reading:
   parameters.
 - A contract has one clock: with several, `clock` chooses one (the clock of
   most properties by default) and the properties of the others are skipped.
-- The directions come from the ports of the module, or from `inputs` or
-  `outputs` (names, or a dictionary of types); signals without a
+- The directions come from `inputs` or `outputs` (names, or a dictionary
+  of types), then from the ports of the module; signals without a
   declaration are read as 1-bit signals and listed in `undeclared`.
+- Packed arrays are words: `logic [3:0][7:0] x` has 32 bits, `x[2]` is
+  bits 23 to 16. Hierarchical names are read as one name: `u1.state` is
+  `u1__state`, and `names` maps them back (`to_sva(..., names=r.names)`
+  connects them in the bind statement).
 
 Not read, and listed in `skipped` with the reason: local variables, `[->n]`
-and `[=n]`, unbounded repetition, a comparison of values two cycles apart
-(`y == $past(x, 2)`), hierarchical names, unpacked arrays, `x` and `z`
-digits, immediate assertions.
+and `[=n]`, unbounded repetition, unpacked arrays, `x` and `z` digits,
+immediate assertions.
 
 Writing: a formula `G p` is checked at every cycle, any other formula once,
-at the first cycle (`initial`). Words are vectors (`logic [7:0]`), integer
+at the first cycle (`initial`); `past(x, n)` is `$past(x, n)`, the same
+once the past exists. Words are vectors (`logic [7:0]`), integer
 ranges `int` with their range assumed (inputs) or asserted (outputs); real
 variables cannot be written. `reset` disables the properties while it holds
 (`"rst"`, `"!rst_n"`), and `bind` adds a bind statement that puts the
@@ -680,16 +694,18 @@ $> chase-cps doctor
 
 ### Engines
 
-nuXmv checks the formulas with IC3 by default. Another engine can be
-chosen with `engine`, or in the name of the back end, as the results name
-it:
+nuXmv checks the formulas with IC3 and BDDs at the same time (`portfolio`):
+the first verdict wins, and the other run is stopped. Both engines prove
+and refute, so the verdict is the same whichever answers; the
+counterexample may differ. One engine can be chosen with `engine`, or in
+the name of the back end, as the results name it:
 
 | Engine | Proves | Finds counterexamples | Good for |
 | --- | --- | --- | --- |
-| `ic3` (default with nuXmv) | yes | yes | large state spaces, words, reals |
+| `portfolio` (default with nuXmv) | yes | yes | IC3 and BDDs at the same time (IC3 and BMC for reals) |
+| `ic3` | yes | yes | large state spaces, words, reals |
 | `bdd` | yes | yes | a counterexample that needs a long loop (a counter that goes around) |
 | `bmc` | no | up to `bmc_bound` steps (20) | short counterexamples |
-| `portfolio` | yes | yes | IC3 and BDDs at the same time; the first verdict wins |
 
 ````
 from chase_cps import implies
@@ -700,7 +716,9 @@ print(r.status, r.backend)      # invalid nuxmv/bdd
 ````
 
 The counterexample is a loop of 256 steps: BDDs find it at once, IC3 takes
-minutes. On the command line the option is `--engine`; the environment
+minutes, and the default gives the answer of BDDs. Formulas with `signed()`
+or `unsigned()` are checked with BDDs only: IC3 of nuXmv 2.2.0 gives wrong
+answers on them. On the command line the option is `--engine`; the environment
 variable `CHASE_BACKEND` may also name an engine (`nuxmv/portfolio`).
 NuSMV has no IC3: without nuXmv, the default first looks for a
 counterexample with BMC, then proves with BDDs. The SMT engine of nuXmv

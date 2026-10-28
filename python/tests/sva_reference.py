@@ -276,9 +276,30 @@ def atom_value(f, trace, t, types):
         state[v + "__n"] = trace[t + need][v] if need else None
         variables[v + "__n"] = types[v]
     g = _unprime(f)
-    st = {k: (bool(v) if types.get(k.replace("__n", "")) == "bool" and v is not None else v)
+    pasts = {}
+    g = _unpast(g, pasts)
+    for name, (v, k) in pasts.items():
+        if t - k < 0:
+            return None             # before the first cycle: any value
+        state[name] = trace[t - k][v]
+        variables[name] = types[v]
+    st = {k: (bool(v) if types.get(k.replace("__n", "").split("__p")[0]) == "bool"
+              and v is not None else v)
           for k, v in state.items()}
     return bool(words.evaluate(g, st, variables))
+
+
+def _unpast(f, pasts):
+    """past(x, k) as a variable x__pk, recorded in pasts."""
+    if isinstance(f, ltl.Unary) and ltl.function(f) == "past":
+        name = f"{f.arg.name}__p{ltl.extension(f)}"
+        pasts[name] = (f.arg.name, ltl.extension(f))
+        return ltl.Var(name)
+    if isinstance(f, ltl.Unary):
+        return ltl.Unary(f.op, _unpast(f.arg, pasts))
+    if isinstance(f, ltl.Binary):
+        return ltl.Binary(f.op, _unpast(f.left, pasts), _unpast(f.right, pasts))
+    return f
 
 
 def _primed(f):

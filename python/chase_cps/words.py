@@ -131,6 +131,8 @@ def type_of(node: ltl.Node, variables) -> Type:
                 raise WordTypeError(f"bit {high} of {ltl.to_str(node.arg)}, a {arg}")
             return _W(high - low + 1, False)
         f = ltl.function(node)
+        if f == "past":
+            return arg
         if f:
             if not isinstance(arg, _W):
                 raise WordTypeError(f"{f} of {ltl.to_str(node.arg)}, which is not a word")
@@ -251,6 +253,8 @@ class _Printer:
                 return f"{self.term(node.arg, None)}{node.op}"
             if ltl.function(node) == "extend":
                 return f"extend({self.term(node.arg, None)}, {ltl.extension(node)})"
+            if ltl.function(node) == "past":
+                return ltl.past_name(node)
             if ltl.function(node):
                 return f"{node.op}({self.term(node.arg, None)})"
             if node.op == "neg":
@@ -395,6 +399,8 @@ def evaluate(node: ltl.Node, state: dict, variables):
             b = ltl.bits(n)
             if b:
                 return (a >> b[1]) & ((1 << (b[0] - b[1] + 1)) - 1)
+            if ltl.function(n) == "past":
+                raise ValueError(f"{ltl.to_str(n)}: past values are not in one state")
             if ltl.function(n):
                 return fit(a, t)        # extend keeps the value; the casts keep the bits
             if n.op == "neg":

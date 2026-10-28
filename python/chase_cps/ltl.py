@@ -22,6 +22,10 @@ words. A bitwise operation inside a relation needs parentheses:
 ``(x & y) = 0``. ``extend(x, n)`` adds n bits (copies of the sign bit for
 a signed word, zeros otherwise), ``signed(x)`` and ``unsigned(x)`` read the
 same bits as a signed or an unsigned word.
+
+``past(x, n)`` is the value of the variable x n steps before (x' is the
+value one step after); in the first n steps it is any value of the type
+of x. It compares values of different steps: ``y = past(x, 2)``.
 """
 
 from __future__ import annotations
@@ -93,7 +97,8 @@ def number_text(value, fraction: str = "decimal") -> str:
 @dataclass(frozen=True)
 class Unary:
     op: str            # '!', 'G', 'F', 'X', 'neg' (arithmetic minus), '[h:l]' (bits of a word),
-                       # 'signed', 'unsigned', 'extend n' (functions on words)
+                       # 'signed', 'unsigned', 'extend n' (functions on words),
+                       # 'past n' (the value n steps before)
     arg: "Node"
 
 
@@ -109,7 +114,7 @@ Node = Union[Const, Var, Num, Unary, Binary]
 RELATIONS = ("=", "!=", "<", "<=", ">", ">=")
 ARITHMETIC = ("+", "-", "*", "/")
 WORD_OPS = ("mod", "<<", ">>", "::")
-FUNCTIONS = ("signed", "unsigned", "extend")
+FUNCTIONS = ("signed", "unsigned", "extend", "past")
 BOOLEAN_BINARY = ("&", "|", "->", "<->")
 TEMPORAL_UNARY = ("G", "F", "X")
 TEMPORAL_BINARY = ("U", "R")
@@ -223,13 +228,16 @@ class _Parser:
         if kind == "id" and val in FUNCTIONS and self.peek() == ("op", "("):
             self.take()
             arg = self.expression(0)
-            if val == "extend":
+            if val in ("extend", "past"):
                 self.expect(",")
                 kind, n = self.take()
-                if kind != "num" or not n.isdigit():
-                    raise LTLSyntaxError(f"extend(x, n) takes a number of bits n, not "
+                if kind != "num" or not n.isdigit() or (val == "past" and int(n) < 1):
+                    what = "a number of bits n" if val == "extend" else "a number of steps n > 0"
+                    raise LTLSyntaxError(f"{val}(x, n) takes {what}, not "
                                          f"{n or 'end of formula'!r}, in {self.text!r}")
-                val = f"extend {int(n)}"
+                if val == "past" and not (isinstance(arg, Var) and not arg.primed):
+                    raise LTLSyntaxError(f"past(x, n) takes a variable, in {self.text!r}")
+                val = f"{val} {int(n)}"
             self.expect(")")
             return self.bits(Unary(val, arg))
         if kind == "id":
@@ -280,8 +288,32 @@ def function(node: Node) -> Optional[str]:
 
 
 def extension(node: Node) -> int:
-    """The number of bits that ``extend`` adds."""
+    """The number of bits that ``extend`` adds, or the steps of ``past``."""
     return int(node.op.split(" ")[1])
+
+
+def past_name(node: Node) -> str:
+    """The history variable that holds past(x, n) in a model."""
+    return f"chase_past{extension(node)}_{node.arg.name}"
+
+
+def has_past(node: Node) -> bool:
+    if isinstance(node, Unary):
+        return function(node) == "past" or has_past(node.arg)
+    if isinstance(node, Binary):
+        return has_past(node.left) or has_past(node.right)
+    return False
+
+
+def pasts(node: Node) -> set:
+    """The (variable, steps) of the past(x, n) of a formula."""
+    if isinstance(node, Unary):
+        if function(node) == "past":
+            return {(node.arg.name, extension(node))}
+        return pasts(node.arg)
+    if isinstance(node, Binary):
+        return pasts(node.left) | pasts(node.right)
+    return set()
 
 
 def bits(node: Node) -> Optional[tuple[int, int]]:
@@ -403,6 +435,8 @@ def to_smv(node: Node) -> str:
             return f"{to_smv(node.arg)}{node.op}"
         if function(node) == "extend":
             return f"extend({to_smv(node.arg)}, {extension(node)})"
+        if function(node) == "past":
+            return past_name(node)
         if function(node):
             return f"{node.op}({to_smv(node.arg)})"
         return f"{node.op} ({to_smv(node.arg)})"
@@ -423,8 +457,8 @@ def _pretty(node: Node, outer: int) -> str:
             return f"-{_pretty(node.arg, _BINARY['*'][0] + 1)}"
         if bits(node):
             return f"{_pretty(node.arg, 99)}{node.op}"
-        if function(node) == "extend":
-            return f"extend({_pretty(node.arg, 0)}, {extension(node)})"
+        if function(node) in ("extend", "past"):
+            return f"{function(node)}({_pretty(node.arg, 0)}, {extension(node)})"
         if function(node):
             return f"{node.op}({_pretty(node.arg, 0)})"
         sep = "" if node.op == "!" else " "

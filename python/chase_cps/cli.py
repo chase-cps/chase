@@ -345,9 +345,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
     p.add_argument("--engine", default="auto",
                    choices=["auto", "ic3", "bdd", "bmc", "portfolio"],
-                   help="engine of nuXmv or NuSMV: auto is IC3 with nuXmv; bdd is fast when "
-                        "a counterexample needs a long loop; portfolio runs IC3 and BDDs at "
-                        "the same time")
+                   help="engine of nuXmv or NuSMV: auto runs IC3 and BDDs at the same time "
+                        "with nuXmv (portfolio); bdd is fast when a counterexample needs a "
+                        "long loop")
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")
     p.set_defaults(run=check)

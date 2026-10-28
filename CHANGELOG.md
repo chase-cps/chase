@@ -23,18 +23,27 @@ New:
   sequences of bounded length, `disable iff`, named properties and
   sequences, and definitions; the statements not read are listed with the
   reason. `to_sva` writes a contract as a checker module (and a bind
-  statement). Tested against a reference interpreter of IEEE 1800 and
+  statement). Packed arrays of several dimensions are words; hierarchical
+  names (`u1.state`) are read as one name (`u1__state`, mapped back in
+  `names`). Tested against a reference interpreter of IEEE 1800 and
   against Verilator.
 - Words: `extend(x, n)`, `signed(x)`, `unsigned(x)`, as in nuXmv.
-- The engine of nuXmv can be chosen: `engine="ic3"` (the default), `"bdd"`,
-  `"bmc"`, or `"portfolio"` (IC3 and BDDs at the same time, the first
-  verdict wins), or in the back end, `"nuxmv/bdd"`, as the results name it.
-  BDDs are much faster than IC3 when a counterexample needs a long loop.
-  Command line: `--engine`. `engine="ic3"` with NuSMV and an unknown engine
-  are refused (before, they ran BDDs).
+- `past(x, n)`: the value of x n steps before (any value in the first n
+  steps), for variables of any type. nuXmv gets it as history variables;
+  the contract algebra treats a formula with it as one proposition; slugs
+  and the logics language do not take it. `parse_sva` writes with it the
+  comparisons of values two cycles apart or more (`y == $past(x, 2)`).
+- The engine of nuXmv can be chosen: `engine="portfolio"` (the default),
+  `"ic3"`, `"bdd"`, or `"bmc"`, or in the back end, `"nuxmv/bdd"`, as the
+  results name it. Command line: `--engine`. `engine="ic3"` with NuSMV and
+  an unknown engine are refused (before, they ran BDDs).
 
-Change:
+Changes:
 
+- nuXmv runs IC3 and BDDs at the same time by default (`portfolio`; before,
+  IC3 alone): the first verdict wins. BDDs are much faster than IC3 when a
+  counterexample needs a long loop. The verdicts are the same; a
+  counterexample may differ from one run to the next.
 - `mod` and `xor` are keywords of the formulas: they cannot be names.
 
 Fixes:
