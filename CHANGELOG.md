@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.2 (not released yet)
+
+New:
+
+- `conjoin(..., discharge=True)`: the result keeps the terms and is the
+  same contract as the conjunction. Each guarantee is guaranteed under the
+  assumptions of its contract that the other's do not imply; when the
+  assumptions of one contract imply those of the other, the assumption is
+  theirs and has no disjunction (with the same assumptions, (A, G1 & G2)).
+
 ## 0.4.1 (2026-10-28)
 
 New:

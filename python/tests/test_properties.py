@@ -195,6 +195,23 @@ def test_merge_and_quotient_with_discharge_are_the_same_contracts():
             assert same(system.divide(p), system.divide(p, discharge=True))
 
 
+@needs_native
+@needs_mc
+def test_conjunction_with_discharge_is_the_same_contract():
+    rnd = random.Random(12)
+    for _ in range(RUNS):
+        c1 = contract(rnd, "Cone")
+        c2 = contract(rnd, "Ctwo")
+        # the assumptions of one include those of the other, or share a term
+        wider = Contract("Cwide", dict(c2.inputs), dict(c2.outputs),
+                         list(c1.assumptions) + list(c2.assumptions), list(c2.guarantees))
+        shared = Contract("Cshare", dict(c2.inputs), dict(c2.outputs),
+                          list(c1.assumptions)[:1] + list(c2.assumptions), list(c2.guarantees))
+        for other in (c2, wider, shared):
+            assert same(c1.conjoin(other), c1.conjoin(other, discharge=True))
+            assert same(other.conjoin(c1), other.conjoin(c1, discharge=True))
+
+
 @needs_mc
 def test_the_checks_on_related_terms_give_the_same_answers(monkeypatch):
     # remove_redundant uses, for each term, only the terms that share

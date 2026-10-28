@@ -270,17 +270,23 @@ variant uses the checks of layer 2 (one implication per test), so it needs
 nuXmv. The result is an abstraction of the composition: a refinement proved
 on it holds for the composition; a failed one may not.
 
-`c1.merge(c2, discharge=True)` and `c1.divide(c2, discharge=True)` keep the
-terms too, and the result is the same contract as the closed form. The merge
-is (A1 & A2, G1 & G2), whose saturation is the merge. The quotient assumes
+`c1.merge(c2, discharge=True)`, `c1.divide(c2, discharge=True)`, and
+`c1.conjoin(c2, discharge=True)` keep the terms too, and the result is the
+same contract as the closed form: only composition gives an abstraction.
+The merge is (A1 & A2, G1 & G2), whose saturation is the merge. The quotient assumes
 the assumptions of c1 and the guarantees of c2, and guarantees the
 guarantees of c1 and the assumptions of c2; the assumptions of c2 implied by
 those of c1 are discharged first, and when some are left, each guarantee g
 of c2 is assumed as A2' -> g, with A2' the ones left. Then the redundant
-terms are dropped. The closed forms are rarely GR(1); the terms often are,
-so use these before `is_realizable` and `synthesize`. Conjunction,
-disjunction, and separation have no such form: their assumption or their
-guarantee is a disjunction (A1 | A2, G1 | G2, (A1 & G2) | !(G1 & A2)).
+terms are dropped. In the conjunction, each guarantee of c1 is guaranteed
+under A1', the assumptions of c1 that those of c2 do not imply (under
+A1 | A2, A1 is the same as A1'), and the same for c2; the assumption is
+A1' | A2' with the other terms of A1 and A2. When the assumptions of one
+contract imply those of the other, there is no disjunction left: with the
+same assumptions, the conjunction is (A, G1 & G2). The closed forms are
+rarely GR(1); the terms often are, so use these before `is_realizable` and
+`synthesize`. Disjunction and separation have no such form: their guarantee
+or their assumption is a disjunction (G1 | G2, (A1 & G2) | !(G1 & A2)).
 
 The console also accepts the names of its first version: `conjunction` for
 `conjoin`, `quotient` for `divide`, and `refinement` for `refines`. It has

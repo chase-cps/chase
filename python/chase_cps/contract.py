@@ -339,10 +339,26 @@ class Contract:
             return _compose_terms(self, other, name, backend, **options)
         return _algebra("composition", self, other, name)
 
-    def conjoin(self, other: "Contract", name: str | None = None) -> "Contract":
+    def conjoin(self, other: "Contract", name: str | None = None, discharge: bool = False,
+                backend: str = "auto", **options) -> "Contract":
         """Greatest lower bound (both specifications at once):
-        (A1 | A2, G1 & G2)."""
-        return _algebra("conjunction", self, other, name or f"{self.name}_and_{other.name}")
+        (A1 | A2, G1 & G2), with the contracts saturated.
+
+        With ``discharge=True``, the result keeps the terms of the two
+        contracts: each guarantee of one contract is guaranteed under the
+        assumptions of that contract that the other's do not imply (A1' -> g,
+        or g when there are none), and the assumption is A1 | A2, with the
+        terms implied by both sides taken out of the disjunction. When the
+        assumptions of one contract imply those of the other, the
+        disjunction goes away. This is the same contract as the
+        conjunction. Then the terms implied by the others are dropped as in
+        ``remove_redundant``. Each test is one implication check (nuXmv or
+        NuSMV; ``backend`` and ``options`` as for the checks).
+        """
+        name = name or f"{self.name}_and_{other.name}"
+        if discharge:
+            return _conjoin_terms(self, other, name, backend, **options)
+        return _algebra("conjunction", self, other, name)
 
     def disjoin(self, other: "Contract", name: str | None = None) -> "Contract":
         """Least upper bound: (A1 & A2, G1 | G2)."""
@@ -528,6 +544,43 @@ def _divide_terms(c1: Contract, c2: Contract, name: str, backend: str,
                  {v: t for v, t in variables.items() if v in outputs},
                  list(c1.assumptions) + given,
                  list(c1.guarantees) + list(c2.assumptions))
+    return remove_redundant(c, backend, **options).contract
+
+
+def _conjoin_terms(c1: Contract, c2: Contract, name: str, backend: str,
+                   **options) -> Contract:
+    """The conjunction keeping the terms (see Contract.conjoin)."""
+    from .checks import VALID, _merge_vars, remove_redundant
+    from .logic import _Implications
+    variables = _merge_vars(c1, c2)
+    outputs = _outputs("conjunction", c1, c2)
+    a1, a2 = list(c1.assumptions), list(c2.assumptions)
+
+    def split(terms, context):
+        # the terms implied by the context, and the others
+        check = _Implications(context, variables, backend, **options)
+        implied = [t for t in terms if check(context, t).status == VALID]
+        return implied, [t for t in terms if not any(t is i for i in implied)]
+    # Under A1 | A2, A1 is the conjunction of its terms that A2 does not
+    # imply (when A2 holds, the others hold too), and the same for A2.
+    both1, left1 = split(a1, a2)
+    both2, left2 = split(a2, a1)
+
+    def under(premise, guarantees):
+        if not premise:
+            return list(guarantees)
+        p = ltl.conjunction(premise)
+        return [ltl.Binary("->", p, g) for g in guarantees]
+    assumptions = both1 + both2
+    if left1 and left2:
+        assumptions.append(ltl.Binary("|", ltl.conjunction(left1), ltl.conjunction(left2)))
+    elif not left2:          # A1 implies A2: A1 | A2 is A2
+        assumptions = a2
+    else:                    # A2 implies A1
+        assumptions = a1
+    c = Contract(name, {v: t for v, t in variables.items() if v not in outputs},
+                 {v: t for v, t in variables.items() if v in outputs},
+                 assumptions, under(left1, c1.guarantees) + under(left2, c2.guarantees))
     return remove_redundant(c, backend, **options).contract
 
 

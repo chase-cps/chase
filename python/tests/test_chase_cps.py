@@ -478,6 +478,41 @@ def test_merge_and_divide_with_discharge():
 
 @needs_native
 @needs_mc
+def test_conjoin_with_discharge():
+    from chase_cps import refines
+
+    def same(x, y):
+        return refines(x, y).status == "valid" == refines(y, x).status
+
+    def strs(terms):
+        return sorted(ltl.to_str(t) for t in terms)
+    c1 = Contract.from_strings(inputs=["r"], outputs=["g"], assumptions=["G F r"],
+                               guarantees=["G F g"], name="C1")
+    # the assumptions of C2 imply those of C1: the assumption is A1, and only
+    # G F !r is left as the premise of the guarantee of C2
+    c2 = Contract.from_strings(inputs=["r"], outputs=["g"], assumptions=["G F r", "G F !r"],
+                               guarantees=["G (g -> r)"], name="C2")
+    for c in (c1.conjoin(c2, discharge=True), c2.conjoin(c1, discharge=True)):
+        assert strs(c.assumptions) == ["G F r"]
+        assert strs(c.guarantees) == ["G F !r -> G (g -> r)", "G F g"]
+        assert same(c, c1.conjoin(c2))
+    # the same assumptions: the conjunction is (A, G1 & G2)
+    c3 = Contract.from_strings(inputs=["r"], outputs=["g"], assumptions=["G F r"],
+                               guarantees=["G (g -> r)"], name="C3")
+    c = c1.conjoin(c3, discharge=True)
+    assert strs(c.assumptions) == ["G F r"]
+    assert strs(c.guarantees) == ["G (g -> r)", "G F g"]
+    # neither implies the other: a disjunction, each guarantee under its premise
+    c4 = Contract.from_strings(inputs=["r", "s"], outputs=["g"], assumptions=["G F s"],
+                               guarantees=["G (g -> r)"], name="C4")
+    c = c1.conjoin(c4, discharge=True)
+    assert strs(c.assumptions) == ["G F r | G F s"]
+    assert strs(c.guarantees) == ["G F r -> G F g", "G F s -> G (g -> r)"]
+    assert same(c, c1.conjoin(c4))
+
+
+@needs_native
+@needs_mc
 def test_implication_coimplication_and_reciprocal():
     from chase_cps import refines
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],
