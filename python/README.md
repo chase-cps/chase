@@ -45,7 +45,13 @@ layers:
 
 All the names are also in `chase_cps`. `load_spec` and `parse_spec` read the
 contracts of a specification written in the logics language of CHASE, and
-`to_spec` writes one.
+`to_spec` writes one. `parse_sva` reads the `assume property` and `assert
+property` statements of SystemVerilog as a contract, and `to_sva` writes a
+contract as a checker module. The variables are Booleans, integer ranges,
+reals, and words (`"word[8]"`, `"signed word[8]"`); `past(x, n)` is the
+value of x n steps before. nuXmv runs IC3 and BDDs at the same time; the
+option `engine` chooses one. The details are in
+[docs/usage.md](https://github.com/chase-cps/chase/blob/master/docs/usage.md).
 
 ## Installation
 

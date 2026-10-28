@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (not released yet)
+## 0.4.0 (2026-10-28)
 
 New:
 
@@ -11,7 +11,9 @@ New:
   `x[7:0]`, `x[3]` (a single bit is a Boolean). A formula whose operands do
   not have the same width and signedness, or a constant that does not fit,
   is refused when the contract is built. The checks give the words to nuXmv;
-  the values of the traces are integers. The contract algebra works on
+  the values of the traces are integers. `extend(x, n)`, `signed(x)`, and
+  `unsigned(x)` change the width and the signedness, as in nuXmv. The
+  contract algebra works on
   contracts with words: each comparison over words goes to the core library
   as a Boolean variable and comes back after the operation (the results are
   the same as on integers). State machines may declare words. Not in the
@@ -25,9 +27,9 @@ New:
   reason. `to_sva` writes a contract as a checker module (and a bind
   statement). Packed arrays of several dimensions are words; hierarchical
   names (`u1.state`) are read as one name (`u1__state`, mapped back in
-  `names`). Tested against a reference interpreter of IEEE 1800 and
-  against Verilator.
-- Words: `extend(x, n)`, `signed(x)`, `unsigned(x)`, as in nuXmv.
+  `names`). The meaning is that of the standard (IEEE 1800-2017, Annex F
+  for `disable iff`), not that of a tool. Tested against a reference
+  interpreter of the standard, against Verilator, and against Jasper.
 - `past(x, n)`: the value of x n steps before (any value in the first n
   steps), for variables of any type. nuXmv gets it as history variables;
   the contract algebra treats a formula with it as one proposition; slugs
@@ -43,7 +45,11 @@ Changes:
 - nuXmv runs IC3 and BDDs at the same time by default (`portfolio`; before,
   IC3 alone): the first verdict wins. BDDs are much faster than IC3 when a
   counterexample needs a long loop. The verdicts are the same; a
-  counterexample may differ from one run to the next.
+  counterexample may differ from one run to the next, and the one of BDDs
+  can be a loop without a prefix.
+- MCP server: the tools have the names of the Python functions:
+  `parse_spec` and `to_spec` replace `read_spec` and `write_spec`, and
+  `parse_sva`, `to_sva` are new.
 - `mod` and `xor` are keywords of the formulas: they cannot be names.
 
 Fixes:

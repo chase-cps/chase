@@ -160,7 +160,10 @@ in the standard LTL syntax, in three layers:
 3. GR(1) synthesis with slugs: realizability, controllers, unrealizable
    cores, well-separation, and vacuity.
 
-A failed check returns a counterexample trace.
+A failed check returns a counterexample trace. The variables are Booleans,
+integer ranges, reals, and words (bit vectors of a fixed width). Contracts
+are read and written in the logics language of CHASE and in SystemVerilog
+Assertions.
 
 The package, together with the compiled CHASE modules, is installed with:
 

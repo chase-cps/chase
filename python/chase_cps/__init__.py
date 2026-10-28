@@ -52,7 +52,7 @@ from .gr1 import (OutputVacuity, VacuousOutput, is_realizable, is_vacuous, is_we
                   synthesize, unrealizable_core)
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 __all__ = [
     # 1. Contracts and their algebra
