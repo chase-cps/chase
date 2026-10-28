@@ -83,6 +83,113 @@ d = Contract.from_dict({"name": "Spec", "inputs": {"req": "bool", "n": [0, 3], "
                         "guarantees": ["G (req -> F grant)"]})
 ````
 
+## SystemVerilog Assertions
+
+`parse_sva` reads the `assume property` and `assert property` statements of
+SystemVerilog (a module, a bind file, or the statements alone) as a
+contract: the assumptions and the guarantees. `to_sva` writes a contract as
+a checker module that any tool reading SVA can check, formal or simulator.
+Nothing in either is specific to a tool.
+
+````
+from chase_cps import Contract, ltl, parse_sva, to_sva
+
+r = parse_sva("""
+module arbiter (input logic clk, input logic rst, input logic req,
+                output logic gnt, output logic [7:0] count);
+  default clocking @(posedge clk); endclocking
+  default disable iff (rst);
+  A0: assume property (req |=> !req);
+  G0: assert property (req |-> ##[1:2] gnt);
+  G1: assert property (gnt |=> count == $past(count) + 1);
+endmodule""")
+print(r.contract.inputs, r.contract.outputs)
+for p in r.properties:
+    print(p.label, ltl.to_str(p.formula))
+print(r.skipped)                    # the statements not read, with the reason
+
+c = Contract.from_dict({"name": "Arb", "inputs": {"req": "bool"},
+                        "outputs": {"gnt": "bool", "count": "word[8]"},
+                        "assumptions": ["G (req -> X !req)"],
+                        "guarantees": ["G (req -> X gnt | X X gnt)",
+                                       "G (gnt -> count' = count + 1)"]})
+print(to_sva(c, reset="rst", bind="arbiter"))
+````
+
+It prints, for the first property, `A0 G (req -> rst | X (req -> rst))`:
+`disable iff (rst)` is in the formula. The checker written for `Arb`:
+
+````systemverilog
+module Arb_sva (
+  input logic clk,
+  input logic rst,
+  (* chase = "input" *) input logic req,
+  (* chase = "output" *) input logic gnt,
+  (* chase = "output" *) input logic [7:0] count
+);
+  // assumptions
+  A0: assume property (@(posedge clk) disable iff (rst)
+    req |=> (!(req)));
+  // guarantees
+  G0: assert property (@(posedge clk) disable iff (rst)
+    req |-> (((nexttime (gnt)) or (nexttime (nexttime (gnt))))));
+  G1: assert property (@(posedge clk) disable iff (rst)
+    gnt |=> ((count == ($past(count) + 8'd1))));
+endmodule
+
+bind arbiter Arb_sva Arb_sva_i (.*);
+````
+
+The attribute `(* chase = ... *)` keeps the role of each signal for
+`parse_sva`; tools ignore it. In `to_sva`, `+ 8'd1` keeps the arithmetic of
+8 bits that the formula has.
+
+Reading:
+
+- One step of LTL is one cycle of the clock. An assertion is checked at
+  every cycle: `assert property (p)` is the guarantee `G p`, `initial assert
+  property (p)` is `p`. `assume property` and `restrict property` are
+  assumptions; `cover property` is kept apart (`covers`).
+- The widths are those of Verilog. The operands are extended to the width
+  of the context first, so in `count == $past(count) + 1` the sum has 32
+  bits (as the constant 1) and does not wrap around: the property fails when
+  `count` goes from 255 to 0. Vectors are words, 1-bit signals Booleans.
+- `$past(e, n)`, `$rose`, `$fell`, `$stable`, `$changed`, `$onehot`,
+  `$onehot0`, `$countones`. A property that looks before the first cycle is
+  checked from the cycle where the past exists (`from_cycle` of the
+  property): `x == $past(x)` from cycle 1.
+- Sequences of bounded length: `##n`, `##[m:n]`, `[*m:n]`, `and`, `or`,
+  `intersect`, `throughout`, `within`, `first_match`. `##[m:$]` is read in
+  an antecedent and in a strong sequence. In a consequent, as in
+  `a |-> ##[1:$] b`, it is weak in an assert and never fails, so it is not
+  read: write `a |-> s_eventually b`.
+- `disable iff (r)` passes the attempt when r holds before it fails;
+  `default clocking` and `default disable iff` apply.
+- Named properties and sequences (with arguments) and `assign` or `wire x =
+  e` definitions are put in place. `parameters` gives the values of
+  parameters.
+- A contract has one clock: with several, `clock` chooses one (the clock of
+  most properties by default) and the properties of the others are skipped.
+- The directions come from the ports of the module, or from `inputs` or
+  `outputs` (names, or a dictionary of types); signals without a
+  declaration are read as 1-bit signals and listed in `undeclared`.
+
+Not read, and listed in `skipped` with the reason: local variables, `[->n]`
+and `[=n]`, unbounded repetition, a comparison of values two cycles apart
+(`y == $past(x, 2)`), hierarchical names, unpacked arrays, `x` and `z`
+digits, immediate assertions.
+
+Writing: a formula `G p` is checked at every cycle, any other formula once,
+at the first cycle (`initial`). Words are vectors (`logic [7:0]`), integer
+ranges `int` with their range assumed (inputs) or asserted (outputs); real
+variables cannot be written. `reset` disables the properties while it holds
+(`"rst"`, `"!rst_n"`), and `bind` adds a bind statement that puts the
+checker in a design module, its ports connected by name.
+
+The reading is tested against a reference interpreter of the standard on
+random properties and traces, and against Verilator; a contract written and
+read back is equivalent (nuXmv).
+
 ## Three layers
 
 The operations of CHASE are in three layers:

@@ -17,6 +17,15 @@ New:
   the same as on integers). State machines may declare words. Not in the
   logics language (`to_spec`) and not for slugs. MCP server: the types
   `"word[n]"` and `"signed word[n]"`.
+- SystemVerilog Assertions (`chase_cps.sva`): `parse_sva` reads the
+  `assume property` and `assert property` statements of a text as a
+  contract, with the widths of Verilog, `$past` and the functions on it,
+  sequences of bounded length, `disable iff`, named properties and
+  sequences, and definitions; the statements not read are listed with the
+  reason. `to_sva` writes a contract as a checker module (and a bind
+  statement). Tested against a reference interpreter of IEEE 1800 and
+  against Verilator.
+- Words: `extend(x, n)`, `signed(x)`, `unsigned(x)`, as in nuXmv.
 - The engine of nuXmv can be chosen: `engine="ic3"` (the default), `"bdd"`,
   `"bmc"`, or `"portfolio"` (IC3 and BDDs at the same time, the first
   verdict wins), or in the back end, `"nuxmv/bdd"`, as the results name it.
@@ -27,6 +36,15 @@ New:
 Change:
 
 - `mod` and `xor` are keywords of the formulas: they cannot be names.
+
+Fixes:
+
+- Variables named as keywords or functions of nuXmv (`count`, `abs`,
+  `next`, `init`, `E`, ...) made nuXmv fail with a syntax error; they are
+  renamed in the models given to it.
+- IC3 of nuXmv 2.2.0 gives wrong answers on formulas with `signed()` and
+  `unsigned()` (it finds `G X (s < signed(x)) -> X G (s < signed(x))`
+  false); these formulas are checked with BDDs.
 
 ## 0.3.2 (2026-10-27)
 

@@ -17,7 +17,9 @@ The package has three layers:
    the operations that build contracts from contracts (compose, conjoin,
    disjoin, merge, divide, separate, imply, coimply, invert, saturate,
    assume, ensure), computed by the CHASE core library. They do not depend
-   on a theory or a back end.
+   on a theory or a back end. Contracts are read and written in the logics
+   language of CHASE (``parse_spec``, ``to_spec``) and in SystemVerilog
+   Assertions (``parse_sva``, ``to_sva``, see ``chase_cps.sva``).
 2. Checks (``chase_cps.checks`` and ``chase_cps.logic``): the checks on
    contracts (refines, verify, is_compatible, is_consistent, implements,
    accepts, is_receptive, remove_redundant) reduce to queries on formulas of a theory
@@ -38,6 +40,7 @@ from .backends import check
 # 1. Contracts and their algebra.
 from .contract import Contract, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
+from .sva import SVAError, SVAReading, parse_sva, to_sva
 # 2. Checks on contracts, and the queries on formulas they reduce to.
 from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, accepts,
                      implements, is_compatible, is_consistent, refines, remove_redundant,
@@ -54,6 +57,7 @@ __version__ = "0.3.2"
 __all__ = [
     # 1. Contracts and their algebra
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
+    "parse_sva", "to_sva", "SVAReading", "SVAError",
     # 2. Checks on contracts
     "refines", "verify", "is_compatible", "is_consistent", "implements", "accepts",
     "remove_redundant", "RefinementResult", "Verification", "Redundancy", "RedundantTerm",
