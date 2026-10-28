@@ -45,8 +45,9 @@ build_boolean_model')" = "true true "
     check "Charger console"       "charger_console"
     check "LiftPlusCruise"        "python3 LiftPlusCruise/lpc.py --expect"
     check "LiftPlusCruise console" "lpc_console"
+    check "LMFSM"                 "python3 LMFSM/fsm.py --expect"
 else
-    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise (no nuXmv)"
+    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM (no nuXmv)"
 fi
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail
