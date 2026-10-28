@@ -130,6 +130,13 @@ def type_of(node: ltl.Node, variables) -> Type:
             if high >= arg.width:
                 raise WordTypeError(f"bit {high} of {ltl.to_str(node.arg)}, a {arg}")
             return _W(high - low + 1, False)
+        f = ltl.function(node)
+        if f:
+            if not isinstance(arg, _W):
+                raise WordTypeError(f"{f} of {ltl.to_str(node.arg)}, which is not a word")
+            if f == "extend":
+                return _W(arg.width + ltl.extension(node), arg.signed)
+            return _W(arg.width, f == "signed")
         if node.op == "neg":
             if arg == "bool":
                 raise WordTypeError(f"minus applied to {ltl.to_str(node.arg)}, a Boolean")
@@ -242,6 +249,10 @@ class _Printer:
         if isinstance(node, ltl.Unary):
             if ltl.bits(node):
                 return f"{self.term(node.arg, None)}{node.op}"
+            if ltl.function(node) == "extend":
+                return f"extend({self.term(node.arg, None)}, {ltl.extension(node)})"
+            if ltl.function(node):
+                return f"{node.op}({self.term(node.arg, None)})"
             if node.op == "neg":
                 return f"(-{self.term(node.arg, want if isinstance(t, _W) else None)})"
             if node.op == "!" and isinstance(t, _W):
@@ -284,8 +295,7 @@ class Abstraction:
         fresh = {}
 
         def atom(node):
-            if isinstance(node, ltl.Unary) and (node.op == "!" or node.op in ltl.TEMPORAL_UNARY) \
-                    and not ltl.bits(node):
+            if isinstance(node, ltl.Unary) and (node.op == "!" or node.op in ltl.TEMPORAL_UNARY):
                 return ltl.Unary(node.op, atom(node.arg))
             if isinstance(node, ltl.Binary) and (node.op in ("&", "|", "->", "<->")
                                                  or node.op in ltl.TEMPORAL_BINARY
@@ -346,7 +356,7 @@ def _wordy(node, words=None) -> bool:
     if isinstance(node, ltl.Var):
         return bool(words) and node.name in words
     if isinstance(node, ltl.Unary):
-        return bool(ltl.bits(node)) or _wordy(node.arg, words)
+        return bool(ltl.bits(node) or ltl.function(node)) or _wordy(node.arg, words)
     if isinstance(node, ltl.Binary):
         return node.op in ltl.WORD_OPS or _wordy(node.left, words) or _wordy(node.right, words)
     return False
@@ -385,6 +395,8 @@ def evaluate(node: ltl.Node, state: dict, variables):
             b = ltl.bits(n)
             if b:
                 return (a >> b[1]) & ((1 << (b[0] - b[1] + 1)) - 1)
+            if ltl.function(n):
+                return fit(a, t)        # extend keeps the value; the casts keep the bits
             if n.op == "neg":
                 return fit(-a, t)
             return fit(~a, t) if isinstance(t, _W) else not a

@@ -19,7 +19,9 @@ The operators of words (``chase_cps.words``) are those of nuXmv: ``x[7:0]``
 and ``x[3]`` select bits, ``::`` concatenates, ``<<`` and ``>>`` shift,
 ``mod`` is the remainder, and ``&``, ``|``, ``xor``, ``!`` are bitwise on
 words. A bitwise operation inside a relation needs parentheses:
-``(x & y) = 0``.
+``(x & y) = 0``. ``extend(x, n)`` adds n bits (copies of the sign bit for
+a signed word, zeros otherwise), ``signed(x)`` and ``unsigned(x)`` read the
+same bits as a signed or an unsigned word.
 """
 
 from __future__ import annotations
@@ -90,7 +92,8 @@ def number_text(value, fraction: str = "decimal") -> str:
 
 @dataclass(frozen=True)
 class Unary:
-    op: str            # '!', 'G', 'F', 'X', 'neg' (arithmetic minus), '[h:l]' (bits of a word)
+    op: str            # '!', 'G', 'F', 'X', 'neg' (arithmetic minus), '[h:l]' (bits of a word),
+                       # 'signed', 'unsigned', 'extend n' (functions on words)
     arg: "Node"
 
 
@@ -106,6 +109,7 @@ Node = Union[Const, Var, Num, Unary, Binary]
 RELATIONS = ("=", "!=", "<", "<=", ">", ">=")
 ARITHMETIC = ("+", "-", "*", "/")
 WORD_OPS = ("mod", "<<", ">>", "::")
+FUNCTIONS = ("signed", "unsigned", "extend")
 BOOLEAN_BINARY = ("&", "|", "->", "<->")
 TEMPORAL_UNARY = ("G", "F", "X")
 TEMPORAL_BINARY = ("U", "R")
@@ -117,7 +121,7 @@ _TOKEN_RE = re.compile(r"""
     \s*(?:
       (?P<num>\d+(?:\.\d+)?)
     | (?P<id>[A-Za-z_][A-Za-z0-9_]*)(?P<prime>')?
-    | (?P<op><->|<=>|->|=>|==|!=|<<|>>|<=|>=|::|&&|\|\||/\\|\\/|\[\]|<>|[!~&|()<>=+\-*/\[\]:])
+    | (?P<op><->|<=>|->|=>|==|!=|<<|>>|<=|>=|::|&&|\|\||/\\|\\/|\[\]|<>|[!~&|()<>=+\-*/\[\]:,])
     )""", re.VERBOSE)
 
 _OP_ALIASES = {"<=>": "<->", "=>": "->", "==": "=", "&&": "&", "||": "|",
@@ -216,6 +220,18 @@ class _Parser:
             return Num(number(val))
         if kind == "const":
             return Const(val == "true")
+        if kind == "id" and val in FUNCTIONS and self.peek() == ("op", "("):
+            self.take()
+            arg = self.expression(0)
+            if val == "extend":
+                self.expect(",")
+                kind, n = self.take()
+                if kind != "num" or not n.isdigit():
+                    raise LTLSyntaxError(f"extend(x, n) takes a number of bits n, not "
+                                         f"{n or 'end of formula'!r}, in {self.text!r}")
+                val = f"extend {int(n)}"
+            self.expect(")")
+            return self.bits(Unary(val, arg))
         if kind == "id":
             return self.bits(Var(val))
         if kind == "primed":
@@ -253,6 +269,19 @@ class _Parser:
             raise LTLSyntaxError(f"a bit index is a number, not {val or 'end of formula'!r}, "
                                  f"in {self.text!r}")
         return int(val)
+
+
+def function(node: Node) -> Optional[str]:
+    """The function of words applied by the node ("signed", "unsigned",
+    "extend"), or None."""
+    if isinstance(node, Unary) and node.op.split(" ")[0] in FUNCTIONS:
+        return node.op.split(" ")[0]
+    return None
+
+
+def extension(node: Node) -> int:
+    """The number of bits that ``extend`` adds."""
+    return int(node.op.split(" ")[1])
 
 
 def bits(node: Node) -> Optional[tuple[int, int]]:
@@ -344,9 +373,9 @@ def to_chase(node: Node) -> str:
     if isinstance(node, Unary):
         if node.op == "neg":
             return f"(0 - {to_chase(node.arg)})"
-        if bits(node):
-            raise ValueError(f"bits of a word ({to_str(node)}) are not in the logics "
-                             "language of CHASE")
+        if bits(node) or function(node):
+            raise ValueError(f"{'bits' if bits(node) else function(node)} of a word "
+                             f"({to_str(node)}) are not in the logics language of CHASE")
         # In the CHASE grammar G, F and X bind more loosely than the binary
         # Boolean operators (G a -> b is G (a -> b)): always parenthesize.
         return f"({node.op} ({to_chase(node.arg)}))"
@@ -372,6 +401,10 @@ def to_smv(node: Node) -> str:
             return f"(-{to_smv(node.arg)})"
         if bits(node):
             return f"{to_smv(node.arg)}{node.op}"
+        if function(node) == "extend":
+            return f"extend({to_smv(node.arg)}, {extension(node)})"
+        if function(node):
+            return f"{node.op}({to_smv(node.arg)})"
         return f"{node.op} ({to_smv(node.arg)})"
     op = "V" if node.op == "R" else node.op
     return f"({to_smv(node.left)} {op} {to_smv(node.right)})"
@@ -390,6 +423,10 @@ def _pretty(node: Node, outer: int) -> str:
             return f"-{_pretty(node.arg, _BINARY['*'][0] + 1)}"
         if bits(node):
             return f"{_pretty(node.arg, 99)}{node.op}"
+        if function(node) == "extend":
+            return f"extend({_pretty(node.arg, 0)}, {extension(node)})"
+        if function(node):
+            return f"{node.op}({_pretty(node.arg, 0)})"
         sep = "" if node.op == "!" else " "
         return f"{node.op}{sep}{_pretty(node.arg, _UNARY_PRECEDENCE)}"
     prec, right_assoc = _BINARY[node.op]

@@ -128,6 +128,10 @@ def test_nuxmv_and_evaluate_agree():
         if op == "::":
             left, right = "x", "y"
         terms.append(f"({left} {op} {right})")
+    # the functions: extension (zeros, the sign bit), the casts, after an operation
+    terms += ["extend(x, 3)", "extend(s, 3)", "signed(x)", "unsigned(s)",
+              "extend(x + y, 1)", "extend(s - t, 2)", "signed(extend(x, 2))",
+              "unsigned(extend(s, 4))", "extend(signed(x), 4)", "(extend(x, 4) * extend(y, 4))"]
     rows = 0
     for _ in range(6):
         state = {"x": rnd.randrange(16), "y": rnd.randrange(1, 16),
@@ -221,3 +225,22 @@ def test_state_machines():
     echo = Contract.from_dict({"name": "E", "inputs": {"x": "word[4]"}, "outputs": {"o": "bool"},
                                "guarantees": ["G (o <-> x[3])"]})
     assert implements(machine, echo).status == "valid"
+
+
+def test_functions():
+    for text in ["extend(x, 4) = cnt", "signed(x) < 0", "unsigned(s) = 15",
+                 "extend(x + 1, 1)[4]", "signed(extend(x, 4)) = 3"]:
+        node = ltl.parse(text)
+        words.check(node, V)
+        assert ltl.parse(ltl.to_str(node)) == node
+    assert str(words.type_of(ltl.parse("extend(s, 4)"), V)) == "signed word[8]"
+    assert str(words.type_of(ltl.parse("unsigned(s)"), V)) == "word[4]"
+    assert words.to_smv(ltl.parse("extend(x, 4) = cnt"), V) == "(extend(x, 4) = cnt)"
+    with pytest.raises(ltl.LTLSyntaxError, match="number of bits"):
+        ltl.parse("extend(x, y) = 0")
+    with pytest.raises(words.WordTypeError, match="signed of b, which is not a word"):
+        words.check(ltl.parse("signed(b)"), V)
+    with pytest.raises(ValueError, match="logics language"):
+        ltl.to_chase(ltl.parse("signed(x) < 0"))
+    # a variable may still be called signed
+    assert ltl.parse("signed & b") == ltl.Binary("&", ltl.Var("signed"), ltl.Var("b"))
