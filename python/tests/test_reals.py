@@ -140,6 +140,7 @@ def test_normal_form_of_comparisons():
     assert ltl.to_str(a.rewrite(P("x' < x"))) == "!chase_p4"        # x - x' <= 0, negated
 
 
+@needs_nuxmv
 @needs_z3
 def test_relations_between_predicates():
     V = {"x": "real", "m": "bool"}
@@ -151,6 +152,7 @@ def test_relations_between_predicates():
     assert any(s["x"] < 15 for s in r.trace.prefix + r.trace.loop)
 
 
+@needs_nuxmv
 @needs_z3
 def test_nonlinear_with_predicates():
     V = {"a": "real", "b": "real"}

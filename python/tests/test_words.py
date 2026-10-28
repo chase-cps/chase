@@ -192,8 +192,10 @@ def test_what_words_do_not_go_to():
                             "outputs": {"b": "word[8]"}, "guarantees": ["G (b = a + 1)"]})
     with pytest.raises(ValueError, match="logics language"):
         to_spec([c])
-    from chase_cps import is_realizable
-    r = is_realizable(c)
+    from chase_cps import Realizable, is_realizable
+    from chase_cps.backends import SlugsAdapter
+    assert is_realizable(c).status == "unknown"
+    r = SlugsAdapter().run(Realizable(c))      # with or without slugs installed
     assert r.status == "unknown" and "words" in r.reason
 
 

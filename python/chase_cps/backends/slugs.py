@@ -67,10 +67,7 @@ class SlugsAdapter(Adapter):
                               text=True, timeout=self.timeout)
 
     def run(self, query: Realizable) -> Result:
-        if not self.available():
-            return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed; run "
-                          "`chase-cps doctor` to see how to install it")
-        start = time.monotonic()
+        # what slugs does not take, whether it is installed or not
         from ..words import word_type
         found = sorted(v for v, t in query.contract.variables.items() if word_type(t))
         if found:
@@ -80,6 +77,10 @@ class SlugsAdapter(Adapter):
         if any(ltl.has_past(f) for f in c.assumptions + c.guarantees):
             return Result(UNKNOWN, self.name, reason="slugs does not take past(x, n): GR(1) "
                           "formulas read the current and next values only")
+        if not self.available():
+            return Result(UNKNOWN, self.name, reason="slugs or its compiler.py is not installed; run "
+                          "`chase-cps doctor` to see how to install it")
+        start = time.monotonic()
         from ..gr1 import gr1_roles
         problem = gr1_roles(query.contract)
         if problem:

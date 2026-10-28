@@ -69,6 +69,10 @@ def test_python_examples_run(text, tmp_path, monkeypatch):
             chase_cps.backends.ADAPTERS["nuxmv"].available()
             or chase_cps.backends.ADAPTERS["nusmv"].available()):
         pytest.skip("nuXmv/NuSMV not installed")
+    game = ("synthesize(", "is_realizable(", "is_vacuous(", "is_well_separated(",
+            "unrealizable_core(", "synth=True")
+    if any(n in text for n in game) and not chase_cps.backends.ADAPTERS["slugs"].available():
+        pytest.skip("slugs not installed")
     monkeypatch.chdir(tmp_path)
     with contextlib.redirect_stdout(io.StringIO()):
         exec(compile(text, "<doc>", "exec"), {})
