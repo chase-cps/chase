@@ -132,3 +132,30 @@ def test_errors(tmp_path, monkeypatch):
     monkeypatch.setattr(rtl, "yosys", lambda: None)
     with pytest.raises(RTLError, match="not installed"):
         rtl.from_rtl(write(tmp_path, "buf1", BUF1), "buf1")
+
+
+VERILOG_2005 = """
+module cnt (clk, rst, en, q, wrap);
+  input clk, rst, en;
+  output [3:0] q;
+  output wrap;
+  reg [3:0] q;
+  wire wrap;
+  assign wrap = (q == 4'd15) & en;
+  always @(posedge clk)
+    if (rst) q <= 4'd0;
+    else if (en) q <= q + 4'd1;
+endmodule
+"""
+
+
+def test_verilog_2005(tmp_path):
+    f = tmp_path / "cnt.v"
+    f.write_text(VERILOG_2005)
+    m = from_rtl(str(f), "cnt", reset="rst")
+    assert m.variables == {"rst": "bool", "en": "bool", "q": "word[4]", "wrap": "bool"}
+    c = Contract.from_dict({"name": "C", "inputs": {"en": "bool"},
+                            "outputs": {"q": "word[4]", "wrap": "bool"},
+                            "guarantees": ["q = 0", "G (en -> q' = q + 1)",
+                                           "G (wrap <-> q = 15 & en)"]})
+    assert implements(m, c).status == "valid"
