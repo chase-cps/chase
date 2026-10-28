@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.1 (not released yet)
+## 0.4.1 (2026-10-28)
 
 New:
 
@@ -17,8 +17,10 @@ New:
   the assumptions of the part that A1 does not imply), and guarantees G1
   and the assumptions of the part. The results can go to `is_realizable`
   and `synthesize`, which do not take the closed forms.
-- Demos: LMFSM (the state machine of the Ten Lockheed Martin Cyber-Physical
-  Challenges) and AHB (the arbiter of the AMBA AHB bus as two viewpoints).
+- Demos: BufferSwap (a buffer of a circuit replaced, with the contracts in
+  SVA and the RTL of BaseJump STL), LMFSM (the state machine of the Ten
+  Lockheed Martin Cyber-Physical Challenges), and AHB (the arbiter of the
+  AMBA AHB bus as two viewpoints in SVA).
 
 Fix:
 
