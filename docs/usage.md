@@ -740,9 +740,12 @@ it does for A -> G.
   contract of its own is a component.
 - The results of the checks are tags next to the name of a box: A
   (compatible), G (consistent), A∧G (when the two cannot hold together), R
-  (realizable), M ⊨ C, E ⊨ A, and ⊑ (refines), green when the check holds,
-  red when it does not. A click on a red tag with a core keeps the terms of
-  the core and fades the others.
+  (realizable), M ⊨ C, E ⊨ A, and ⪯ (refines), green when the check holds,
+  red when it does not. A click on a red tag with a core puts the terms of
+  the core on a red ground.
+- The operations are written as in Benveniste et al. (Contracts for System
+  Design, 2018): ⊗ composition, ∧ conjunction (viewpoints of one component,
+  drawn side by side in one box), / quotient, ⪯ refinement.
 - The context of the checks is a tag above the diagram.
 
 The structure comes from the contracts: each result of the algebra

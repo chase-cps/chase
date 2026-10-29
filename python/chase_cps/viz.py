@@ -49,8 +49,8 @@ from .contract import Contract
 from .system import Component, System
 
 # Operations drawn as a box with its operands inside, and the word used.
-SIGNS = {"composition": "||", "quotient": "/", "merging": "merged with",
-         "conjunction": "and", "disjunction": "or", "separation": "separated by"}
+SIGNS = {"composition": "⊗", "quotient": "/", "merging": "•",
+         "conjunction": "∧", "disjunction": "∨", "separation": "÷"}
 STACKED = {"merging", "conjunction", "disjunction", "separation"}
 
 
@@ -133,7 +133,7 @@ class _Scene:
                             contract=self.terms(c), inputs=sorted(c.inputs),
                             outputs=sorted(c.outputs))
             node = self.group(dividend, operation, known + [hole], box_of=c)
-            node["note"] = " || ".join([k["title"] for k in known] + ["?"])
+            node["note"] = " ⊗ ".join([k["title"] for k in known] + ["?"])
             node["contract"] = self.terms(dividend)
             return node
         return self.group(c, operation, [self.contract(o) for o in operands])
@@ -183,7 +183,7 @@ class _Scene:
         return self.box(s, types=_types(*(k.contract for k in s.components),
                                          *([s.contract] if s.contract else [])),
                         kind="group", op="system", title=s.name,
-                        note=" || ".join(k.name for k in s.components), contract=None,
+                        note=" ⊗ ".join(k.name for k in s.components), contract=None,
                         inputs=sorted(inputs), outputs=[], children=children,
                         edges=_wires(children, inputs))
 
@@ -226,13 +226,13 @@ class _Scene:
             if inner.get("contract"):         # the computed composition stays, under its own icon
                 inner["composed"] = inner["contract"]
             inner.update(kind="group", title=high.name, contract=self.terms(high),
-                         badge={"text": "⊑", "status": status})
+                         badge={"text": "⪯", "status": status})
             self.ids.setdefault(id(high), inner["id"])
             return inner
         return self.box(high, types=_types(high), kind="contract", title=high.name,
                         contract=self.terms(high), inputs=sorted(high.inputs), outputs=sorted(high.outputs),
                         children=[inner], edges=_through(inner, high.inputs, high.outputs),
-                        badge={"text": "⊑", "status": status})
+                        badge={"text": "⪯", "status": status})
 
 
 def _wires(children: list, inputs) -> list:
@@ -380,7 +380,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             inner = scene.node(low)
             hole["children"].append(inner)
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
-            hole["badge"] = {"text": "⊑", "status": status}
+            hole["badge"] = {"text": "⪯", "status": status}
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
@@ -537,8 +537,9 @@ _PAGE = r"""<!doctype html>
                stroke-linecap:round; stroke-linejoin:round; }
   .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
   #help { position:absolute; right:16px; top:44px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
-          box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font-size:12px; color:var(--soft); display:none; z-index:11; }
-  #help div { display:flex; gap:10px; align-items:center; margin:5px 0; }
+          box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font:12px 'Arial Unicode MS', Helvetica, Arial, sans-serif;
+          color:var(--soft); display:none; z-index:11; }
+  #help div { display:flex; gap:10px; align-items:center; margin:6px 0; white-space:nowrap; }
   #help svg { flex:none; }
   #context { margin:14px 18px 0; display:none; gap:8px; flex-wrap:wrap; }
   #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
@@ -549,7 +550,7 @@ _PAGE = r"""<!doctype html>
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
   .h { font-weight:600; font-size:12.5px; fill:var(--ink); cursor:pointer; }
-  .s { font-size:11px; fill:var(--soft); }
+  .s { font-family:'Arial Unicode MS', Helvetica, Arial, sans-serif; font-size:11px; fill:var(--soft); }
   .w { font-family:Menlo, Monaco, monospace; font-size:10px; fill:var(--soft); }
   .halo { paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }
   .icon { cursor:pointer; }
@@ -569,8 +570,7 @@ _PAGE = r"""<!doctype html>
 </style></head><body>
 <header><b>__TITLE__</b>
   <span class="tools">
-    <button title="Open all" onclick="openAll(true)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
-    <button title="Close all" onclick="openAll(false)"><svg viewBox="0 0 16 16"><path d="M4.5 3 8 6.5 11.5 3M4.5 13 8 9.5l3.5 3.5"/></svg></button>
+    <button id="all" title="Open all" onclick="openAll(!allOpen)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
     <span class="sep"></span>
     <button class="on" title="Ports and their names" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (bit vectors, ranges, reals)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
@@ -590,7 +590,7 @@ const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
-      FONT_S = "11px Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
+      FONT_S = "11px 'Arial Unicode MS', Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
 const show = { ports: true, types: true, conditions: true, checks: true };
 
 // What is open: the contract ("c:"), the computed composition ("k:"), and
@@ -602,8 +602,8 @@ function flip(b, what) {
   if (what === "conditions") for (const k in MODELS) delete MODELS[k];
   render();
 }
-// The core in focus, by box: the index of the check whose core is shown.
-// Its terms are drawn as usual, the others faded.
+// The core in focus, by box: the index of the check whose core is shown,
+// its terms on a red ground.
 const focus = {};
 
 const byId = {};
@@ -611,10 +611,15 @@ const byId = {};
 const boxes = Object.values(byId);
 const states = n => n.model && n.model.fsm && n.model.fsm.states;
 const inlineModel = n => states(n) && n.model.fsm.count <= INLINE_STATES;
+let allOpen = false;
 function openAll(on) {
   boxes.forEach(n => ["c:", "k:", "m:"].forEach(p => {
     const key = p + n.id, there = p === "c:" ? n.contract : p === "k:" ? n.composed : inlineModel(n);
     if (on && there) open.add(key); else open.delete(key); }));
+  allOpen = on;
+  const b = document.getElementById("all");
+  b.title = on ? "Close all" : "Open all";
+  b.querySelector("path").setAttribute("d", on ? "M4.5 3 8 6.5 11.5 3M4.5 13 8 9.5l3.5 3.5" : "M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5");
   render();
 }
 
@@ -632,10 +637,10 @@ function wrap(f) {
   out.push(rest); return out;
 }
 // Each part opens with a tag: A (assumes), G (guarantees), E (an environment).
-// With a core in focus, the terms out of it are faded: [kind, tag, text, faded].
+// With a core in focus, its terms are on a red ground: [kind, tag, text, in the core].
 function terms(c, out, core) {
   const part = (tag, fs, hit) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
-    out.push(["f", i || j ? "" : tag, l, core ? !hit.includes(j) : false])));
+    out.push(["f", i || j ? "" : tag, l, hit.includes(j)])));
   part("A", c.A, core ? core.A : []);
   if (c.E) part("E", c.E, []);
   else part("G", c.G.length ? c.G : ["true"], core ? core.G : []);
@@ -675,13 +680,16 @@ function icons(n) {
 // Arial Unicode draws ∧, ⊨ and ⊑ as large as the letters; Helvetica does not.
 const FONT_T = "600 11px 'Arial Unicode MS', 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif";
 const COLOR = { valid: "var(--ok)", invalid: "var(--bad)", unknown: "var(--faint)" };
-const tagWidth = s => textWidth(s, FONT_T) + 12;
+const tagWidth = s => s === "⪯" ? 22 : textWidth(s, FONT_T) + 12;
 function tag(g, x, y, s, status) {
-  const c = COLOR[status];
+  const c = COLOR[status], ink = c ? "#fff" : "var(--soft)";
   el("rect", { x, y, width: tagWidth(s), height: 16, rx: 4, fill: c || "#fff", stroke: c || "var(--line)",
                "stroke-width": 1 }, g);
-  const t = text(g, x + 6, y + 11.8, "", s);
-  t.setAttribute("style", "font:" + FONT_T + ";fill:" + (c ? "#fff" : "var(--soft)"));
+  if (s === "⪯")             // refinement, as in the book: drawn, since fonts draw it small
+    el("path", { d: `M${x + 15} ${y + 3.5} L${x + 7} ${y + 7.5} L${x + 15} ${y + 11.5} M${x + 7} ${y + 13} L${x + 15} ${y + 13}`,
+                 fill: "none", stroke: ink, "stroke-width": 1.6, "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
+  else { const t = text(g, x + 6, y + 11.8, "", s);
+         t.setAttribute("style", "font:" + FONT_T + ";fill:" + ink); }
   return tagWidth(s);
 }
 const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
@@ -691,7 +699,7 @@ const WHAT = { "A": "A is satisfiable: the contract is compatible",
                "R": "the contract is realizable (GR(1))",
                "M ⊨ C": "the model implements the contract",
                "E ⊨ A": "the environment satisfies the assumptions",
-               "⊑": "what is inside refines this contract" };
+               "⪯": "what is inside refines this contract" };
 const checks = n => show.checks && n.checks ? n.checks : [];
 
 const MODELS = {};       // the layout of each open model drawn in its box
@@ -753,8 +761,8 @@ function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag);
 function text(parent, x, y, cls, s) { const t = el("text", { x, y, class: cls }, parent); t.textContent = s; return t; }
 function tip(parent, s) { el("title", {}, parent).textContent = s; }
 
-// The icons: a card for a contract, two bars for a computed composition,
-// two states and a move for a model.
+// The icons: a card for a contract, ⊗ for a computed composition, two
+// states and a move for a model.
 function icon(g, kind, x, y, on, title, off) {
   const c = el("g", { class: off ? "" : "icon" }, g), ink = off ? "var(--line)" : "var(--teal)", fg = on ? "#fff" : ink;
   el("rect", { x, y, width: ICON, height: ICON, rx: 4, fill: on ? ink : "#fff",
@@ -763,9 +771,10 @@ function icon(g, kind, x, y, on, title, off) {
     el("rect", { x: x + 4, y: y + 3.5, width: 8, height: 9, rx: 1.5, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
     el("line", { x1: x + 5.8, y1: y + 6.5, x2: x + 10.2, y2: y + 6.5, stroke: fg, "stroke-width": 1 }, c);
     el("line", { x1: x + 5.8, y1: y + 9.3, x2: x + 10.2, y2: y + 9.3, stroke: fg, "stroke-width": 1 }, c);
-  } else if (kind === "composed") {
-    el("line", { x1: x + 6, y1: y + 4, x2: x + 6, y2: y + 12, stroke: fg, "stroke-width": 1.4 }, c);
-    el("line", { x1: x + 10, y1: y + 4, x2: x + 10, y2: y + 12, stroke: fg, "stroke-width": 1.4 }, c);
+  } else if (kind === "composed") {        // ⊗, the composition of contracts
+    el("circle", { cx: x + 8, cy: y + 8, r: 4.6, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
+    el("path", { d: `M${x + 4.8} ${y + 4.8} L${x + 11.2} ${y + 11.2} M${x + 11.2} ${y + 4.8} L${x + 4.8} ${y + 11.2}`,
+                 stroke: fg, "stroke-width": 1.1 }, c);
   } else {
     el("circle", { cx: x + 4.8, cy: y + 10.8, r: 2.3, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
     el("circle", { cx: x + 11.2, cy: y + 5.2, r: 2.3, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
@@ -803,7 +812,7 @@ function drawNode(g, e, ox, oy) {
     const t = el("g", {}, box), on = focus[n.id] === i;
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
-           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core, the terms that make it fail") : ""));
+           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core, the terms that fail together") : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
     if (c.core) { t.setAttribute("class", "icon");
@@ -812,11 +821,11 @@ function drawNode(g, e, ox, oy) {
   if (n.badge) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
     tag(b, x + e.width - PAD - w, y + 6, n.badge.text, n.badge.status);
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")); }
-  sz.ls.forEach(([k, label, s, faded], i) => {
-    const ty = y + HEAD + 12 + i * LINE, row = el("g", faded ? { opacity: 0.3 } : {}, box);
+  sz.ls.forEach(([k, label, s, core], i) => {
+    const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
     if (k === "f") {
-      if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3,
-                                fill: label === "A" ? "#8a9a9b" : label === "E" ? "#7f8f6a" : "var(--teal)" }, row);
+      if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9" }, row);
+      if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3, fill: "var(--teal)" }, row);
                    const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
                    t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
       text(row, x + PAD + 20, ty, "f", s); }
@@ -973,30 +982,26 @@ function help() {
   const h = document.getElementById("help");
   if (h.style.display === "block") { h.style.display = "none"; return; }
   const sample = (draw, s) => { const d = document.createElement("div");
-    const svg = el("svg", { width: 34, height: 20 }, d); draw(svg); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
+    const svg = el("svg", { width: 48, height: 20 }, d); draw(svg); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
+  const box = (rx, fill, stroke, w, dash) => s => el("rect", { x: 4, y: 3, width: 40, height: 14, rx, fill, stroke,
+    "stroke-width": w, "stroke-dasharray": dash || "none" }, s);
   h.innerHTML = "";
-  sample(s => el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 5, fill: "#fff", stroke: "#17393b" }, s), "a contract");
-  sample(s => el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 1, fill: "#fff", stroke: "#1d2526", "stroke-width": 1.8 }, s),
-         "a component with a model (an implementation)");
-  sample(s => { el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 1, fill: "#f5f7f7", stroke: "#667374", "stroke-width": 1.4 }, s); },
-         "an environment, driving the inputs of the box on its right");
-  sample(s => { svgDefsHatch(s); el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 5, fill: "url(#hatchh)", stroke: "#17393b",
-         "stroke-dasharray": "4 3" }, s); }, "the missing part of a quotient, with what refines it inside");
-  sample(s => { el("rect", { x: 2, y: 2, width: 30, height: 16, rx: 5, fill: "#f5f7f7", stroke: "#17393b" }, s);
-                el("rect", { x: 9, y: 6, width: 16, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
-         "a box inside a box refines it");
-  [["contract", "the contract: A assumes, G guarantees"], ["composed", "the contract computed by the composition"],
-   ["model", "the model: its states and moves"]].forEach(([k, s]) => sample(svg => icon(svg, k, 9, 2, false, s), s));
-  sample(s => { tag(s, 2, 2, "A", "valid"); tag(s, 20, 2, "R", "invalid"); },
-         "checks: A compatible, G consistent, A∧G both together, R realizable (green holds, red not, grey undecided)");
-  sample(s => { tag(s, 4, 2, "M ⊨ C", null); },
-         "M ⊨ C implements, E ⊨ A environment, ⊑ refines: the same colors");
-  sample(s => { const g = el("g", { opacity: 0.3 }, s); el("rect", { x: 2, y: 5, width: 30, height: 3, fill: "#1d2526" }, g);
-                el("rect", { x: 2, y: 12, width: 30, height: 3, fill: "#1d2526" }, s); },
-         "a click on a red check shows its core: the terms that make it fail stay, the others fade");
-  sample(s => { el("line", { x1: 2, y1: 10, x2: 32, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
-                el("line", { x1: 13, y1: 15, x2: 21, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s); },
-         "a bus (a bit vector), with its width");
+  sample(box(5, "#fff", "#17393b", 1.2), "contract");
+  sample(box(1, "#fff", "#1d2526", 1.8), "component with a model");
+  sample(box(1, "#f5f7f7", "#667374", 1.4), "environment");
+  sample(s => { svgDefsHatch(s); box(5, "url(#hatchh)", "#17393b", 1.2, "4 3")(s); }, "hole of a quotient");
+  sample(s => { box(5, "#f5f7f7", "#17393b", 1.2)(s);
+                el("rect", { x: 14, y: 6, width: 20, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
+         "inside: refines the outer box");
+  [["contract", "assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
+   ["model", "states of the model"]].forEach(([k, t]) => sample(svg => icon(svg, k, 16, 2, false, t), t));
+  [["A", "compatible"], ["G", "consistent"], ["A∧G", "A and G together"], ["R", "realizable"],
+   ["M ⊨ C", "implements"], ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) =>
+    sample(s => tag(s, 24 - tagWidth(t) / 2, 2, t, "valid"), d));
+  sample(s => { tag(s, 4, 2, "R", "valid"); tag(s, 26, 2, "R", "invalid"); }, "holds, does not hold");
+  sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");
+  sample(s => { el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
+                el("line", { x1: 20, y1: 15, x2: 28, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s); }, "bus, with its width");
   h.style.display = "block";
 }
 function svgDefsHatch(s) {

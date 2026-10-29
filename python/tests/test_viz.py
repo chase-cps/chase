@@ -67,7 +67,7 @@ def test_refinement_is_drawn_as_nesting():
     d = viz.diagram(ab, top, refines=[(ab, top, "valid")])
     group = d["nodes"][0]
     assert group["title"] == "Top" and group["contract"]["G"] == ["G (x -> z)"]
-    assert group["badge"] == {"text": "⊑", "status": "valid"}
+    assert group["badge"] == {"text": "⪯", "status": "valid"}
     # a single contract: inside the box of the other one, wired by name
     other = Contract.from_strings(name="A2", inputs=["x"], outputs=["y"], guarantees=["G y"])
     box = viz.diagram(refines=[(other, a, "invalid")])["nodes"][0]
@@ -92,7 +92,7 @@ def test_a_quotient_is_a_hole_that_holds_what_refines_it():
     assert [c["kind"] for c in node["children"]] == ["contract", "hole"]
     hole = node["children"][1]
     assert hole["title"] == "Q" and [c["title"] for c in hole["children"]] == ["B"]
-    assert hole["badge"] == {"text": "⊑", "status": "valid"}
+    assert hole["badge"] == {"text": "⪯", "status": "valid"}
 
 
 def test_merged_viewpoints_are_stacked_without_wires():
