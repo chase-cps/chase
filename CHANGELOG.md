@@ -11,8 +11,9 @@ Fixed:
 
 New:
 
-- The demo suite runs Warehouse, a new demo: the contract of a delegated
-  controller as a quotient.
+- The demo suite runs two new demos: Warehouse, the contract of a delegated
+  controller as a quotient, and Delegation, a task of an AI agent split
+  among three sub-agents.
 
 ## 0.4.2 (2026-10-28)
 
