@@ -676,7 +676,10 @@ def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Co
         shared = list(system.getDeclarationsSet())
         out = {}
         for name in sorted(contracts):
-            c = Contract.from_pychase(contracts[name], shared)
+            try:
+                c = Contract.from_pychase(contracts[name], shared)
+            except ValueError as e:              # which contract, in the message
+                raise ValueError(f"contract {name}: {e}") from None
             # keep the shared declarations the contract uses
             used = ltl.variables(ltl.conjunction(c.assumptions + c.guarantees))
             local = {d.getName().getString() for d in contracts[name].declarations}

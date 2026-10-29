@@ -753,6 +753,9 @@ it does for A -> G.
   inside), / quotient, ⪯ refinement.
 - The context of the checks is a tag above the diagram.
 
+The diagram fills the window: drag to move it, the wheel or a pinch zooms,
+and the button with four corners (or the key 0) fits it to the window.
+
 The structure comes from the contracts: each result of the algebra
 remembers its operands (`Contract.origin`). The page lays the boxes out
 with ELK, loaded from a CDN.

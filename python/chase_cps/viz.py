@@ -663,8 +663,9 @@ _PAGE = r"""<!doctype html>
 <style>
   :root { --ink:#1d2526; --soft:#667374; --faint:#97a3a4; --teal:#17393b; --line:#b6c1c1; --fill:#f5f7f7;
           --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; }
+  html, body { height:100%; overflow:hidden; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
-  #top { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
+  #top { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
          padding:10px 12px 0 18px; pointer-events:none; }
   #top > * { pointer-events:auto; }
   .tools { display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e3e8e8; border-radius:8px;
@@ -687,7 +688,9 @@ _PAGE = r"""<!doctype html>
                   white-space:nowrap; background:#fff; }
   #context i { font:600 9.5px -apple-system, Helvetica, Arial, sans-serif; font-style:normal; color:#fff;
                background:#6f7f80; border-radius:4px; padding:2px 5px; }
-  #view { overflow:auto; padding:6px 18px 18px; }
+  #view { position:fixed; inset:0; overflow:hidden; cursor:grab; touch-action:none; }
+  #view.moving { cursor:grabbing; }
+  #view > svg { display:block; width:100%; height:100%; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
   .h { font-weight:600; font-size:12.5px; fill:var(--ink); cursor:pointer; }
@@ -713,6 +716,10 @@ _PAGE = r"""<!doctype html>
 <div id="top"><div id="context"></div>
   <span class="tools">
     <button id="all" title="Open all" onclick="openAll(!allOpen)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
+    <span class="sep"></span>
+    <button title="Zoom out (-)" onclick="zoomBy(1 / 1.25)"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14M4.8 7h4.4"/></svg></button>
+    <button title="Fit the diagram to the window (0)" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
+    <button title="Zoom in (+)" onclick="zoomBy(1.25)"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14M4.8 7h4.4M7 4.8v4.4"/></svg></button>
     <span class="sep"></span>
     <button class="on" title="Ports and their names" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (bit vectors, ranges, reals)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
@@ -761,7 +768,7 @@ function openAll(on) {
     const key = p + n.id, there = p === "c:" ? n.contract : p === "k:" ? n.composed : inlineModel(n);
     if (on && there) open.add(key); else open.delete(key); }));
   if (on) folded.clear();
-  allOpen = on;
+  allOpen = on; refit = true;
   const b = document.getElementById("all");
   b.title = on ? "Close all" : "Open all";
   b.querySelector("path").setAttribute("d", on ? "M4.5 3 8 6.5 11.5 3M4.5 13 8 9.5l3.5 3.5" : "M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5");
@@ -1123,9 +1130,61 @@ function drawModel(g, m, ax, ay) {
                              "stroke-width": 1.4, "marker-end": "url(#arrow)" }, lg); });
 }
 
+// The camera: the diagram moves and scales in the window, as in a map. A
+// drag on the background moves it, the wheel or a pinch zooms (a trackpad
+// scroll moves it), the buttons and the keys + - 0 too.
+let cam = null, size0 = { w: 0, h: 0 }, camera = null, refit = false;
+const TOP = 56;               // the room of the tools at the top
+function place() { if (camera && cam) camera.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.k})`); }
+function fit() {
+  const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
+  const k = Math.min(1, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
+  cam = { k, x: Math.max(20, (W - size0.w * k) / 2), y: TOP + 10 };
+  place();
+}
+function zoomAt(px, py, f) {
+  const k = Math.min(4, Math.max(0.1, cam.k * f));
+  cam.x = px - (px - cam.x) * k / cam.k; cam.y = py - (py - cam.y) * k / cam.k; cam.k = k;
+  place();
+}
+function zoomBy(f) { if (!cam) return; const v = document.getElementById("view"); zoomAt(v.clientWidth / 2, v.clientHeight / 2, f); }
+(function controls() {
+  const v = document.getElementById("view");
+  let drag = null;
+  const live = t => { for (let e = t; e && e !== v; e = e.parentNode) if (e.onclick) return true; return false; };
+  v.addEventListener("pointerdown", e => {
+    if (!cam || e.button !== 0 || live(e.target)) return;
+    drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
+    v.setPointerCapture(e.pointerId); v.classList.add("moving");
+  });
+  v.addEventListener("pointermove", e => {
+    if (!drag) return;
+    cam.x = drag.cx + e.clientX - drag.x; cam.y = drag.cy + e.clientY - drag.y; place();
+  });
+  const stop = () => { drag = null; v.classList.remove("moving"); };
+  v.addEventListener("pointerup", stop); v.addEventListener("pointercancel", stop);
+  v.addEventListener("wheel", e => {
+    if (!cam) return;
+    e.preventDefault();
+    // a pinch, or a mouse wheel (whole lines, or big steps up and down): zoom
+    const mouse = e.deltaMode !== 0 || (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 50);
+    if (e.ctrlKey || e.metaKey || mouse)
+      zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)));
+    else { cam.x -= e.deltaX; cam.y -= e.deltaY; place(); }   // a trackpad scroll moves it
+  }, { passive: false });
+  document.addEventListener("keydown", e => {
+    if (e.target.closest && e.target.closest("input, textarea")) return;
+      if (!cam) return;
+    if (e.key === "+" || e.key === "=") zoomBy(1.25);
+    else if (e.key === "-") zoomBy(1 / 1.25);
+    else if (e.key === "0") fit();
+  });
+  window.addEventListener("resize", () => { if (cam) place(); });
+})();
+
 function svgIn(container, width, height) {
   container.innerHTML = "";
-  const svg = el("svg", { width: width + 40, height: height + 40 }, container);
+  const svg = el("svg", {}, container);
   const defs = el("defs", {}, svg);
   const m = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7,
                            markerHeight: 7, markerUnits: "userSpaceOnUse", orient: "auto" }, defs);
@@ -1134,7 +1193,11 @@ function svgIn(container, width, height) {
                             patternTransform: "rotate(45)" }, defs);
   el("rect", { width: 7, height: 7, fill: "#fff" }, h);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "#e6ecec", "stroke-width": 2 }, h);
-  return el("g", { transform: "translate(20,20)" }, svg);
+  camera = el("g", {}, svg);
+  size0 = { w: width, h: height };
+  if (cam && !refit) place(); else fit();  // the first drawing fits the window, and Open all; then the view stays
+  refit = false;
+  return camera;
 }
 
 function narrow(e, todo) {
@@ -1208,7 +1271,7 @@ function help() {
     const svg = el("svg", { width: 88, height: 20 }, d); draw(el("g", { transform: "translate(20,0)" }, svg)); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
   const box = (rx, fill, stroke, w, dash) => s => el("rect", { x: 4, y: 3, width: 40, height: 14, rx, fill, stroke,
     "stroke-width": w, "stroke-dasharray": dash || "none" }, s);
-  h.innerHTML = "";
+  h.innerHTML = "<div>drag to move · wheel or pinch to zoom · 0 fits the window</div>";
   sample(box(5, "#fff", "#17393b", 1.2), "contract");
   sample(box(1, "#fff", "#1d2526", 1.8), "component with a model");
   sample(box(1, "#f5f7f7", "#667374", 1.4), "environment");

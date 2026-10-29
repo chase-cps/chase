@@ -515,7 +515,9 @@ def from_pychase(obj) -> Node:
         if right is None:   # unary minus
             return Unary("neg", from_pychase(left))
         return Binary(op, from_pychase(left), from_pychase(right))
-    raise TypeError(f"unsupported CHASE formula node: {name}")
+    if name == "ProbabilityFunction":
+        raise ValueError("probabilities, P(...), are not supported: chase-cps checks LTL only")
+    raise ValueError(f"unsupported CHASE formula node: {name}")
 
 
 _EXPRESSION_OPS = {"op_eq": "=", "op_neq": "!=", "op_lt": "<", "op_le": "<=",

@@ -277,3 +277,17 @@ def test_offline_pages_the_output_variable_and_specification_files(tmp_path, mon
     assert [n["title"] for n in d["nodes"]] == ["Top"] and d["title"] == "s.json"
     assert main(["view", str(spec), "--elk", str(elk), "-o", str(out)]) == 0
     assert "var ELK" in out.read_text()
+
+
+def test_a_specification_with_probabilities_is_refused_clearly(tmp_path, capsys):
+    try:
+        from chase_cps import _native  # noqa: F401
+    except ImportError:
+        pytest.skip("CHASE modules not installed")
+    spec = tmp_path / "p.ltl"
+    spec.write_text("NAME: p;\nCONTRACT C1:\n    input integer (0:3) variable x;\n"
+                    "    output integer (0:7) variable z;\nAssumptions:\n    true;\n"
+                    "Guarantees:\n    G(P(x<=2) < 0.2);\n")
+    assert main(["view", str(spec), "-o", str(tmp_path / "p.html")]) == 2
+    err = capsys.readouterr().err
+    assert "contract C1: probabilities, P(...), are not supported" in err and "Traceback" not in err
