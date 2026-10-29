@@ -217,6 +217,8 @@ to AI agents through the [CHASE MCP server](https://github.com/chase-cps/chase-m
 - [Tools](https://github.com/chase-cps/core-library/blob/main/doc/md/tools.md)
 - [Python interface](https://github.com/chase-cps/core-library/blob/main/doc/md/python.md)
 - [Demos](https://github.com/chase-cps/demos)
+- [Contributing](CONTRIBUTING.md): reporting bugs, building and testing,
+  and proposing changes
 
 Each module also contains its own documentation in its repository.
 

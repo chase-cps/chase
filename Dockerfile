@@ -30,9 +30,10 @@ ARG UBUNTU_VERSION=24.04
 
 ###############################################################################
 # NuSMV 2.6.0, from https://nusmv.fbk.eu/distrib/NuSMV-2.6.0.tar.gz. Its build
-# needs Python 2 and an older compiler, hence Ubuntu 18.04 (the binary needs
-# only libc and libstdc++). Without zChaff, readline (GPL), and libxml2; two
-# fixes for newer compilers (MiniSat patch, `union wait` in CUDD).
+# needs Python 2 and an older compiler, hence Ubuntu 18.04. The binary is
+# linked statically, and built with one job (MiniSat is built by a nested
+# make). Without zChaff, readline (GPL), and libxml2; two fixes for newer
+# compilers (MiniSat patch, `union wait` in CUDD).
 ###############################################################################
 FROM ubuntu:18.04 AS nusmv
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,8 +46,8 @@ RUN curl -fsSL https://nusmv.fbk.eu/distrib/NuSMV-2.6.0.tar.gz | tar xz -C /tmp 
     && mkdir /tmp/nusmv-build && cd /tmp/nusmv-build \
     && cmake /tmp/NuSMV-2.6.0/NuSMV -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_ZCHAFF=OFF -DENABLE_READLINE=OFF -DENABLE_LIBXML2=OFF \
-        -DENABLE_STATIC_LINK=ON -DBUILD_CMD_HELP=OFF -DCMAKE_INSTALL_PREFIX=/opt/nusmv \
-    && (make -j"$(nproc)" || make) && make install \
+        -DCMAKE_EXE_LINKER_FLAGS=-static -DBUILD_CMD_HELP=OFF -DCMAKE_INSTALL_PREFIX=/opt/nusmv \
+    && make && make install \
     && cd / \
     && mkdir -p /opt/nusmv/doc \
     && cp /tmp/NuSMV-2.6.0/NuSMV/LGPL-2.1 /tmp/NuSMV-2.6.0/NuSMV/README_MiniSat.txt /opt/nusmv/doc/ \
