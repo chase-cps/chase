@@ -75,7 +75,7 @@ RUN git clone https://github.com/tulip-control/gr1c /tmp/gr1c \
     && cd /tmp/gr1c && git checkout ${GR1C_REF} \
     && ./get-deps.sh && ./build-deps.sh \
     && make -j"$(nproc)" && make install prefix=/usr/local \
-    && mkdir -p /usr/local/share/doc/gr1c && cp LICENSE /usr/local/share/doc/gr1c/ \
+    && mkdir -p /usr/local/share/doc/gr1c && cp LICENSE.txt /usr/local/share/doc/gr1c/ \
     && rm -rf /tmp/gr1c
 
 # slugs (GR(1) synthesis) and its structured-slugs compiler

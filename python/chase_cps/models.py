@@ -9,10 +9,10 @@ time, as the traces of the contracts do. A model is built from
 - a controller synthesized by slugs (``Model.from_controller``),
 - a state machine in JSON (``Model.from_dict``).
 
-The checks on contracts take models: ``implements(m, c)`` (every behavior
-of m satisfies A -> G), ``accepts(c, e)`` (every behavior of the
+The checks on contracts take models: ``is_implementation(m, c)`` (every behavior
+of m satisfies A -> G), ``is_environment(e, c)`` (every behavior of the
 environment e satisfies A), and ``is_receptive(m, c)`` (m never refuses an
-input that the assumptions allow, so that ``implements`` does not hold only
+input that the assumptions allow, so that ``is_implementation`` does not hold only
 because m blocks the inputs).
 """
 

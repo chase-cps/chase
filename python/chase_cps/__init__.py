@@ -21,8 +21,9 @@ The package has three layers:
    language of CHASE (``parse_spec``, ``to_spec``) and in SystemVerilog
    Assertions (``parse_sva``, ``to_sva``, see ``chase_cps.sva``).
 2. Checks (``chase_cps.checks`` and ``chase_cps.logic``): the checks on
-   contracts (refines, verify, is_compatible, is_consistent, implements,
-   accepts, is_receptive, remove_redundant) reduce to queries on formulas of a theory
+   contracts (refines, verify, is_compatible, is_consistent,
+   is_implementation, is_environment, is_receptive, remove_redundant) reduce
+   to queries on formulas of a theory
    (implies: validity; is_satisfiable: satisfiability; unsat_core), which
    the back ends decide (nuXmv, NuSMV; real variables through
    ``chase_cps.reals``). The implementations and environments can be
@@ -43,7 +44,8 @@ from .ltl import LTLSyntaxError
 from .sva import SVAError, SVAReading, parse_sva, to_sva
 # 2. Checks on contracts, and the queries on formulas they reduce to.
 from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, accepts,
-                     implements, is_compatible, is_consistent, refines, remove_redundant,
+                     implements, is_environment, is_implementation, is_compatible,
+                     is_consistent, refines, remove_redundant,
                      verify)
 from .models import Model, is_receptive
 from .logic import Core, implies, is_satisfiable, unsat_core
@@ -59,7 +61,8 @@ __all__ = [
     "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
     "parse_sva", "to_sva", "SVAReading", "SVAError",
     # 2. Checks on contracts
-    "refines", "verify", "is_compatible", "is_consistent", "implements", "accepts",
+    "refines", "verify", "is_compatible", "is_consistent", "is_implementation",
+    "is_environment", "implements", "accepts",
     "remove_redundant", "RefinementResult", "Verification", "Redundancy", "RedundantTerm",
     "Model", "is_receptive",
     #    and on formulas

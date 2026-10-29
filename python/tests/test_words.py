@@ -8,7 +8,7 @@ import re
 
 import pytest
 
-from chase_cps import Contract, Model, implements, implies, is_receptive, is_satisfiable, ltl
+from chase_cps import Contract, Model, implies, is_implementation, is_receptive, is_satisfiable, ltl
 from chase_cps import refines, to_spec, verify, words
 from chase_cps.backends import ADAPTERS
 
@@ -206,18 +206,18 @@ def test_state_machines():
     assert m.variables == {"a": "word[8]", "b": "word[8]"}
     lag = Contract.from_dict({"name": "Lag", "inputs": {"a": "word[8]"},
                               "outputs": {"b": "word[8]"}, "guarantees": ["G (b' = a + 1)"]})
-    assert implements(m, lag).status == "valid"
+    assert is_implementation(m, lag).status == "valid"
     assert is_receptive(m, lag).status == "receptive"
     wrong = Contract.from_dict({"name": "Wrong", "inputs": {"a": "word[4]"},
                                 "outputs": {"b": "word[8]"}, "guarantees": ["G (a = 1)"]})
     with pytest.raises(ValueError, match="a is word"):
-        implements(m, wrong)
+        is_implementation(m, wrong)
     # an initial assumption on the bits of an input
     x4 = Contract.from_dict({"name": "X4", "inputs": {"x": "word[4]"}, "outputs": {"o": "bool"},
                              "assumptions": ["x[0] = 0"], "guarantees": ["G (o -> x[3])"]})
     blocks = Model.from_smv("MODULE main\nIVAR\n  x : unsigned word[4];\nVAR\n  o : boolean;\n"
                             "INIT !o\nTRANS next(o) = bool(x[3:3])\nTRANS x != 0ud4_2\n")
-    assert implements(blocks, x4).status == "invalid"
+    assert is_implementation(blocks, x4).status == "invalid"
     r = is_receptive(blocks, x4)
     assert r.status == "not_receptive" and r.details["input"] == {"x": 2}
     machine = {"name": "Echo", "inputs": {"x": "word[4]"}, "outputs": {"o": "bool"},
@@ -226,7 +226,7 @@ def test_state_machines():
                                {"from": "s", "when": "!x[3]", "outputs": {"o": False}, "to": "s"}]}
     echo = Contract.from_dict({"name": "E", "inputs": {"x": "word[4]"}, "outputs": {"o": "bool"},
                                "guarantees": ["G (o <-> x[3])"]})
-    assert implements(machine, echo).status == "valid"
+    assert is_implementation(machine, echo).status == "valid"
 
 
 def test_functions():

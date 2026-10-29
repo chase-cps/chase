@@ -1,8 +1,8 @@
 """RTL as state machines: Verilog and SystemVerilog read with Yosys.
 
 ``from_rtl(files, top)`` gives the module ``top`` as a ``Model``, which
-the checks take as an implementation (``implements``) or an environment
-(``accepts``), and ``is_receptive``. Yosys (ISC license) reads the design,
+the checks take as an implementation (``is_implementation``) or an
+environment (``is_environment``), and ``is_receptive``. Yosys (ISC license) reads the design,
 flattens it, maps the memories to registers, and writes it in SMV; CHASE
 names the ports as the variables of the contracts: a 1-bit port is a
 Boolean, a wider one a word.

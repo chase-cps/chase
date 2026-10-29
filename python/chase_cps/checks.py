@@ -5,8 +5,9 @@ A -> G. ``refined`` refines ``abstract`` when A_abstract -> A_refined and
 (A_refined -> G_refined) -> (A_abstract -> G_abstract). A contract is
 compatible when some environment satisfies A, consistent when some
 behavior satisfies A -> G, and ``verify`` checks that A & G is satisfiable;
-a component M implements the contract when M & A -> G holds, and the
-contract accepts an environment E when E -> A. M and E are LTL formulas or
+a component M is an implementation of the contract when M & A -> G
+holds (is_implementation), and E is an environment of it when E -> A
+(is_environment). M and E are LTL formulas or
 state machines (``chase_cps.models``); ``is_receptive`` checks that a state
 machine does not refuse the inputs that the assumptions allow.
 Each check is one or two queries on formulas (``chase_cps.logic``), so the
@@ -25,6 +26,7 @@ before 0.3.1.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
@@ -246,7 +248,7 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
     implication check, with the terms that share variables with the term
     (see ``logic._Implications``); a term whose check does not finish is
     kept. This keeps the contract, A -> G: use it before the algebra and the
-    checks (compose, refines, verify, implements, ...).
+    checks (compose, refines, verify, is_implementation, ...).
 
     With synth=True, a term is dropped only when it is implied in the GR(1)
     game, which keeps realizability and the controllers: use it before
@@ -312,11 +314,11 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
     return out
 
 
-def accepts(contract: Contract, environment, backend: str = "auto", context=None,
-            **options) -> Result:
-    """Does the contract accept the environment, i.e. E -> A? The environment
-    is an LTL formula over the variables of the contract, or a state machine
-    (a ``Model``, SMV text, or a state machine in JSON; see
+def is_environment(environment, contract: Contract, backend: str = "auto", context=None,
+                   **options) -> Result:
+    """Is E an environment of the contract (E |=_E C), i.e. does E -> A hold?
+    The environment is an LTL formula over the variables of the contract, or
+    a state machine (a ``Model``, SMV text, or a state machine in JSON; see
     ``chase_cps.models``) that declares the variables of the assumptions:
     every behavior of the machine must satisfy A."""
     from .models import as_model
@@ -328,14 +330,15 @@ def accepts(contract: Contract, environment, backend: str = "auto", context=None
                   backend, context, **options)
 
 
-def implements(implementation, contract: Contract, backend: str = "auto", context=None,
-               **options) -> Result:
-    """Does the implementation implement the contract, i.e. M & A -> G? The
-    implementation is an LTL formula that describes the behaviors of a
-    component, or a state machine: a ``Model``, SMV text, a state machine in
-    JSON, or a controller of ``synthesize`` (see ``chase_cps.models``), whose
-    every behavior must satisfy A -> G. A machine that refuses inputs can
-    implement a contract only because of that: ``is_receptive`` checks it."""
+def is_implementation(implementation, contract: Contract, backend: str = "auto",
+                      context=None, **options) -> Result:
+    """Is M an implementation of the contract (M |=_M C), i.e. does M & A -> G
+    hold? The implementation is an LTL formula that describes the behaviors
+    of a component, or a state machine: a ``Model``, SMV text, a state
+    machine in JSON, or a controller of ``synthesize`` (see
+    ``chase_cps.models``), whose every behavior must satisfy A -> G. A
+    machine that refuses inputs can implement a contract only because of
+    that: ``is_receptive`` checks it."""
     from .models import as_model
     m = as_model(implementation, contract)
     if m is None:
@@ -343,6 +346,22 @@ def implements(implementation, contract: Contract, backend: str = "auto", contex
                        contract.guarantee, contract.variables, backend, context, **options)
     return _holds(m, contract.saturated_guarantee, contract, f"the contract {contract.name}",
                   backend, context, **options)
+
+
+def accepts(contract: Contract, environment, backend: str = "auto", context=None,
+            **options) -> Result:
+    """The name of ``is_environment`` before 0.4.2, with the arguments the
+    other way round."""
+    warnings.warn("accepts(c, e) is now is_environment(e, c)", DeprecationWarning, stacklevel=2)
+    return is_environment(environment, contract, backend, context, **options)
+
+
+def implements(implementation, contract: Contract, backend: str = "auto", context=None,
+               **options) -> Result:
+    """The name of ``is_implementation`` before 0.4.2."""
+    warnings.warn("implements(m, c) is now is_implementation(m, c)", DeprecationWarning,
+                  stacklevel=2)
+    return is_implementation(implementation, contract, backend, context, **options)
 
 
 def _holds(model, phi, contract: Contract, what: str, backend: str, context,

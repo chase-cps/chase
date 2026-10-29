@@ -2,6 +2,16 @@
 
 ## 0.4.2 (not released yet)
 
+Changed:
+
+- `is_implementation(m, c)` and `is_environment(e, c)` are the new names of
+  `implements(m, c)` and `accepts(c, e)`, after the terms of the theory
+  (M is an implementation of C, E is an environment of C); the environment
+  now comes first, as the implementation. The old names still work, with a
+  DeprecationWarning. Command line: `--implementation MODEL C` (was
+  `--implements`, still read) and the new `--environment MODEL C`. MCP
+  server: the tools are named `is_implementation` and `is_environment`.
+
 New:
 
 - `conjoin(..., discharge=True)`: the result keeps the terms and is the

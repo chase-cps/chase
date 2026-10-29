@@ -307,8 +307,8 @@ same name are the same variable, and `c.rename({...})` renames them.
 | A and G hold together (implies compatibility and consistency) | `verify C file` | `verify(c)` | `--verify` (default) | `verify` |
 | compatibility | | `is_compatible(c)` | | `is_compatible` |
 | consistency | | `is_consistent(c)` | | `is_consistent` |
-| implementation M ⊨ C | | `implements(m, c)` | `--implements MODEL C` | `implements` |
-| acceptance of an environment E | | `accepts(c, e)` | | `accepts` |
+| implementation M ⊨<sub>M</sub> C | | `is_implementation(m, c)` | `--implementation MODEL C` | `is_implementation` |
+| environment E ⊨<sub>E</sub> C | | `is_environment(e, c)` | `--environment MODEL C` | `is_environment` |
 | receptiveness of a state machine | | `is_receptive(m, c)` | `--receptive MODEL C` | `is_receptive` |
 | redundant terms | | `remove_redundant(c)` | | `remove_redundant` |
 
@@ -322,11 +322,12 @@ some environment meets the assumptions and some component the guarantees,
 on the same behavior. This implies compatibility and consistency (with the
 same witness); when A & G is unsatisfiable, `verify` also checks the two,
 to tell whether the assumptions alone cannot hold, and with `core=True`
-gives the terms that conflict. A component M satisfies
-the contract (`implements(m, c)`) when M & A -> G is valid, and the contract
-accepts an environment E (`accepts(c, e)`) when E -> A is valid; M and E are
-LTL formulas over the variables of the contract, or state machines (see
-below). `remove_redundant(c)` drops
+gives the terms that conflict. M is an implementation of the contract
+(`is_implementation(m, c)`) when M & A -> G is valid, and E is an
+environment of it (`is_environment(e, c)`) when E -> A is valid; M and E
+are LTL formulas over the variables of the contract, or state machines (see
+below). The names before 0.4.2, `implements(m, c)` and `accepts(c, e)`,
+still work. `remove_redundant(c)` drops
 the assumptions implied by the other assumptions, and the guarantees implied
 by the assumptions and the other guarantees. Which terms it may drop depends
 on what the contract is for next:
@@ -356,8 +357,8 @@ comes from SMV text or a file (`Model.from_smv`), from a controller of
 `synthesize` (`Model.from_controller`), or from a state machine in JSON
 (`Model.from_dict`): at each step, in its state, the machine takes a
 transition whose `when` holds, sets the outputs of that step, and moves to
-the next state. `implements(m, c)` checks that every behavior of m satisfies
-A -> G, and `accepts(c, e)` that every behavior of e satisfies A; the model
+the next state. `is_implementation(m, c)` checks that every behavior of m satisfies
+A -> G, and `is_environment(e, c)` that every behavior of e satisfies A; the model
 declares the variables of the contract (inputs as IVAR or VAR).
 
 A machine that refuses an input has no behavior with it: it may implement a
@@ -370,7 +371,7 @@ other assumptions are not used, which asks for more inputs than OCRA does.
 `not_receptive` comes with the state and the input refused.
 
 ```python
-from chase_cps import Contract, Model, implements, is_receptive
+from chase_cps import Contract, Model, is_implementation, is_receptive
 
 spec = Contract.from_strings(inputs=["req"], outputs=["grant"], name="Spec",
                              guarantees=["G (req -> X grant)"])
@@ -387,7 +388,7 @@ TRANS
   !(grant & req)
 ''', name="Blocking")
 r = is_receptive(blocking, spec)
-print(implements(blocking, spec).status, r.status, r.details["input"])
+print(is_implementation(blocking, spec).status, r.status, r.details["input"])
 ```
 
 ```
@@ -409,7 +410,7 @@ wider one a word. One step is one cycle of the clock, and the clock inputs
 (`clk`, `clk_i`, `clock`, or `clocks=[...]`) are left out.
 
 ````
-from chase_cps import Contract, Model, implements
+from chase_cps import Contract, Model, is_implementation
 
 m = Model.from_rtl(["bsg_dff_reset.sv", "bsg_dff_en.sv", "bsg_one_fifo.sv"],
                    "bsg_one_fifo", parameters={"width_p": 4}, reset="reset_i",
@@ -419,7 +420,7 @@ slot = Contract.from_dict({"name": "Slot",
                            "outputs": {"v_o": "bool", "data_o": "word[4]", "ready_o": "bool"},
                            "assumptions": ["G (yumi_i -> v_o)"],
                            "guarantees": ["G (v_o & !yumi_i -> X v_o)"]})
-print(implements(m, slot).status)
+print(is_implementation(m, slot).status)
 ````
 
 `parameters` sets parameters of the top module, `names` renames ports as
@@ -445,7 +446,7 @@ is `valid`, or `invalid` with a counterexample (a behavior that satisfies
 phi and violates psi). `is_satisfiable` checks that some behavior (a value
 of each variable at each step) satisfies the formula; the answer is `sat`
 with such a behavior, or `unsat`. This satisfiability of a formula is not
-the satisfaction of a contract by a component, which is `implements`.
+the satisfaction of a contract by a component, which is `is_implementation`.
 
 When a check fails, a core is a minimal set of terms that explains it:
 removing any term of the core makes the check pass. `unsat_core(c)` gives
@@ -492,7 +493,7 @@ The checks are:
 - `implies(phi, psi, variables, context=k)`: k & phi -> psi;
 - `is_satisfiable(phi, variables, context=k)`: k & phi;
 - `is_compatible`, `is_consistent`, `verify`, `refines`, `remove_redundant`,
-  `accepts`, `implements`, and `unsat_core` (the context is in every test of
+  `is_environment`, `is_implementation`, and `unsat_core` (the context is in every test of
   the search and never in the core).
 
 The variables of the context must be variables of the check. The

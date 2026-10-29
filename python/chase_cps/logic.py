@@ -3,7 +3,7 @@
 These are the logic queries that the contract checks reduce to. They are
 about formulas, not contracts: ``is_satisfiable(phi)`` asks whether some
 behavior (an assignment of the variables at each step) satisfies phi, which
-is not the satisfaction of a contract by a component (``implements`` in
+is not the satisfaction of a contract by a component (``is_implementation`` in
 ``chase_cps.checks``). ``implies(phi, psi)`` checks validity: phi -> psi
 holds for every behavior.
 

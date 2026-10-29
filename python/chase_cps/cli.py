@@ -25,7 +25,7 @@ from .queries import REALIZABLE, SAT, VALID
 # What each back end is needed for.
 NEEDED_FOR = {
     "nuxmv": "refines, verify, is_consistent, is_compatible, implies, is_satisfiable, "
-             "implements, accepts, is_receptive, remove_redundant",
+             "is_implementation, is_environment, is_receptive, remove_redundant",
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
     "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis), "
              "is_well_separated, is_vacuous",
@@ -130,7 +130,7 @@ def _checks(args, contracts):
     out = []
     every = args.contracts or list(contracts)
     if not (args.verify or args.compatible or args.consistent or args.refines
-            or args.implements or args.receptive or args.realizable or args.synthesize
+            or args.implementation or args.environment or args.receptive or args.realizable or args.synthesize
             or args.well_separated or args.vacuous):
         args.verify = True
     options = {"timeout": args.timeout}
@@ -154,11 +154,16 @@ def _checks(args, contracts):
         r, a = _contract(refined, contracts), _contract(abstract, contracts)
         out.append(("refines", f"{refined} <= {abstract}",
                     lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
-    for path, name in args.implements or []:
+    for path, name in args.implementation or []:
         c = _contract(name, contracts)
         m = _model(path, c)
-        out.append(("implements", f"{m.name} |= {name}",
-                    lambda m=m, c=c: checks.implements(m, c, args.backend, **options)))
+        out.append(("implementation", f"{m.name} |= {name}",
+                    lambda m=m, c=c: checks.is_implementation(m, c, args.backend, **options)))
+    for path, name in args.environment or []:
+        c = _contract(name, contracts)
+        m = _model(path, c)
+        out.append(("environment", f"{m.name} |=E {name}",
+                    lambda m=m, c=c: checks.is_environment(m, c, args.backend, **options)))
     for path, name in args.receptive or []:
         c = _contract(name, contracts)
         m = _model(path, c)
@@ -198,7 +203,7 @@ def _model(path: str, contract):
 
 
 def _passed(kind: str, result) -> bool:
-    return result.status == {"refines": VALID, "implements": VALID, "realizable": REALIZABLE,
+    return result.status == {"refines": VALID, "implementation": VALID, "environment": VALID, "realizable": REALIZABLE,
                              "synthesize": REALIZABLE, "separated": "separated",
                              "receptive": "receptive", "vacuous": "not_vacuous"}.get(kind, SAT)
 
@@ -323,9 +328,14 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
     g.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="REFINED refines ABSTRACT (may be repeated)")
-    g.add_argument("--implements", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+    g.add_argument("--implementation", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL (an SMV file, or a JSON file: a state "
-                        "machine or a controller of slugs) implements CONTRACT")
+                        "machine or a controller of slugs) is an implementation of CONTRACT")
+    g.add_argument("--implements", nargs=2, action="append", dest="implementation",
+                   metavar=("MODEL", "CONTRACT"), help=argparse.SUPPRESS)
+    g.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+                   help="the state machine in MODEL is an environment of CONTRACT: its "
+                        "behaviors satisfy the assumptions")
     g.add_argument("--receptive", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL accepts every input that the "
                         "assumptions of CONTRACT allow")

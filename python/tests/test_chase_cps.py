@@ -806,14 +806,21 @@ def test_rename_and_signatures():
 
 @needs_mc
 def test_environment_and_implementation():
-    from chase_cps import accepts, implements
+    from chase_cps import is_environment, is_implementation
     spec = Contract.from_strings(inputs=["req"], outputs=["grant"],
                                  assumptions=["G F !req"],
                                  guarantees=["G (req -> F grant)"], name="Spec")
-    assert accepts(spec, "G (req -> X !req)").status == "valid"
-    assert accepts(spec, "G req").status == "invalid"
-    assert implements("G (grant <-> X req)", spec).status == "invalid"
-    assert implements("G grant", spec).status == "valid"
+    assert is_environment("G (req -> X !req)", spec).status == "valid"
+    assert is_environment("G req", spec).status == "invalid"
+    assert is_implementation("G (grant <-> X req)", spec).status == "invalid"
+    assert is_implementation("G grant", spec).status == "valid"
+    # the names before 0.4.2 still work, with a warning (accepts takes the
+    # contract first)
+    from chase_cps import accepts, implements
+    with pytest.warns(DeprecationWarning):
+        assert accepts(spec, "G (req -> X !req)").status == "valid"
+    with pytest.warns(DeprecationWarning):
+        assert implements("G grant", spec).status == "valid"
 
 
 
@@ -1130,8 +1137,8 @@ def test_layers_and_the_names_before_0_3_1():
     # 0.3.1 are the same objects.
     import chase_cps
     from chase_cps import checks, cores, gr1, logic
-    for name in ("refines", "verify", "is_compatible", "is_consistent", "implements",
-                 "accepts", "remove_redundant"):
+    for name in ("refines", "verify", "is_compatible", "is_consistent", "is_implementation",
+                 "is_environment", "remove_redundant"):
         assert getattr(chase_cps, name) is getattr(checks, name)
     for name in ("implies", "is_satisfiable", "unsat_core", "Core"):
         assert getattr(chase_cps, name) is getattr(logic, name)

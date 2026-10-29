@@ -1,4 +1,4 @@
-"""Tests of the state machines (chase_cps.models): implements and accepts of a
+"""Tests of the state machines (chase_cps.models): is_implementation and is_environment of a
 model, and receptiveness. Skipped without nuXmv or NuSMV (and slugs and the
 CHASE modules for the controllers)."""
 
@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from chase_cps import Contract, Model, accepts, implements, is_receptive
+from chase_cps import Contract, Model, is_environment, is_implementation, is_receptive
 from chase_cps.backends import ADAPTERS
 
 HAS_MC = ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()
@@ -67,30 +67,30 @@ def test_smv_declarations():
 @needs_mc
 def test_a_model_that_blocks_the_inputs_implements_the_contract_but_is_not_receptive():
     m = Model.from_smv(BLOCKING, name="Blocking")
-    assert implements(m, SPEC).status == "valid"
+    assert is_implementation(m, SPEC).status == "valid"
     r = is_receptive(m, SPEC)
     assert r.status == "not_receptive" and not r
     assert r.details["input"] == {"req": True}
     assert r.details["state"] == {"req": True, "grant": False}
     assert r.trace.prefix[-1] == {"req": True, "grant": False}
     good = Model.from_smv(GOOD, name="Good")
-    assert implements(good, SPEC).status == "valid"
+    assert is_implementation(good, SPEC).status == "valid"
     assert is_receptive(good, SPEC).status == "receptive"
     # SMV text is a model too
-    assert implements(GOOD, SPEC).status == "valid"
+    assert is_implementation(GOOD, SPEC).status == "valid"
 
 
 @needs_mc
 def test_a_state_machine_in_json():
     m = Model.from_dict(MACHINE)
-    r = implements(m, SPEC)
+    r = is_implementation(m, SPEC)
     assert r.status == "invalid" and r.trace is not None    # a request while busy
     assert is_receptive(m, SPEC).status == "receptive"
     spaced = Contract.from_strings(inputs=["req"], outputs=["grant"], name="Spaced",
                                    assumptions=["G (req -> X !req)"],
                                    guarantees=["G (req -> X grant)"])
-    assert implements(m, spaced).status == "valid"
-    assert implements(MACHINE, spaced).status == "valid"
+    assert is_implementation(m, spaced).status == "valid"
+    assert is_implementation(MACHINE, spaced).status == "valid"
     # without the transition for !req in idle, the machine refuses !req there
     partial = {**MACHINE, "transitions": [t for t in MACHINE["transitions"]
                                           if t.get("when") != "!req"]}
@@ -104,13 +104,13 @@ def test_an_environment_model():
                          "ASSIGN\n  init(req) := FALSE;\n  next(req) := !req;\n")
     spaced = Contract.from_strings(inputs=["req"], outputs=["grant"], name="Spaced",
                                    assumptions=["G (req -> X !req)"], guarantees=["G grant"])
-    assert accepts(spaced, env).status == "valid"
+    assert is_environment(env, spaced).status == "valid"
     never = Contract.from_strings(inputs=["req"], outputs=["grant"], name="Never",
                                   assumptions=["G !req"])
-    r = accepts(never, env)
+    r = is_environment(env, never)
     assert r.status == "invalid" and r.trace is not None
     with pytest.raises(ValueError):
-        accepts(never, Model.from_smv("MODULE main\nVAR\n  x : boolean;\n"))
+        is_environment(Model.from_smv("MODULE main\nVAR\n  x : boolean;\n"), never)
 
 
 @needs_mc
@@ -120,11 +120,11 @@ def test_the_types_of_the_model_and_the_contract():
     boolean = Contract.from_strings(inputs=["x"], outputs=["hot"], name="Heat",
                                     guarantees=["G (hot -> x > 5)"])
     with pytest.raises(ValueError):
-        implements(real, boolean)
+        is_implementation(real, boolean)
     heat = Contract.from_dict({"name": "Heat", "inputs": {"x": "real"},
                                "outputs": {"hot": "bool"}, "guarantees": ["G (hot -> x > 5)"]})
     if ADAPTERS["nuxmv"].available():
-        assert implements(real, heat).status == "valid"
+        assert is_implementation(real, heat).status == "valid"
     assert is_receptive(real, heat).status == "unknown"
 
 
@@ -137,13 +137,13 @@ def test_the_controller_of_fair_implements_it_and_is_receptive():
     assert r.status == "realizable" and r.details["init"] == ["!grant1", "!grant2"]
     m = Model.from_controller(r)
     assert m.variables["chase_node"] == (0, len(r.controller["nodes"]) - 1)
-    assert implements(m, fair).status == "valid"
-    assert implements(r, fair).status == "valid"
-    assert implements(r, c["System"]).status == "valid"
+    assert is_implementation(m, fair).status == "valid"
+    assert is_implementation(r, fair).status == "valid"
+    assert is_implementation(r, c["System"]).status == "valid"
     assert is_receptive(m, fair).status == "receptive"
     # the controller as JSON, with the contract it was synthesized from
     data = json.loads(json.dumps(r.controller))
-    assert implements(Model.from_controller(data, fair), fair).status == "valid"
+    assert is_implementation(Model.from_controller(data, fair), fair).status == "valid"
     with pytest.raises(ValueError):
         Model.from_controller(data)
 
@@ -174,11 +174,11 @@ def test_a_controller_with_integers():
     r = synthesize(c)
     m = Model.from_controller(r)
     assert m.variables["n"] == (1, 6) and m.variables["k"] == (0, 2)
-    assert implements(m, c).status == "valid" and is_receptive(m, c).status == "receptive"
+    assert is_implementation(m, c).status == "valid" and is_receptive(m, c).status == "receptive"
     wrong = Contract.from_dict({"name": "Wrong", "inputs": {"n": [1, 6]},
                                 "outputs": {"o": "bool", "k": [0, 2]},
                                 "guarantees": ["G ((n > 4) -> (k = 1))"]})
-    assert implements(m, wrong).status == "invalid"
+    assert is_implementation(m, wrong).status == "invalid"
 
 
 @needs_slugs
@@ -191,15 +191,15 @@ def test_the_command_line(tmp_path, capsys):
         SPEC.to_dict(),
         {"name": "Trusting", "inputs": {"req": "bool"}, "outputs": {"grant": "bool"},
          "assumptions": ["G F !req"], "guarantees": ["G F (!req | grant)"]}]}))
-    assert main(["check", str(spec), "--implements", str(tmp_path / "blocking.smv"),
+    assert main(["check", str(spec), "--implementation", str(tmp_path / "blocking.smv"),
                  "Spec"]) == 0
     assert main(["check", str(spec), "--receptive", str(tmp_path / "blocking.smv"),
                  "Spec"]) == 1
     assert "refuses the input" in capsys.readouterr().out
-    assert main(["check", str(spec), "--implements", str(tmp_path / "slow.json"),
+    assert main(["check", str(spec), "--implementation", str(tmp_path / "slow.json"),
                  "Spec"]) == 1
     capsys.readouterr()
     assert main(["check", str(spec), "--vacuous", "Trusting", "--core", "--json"]) == 1
     report = json.loads(capsys.readouterr().out)
     assert report["checks"][0]["vacuous"][0]["core"]["core"] == ["G F !req"]
-    assert main(["check", str(spec), "--implements", str(tmp_path / "none.smv"), "Spec"]) == 2
+    assert main(["check", str(spec), "--implementation", str(tmp_path / "none.smv"), "Spec"]) == 2

@@ -4,7 +4,7 @@ nuXmv."""
 
 import pytest
 
-from chase_cps import Contract, Model, implements, is_receptive
+from chase_cps import Contract, Model, is_implementation, is_receptive
 from chase_cps.backends import ADAPTERS
 from chase_cps.rtl import RTLError, from_rtl, yosys
 
@@ -84,10 +84,10 @@ def test_a_buffer_implements_its_contract(tmp_path):
     c = Contract.from_dict({**SLOT, "guarantees": SLOT["guarantees"] + [
         "G X (v_i & ready_o -> X (v_o & data_o = past(data_i, 1)))"]})
     assert m.start == 1
-    assert implements(m, c).status == "valid"
+    assert is_implementation(m, c).status == "valid"
     assert is_receptive(m, c).status == "receptive"
     # always ready: false once it holds a value
-    r = implements(m, Contract.from_dict({**SLOT, "guarantees": ["G ready_o"]}))
+    r = is_implementation(m, Contract.from_dict({**SLOT, "guarantees": ["G ready_o"]}))
     assert r.status == "invalid"
     states = r.trace.prefix + r.trace.loop
     assert any(s["v_o"] and not s["ready_o"] for s in states)
@@ -96,13 +96,13 @@ def test_a_buffer_implements_its_contract(tmp_path):
 def test_memories_names_and_parameters(tmp_path):
     f = write(tmp_path, "buf2", BUF2)
     m = from_rtl(f, "buf2", reset="reset_i", names={"ready_param_o": "ready_o"})
-    assert implements(m, Contract.from_dict(SLOT)).status == "valid"
+    assert is_implementation(m, Contract.from_dict(SLOT)).status == "valid"
     # two entries: ready again after one value is in
     # two entries: empty, one value in and none taken, still ready (one entry: not)
     two = Contract.from_dict({**SLOT, "guarantees": ["G (!v_o & v_i & !yumi_i -> X ready_o)"]})
-    assert implements(m, two).status == "valid"
+    assert is_implementation(m, two).status == "valid"
     one = from_rtl(write(tmp_path, "buf1", BUF1), "buf1", reset="reset_i")
-    assert implements(one, two).status == "invalid"
+    assert is_implementation(one, two).status == "invalid"
     m8 = from_rtl(f, "buf2", parameters={"W": 8}, reset="reset_i")
     assert m8.variables["data_o"] == "word[8]"
 
@@ -113,8 +113,8 @@ def test_active_low_reset(tmp_path):
                             "outputs": {"n": "word[4]"},
                             "guarantees": ["n = 0", "G (en -> n' = n + 1)",
                                            "G (!en -> n' = n)"]})
-    assert implements(m, c).status == "valid"
-    assert implements(m, Contract.from_dict({**c.to_dict(), "guarantees": ["G (n < 15)"]})) \
+    assert is_implementation(m, c).status == "valid"
+    assert is_implementation(m, Contract.from_dict({**c.to_dict(), "guarantees": ["G (n < 15)"]})) \
         .status == "invalid"
     # without the reset the counter starts anywhere
     free = from_rtl(write(tmp_path, "counter", COUNTER), "counter")
@@ -158,4 +158,4 @@ def test_verilog_2005(tmp_path):
                             "outputs": {"q": "word[4]", "wrap": "bool"},
                             "guarantees": ["q = 0", "G (en -> q' = q + 1)",
                                            "G (wrap <-> q = 15 & en)"]})
-    assert implements(m, c).status == "valid"
+    assert is_implementation(m, c).status == "valid"
