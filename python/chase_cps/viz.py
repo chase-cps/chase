@@ -46,6 +46,31 @@ SIGNS = {"composition": "||", "quotient": "/", "merging": "merged with",
 STACKED = {"merging", "conjunction", "disjunction", "separation"}
 
 
+def _type(t) -> Optional[dict]:
+    """How a port of a type is drawn: None for a Boolean; a label, and the
+    width of a bus for a bit vector."""
+    from . import words
+    w = words.word_type(t)
+    if w is not None:
+        width, signed = w
+        return {"label": ("s" if signed else "") + f"[{width - 1}:0]", "bus": width}
+    if isinstance(t, tuple):
+        return {"label": f"{t[0]}..{t[1]}"}
+    if t == "real":
+        return {"label": "real"}
+    return None
+
+
+def _types(*contracts) -> dict:
+    out = {}
+    for c in contracts:
+        for v, t in c.variables.items():
+            k = _type(t)
+            if k is not None:
+                out[v] = k
+    return out
+
+
 def _status(s):
     return getattr(s, "status", s)
 
@@ -59,8 +84,9 @@ class _Scene:
         self.count += 1
         return f"{prefix}{self.count}"
 
-    def box(self, obj, **node) -> dict:
+    def box(self, obj, types=None, **node) -> dict:
         node.setdefault("id", self.fresh())
+        node["types"] = types or {}
         self.ids.setdefault(id(obj), node["id"])
         node.setdefault("children", [])
         node.setdefault("edges", [])
@@ -80,7 +106,7 @@ class _Scene:
             note = None
             if origin:
                 note = f"{origin[0]} of " + ", ".join(o.name for o in origin[1])
-            return self.box(c, kind="contract", title=title or c.name, note=note,
+            return self.box(c, types=_types(c), kind="contract", title=title or c.name, note=note,
                             contract=self.terms(c), inputs=sorted(c.inputs),
                             outputs=sorted(c.outputs))
         operation, operands = origin
@@ -94,7 +120,8 @@ class _Scene:
             dividend, divisor = operands
             known = self.contract(divisor)
             known = known["children"] if known.get("op") == "composition" else [known]
-            hole = self.box(c, kind="hole", title=c.name, note=f"{dividend.name} / {divisor.name}",
+            hole = self.box(c, types=_types(c), kind="hole", title=c.name,
+                            note=f"{dividend.name} / {divisor.name}",
                             contract=self.terms(c), inputs=sorted(c.inputs),
                             outputs=sorted(c.outputs))
             node = self.group(dividend, operation, known + [hole], box_of=c)
@@ -105,12 +132,13 @@ class _Scene:
     def group(self, c: Contract, operation: str, children: list, box_of=None) -> dict:
         names = [ch["title"] for ch in children]
         if operation in STACKED:      # viewpoints of one component: the same ports, no wires
-            return self.box(box_of if box_of is not None else c, kind="group", op=operation,
+            return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
+                            op=operation,
                             title=c.name, note=f" {SIGNS[operation]} ".join(names),
                             layout="stack", contract=None, inputs=[], outputs=[],
                             children=children, edges=[])
-        return self.box(box_of if box_of is not None else c, kind="group", op=operation,
-                        title=c.name, note=f" {SIGNS[operation]} ".join(names),
+        return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
+                        op=operation, title=c.name, note=f" {SIGNS[operation]} ".join(names),
                         layout="row", contract=None, inputs=sorted(c.inputs), outputs=[],
                         children=children, edges=_wires(children, c.inputs))
 
@@ -126,9 +154,10 @@ class _Scene:
         except Exception:                     # the diagram does without it
             fsm = None
         name = getattr(k.implementation, "name", None) or type(k.implementation).__name__
-        return self.box(k, kind="component", title=k.name, contract=self.terms(k.contract),
+        return self.box(k, types=_types(k.contract), kind="component", title=k.name,
+                        contract=self.terms(k.contract),
                         model={"name": name, "fsm": fsm},
-                        badge={"text": "model implements contract", "status": k.status},
+                        badge={"text": "M implements C", "status": k.status},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
 
     def system(self, s: System) -> dict:
@@ -138,7 +167,9 @@ class _Scene:
         else:
             driven = {v for k in s.components for v in k.contract.outputs}
             inputs = {v for k in s.components for v in k.contract.inputs if v not in driven}
-        return self.box(s, kind="group", op="system", title=s.name,
+        return self.box(s, types=_types(*(k.contract for k in s.components),
+                                         *([s.contract] if s.contract else [])),
+                        kind="group", op="system", title=s.name,
                         note=" || ".join(k.name for k in s.components), contract=None,
                         inputs=sorted(inputs), outputs=[], children=children,
                         edges=_wires(children, inputs))
@@ -158,10 +189,10 @@ class _Scene:
         """inner, drawn inside the box of the contract it refines."""
         if inner["kind"] == "group":          # a decomposition: the group is the box
             inner.update(kind="group", title=high.name, contract=self.terms(high),
-                         badge={"text": "the decomposition refines it", "status": status})
+                         badge={"text": "refines it", "status": status})
             return inner
-        return self.box(high, kind="contract", title=high.name, contract=self.terms(high),
-                        inputs=sorted(high.inputs), outputs=sorted(high.outputs),
+        return self.box(high, types=_types(high), kind="contract", title=high.name,
+                        contract=self.terms(high), inputs=sorted(high.inputs), outputs=sorted(high.outputs),
                         children=[inner], edges=_through(inner, high.inputs, high.outputs),
                         badge={"text": f"{inner['title']} refines it", "status": status})
 
@@ -345,48 +376,59 @@ _RELOAD = """<script>
 _PAGE = r"""<!doctype html>
 <html><head><meta charset="utf-8"><title>__TITLE__</title>
 <style>
-  :root { --ink:#1f2728; --soft:#586566; --teal:#17393b; --line:#9aa7a7; --fill:#f3f5f5;
-          --ok:#2f7d4f; --bad:#b03a2e; --hole:#fdf6e3; --link:#1c6a6f; }
+  :root { --ink:#1f2728; --soft:#5f6c6d; --teal:#17393b; --line:#a3afaf; --fill:#f3f5f5;
+          --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --hole:#fdf6e3; --gold:#b8962e; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
-  header { padding:10px 16px; border-bottom:1px solid #dde3e3; }
-  header b { font-size:15px; margin-right:16px; }
-  .legend { display:inline-flex; gap:18px; color:var(--soft); font-size:12px; align-items:center; flex-wrap:wrap; }
-  .legend i { display:inline-block; width:18px; height:12px; margin-right:6px; vertical-align:-2px; border:1.5px solid var(--teal); }
+  header { padding:10px 16px; border-bottom:1px solid #dde3e3; display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  header b { font-size:15px; }
+  .legend { display:flex; gap:16px; color:var(--soft); font-size:12px; align-items:center; flex-wrap:wrap; }
+  .legend i { display:inline-block; width:18px; height:12px; margin-right:5px; vertical-align:-2px; border:1.5px solid var(--teal); }
   .legend .c { border-radius:5px; } .legend .m { border-color:var(--ink); border-width:2px; }
-  .legend .h { border-style:dashed; border-radius:5px; background:var(--hole); }
+  .legend .h { border-style:dashed; border-color:var(--gold); border-radius:5px; background:var(--hole); }
+  .legend .chip { display:inline-block; font-size:10px; font-weight:700; border:1px solid var(--teal); border-radius:3px;
+                  padding:0 4px; color:var(--teal); margin-right:3px; }
   #view { overflow:auto; padding:16px; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
   .h { font-weight:600; font-size:13px; fill:var(--ink); cursor:pointer; }
   .s { font-size:11px; fill:var(--soft); }
-  .k { font-size:9.5px; font-weight:600; letter-spacing:.06em; fill:var(--soft); }
+  .k { font-family:Menlo, Monaco, monospace; font-size:11px; font-weight:700; fill:var(--teal); }
   .w { font-family:Menlo, Monaco, monospace; font-size:10.5px; fill:var(--soft); }
-  .l { font-size:11.5px; fill:var(--link); cursor:pointer; }
+  .chip { cursor:pointer; }
+  #pop { position:fixed; inset:40px; background:#fff; border:1px solid #c9d2d2; border-radius:10px;
+         box-shadow:0 8px 30px rgba(0,0,0,.18); display:none; flex-direction:column; z-index:10; }
+  #pop header { justify-content:space-between; }
+  #pop button { font:inherit; border:1px solid #c9d2d2; background:#fff; border-radius:6px; padding:2px 10px; cursor:pointer; }
+  #popview { overflow:auto; padding:8px 20px 20px; flex:1; }
+  table.fsm { border-collapse:collapse; font:12px Menlo, Monaco, monospace; }
+  table.fsm th { font:600 12px -apple-system, Helvetica, Arial, sans-serif; text-align:left; color:var(--soft);
+                 padding:6px 14px 6px 0; border-bottom:1px solid #dde3e3; position:sticky; top:0; background:#fff; }
+  table.fsm td { padding:3px 14px 3px 0; border-bottom:1px solid #f0f3f3; vertical-align:top; }
+  table.fsm td.st { color:var(--teal); font-weight:600; border-bottom:1px solid #dde3e3; }
+  table.fsm td.when { color:var(--soft); }
 </style></head><body>
 <header><b>__TITLE__</b>
-  <span class="legend"><span><i class="c"></i>contract</span><span><i class="m"></i>component: contract and model</span>
-  <span><i class="h"></i>the missing part of a quotient</span><span>a box inside a box: it refines it</span>
-  <span>click ▸ to open</span></span></header>
+  <span class="legend"><span><i class="c"></i>contract</span><span><i class="m"></i>component with a model</span>
+  <span><i class="h"></i>the missing part of a quotient</span><span>a box inside a box refines it</span>
+  <span><span class="chip">C</span>contract <span class="chip">M</span>model: click to open</span></span></header>
 <div id="view"></div>
+<div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
 <script>
 const DATA = __DATA__;
-const LINE = 17, PAD = 10, PORT = 8, HEAD = 26;
+const LINE = 17, PAD = 10, PORT = 8, HEAD = 28, CHIP = 18, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 13px Helvetica, Arial, sans-serif",
-      FONT_S = "11.5px Helvetica, Arial, sans-serif", FONT_W = "10.5px Menlo, Monaco, monospace";
-const fontOf = c => c === "f" ? FONT_F : c === "h" ? FONT_H : FONT_S;
-const count = (k, word) => k + " " + word + (k === 1 ? "" : "s");
+      FONT_S = "11px Helvetica, Arial, sans-serif", FONT_W = "10.5px Menlo, Monaco, monospace";
 
-// What is open: the contract of a box ("c:" + id) and the model of a
-// component ("m:" + id). At first, only the boxes and their names show.
+// What is open: the contract ("c:" + id) and the model ("m:" + id) of a
+// box. At first, only the names show.
 const open = new Set();
-const widen = {};       // the room added to a box narrower than its text
 const toggle = key => () => { open.has(key) ? open.delete(key) : open.add(key); render(); };
 
 // A long formula on several lines, cut before an operator.
-const WIDTH = 64;
+const WIDTH = 60;
 function wrap(f) {
   const out = []; let rest = f;
   while (rest.length > WIDTH) {
@@ -394,37 +436,63 @@ function wrap(f) {
     for (const op of [" & ", " | ", " -> ", " <-> ", " "]) {
       const i = rest.lastIndexOf(op, WIDTH); if (i > WIDTH / 3) { cut = i; break; } }
     if (cut < 0) cut = WIDTH;
-    out.push(rest.slice(0, cut)); rest = "    " + rest.slice(cut).trimStart();
+    out.push(rest.slice(0, cut)); rest = "  " + rest.slice(cut).trimStart();
   }
   out.push(rest); return out;
 }
 
-// The lines under the name of a box: [class, text, key to toggle]
+const byId = {};
+(function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
+const hasModel = n => n.kind === "component";
+const states = n => n.model && n.model.fsm && n.model.fsm.states;
+const inlineModel = n => states(n) && n.model.fsm.count <= INLINE_STATES;
+
+// The lines under the name: [kind, letter or class, text]
 function lines(n) {
   const out = [];
-  if (n.note) out.push(["s", n.note]);
-  if (n.contract) {
-    const c = n.contract, key = "c:" + n.id;
-    if (!open.has(key)) out.push(["l", "▸ contract " + c.name + ": " + count(c.A.length, "assumption")
-                                  + ", " + count(c.G.length, "guarantee"), key]);
-    else {
-      out.push(["l", "▾ contract " + c.name, key]);
-      if (c.A.length) { out.push(["k", "ASSUMES"]); c.A.forEach(a => wrap(a).forEach(l => out.push(["f", l]))); }
-      out.push(["k", "GUARANTEES"]);
-      if (c.G.length) c.G.forEach(g => wrap(g).forEach(l => out.push(["f", l]))); else out.push(["f", "true"]);
-    }
+  if (n.note) out.push(["s", "", n.note]);
+  if (n.contract && open.has("c:" + n.id)) {
+    // each part opens with a tag, A or G; a term that does not fit goes on with an indent
+    n.contract.A.forEach((a, j) => wrap(a).forEach((l, i) => out.push(["f", i || j ? "" : "A", l])));
+    const G = n.contract.G.length ? n.contract.G : ["true"];
+    G.forEach((g, j) => wrap(g).forEach((l, i) => out.push(["f", i || j ? "" : "G", l])));
   }
-  if (n.model) {
-    const m = n.model, key = "m:" + n.id, f = m.fsm;
-    if (!f) out.push(["s", "model " + m.name]);
-    else if (f.too_many) out.push(["s", "model " + m.name + ": more than 24 states"]);
-    else out.push(["l", (open.has(key) ? "▾ " : "▸ ") + "model " + m.name + ": " + count(f.count, "state"), key]);
+  if (hasModel(n) && open.has("m:" + n.id)) {
+    const f = n.model.fsm;
+    if (!f) out.push(["s", "", "model " + n.model.name + ": no registers, the outputs are functions of the inputs"]);
+    else if (f.too_many) out.push(["s", "", "model " + n.model.name + ": more than " + f.count + " states, too many to draw"]);
+    else if (!inlineModel(n)) out.push(["s", "", "model " + n.model.name + ": " + f.count + " states, in a table above the page"]);
+    else out.push(["s", "", "model " + n.model.name]);
   }
   return out;
 }
+const lineWidth = ([k, letter, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
 
+function chips(n) {
+  const out = [];
+  if (n.contract) out.push(["C", "c:" + n.id]);
+  if (hasModel(n)) out.push(["M", "m:" + n.id]);
+  return out;
+}
+function badgeText(n) { return n.badge ? n.badge.text + " " + mark(n.badge.status)[0] : ""; }
+
+function size(n) {     // the width and the height of the name and of the lines under it
+  const ls = lines(n);
+  const top = textWidth(n.title, FONT_H) + chips(n).length * (CHIP + 4) + 12
+            + (n.badge ? textWidth(badgeText(n), FONT_S) + 16 : 0);
+  const w = Math.max(top, ...ls.map(lineWidth)) + 2 * PAD;
+  return { ls, w: Math.max(w, 120), h: HEAD + ls.length * LINE + (ls.length ? 8 : 0) };
+}
+
+// The type of a variable, from the box or the boxes inside it.
+function typeOf(n, v) {
+  if (n.types && n.types[v]) return n.types[v];
+  for (const c of n.children || []) { const t = typeOf(c, v); if (t) return t; }
+  return null;
+}
+const portText = (n, v) => { const t = n.types && n.types[v]; return t ? v + " " + t.label : v; };
 function ports(n) {
-  const ps = [], lab = v => [{ text: v, width: textWidth(v, FONT_W), height: 12 }];
+  const ps = [], lab = v => [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 12 }];
   (n.inputs || []).forEach((v, i) => ps.push({ id: n.id + ":in:" + v, width: PORT, height: PORT, labels: lab(v),
     layoutOptions: { "elk.port.side": "WEST", "elk.port.index": String(n.inputs.length - i) } }));
   (n.outputs || []).forEach((v, i) => ps.push({ id: n.id + ":out:" + v, width: PORT, height: PORT, labels: lab(v),
@@ -432,45 +500,42 @@ function ports(n) {
   return ps;
 }
 
-const byId = {};
-(function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
-
-function header(n) {     // width and height of the name and the lines under it
-  const ls = lines(n);
-  let w = textWidth(n.title, FONT_H) + 2 * PAD + (n.badge ? textWidth(n.badge.text, FONT_S) + 40 : 0);
-  ls.forEach(([c, t]) => { w = Math.max(w, textWidth(t, fontOf(c)) + 2 * PAD); });
-  return { ls, w: Math.max(w, 150), h: HEAD + ls.length * LINE + (ls.length ? 6 : 0) };
+let widen = {};       // the room added to a box narrower than its text
+function stateGraph(n, prefix) {
+  const f = n.model.fsm;
+  return { children: f.states.map(st => { const id = prefix + st.id;
+      byId[id] = { kind: "state", id, label: st.label, init: st.init };
+      return { id, width: textWidth(st.label, FONT_W) + 26, height: 26 }; }),
+    edges: f.edges.map((t, i) => ({ id: prefix + "t" + i, sources: [prefix + t.from], targets: [prefix + t.to],
+      labels: t.label ? [{ text: t.label, width: textWidth(t.label, FONT_W), height: 12 }] : [] })) };
 }
+const FLOW = { "elk.layered.spacing.nodeNodeBetweenLayers": "80", "elk.spacing.nodeNode": "30",
+               "elk.spacing.edgeLabel": "4", "elk.layered.crossingMinimization.semiInteractive": "true",
+               "elk.layered.cycleBreaking.strategy": "INTERACTIVE",
+               "elk.layered.layering.strategy": "INTERACTIVE" };
 
-function toElk(n) {
-  const hd = header(n);
-  const base = { id: n.id, ports: ports(n),
+function toElk(n, order) {
+  const sz = size(n);
+  const base = { id: n.id, ports: ports(n), x: (order || 0) * 600, y: 0,
     layoutOptions: { "elk.portConstraints": "FIXED_ORDER", "elk.nodeSize.constraints": "MINIMUM_SIZE",
       "elk.portLabels.placement": "OUTSIDE", "elk.spacing.portPort": "14",
-      "elk.nodeSize.minimum": "(" + hd.w + "," + Math.max(hd.h, ((Math.max((n.inputs || []).length, (n.outputs || []).length)) + 1) * 18) + ")" } };
+      "elk.nodeSize.minimum": "(" + sz.w + "," + Math.max(sz.h, (Math.max((n.inputs || []).length, (n.outputs || []).length) + 1) * 18) + ")" } };
   let inner = null;
   if (n.children && n.children.length) {
-    inner = { children: n.children.map(toElk),
+    inner = { children: n.children.map((c, i) => toElk(c, i)),
       edges: (n.edges || []).filter(w => !w.open).map((w, i) => ({ id: n.id + ":e" + i,
+        kind: typeOf(n, w.var),
         sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
         targets: [(w.to[0] || n.id) + ":" + w.to[1] + ":" + w.to[2]] })),
       dir: n.layout === "stack" ? "DOWN" : "RIGHT" };
-  } else if (n.model && n.model.fsm && n.model.fsm.states && open.has("m:" + n.id)) {
-    const f = n.model.fsm;
-    inner = { children: f.states.map(st => { const id = n.id + ":" + st.id;
-        byId[id] = { kind: "state", id, label: st.label, init: st.init };
-        return { id, width: textWidth(st.label, FONT_W) + 26, height: 26 }; }),
-      edges: f.edges.map((t, i) => ({ id: n.id + ":t" + i, sources: [n.id + ":" + t.from],
-        targets: [n.id + ":" + t.to],
-        labels: t.label ? [{ text: t.label, width: textWidth(t.label, FONT_W), height: 12 }] : [] })),
-      dir: "RIGHT" };
+  } else if (hasModel(n) && open.has("m:" + n.id) && inlineModel(n)) {
+    inner = Object.assign(stateGraph(n, n.id + ":"), { dir: "RIGHT" });
   }
-  if (!inner) { base.width = hd.w; base.height = hd.h; return base; }
+  if (!inner) { base.width = sz.w; base.height = sz.h; return base; }
+  inner.edges.forEach(e => { KIND[e.id] = e.kind; delete e.kind; });
   base.children = inner.children; base.edges = inner.edges;
-  Object.assign(base.layoutOptions, { "elk.direction": inner.dir,
-    "elk.padding": "[top=" + (hd.h + 8) + ",left=24,bottom=16,right=" + (24 + (widen[n.id] || 0)) + "]",
-    "elk.spacing.nodeNode": "30", "elk.layered.spacing.nodeNodeBetweenLayers": "80",
-    "elk.layered.cycleBreaking.strategy": "MODEL_ORDER", "elk.spacing.edgeLabel": "4" });
+  Object.assign(base.layoutOptions, FLOW, { "elk.direction": inner.dir,
+    "elk.padding": "[top=" + (sz.h + 8) + ",left=26,bottom=16,right=" + (26 + (widen[n.id] || 0)) + "]" });
   return base;
 }
 
@@ -484,31 +549,49 @@ const STYLE = {
   contract:  { rx: 10, fill: "#fff", stroke: "var(--teal)", width: 1.4, dash: "none" },
   component: { rx: 0, fill: "#fff", stroke: "var(--ink)", width: 2, dash: "none" },
   group:     { rx: 8, fill: "var(--fill)", stroke: "var(--line)", width: 1, dash: "none" },
-  hole:      { rx: 10, fill: "var(--hole)", stroke: "#b8962e", width: 1.4, dash: "6 4" } };
+  hole:      { rx: 10, fill: "var(--hole)", stroke: "var(--gold)", width: 1.4, dash: "6 4" } };
+
+function drawState(g, e, x, y, n) {
+  el("rect", { x, y, width: e.width, height: e.height, rx: 13, fill: "#fff", stroke: "var(--teal)",
+               "stroke-width": n.init ? 2.4 : 1.1 }, g);
+  const t = text(g, x + e.width / 2, y + 17, "w", n.label); t.setAttribute("text-anchor", "middle");
+  if (n.init) el("polyline", { points: (x - 16) + "," + (y + 13) + " " + (x - 2) + "," + (y + 13),
+    stroke: "var(--teal)", "stroke-width": 1.6, fill: "none", "marker-end": "url(#arrow)" }, g);
+}
 
 function drawNode(g, e, ox, oy) {
   const n = byId[e.id], x = ox + e.x, y = oy + e.y;
-  if (n.kind === "state") {
-    el("rect", { x, y, width: e.width, height: e.height, rx: 13, fill: "#fff", stroke: "var(--teal)",
-                 "stroke-width": n.init ? 2.4 : 1.1 }, g);
-    const t = text(g, x + e.width / 2, y + 17, "w", n.label); t.setAttribute("text-anchor", "middle");
-    if (n.init) el("polyline", { points: (x - 16) + "," + (y + 13) + " " + (x - 2) + "," + (y + 13),
-      stroke: "var(--teal)", "stroke-width": 1.6, fill: "none", "marker-end": "url(#arrow)" }, g);
-    return;
-  }
-  const st = STYLE[n.kind] || STYLE.contract;
-  // a group that holds a decomposition refining a contract looks like the contract
-  const s2 = n.kind === "group" && n.contract ? Object.assign({}, STYLE.contract, { fill: "var(--fill)" }) : st;
-  el("rect", { x, y, width: e.width, height: e.height, rx: s2.rx, fill: s2.fill, stroke: s2.stroke,
-               "stroke-width": s2.width, "stroke-dasharray": s2.dash }, g);
-  if (n.kind === "component") el("line", { x1: x, y1: y + HEAD, x2: x + e.width, y2: y + HEAD,
-                                           stroke: "var(--ink)", "stroke-width": 1 }, g);
-  text(g, x + PAD, y + 18, "h", n.title);
+  if (n.kind === "state") return drawState(g, e, x, y, n);
+  const box = el("g", { "data-box": n.id }, g);
+  const st = n.kind === "group" && n.contract ? Object.assign({}, STYLE.contract, { fill: "var(--fill)" })
+                                              : STYLE[n.kind] || STYLE.contract;
+  el("rect", { x, y, width: e.width, height: e.height, rx: st.rx, fill: st.fill, stroke: st.stroke,
+               "stroke-width": st.width, "stroke-dasharray": st.dash }, box);
+  // the name, the C and M chips, the status
+  const name = text(box, x + PAD, y + 19, "h", n.title);
+  if (n.contract) name.onclick = toggle("c:" + n.id);
+  let cx = x + PAD + textWidth(n.title, FONT_H) + 10;
+  chips(n).forEach(([letter, key]) => {
+    const on = open.has(key), c = el("g", { class: "chip" }, box);
+    el("rect", { x: cx, y: y + 8, width: CHIP, height: 15, rx: 3, fill: on ? "var(--teal)" : "#fff",
+                 stroke: "var(--teal)", "stroke-width": 1 }, c);
+    const t = text(c, cx + CHIP / 2, y + 19.5, "k", letter); t.setAttribute("text-anchor", "middle");
+    t.setAttribute("style", "font-family:Helvetica,Arial;font-size:10.5px;font-weight:700;fill:" + (on ? "#fff" : "var(--teal)"));
+    c.onclick = letter === "M" && on === false && states(n) && !inlineModel(n)
+      ? () => { open.add(key); render(); showModel(n); } : toggle(key);
+    cx += CHIP + 4; });
   if (n.badge) { const [m, col] = mark(n.badge.status);
-    const b = text(g, x + e.width - PAD, y + 18, "s", n.badge.text + " " + m);
+    const b = text(box, x + e.width - PAD, y + 19, "s", badgeText(n));
     b.setAttribute("text-anchor", "end"); b.setAttribute("fill", col); }
-  header(n).ls.forEach(([c, s, key], i) => { const t = text(g, x + PAD, y + HEAD + 12 + i * LINE, c, s);
-    if (key) t.onclick = toggle(key); });
+  size(n).ls.forEach(([k, letter, s], i) => {
+    const ty = y + HEAD + 12 + i * LINE;
+    if (k === "f") {
+      if (letter) { el("rect", { x: x + PAD, y: ty - 10.5, width: 13, height: 13, rx: 3,
+                                 fill: letter === "A" ? "#7a8b8c" : "var(--teal)" }, box);
+                    const t = text(box, x + PAD + 6.5, ty, "k", letter); t.setAttribute("text-anchor", "middle");
+                    t.setAttribute("style", "font-family:Helvetica,Arial;font-size:9.5px;font-weight:700;fill:#fff"); }
+      text(box, x + PAD + 20, ty, "f", s); }
+    else text(box, x + PAD, ty, "s", s); });
   (e.ports || []).forEach(p => {
     el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
     (p.labels || []).forEach(l => text(g, x + p.x + l.x, y + p.y + l.y + 10, "w", l.text)); });
@@ -518,16 +601,38 @@ function drawNode(g, e, ox, oy) {
     const c = (e.children || []).find(c => c.id === w.open[0]); if (!c) return;
     const p = (c.ports || []).find(p => p.id === w.open[0] + ":in:" + w.var); if (!p) return;
     const px = x + c.x + p.x, py = y + c.y + p.y + PORT / 2;
-    el("line", { x1: px - 22, y1: py, x2: px, y2: py, stroke: "var(--bad)", "stroke-width": 2 }, g);
-    const t = text(g, px - 24, py - 4, "w", "open"); t.setAttribute("text-anchor", "end"); t.setAttribute("fill", "var(--bad)"); });
+    el("line", { x1: px - 26, y1: py, x2: px, y2: py, stroke: "var(--warn)", "stroke-width": 1.6,
+                 "stroke-dasharray": "4 3" }, g);
+    const t = text(g, px - 28, py - 4, "w", "not driven"); t.setAttribute("text-anchor", "end");
+    t.setAttribute("fill", "var(--warn)"); });
 }
 
+const KIND = {};       // the type of the variable of each wire, by the id of the wire
 function drawEdge(g, ed, ox, oy) {
+  const k = KIND[ed.id];
   (ed.sections || []).forEach(s => {
-    const pts = [s.startPoint, ...(s.bendPoints || []), s.endPoint].map(p => (ox + p.x) + "," + (oy + p.y));
-    el("polyline", { points: pts.join(" "), fill: "none", stroke: "var(--soft)", "stroke-width": 1.2,
-                     "marker-end": "url(#arrow)" }, g); });
+    const pts = [s.startPoint, ...(s.bendPoints || []), s.endPoint];
+    el("polyline", { points: pts.map(p => (ox + p.x) + "," + (oy + p.y)).join(" "), fill: "none",
+                     stroke: "var(--soft)", "stroke-width": k && k.bus ? 2.6 : k ? 2 : 1.2,
+                     "marker-end": "url(#arrow)" }, g);
+    if (k && k.bus) {         // a bus: a slash and its width, in the middle of its longest segment
+      let a = pts[0], b = pts[1] || pts[0];
+      for (let i = 0; i + 1 < pts.length; i++)
+        if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
+      const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
+      el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--soft)", "stroke-width": 1.4 }, g);
+      text(g, mx + 3, my - 7, "w", String(k.bus));
+    } });
   (ed.labels || []).forEach(l => text(g, ox + l.x, oy + l.y + 10, "w", l.text));
+}
+
+function svgIn(container, width, height) {
+  container.innerHTML = "";
+  const svg = el("svg", { width: width + 40, height: height + 40 }, container);
+  const m = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 8,
+                           markerHeight: 8, markerUnits: "userSpaceOnUse", orient: "auto" }, el("defs", {}, svg));
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--soft)" }, m);
+  return el("g", { transform: "translate(20,20)" }, svg);
 }
 
 // ELK does not keep the minimum width of a box with boxes inside: a second
@@ -535,30 +640,54 @@ function drawEdge(g, ed, ox, oy) {
 function narrow(e, todo) {
   const n = byId[e.id];
   if (n && n.kind !== "state" && e.children && e.children.length) {
-    const need = header(n).w - e.width;
+    const need = size(n).w - e.width;
     if (need > 1) { widen[n.id] = (widen[n.id] || 0) + need; todo.push(n.id); }
   }
   (e.children || []).forEach(c => narrow(c, todo));
 }
-async function layout() {
-  return new ELK().layout({ id: "root", children: DATA.nodes.map(toElk), edges: [],
-    layoutOptions: { "elk.algorithm": "layered", "elk.direction": "DOWN",
-      "elk.hierarchyHandling": "INCLUDE_CHILDREN", "elk.spacing.nodeNode": "40" } });
+function layout() {
+  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i)), edges: [],
+    // with INCLUDE_CHILDREN, every level takes the direction of the root
+    layoutOptions: Object.assign({ "elk.algorithm": "layered", "elk.direction": "RIGHT",
+      "elk.hierarchyHandling": "INCLUDE_CHILDREN" }, FLOW, { "elk.spacing.nodeNode": "40" }) });
 }
 async function render() {
+  widen = {};
   let out = await layout();
   for (let pass = 0; pass < 3; pass++) {
     const todo = []; (out.children || []).forEach(c => narrow(c, todo));
     if (!todo.length) break;
     out = await layout();
   }
-  const view = document.getElementById("view"); view.innerHTML = "";
-  const svg = el("svg", { width: out.width + 40, height: out.height + 40 }, view);
-  const m = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7,
-                           markerHeight: 7, orient: "auto" }, el("defs", {}, svg));
-  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--soft)" }, m);
-  const g = el("g", { transform: "translate(20,20)" }, svg);
+  const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
+}
+
+// A model with many states is shown over the page as a table: each state,
+// and the states it moves to, with the inputs that take each move. A graph
+// of so many states, with free inputs, is a tangle.
+function showModel(n) {
+  const f = n.model.fsm, label = {};
+  f.states.forEach(st => { label[st.id] = st.label; });
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  let rows = "";
+  f.states.forEach(st => {
+    const moves = f.edges.filter(e => e.from === st.id);
+    rows += moves.map((e, i) => "<tr>" + (i ? "" : "<td rowspan='" + moves.length + "' class='st'>"
+        + (st.init ? "<b>→ </b>" : "") + esc(st.label) + "</td>")
+      + "<td class='to'>" + esc(label[e.to]) + "</td><td class='when'>"
+      + esc(e.label || (f.inputs_in_state ? "" : "any input")) + "</td></tr>").join("");
+  });
+  document.getElementById("poptitle").textContent = n.title + ": model " + n.model.name + ", "
+    + f.count + (f.inputs_in_state ? " states (a state lists the variables that are 1, the inputs among them: a move needs no condition)"
+                                   : " states (a state lists the registers that are 1)");
+  document.getElementById("popview").innerHTML = "<table class='fsm'><tr><th>state</th><th>next state</th>"
+    + "<th>when the inputs are</th></tr>" + rows + "</table>";
+  document.getElementById("pop").style.display = "flex";
+}
+function closePop() {
+  document.getElementById("pop").style.display = "none";
+  Object.values(byId).forEach(n => open.delete("m:" + n.id)); render();
 }
 render().catch(e => { document.getElementById("view").textContent = "Cannot draw the diagram: " + e; });
 </script>

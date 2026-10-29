@@ -279,4 +279,4 @@ def _controller(controller: dict, max_states: int) -> dict:
     states = [{"id": f"s{k}", "label": label(v), "init": False} for k, v in nodes.items()]
     edges = [{"from": f"s{k}", "to": f"s{t}", "label": ""}
              for k, v in nodes.items() for t in v["trans"]]
-    return {"states": states, "edges": edges, "count": len(nodes)}
+    return {"states": states, "edges": edges, "count": len(nodes), "inputs_in_state": True}

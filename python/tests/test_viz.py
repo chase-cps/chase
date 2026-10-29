@@ -56,7 +56,7 @@ def test_refinement_is_drawn_as_nesting():
     d = viz.diagram(ab, top, refines=[(ab, top, "valid")])
     group = d["nodes"][0]
     assert group["title"] == "Top" and group["contract"]["G"] == ["G (x -> z)"]
-    assert group["badge"] == {"text": "the decomposition refines it", "status": "valid"}
+    assert group["badge"] == {"text": "refines it", "status": "valid"}
     # a single contract: inside the box of the other one, wired by name
     other = Contract.from_strings(name="A2", inputs=["x"], outputs=["y"], guarantees=["G y"])
     box = viz.diagram(refines=[(other, a, "invalid")])["nodes"][0]
@@ -111,6 +111,12 @@ def test_state_graphs_of_models():
     assert {(e["from"], e["to"], e["label"]) for e in g["edges"]} == {
         ("off", "on", "x"), ("on", "off", "/ y=1")}
     assert _cover([(0, 1), (1, 1)], ["a", "b"]) == "b"
+    # the types of the ports: a bus of 8 bits, an integer range, a real
+    w = Contract.from_strings(name="Wd", inputs={"d": "word[8]", "n": (0, 5)},
+                              outputs={"r": "real", "b": "bool"}, guarantees=["G (r >= 0.0)"])
+    types = viz.diagram(w)["nodes"][0]["types"]
+    assert types == {"d": {"label": "[7:0]", "bus": 8}, "n": {"label": "0..5"},
+                     "r": {"label": "real"}}
     assert _cover([(0, 0), (0, 1), (1, 0), (1, 1)], ["a", "b"]) == ""
 
 
