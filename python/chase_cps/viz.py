@@ -936,6 +936,19 @@ function columns(n) {
   order.forEach(id => { col[id] = col[id] || 0; next[id].forEach(t => { col[t] = Math.max(col[t] || 0, col[id] + 1); }); });
   return col;
 }
+// The groups of boxes inside n that are wired to each other (the ports of
+// n left out): null when there is one group, or when n stacks viewpoints.
+function bands(n) {
+  if (n.layout === "stack" || n.children.length < 2) return null;
+  const up = {};
+  const root = id => up[id] === id ? id : (up[id] = root(up[id]));
+  n.children.forEach(c => { up[c.id] = c.id; });
+  (n.edges || []).forEach(w => { if (w.from && w.from[0] && w.to[0] && w.from[0] in up && w.to[0] in up)
+    up[root(w.from[0])] = root(w.to[0]); });
+  const rows = new Map();
+  n.children.forEach(c => { const r = root(c.id); if (!rows.has(r)) rows.set(r, []); rows.get(r).push(c); });
+  return rows.size > 1 ? [...rows.values()] : null;
+}
 function toElk(n, column, row) {
   const sz = size(n);
   const base = { id: n.id, ports: ports(n), x: (column || 0) * 600, y: (row || 0) * 40,
@@ -944,11 +957,25 @@ function toElk(n, column, row) {
       "elk.nodeSize.minimum": "(" + sz.w + "," + Math.max(sz.h, (Math.max((n.inputs || []).length, (n.outputs || []).length) + 1) * 17) + ")" } };
   if (!inside(n) || folded.has(n.id)) { base.width = sz.w; base.height = sz.h; return base; }
   const col = columns(n);
-  base.children = n.children.map((c, i) => toElk(c, col[c.id], i));
-  base.edges = (n.edges || []).filter(w => !w.open).map((w, i) => {
+  const edges = (n.edges || []).filter(w => !w.open).map((w, i) => {
     const id = n.id + ":e" + i; KIND[id] = typeOf(n, w.var);
-    return { id, sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
+    return { id, w, sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
              targets: [(w.to[0] || n.id) + ":" + w.to[1] + ":" + w.to[2]] }; });
+  const strip = es => es.map(({ w, ...ed }) => ed);
+  const rows = bands(n);
+  if (!rows) {
+    base.children = n.children.map((c, i) => toElk(c, col[c.id], i));
+    base.edges = strip(edges);
+  } else {                     // each group of connected boxes in a row of its own, laid out apart
+    base.children = rows.map((cs, r) => {
+      const ids = new Set(cs.map(c => c.id));
+      return { id: n.id + ":row" + r, x: 0, y: r * 40, children: cs.map((c, i) => toElk(c, col[c.id], i)),
+               edges: strip(edges.filter(ed => ids.has(ed.w.from[0]) && ids.has(ed.w.to[0]))),
+               layoutOptions: Object.assign({}, FLOW, { "elk.padding": "[top=0,left=0,bottom=0,right=0]",
+                                                        "elk.alignment": "LEFT" }) };
+    });
+    base.edges = strip(edges.filter(ed => !ed.w.from[0] || !ed.w.to[0]));   // to and from the ports of n
+  }
   Object.assign(base.layoutOptions, FLOW, {
     "elk.padding": "[top=" + (sz.h + 10) + ",left=28,bottom=18,right=" + (28 + (widen[n.id] || 0)) + "]" });
   return base;
@@ -993,6 +1020,11 @@ const STYLE = {
   environment: { rx: 2, fill: "var(--fill)", stroke: "var(--soft)", width: 1.4, dash: "none" } };
 
 function drawNode(g, e, ox, oy) {
+  if (!byId[e.id]) {          // a row of boxes: nothing to draw of its own
+    (e.children || []).forEach(c => drawNode(g, c, ox + e.x, oy + e.y));
+    (e.edges || []).forEach(ed => drawEdge(g, ed, ox + e.x, oy + e.y));
+    return;
+  }
   const n = byId[e.id], x = ox + e.x, y = oy + e.y, sz = size(n);
   const box = el("g", { "data-box": n.id }, g);
   const st = n.kind === "group" && n.badge ? Object.assign({}, STYLE.group, { stroke: "var(--teal)", width: 1.2 })
@@ -1059,9 +1091,15 @@ function drawNode(g, e, ox, oy) {
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
   if (folded.has(n.id)) return;
   (n.edges || []).filter(w => w.open).forEach(w => {
-    const c = (e.children || []).find(c => c.id === w.open[0]); if (!c) return;
+    let c = null, dx = 0, dy = 0;              // the box, directly inside or in a row
+    for (const k of e.children || []) {
+      if (k.id === w.open[0]) { c = k; break; }
+      const inRow = (k.children || []).find(cc => cc.id === w.open[0]);
+      if (!byId[k.id] && inRow) { c = inRow; dx = k.x; dy = k.y; break; }
+    }
+    if (!c) return;
     const p = (c.ports || []).find(p => p.id === w.open[0] + ":in:" + w.var); if (!p) return;
-    const px = x + c.x + p.x, py = y + c.y + p.y + PORT / 2;
+    const px = x + dx + c.x + p.x, py = y + dy + c.y + p.y + PORT / 2;
     el("line", { x1: px - 26, y1: py, x2: px, y2: py, stroke: "var(--warn)", "stroke-width": 1.4,
                  "stroke-dasharray": "4 3" }, g);
     const t = text(g, px - 28, py - 4, "w", "not driven"); t.setAttribute("text-anchor", "end");
