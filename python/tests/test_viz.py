@@ -4,8 +4,19 @@ origin of the results of the algebra, and the state graphs of models."""
 import json
 import re
 
-from chase_cps import Component, Contract, Model, System, viz
+import pytest
+
+from chase_cps import Component, Contract, Model, Result, System, Verification, viz
 from chase_cps.cli import main
+from chase_cps.backends import ADAPTERS
+from chase_cps.logic import Core
+
+HAS_MC = ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()
+try:
+    from chase_cps import _native  # noqa: F401
+    HAS_SLUGS = ADAPTERS["slugs"].available()
+except ImportError:
+    HAS_SLUGS = False
 from chase_cps.explicit import _cover, state_graph
 
 
@@ -65,6 +76,12 @@ def test_refinement_is_drawn_as_nesting():
     # every box has its own id
     every = list(ids(d["nodes"]))
     assert len(every) == len(set(every))
+    # a chain: each box inside the one it refines, drawn once
+    a3 = Contract.from_strings(name="A3", inputs=["x"], outputs=["y"], guarantees=["G y"])
+    chain = viz.diagram(refines=[(a3, other, "valid"), (other, a, "valid")])["nodes"]
+    assert len(chain) == 1 and chain[0]["title"] == "A"
+    assert chain[0]["children"][0]["title"] == "A2"
+    assert chain[0]["children"][0]["children"][0]["title"] == "A3"
 
 
 def test_a_quotient_is_a_hole_that_holds_what_refines_it():
@@ -101,6 +118,53 @@ def test_a_system_marks_its_components_and_open_inputs():
     assert group["title"] == "Top"                    # the system, inside its contract
 
 
+def test_checks_and_cores_are_marked_on_the_box():
+    c = Contract.from_strings(name="C", inputs=["x"], outputs=["y", "z"], assumptions=["G F x"],
+                              guarantees=["G (x -> y)", "G z", "G (x -> !y)"])
+    core = Contract("C_core", dict(c.inputs), dict(c.outputs), c.assumptions[:1],
+                    [c.guarantees[0], c.guarantees[2]])
+    v = Verification(Result("sat"), Result("sat"), Result("unsat", core=Core("found", core)))
+    node = viz.diagram(c, checks=[(c, v), (c, Result("realizable"))])["nodes"][0]
+    assert [(k["name"], k["status"]) for k in node["checks"]] == [
+        ("A and G together", "invalid"), ("compatible", "valid"), ("consistent", "valid"),
+        ("unsat core", "core"), ("realizable", "valid")]
+    assert node["contract"]["core"] == {"A": [0], "G": [0, 2], "kind": "unsat core"}
+    # an unrealizable core keeps all the assumptions: only its guarantees are marked
+    r = Result("unrealizable", core=Core("found", Contract("C_core", dict(c.inputs), dict(c.outputs),
+                                                           list(c.assumptions), [c.guarantees[1]])))
+    node = viz.diagram(c, checks=[(c, r)])["nodes"][0]
+    assert node["contract"]["core"] == {"A": [], "G": [1], "kind": "unrealizable core"}
+    assert node["checks"][0] == {"name": "realizable", "status": "invalid", "reason": ""}
+    # a check on the contract of a component goes to the box of the component
+    m = Model.from_dict({"name": "M", "inputs": {"x": "bool"}, "outputs": {"y": "bool"},
+                         "states": ["s"], "transitions": [{"from": "s", "to": "s"}]})
+    k = Component("K", c, m)
+    s = System("S", [k])
+    group = viz.diagram(s, checks=[(c, "compatible", "sat")])["nodes"][0]
+    assert group["children"][0]["checks"] == [{"name": "compatible", "status": "valid", "reason": ""}]
+
+
+def test_environments_drive_the_inputs_and_the_context_is_kept():
+    a, b, top = contracts()
+    s = System("S", [Component("a", a), Component("b", b)], contract=top)
+    pulse = Model.from_dict({"name": "Pulse", "inputs": {}, "outputs": {"x": "bool"},
+                             "states": ["lo", "hi"], "initial": "lo",
+                             "transitions": [{"from": "lo", "outputs": {"x": False}, "to": "hi"},
+                                             {"from": "hi", "outputs": {"x": True}, "to": "lo"}]})
+    d = viz.diagram(s, a, environments=[(pulse, s, "valid"), ("G F x", a)], context="G !(x & y)")
+    kinds = [(n["kind"], n["title"]) for n in d["nodes"]]
+    assert kinds == [("environment", "Environment"), ("group", "Top"),
+                     ("environment", "Environment"), ("contract", "A")]
+    env, system = d["nodes"][0], d["nodes"][1]
+    assert env["outputs"] == ["x"] and env["model"]["fsm"]["count"] == 2
+    assert env["badge"] == {"text": "satisfies A", "status": "valid"}
+    assert d["nodes"][2]["contract"]["E"] == ["G F x"]
+    assert {"from": [env["id"], "out", "x"], "to": [system["id"], "in", "x"], "var": "x"} in d["edges"]
+    assert d["context"] == ["G !(x & y)"]
+    named = viz.diagram(a, environments=[(Component("Pulse", None, pulse), a)])
+    assert named["nodes"][0]["title"] == "Pulse"
+
+
 def test_state_graphs_of_models():
     m = Model.from_dict({"name": "T", "inputs": {"x": "bool"}, "outputs": {"y": "bool"},
                          "states": ["off", "on"], "initial": "off",
@@ -131,3 +195,25 @@ def test_the_page_and_the_command_line(tmp_path):
                  "-o", str(out)]) == 0
     d = data(out.read_text())
     assert len(d["nodes"]) == 1 and d["nodes"][0]["title"] == "Top"
+
+
+@pytest.mark.skipif(not (HAS_MC and HAS_SLUGS), reason="nuXmv/NuSMV or slugs not installed")
+def test_the_command_line_marks_the_checks_and_draws_environments(tmp_path):
+    greedy = Contract.from_strings(name="Greedy", inputs=["r1", "r2"], outputs=["g1", "g2"],
+                                   guarantees=["G !(g1 & g2)", "G (r1 -> g1)", "G (r2 -> g2)"])
+    spec = tmp_path / "s.json"
+    spec.write_text(json.dumps({"contracts": [greedy.to_dict()]}))
+    env = tmp_path / "env.json"
+    env.write_text(json.dumps({"name": "Requests", "inputs": {}, "outputs": {"r1": "bool", "r2": "bool"},
+                               "states": ["s"], "transitions": [{"from": "s", "to": "s",
+                                                                 "outputs": {"r1": True, "r2": False}}]}))
+    out = tmp_path / "s.html"
+    assert main(["view", str(spec), "--verify", "--realizable", "--environment", str(env), "Greedy",
+                 "--check", "-o", str(out)]) == 0
+    d = data(out.read_text())
+    env_box, box = d["nodes"]
+    assert env_box["kind"] == "environment" and env_box["badge"]["status"] == "valid"
+    assert [(k["name"], k["status"]) for k in box["checks"]] == [
+        ("compatible", "valid"), ("consistent", "valid"), ("realizable", "invalid"),
+        ("unrealizable core", "core")]
+    assert box["contract"]["core"]["G"] == [0, 1, 2]

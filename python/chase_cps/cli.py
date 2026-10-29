@@ -314,10 +314,22 @@ def view(args) -> int:
             a, b = get(low), get(high)
             status = None
             if args.check:
-                from .checks import refines
-                status = refines(a, b, timeout=args.timeout).status
+                status = checks.refines(a, b, timeout=args.timeout).status
             pairs.append((a, b, status))
-        return viz.html(viz.diagram(*items, refines=pairs, title=os.path.basename(args.file)))
+        marks = []
+        for c in items:
+            if args.verify:
+                marks.append((c, checks.verify(c, core=True, timeout=args.timeout)))
+            if args.realizable:
+                marks.append((c, gr1.is_realizable(c, core=True, timeout=args.timeout)))
+        environments = []
+        for path, name in args.environment or []:
+            c = get(name)
+            m = _model(path, c)
+            status = checks.is_environment(m, c, timeout=args.timeout).status if args.check else None
+            environments.append((m, c, status))
+        return viz.html(viz.diagram(*items, refines=pairs, checks=marks, environments=environments,
+                                    title=os.path.basename(args.file)))
 
     if not args.serve:
         try:
@@ -412,8 +424,18 @@ def main(argv: list[str] | None = None) -> int:
                    help="the contracts to draw (default: all)")
     p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
                    help="draw ABSTRACT above REFINED (may be repeated)")
+    p.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+                   help="draw the state machine in MODEL as an environment of CONTRACT, on "
+                        "its left (may be repeated)")
     p.add_argument("--check", action="store_true",
-                   help="check the refinements and mark them (nuXmv or NuSMV)")
+                   help="check the refinements and the environments, and mark them (nuXmv "
+                        "or NuSMV)")
+    p.add_argument("--verify", action="store_true",
+                   help="check that each contract drawn is compatible and consistent; when "
+                        "its terms cannot hold together, mark them")
+    p.add_argument("--realizable", action="store_true",
+                   help="check that each contract drawn is realizable (GR(1), slugs); when "
+                        "it is not, mark the guarantees of the core")
     p.add_argument("-o", "--output", help="the page to write (default: FILE with .html)")
     p.add_argument("--serve", action="store_true",
                    help="serve the page, and draw it again when the file changes")

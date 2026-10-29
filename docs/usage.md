@@ -724,6 +724,60 @@ environment breaks its justice assumptions, so these do not imply them; an
 assumption that the guarantees make hold does not matter in the game, but
 it does for A -> G.
 
+## Diagrams
+
+`chase_cps.viz` draws contracts, components, and systems as a web page:
+
+- A contract is a rounded box; a click on its name shows its assumptions
+  (A) and guarantees (G).
+- A component with a model (RTL, a state machine in JSON or SMV, or a
+  controller) is a square box; its model opens on its states and moves.
+- Refinement is nesting: a decomposition, or a contract, is drawn inside
+  the box of the contract it refines. A quotient is a hatched hole next to
+  the known parts, with what refines it inside.
+- An environment is a grey box on the left of what it drives.
+- The results of the checks are marks under the name of a box; the terms
+  of a core are marked in red.
+- The context of the checks is written above the diagram.
+
+The structure comes from the contracts: each result of the algebra
+remembers its operands (`Contract.origin`). The page lays the boxes out
+with ELK, loaded from a CDN.
+
+```python
+from chase_cps import Component, Contract, System, viz, verify, is_realizable, refines
+
+a = Contract.from_strings(name="A", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])
+b = Contract.from_strings(name="B", inputs=["y"], outputs=["z"], guarantees=["G (y -> z)"])
+top = Contract.from_strings(name="Top", inputs=["x"], outputs=["y", "z"],
+                            guarantees=["G (x -> X z)"])
+s = System("S", [Component("a", a), Component("b", b)], contract=top)
+s.check()                      # the composition against Top: drawn inside it
+q = top.divide(a, name="Q")    # what the part next to a must do
+greedy = Contract.from_strings(name="Greedy", inputs=["r1", "r2"], outputs=["g1", "g2"],
+                               guarantees=["G !(g1 & g2)", "G (r1 -> g1)", "G (r2 -> g2)"])
+k = "G !(r1 & r2)"             # the requests never come together
+d = viz.diagram(s, q, greedy,
+                refines=[(b, q, refines(b, q))],
+                checks=[(greedy, verify(greedy, context=k)), (greedy, is_realizable(greedy, core=True))],
+                environments=[("G F x", s)],
+                context=k)
+viz.save(d, "plan.html")       # viz.show(d) opens the browser; in Jupyter, a system draws itself
+```
+
+`checks` takes the result of `verify` (compatible, consistent), of
+`is_realizable` (realizable), any other result with a name, `(item, name,
+result)`, or a core; an unrealizable core marks the guarantees only, since
+it keeps all the assumptions. `environments` takes an LTL formula, a
+`Model`, or a `Component` whose implementation is the environment.
+
+On the command line, `chase-cps view FILE` writes the page of a
+specification; `--refines R A` draws R inside A, `--environment MODEL C`
+draws an environment, `--check` checks the refinements and the
+environments, `--verify` and `--realizable` mark the checks of each
+contract drawn, and `--serve` draws the page again whenever the file
+changes.
+
 ## Results
 
 The checks return a result with a `status`: `valid` or `invalid` for

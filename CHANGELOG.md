@@ -2,6 +2,18 @@
 
 ## Not released
 
+Added:
+
+- Diagrams (`chase_cps.viz`, `chase-cps view`): contracts, components and
+  systems drawn as a web page. Refinement is nesting, a quotient is a hole
+  with what refines it inside, a component opens on the states of its
+  model (RTL through Yosys, JSON, SMV, or a controller), an environment is
+  drawn on the left of what it drives, and the results of the checks and
+  the terms of a core are marked on the boxes. Each result of the algebra
+  remembers its operands (`Contract.origin`). `Component` and `System`
+  bind contracts to implementations; `System.check` checks each
+  implementation and the composition against the contract of the system.
+
 Fixed:
 
 - A negative constant (`w >= -0.8`, `n > -3`) made the operations computed

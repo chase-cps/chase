@@ -16,6 +16,12 @@ Four rules:
   refines the quotient is drawn inside the hole. Merging and conjunction
   stack their operands in one box.
 
+Around them: an environment is a box on the left that drives the inputs
+of what it is the environment of; the results of the checks of a box are
+marks under its name (compatible, consistent, realizable); a core is
+marked on the terms of the contract; the context of the checks is written
+above the diagram.
+
 The structure comes from the contracts themselves: each result of the
 algebra remembers how it was computed (``Contract.origin``). The page is
 drawn in the browser, laid out by ELK (the Eclipse Layout Kernel, loaded
@@ -23,6 +29,8 @@ from a CDN).
 
     from chase_cps import viz
     viz.save(viz.diagram(system, refines=[(text, q3, "valid")]), "plan.html")
+    viz.diagram(c, checks=[(c, verify(c, core=True)), (c, is_realizable(c, core=True))],
+                environments=[(env, c, is_environment(env, c))], context="G !(a & b)")
     viz.show(system)            # opens the browser
     system                      # in Jupyter, the diagram
 """
@@ -147,7 +155,9 @@ class _Scene:
 
     def component(self, k: Component) -> dict:
         if k.implementation is None:          # a contract with a name
-            return self.contract(k.contract, title=k.name)
+            node = self.contract(k.contract, title=k.name)
+            self.ids.setdefault(id(k), node["id"])
+            return node
         fsm = None
         try:
             from .explicit import state_graph
@@ -155,11 +165,13 @@ class _Scene:
         except Exception:                     # the diagram does without it
             fsm = None
         name = getattr(k.implementation, "name", None) or type(k.implementation).__name__
-        return self.box(k, types=_types(k.contract), kind="component", title=k.name,
+        node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
                         model={"name": name, "fsm": fsm},
                         badge={"text": "M implements C", "status": k.status},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
+        self.ids.setdefault(id(k.contract), self.ids[id(k)])
+        return node
 
     def system(self, s: System) -> dict:
         children = [self.component(k) for k in s.components]
@@ -174,6 +186,28 @@ class _Scene:
                         note=" || ".join(k.name for k in s.components), contract=None,
                         inputs=sorted(inputs), outputs=[], children=children,
                         edges=_wires(children, inputs))
+
+    def environment(self, env, target: dict, status) -> dict:
+        """An environment of the box target: it drives the inputs of target."""
+        from .models import as_model
+        name, impl = "Environment", env
+        if isinstance(env, Component):
+            name, impl = env.name, env.implementation
+        model = None if isinstance(impl, ltl.Node) else as_model(impl)
+        node = dict(kind="environment", title=name, inputs=[], outputs=list(target.get("inputs", [])),
+                    badge={"text": "satisfies A", "status": status})
+        if model is None:                   # a formula
+            from .logic import _formula
+            node["contract"] = {"name": name, "A": [], "G": [], "E": [ltl.to_str(_formula(impl))]}
+        else:
+            fsm = None
+            try:
+                from .explicit import state_graph
+                fsm = state_graph(model, inputs=target.get("outputs", []))
+            except Exception:
+                fsm = None
+            node["model"] = {"name": getattr(model, "name", None) or "model", "fsm": fsm}
+        return self.box(env, types=target.get("types"), **node)
 
     def node(self, obj) -> dict:
         if isinstance(obj, System):
@@ -193,6 +227,7 @@ class _Scene:
                 inner["composed"] = inner["contract"]
             inner.update(kind="group", title=high.name, contract=self.terms(high),
                          badge={"text": "refines it", "status": status})
+            self.ids.setdefault(id(high), inner["id"])
             return inner
         return self.box(high, types=_types(high), kind="contract", title=high.name,
                         contract=self.terms(high), inputs=sorted(high.inputs), outputs=sorted(high.outputs),
@@ -236,20 +271,94 @@ def _find(nodes: list, node_id: str):
     return None
 
 
-def diagram(*items, refines: Iterable = (), title: Optional[str] = None) -> dict:
+# Checks ------------------------------------------------------------------------------
+
+def _mark(result) -> str:
+    """valid, invalid, or unknown: whether the check holds."""
+    status = _status(result)
+    if status in (None, "unknown"):
+        return "unknown"
+    if isinstance(result, str):
+        return "valid" if status in ("valid", "sat", "realizable", "separated", "receptive",
+                                     "found") else "invalid"
+    return "valid" if bool(result) else "invalid"
+
+
+def _checks(r, name: Optional[str] = None) -> list:
+    """[(name, result)]: verify gives compatible and consistent (and
+    whether A and G can hold together, when they cannot), a GR(1) result
+    realizable; a Core, or a result that carries one, its core."""
+    from .checks import Verification
+    from .logic import Core
+    if isinstance(r, Verification):
+        out = [("compatible", r.compatible), ("consistent", r.consistent)]
+        if r.feasible is not None and not r.feasible:   # when they hold, A & G implies both
+            out.insert(0, ("A and G together", r.feasible))
+        core = next((x.core for x in (r.feasible, r.compatible, r.consistent)
+                     if x is not None and isinstance(x.core, Core) and x.core), None)
+        return out + ([("unsat core", core)] if core is not None else [])
+    if isinstance(r, Core):
+        return [(name or "unsat core", r)]
+    if name is None:
+        name = {"realizable": "realizable", "unrealizable": "realizable",
+                "separated": "well separated", "not_separated": "well separated",
+                "receptive": "receptive", "not_receptive": "receptive"}.get(_status(r), "check")
+    out = [(name, r)]
+    core = getattr(r, "core", None)
+    if isinstance(core, Core) and core:
+        out.append(("unrealizable core" if name == "realizable" else "unsat core", core))
+    return out
+
+
+def _core(node: dict, core, kind: str) -> bool:
+    """Marks the terms of the core in the contract of the box, or in its
+    composed contract; False when they are not there. All the assumptions
+    are in an unrealizable core: only its guarantees are marked."""
+    c = core.core
+    if isinstance(c, Contract):
+        want = {"A": {ltl.to_str(t) for t in c.assumptions} if kind != "unrealizable core" else set(),
+                "G": {ltl.to_str(t) for t in c.guarantees}}
+    else:                                   # formulas, assumptions or guarantees
+        fs = {ltl.to_str(t) for t in c or []}
+        want = {"A": fs, "G": fs}
+    for key in ("contract", "composed"):
+        terms = node.get(key)
+        if not terms:
+            continue
+        hit = {p: [i for i, t in enumerate(terms[p]) if t in want[p]] for p in "AG"}
+        found = {terms[p][i] for p in "AG" for i in hit[p]}
+        if found and found >= want["A"] | want["G"]:
+            terms["core"] = dict(hit, kind=kind)
+            return True
+    return False
+
+
+def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
+            context=None, title: Optional[str] = None) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
     refined one is drawn inside the abstract one, or inside the hole when
     the abstract one is a quotient. A system with a contract is drawn inside
-    its contract."""
+    its contract.
+
+    ``checks`` lists (item, result) or (item, name, result): the result of
+    ``verify`` (compatible, consistent), of ``is_realizable`` (realizable),
+    any other result under its name, or a ``Core``, whose terms are marked
+    in the contract ("unsat core", or "unrealizable core" for the result of
+    ``unrealizable_core``). ``environments`` lists (environment, item) or
+    (environment, item, status): an LTL formula, a Model, or a Component
+    whose implementation is the environment, drawn on the left of the item
+    and driving its inputs; the status is that of ``is_environment``. The
+    ``context`` of the checks (a formula or a list of formulas) is written
+    above the diagram."""
     scene = _Scene()
-    nodes, top = [], {}
+    nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
 
     def add(obj):
         if id(obj) not in top:
             node = scene.node(obj)
-            top[id(obj)] = node
+            top[id(obj)] = own[id(obj)] = node
             nodes.append(node)
         return top[id(obj)]
 
@@ -276,11 +385,49 @@ def diagram(*items, refines: Iterable = (), title: Optional[str] = None) -> dict
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
             hole["badge"] = {"text": f"{inner['title']} refines it", "status": status}
             continue
-        inner = top.pop(id(low), None) or scene.node(low)
+        inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
+            (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
         wrapped = scene.wrap(inner, high, status)
         replace(inner, wrapped)
         top[id(low)] = wrapped
-    return {"title": title or "CHASE", "nodes": nodes}
+
+    def box_of(obj) -> dict:              # an item drawn on its own first, then inside others
+        if id(obj) in own:
+            return own[id(obj)]
+        if id(obj) not in scene.ids:
+            return add(obj)
+        return _find(nodes, scene.ids[id(obj)])
+
+    for c in checks:
+        obj, name, r = (c[0], None, c[1]) if len(c) == 2 else c
+        node = box_of(obj)
+        for n, res in _checks(r, name):
+            if n.endswith("core"):
+                if not _core(node, res, n):
+                    raise ValueError(f"the terms of the core are not those of {node['title']}")
+                node.setdefault("checks", []).append({"name": n, "status": "core"})
+            else:
+                node.setdefault("checks", []).append(
+                    {"name": n, "status": _mark(res), "reason": getattr(res, "reason", "") or ""})
+
+    wires = []
+    for e in environments:
+        env, target = e[0], e[1]
+        status = _status(e[2]) if len(e) > 2 else None
+        node = box_of(target)
+        env_node = scene.environment(env, node, status)
+        outer = next(n for n in nodes if n is node or _find([n], node["id"]) is not None)
+        nodes.insert(nodes.index(outer), env_node)
+        if outer is node:                   # wires between boxes at the top only
+            wires += [{"from": [env_node["id"], "out", v], "to": [node["id"], "in", v], "var": v}
+                      for v in node.get("inputs", [])]
+        else:
+            env_node["badge"]["text"] = f"satisfies A of {node['title']}"
+    if context is not None:
+        from .logic import _formula
+        context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
+        context = [ltl.to_str(_formula(f)) for f in context]
+    return {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
 
 
 def html(item, **kwargs) -> str:
@@ -394,6 +541,9 @@ _PAGE = r"""<!doctype html>
           box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font-size:12px; color:var(--soft); display:none; z-index:11; }
   #help div { display:flex; gap:10px; align-items:center; margin:5px 0; }
   #help svg { flex:none; }
+  #context { margin:12px 18px 0; padding:7px 12px; border-left:3px solid var(--line); background:var(--fill);
+             font-size:12px; color:var(--soft); display:none; width:fit-content; max-width:calc(100% - 60px); }
+  #context .f { font:11.5px Menlo, Monaco, monospace; color:var(--ink); margin-left:8px; }
   #view { overflow:auto; padding:18px; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
@@ -423,10 +573,12 @@ _PAGE = r"""<!doctype html>
     <label><input type="checkbox" checked onchange="show.ports = this.checked; render()">ports</label>
     <label><input type="checkbox" checked onchange="show.types = this.checked; render()">types</label>
     <label><input type="checkbox" checked onchange="show.conditions = this.checked; for (const k in MODELS) delete MODELS[k]; render()">conditions</label>
+    <label><input type="checkbox" checked onchange="show.checks = this.checked; render()">checks</label>
     <span class="sep"></span>
     <button onclick="help()">?</button>
   </span></header>
 <div id="help"></div>
+<div id="context"></div>
 <div id="view"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
@@ -437,7 +589,7 @@ const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
       FONT_S = "11px Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
-const show = { ports: true, types: true, conditions: true };
+const show = { ports: true, types: true, conditions: true, checks: true };
 
 // What is open: the contract ("c:"), the computed composition ("k:"), and
 // the model ("m:") of each box. At first, only the names show.
@@ -469,15 +621,25 @@ function wrap(f) {
   }
   out.push(rest); return out;
 }
-function terms(c, out) {     // each part opens with a tag, A or G
-  c.A.forEach((a, j) => wrap(a).forEach((l, i) => out.push(["f", i || j ? "" : "A", l])));
-  (c.G.length ? c.G : ["true"]).forEach((g, j) => wrap(g).forEach((l, i) => out.push(["f", i || j ? "" : "G", l])));
+// Each part opens with a tag: A (assumes), G (guarantees), E (an environment).
+// The terms of a core are marked.
+function terms(c, out) {
+  const core = c.core || { A: [], G: [] };
+  const part = (tag, fs, hit) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
+    out.push(["f", i || j ? "" : tag, l, hit.includes(j)])));
+  part("A", c.A, core.A);
+  if (c.E) part("E", c.E, []);
+  else part("G", c.G.length ? c.G : ["true"], core.G);
+  if (c.core) out.push(["s", "", c.core.kind === "unrealizable core"
+    ? "marked: guarantees that no component can meet together, under the assumptions"
+    : "marked: terms that cannot hold together", true]);
 }
 
 // The lines under the name: [kind, tag, text]
 function lines(n) {
   const out = [];
   if (n.note) out.push(["s", "", n.note]);
+  if (show.checks && n.checks) out.push(["k", "", n.checks]);
   if (n.contract && open.has("c:" + n.id)) {
     if (n.composed) out.push(["s", "", "the contract " + n.contract.name]);
     terms(n.contract, out);
@@ -488,7 +650,9 @@ function lines(n) {
   }
   return out;
 }
-const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
+const checkText = c => c.status === "core" ? c.name : c.name + " " + mark(c.status)[0];
+const lineWidth = ([k, tag, t]) => k === "k" ? t.reduce((w, c) => w + textWidth(checkText(c), FONT_S) + 16, 0)
+  : (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
 
 function icons(n) {
   const out = [];
@@ -590,7 +754,8 @@ const STYLE = {
   contract:  { rx: 10, fill: "#fff", stroke: "var(--teal)", width: 1.2, dash: "none" },
   component: { rx: 2, fill: "#fff", stroke: "var(--ink)", width: 1.8, dash: "none" },
   group:     { rx: 10, fill: "var(--fill)", stroke: "var(--line)", width: 1, dash: "none" },
-  hole:      { rx: 10, fill: "url(#hatch)", stroke: "var(--teal)", width: 1.2, dash: "5 4" } };
+  hole:      { rx: 10, fill: "url(#hatch)", stroke: "var(--teal)", width: 1.2, dash: "5 4" },
+  environment: { rx: 2, fill: "var(--fill)", stroke: "var(--soft)", width: 1.4, dash: "none" } };
 
 function drawNode(g, e, ox, oy) {
   const n = byId[e.id], x = ox + e.x, y = oy + e.y, sz = size(n);
@@ -599,7 +764,7 @@ function drawNode(g, e, ox, oy) {
                                            : STYLE[n.kind] || STYLE.contract;
   el("rect", { x, y, width: e.width, height: e.height, rx: st.rx, fill: st.fill, stroke: st.stroke,
                "stroke-width": st.width, "stroke-dasharray": st.dash }, box);
-  if (n.kind === "component") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
+  if (n.kind === "component" || n.kind === "environment") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
   const name = text(box, x + PAD, y + 18, "h", n.title);
   if (n.contract) name.onclick = toggle("c:" + n.id);
@@ -611,15 +776,28 @@ function drawNode(g, e, ox, oy) {
   if (n.badge) { const [m, col] = mark(n.badge.status);
     const b = text(box, x + e.width - PAD, y + 18, "s", badgeText(n));
     b.setAttribute("text-anchor", "end"); b.setAttribute("fill", col); }
-  sz.ls.forEach(([k, tag, s], i) => {
+  sz.ls.forEach(([k, tag, s, core], i) => {
     const ty = y + HEAD + 12 + i * LINE;
-    if (k === "f") {
+    if (k === "k") {             // the checks: a name and a mark each
+      let cx = x + PAD;
+      s.forEach(c => {
+        const [m, col] = c.status === "core" ? ["", "var(--bad)"] : mark(c.status), w = textWidth(checkText(c), FONT_S) + 10;
+        const g2 = el("g", {}, box);
+        el("rect", { x: cx, y: ty - 11, width: w, height: 15, rx: 7.5, fill: "#fff", stroke: col, "stroke-width": 0.9 }, g2);
+        const t = text(g2, cx + 5, ty, "s", checkText(c)); t.setAttribute("fill", col);
+        tip(g2, c.status === "core" ? c.name + ": the terms are marked in the contract"
+                                    : c.name + ": " + c.status + (c.reason ? " (" + c.reason + ")" : ""));
+        if (c.status === "core" && n.contract) { g2.setAttribute("class", "icon");
+          g2.onclick = () => { open.add("c:" + n.id); if (n.composed && n.composed.core) open.add("k:" + n.id); render(); }; }
+        cx += w + 6; });
+    } else if (k === "f") {
+      if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#fbeceb" }, box);
       if (tag) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3,
-                              fill: tag === "A" ? "#8a9a9b" : "var(--teal)" }, box);
+                              fill: core ? "var(--bad)" : tag === "A" ? "#8a9a9b" : tag === "E" ? "#7f8f6a" : "var(--teal)" }, box);
                  const t = text(box, x + PAD + 6.5, ty, "s", tag); t.setAttribute("text-anchor", "middle");
                  t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
-      text(box, x + PAD + 20, ty, "f", s); }
-    else text(box, x + PAD, ty, "s", s); });
+      const t = text(box, x + PAD + 20, ty, "f", s); if (core) t.setAttribute("style", "fill:var(--bad)"); }
+    else { const t = text(box, x + PAD, ty, "s", s); if (core) t.setAttribute("fill", "var(--bad)"); } });
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
     el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
@@ -720,8 +898,13 @@ function narrow(e, todo) {
   }
   (e.children || []).forEach(c => narrow(c, todo));
 }
+const ROOT = { id: "root", types: {}, children: DATA.nodes };
+function rootEdges() {      // from an environment to the box it drives
+  return (DATA.edges || []).map((w, i) => { const id = "root:e" + i; KIND[id] = typeOf(ROOT, w.var);
+    return { id, sources: [w.from.join(":")], targets: [w.to.join(":")] }; });
+}
 function layout() {
-  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i)), edges: [],
+  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i)), edges: rootEdges(),
     // with INCLUDE_CHILDREN, every level takes the direction of the root
     layoutOptions: Object.assign({ "elk.algorithm": "layered", "elk.direction": "RIGHT",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN", "elk.edgeRouting": "ORTHOGONAL" }, FLOW,
@@ -739,6 +922,7 @@ async function render() {
   }
   const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
+  (out.edges || []).forEach(ed => drawEdge(g, ed, 0, 0));
 }
 
 // A model with more states is shown in a panel, as a table of moves.
@@ -771,6 +955,8 @@ function help() {
   sample(s => el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 5, fill: "#fff", stroke: "#17393b" }, s), "a contract");
   sample(s => el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 1, fill: "#fff", stroke: "#1d2526", "stroke-width": 1.8 }, s),
          "a component with a model (an implementation)");
+  sample(s => { el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 1, fill: "#f5f7f7", stroke: "#667374", "stroke-width": 1.4 }, s); },
+         "an environment, driving the inputs of the box on its right");
   sample(s => { svgDefsHatch(s); el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 5, fill: "url(#hatchh)", stroke: "#17393b",
          "stroke-dasharray": "4 3" }, s); }, "the missing part of a quotient, with what refines it inside");
   sample(s => { el("rect", { x: 2, y: 2, width: 30, height: 16, rx: 5, fill: "#f5f7f7", stroke: "#17393b" }, s);
@@ -778,6 +964,12 @@ function help() {
          "a box inside a box refines it (✓ proven, ✗ not, ○ not checked)");
   [["contract", "the contract: A assumes, G guarantees"], ["composed", "the contract computed by the composition"],
    ["model", "the model: its states and moves"]].forEach(([k, s]) => sample(svg => icon(svg, k, 9, 2, false, s), s));
+  sample(s => { el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 7, fill: "#fff", stroke: "#2f7d4f", "stroke-width": 0.9 }, s);
+                text(s, 8, 14, "s", "✓").setAttribute("fill", "#2f7d4f"); },
+         "a check of the box: compatible, consistent, realizable");
+  sample(s => { el("rect", { x: 2, y: 4, width: 30, height: 12, rx: 3, fill: "#fbeceb" }, s);
+                el("rect", { x: 4, y: 5.5, width: 9, height: 9, rx: 2, fill: "#b03a2e" }, s); },
+         "a term of a core: the terms that make a check fail");
   sample(s => { el("line", { x1: 2, y1: 10, x2: 32, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
                 el("line", { x1: 13, y1: 15, x2: 21, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s); },
          "a bus (a bit vector), with its width");
@@ -790,6 +982,11 @@ function svgDefsHatch(s) {
   el("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "#dfe6e6", "stroke-width": 2 }, p);
 }
 
+if (DATA.context && DATA.context.length) {
+  const c = document.getElementById("context"), esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  c.innerHTML = "context of the checks (holds in each of them):" + DATA.context.map(f => "<div class='f'>" + esc(f) + "</div>").join("");
+  c.style.display = "block";
+}
 render().catch(e => { document.getElementById("view").textContent = "Cannot draw the diagram: " + e; });
 </script>
 __RELOAD__
