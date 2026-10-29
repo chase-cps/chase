@@ -9,6 +9,15 @@ New:
   assumptions of its contract that the other's do not imply; when the
   assumptions of one contract imply those of the other, the assumption is
   theirs and has no disjunction (with the same assumptions, (A, G1 & G2)).
+- Docker image published on ghcr.io/chase-cps/chase at each release
+  (`docker pull ghcr.io/chase-cps/chase`), without nuXmv, whose license does
+  not allow redistribution: the checks use NuSMV, built from its sources
+  without zChaff (LGPL), and `chase-cps install nuxmv --accept-license` adds
+  nuXmv in a container. The image also has Yosys (yowasp-yosys) and the
+  `chase-cps` command; the demo suite runs Charger, LMFSM, and AHB with
+  NuSMV, and BufferSwap.
+- `chase-cps install nusmv` says that the build of FBK is linked with
+  zChaff, for non-commercial use only.
 
 ## 0.4.1 (2026-10-28)
 

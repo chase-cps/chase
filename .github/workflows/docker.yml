@@ -1,0 +1,39 @@
+name: Docker
+
+# Builds the Docker image of CHASE without nuXmv (its license does not allow
+# redistribution: the checks use NuSMV, and `chase-cps install nuxmv
+# --accept-license` adds nuXmv in a container), runs the demo suite in it,
+# and on a tag v* pushes it to ghcr.io/chase-cps/chase with the version and
+# "latest". A manual run builds and tests without pushing.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build the image
+        run: docker build -t chase .
+
+      - name: Run the demos (NuSMV, without nuXmv)
+        run: docker run --rm chase /opt/chase/tests/demo-suite.sh
+
+      - name: Push to ghcr.io
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for t in "${GITHUB_REF_NAME#v}" latest; do
+            docker tag chase ghcr.io/chase-cps/chase:$t
+            docker push ghcr.io/chase-cps/chase:$t
+          done

@@ -50,5 +50,15 @@ build_boolean_model')" = "true true "
 else
     echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB (no nuXmv)"
 fi
+# NuSMV, as without nuXmv (the image published on ghcr.io); BufferSwap needs Yosys
+if command -v NuSMV >/dev/null; then
+    for d in Charger/charger.py LMFSM/fsm.py AHB/ahb.py; do
+        check "NuSMV: $d" "CHASE_BACKEND=nusmv python3 $d --expect"
+    done
+fi
+if command -v yosys >/dev/null || command -v yowasp-yosys >/dev/null; then
+    check "BufferSwap"            "python3 BufferSwap/bufferswap.py --expect"
+fi
+check "command line"          "chase-cps --version"
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail

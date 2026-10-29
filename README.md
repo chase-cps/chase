@@ -44,30 +44,36 @@ at once. Each module is developed in its own repository.
 
 ## Quick start
 
-The complete CHASE toolchain, including the gr1c, slugs, and nuXmv solvers,
-is available as a Docker image:
+The complete CHASE toolchain, with the gr1c, slugs, and NuSMV solvers,
+Yosys, and the demos, is available as a Docker image (for x86_64; on Apple
+Silicon, add `--platform linux/amd64`):
 
 ````
-$>  git clone --recursive https://github.com/chase-cps/chase
-$>  cd chase
-$>  docker build --build-arg ACCEPT_NUXMV_LICENSE=yes -t chase .
-$>  docker run --rm -it chase
+$>  docker pull ghcr.io/chase-cps/chase
+$>  docker run --rm -it ghcr.io/chase-cps/chase
 ````
-
-nuXmv may be used only for academic and non-commercial purposes (see its
-[license](https://nuxmv.fbk.eu/license.html)): it is installed in the image
-only with `--build-arg ACCEPT_NUXMV_LICENSE=yes`.
 
 The container starts in the directory of the demos. All the demos can be run
 and checked with:
 
 ````
-$>  docker run --rm chase /opt/chase/tests/demo-suite.sh
+$>  docker run --rm ghcr.io/chase-cps/chase /opt/chase/tests/demo-suite.sh
 ````
 
-nuXmv is distributed for Linux only for x86_64. On ARM machines (e.g., Apple
-Silicon), add `--platform linux/amd64` to the `docker build` and `docker run`
-commands to include it in the image.
+The image has no nuXmv: its license does not allow redistribution, and it
+may be used only for academic and non-commercial purposes (see its
+[license](https://nuxmv.fbk.eu/license.html)). Without it, the checks use
+NuSMV, which has no real variables and no IC3. In a container,
+`chase-cps install nuxmv --accept-license` installs it.
+
+The image can also be built from this repository, with nuXmv when its
+license is accepted:
+
+````
+$>  git clone --recursive https://github.com/chase-cps/chase
+$>  cd chase
+$>  docker build --build-arg ACCEPT_NUXMV_LICENSE=yes -t chase .
+````
 
 ## Installation from sources
 

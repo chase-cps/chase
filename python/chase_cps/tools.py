@@ -27,6 +27,12 @@ may not be modified or redistributed. The full license is at
 https://nuxmv.fbk.eu/license.html and in LICENSE.txt in the installed
 directory."""
 
+NUSMV_ZCHAFF = """\
+NuSMV is under the LGPL; the build of FBK installed here is also linked with
+the zChaff SAT solver, which may be used only for non-commercial purposes
+(NuSMV uses MiniSat unless sat_solver is set to zchaff). The Docker image of
+CHASE has a build of NuSMV without zChaff."""
+
 # (system, machine) -> (url, sha256, path of the executable in the archive)
 NUXMV = {
     ("Linux", "x86_64"): (
@@ -136,6 +142,8 @@ def install(tool: str, accept_license: bool = False, log=print) -> str:
         raise InstallError(NUXMV_LICENSE + "\nTo accept the license and install nuXmv, run "
                            "chase-cps install nuxmv --accept-license")
     url, sha256, member = table[(system, machine)]
+    if tool == "nusmv":
+        log(NUSMV_ZCHAFF)
     libs = _homebrew_libs() if tool == "nuxmv" and system == "Darwin" else None
     root = _download_and_unpack(tool, url, sha256, log)
     executable = os.path.join(root, member)
