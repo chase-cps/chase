@@ -8,8 +8,8 @@ Added:
   systems drawn as a web page. Refinement is nesting, a quotient is a hole
   with what refines it inside, a component opens on the states of its
   model (RTL through Yosys, JSON, SMV, or a controller), an environment is
-  drawn on the left of what it drives, and the results of the checks and
-  the terms of a core are marked on the boxes. Each result of the algebra
+  drawn on the left of what it drives, and the results of the checks are
+  tags on the boxes, with their cores. Each result of the algebra
   remembers its operands (`Contract.origin`). `Component` and `System`
   bind contracts to implementations; `System.check` checks each
   implementation and the composition against the contract of the system.

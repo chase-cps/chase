@@ -67,7 +67,7 @@ def test_refinement_is_drawn_as_nesting():
     d = viz.diagram(ab, top, refines=[(ab, top, "valid")])
     group = d["nodes"][0]
     assert group["title"] == "Top" and group["contract"]["G"] == ["G (x -> z)"]
-    assert group["badge"] == {"text": "refines it", "status": "valid"}
+    assert group["badge"] == {"text": "⊑", "status": "valid"}
     # a single contract: inside the box of the other one, wired by name
     other = Contract.from_strings(name="A2", inputs=["x"], outputs=["y"], guarantees=["G y"])
     box = viz.diagram(refines=[(other, a, "invalid")])["nodes"][0]
@@ -92,7 +92,7 @@ def test_a_quotient_is_a_hole_that_holds_what_refines_it():
     assert [c["kind"] for c in node["children"]] == ["contract", "hole"]
     hole = node["children"][1]
     assert hole["title"] == "Q" and [c["title"] for c in hole["children"]] == ["B"]
-    assert hole["badge"] == {"text": "B refines it", "status": "valid"}
+    assert hole["badge"] == {"text": "⊑", "status": "valid"}
 
 
 def test_merged_viewpoints_are_stacked_without_wires():
@@ -126,15 +126,14 @@ def test_checks_and_cores_are_marked_on_the_box():
     v = Verification(Result("sat"), Result("sat"), Result("unsat", core=Core("found", core)))
     node = viz.diagram(c, checks=[(c, v), (c, Result("realizable"))])["nodes"][0]
     assert [(k["name"], k["status"]) for k in node["checks"]] == [
-        ("A and G together", "invalid"), ("compatible", "valid"), ("consistent", "valid"),
-        ("unsat core", "core"), ("realizable", "valid")]
-    assert node["contract"]["core"] == {"A": [0], "G": [0, 2], "kind": "unsat core"}
-    # an unrealizable core keeps all the assumptions: only its guarantees are marked
+        ("A∧G", "invalid"), ("A", "valid"), ("G", "valid"), ("R", "valid")]
+    assert node["checks"][0]["core"] == {"A": [0], "G": [0, 2], "part": "contract"}
+    # an unrealizable core keeps all the assumptions: only its guarantees count
     r = Result("unrealizable", core=Core("found", Contract("C_core", dict(c.inputs), dict(c.outputs),
                                                            list(c.assumptions), [c.guarantees[1]])))
-    node = viz.diagram(c, checks=[(c, r)])["nodes"][0]
-    assert node["contract"]["core"] == {"A": [], "G": [1], "kind": "unrealizable core"}
-    assert node["checks"][0] == {"name": "realizable", "status": "invalid", "reason": ""}
+    mark = viz.diagram(c, checks=[(c, r)])["nodes"][0]["checks"][0]
+    assert mark == {"name": "R", "status": "invalid", "reason": "",
+                    "core": {"A": [], "G": [1], "part": "contract"}}
     # a check on the contract of a component goes to the box of the component
     m = Model.from_dict({"name": "M", "inputs": {"x": "bool"}, "outputs": {"y": "bool"},
                          "states": ["s"], "transitions": [{"from": "s", "to": "s"}]})
@@ -157,7 +156,7 @@ def test_environments_drive_the_inputs_and_the_context_is_kept():
                      ("environment", "Environment"), ("contract", "A")]
     env, system = d["nodes"][0], d["nodes"][1]
     assert env["outputs"] == ["x"] and env["model"]["fsm"]["count"] == 2
-    assert env["badge"] == {"text": "satisfies A", "status": "valid"}
+    assert env["badge"] == {"text": "E ⊨ A", "status": "valid"}
     assert d["nodes"][2]["contract"]["E"] == ["G F x"]
     assert {"from": [env["id"], "out", "x"], "to": [system["id"], "in", "x"], "var": "x"} in d["edges"]
     assert d["context"] == ["G !(x & y)"]
@@ -214,6 +213,5 @@ def test_the_command_line_marks_the_checks_and_draws_environments(tmp_path):
     env_box, box = d["nodes"]
     assert env_box["kind"] == "environment" and env_box["badge"]["status"] == "valid"
     assert [(k["name"], k["status"]) for k in box["checks"]] == [
-        ("compatible", "valid"), ("consistent", "valid"), ("realizable", "invalid"),
-        ("unrealizable core", "core")]
-    assert box["contract"]["core"]["G"] == [0, 1, 2]
+        ("A", "valid"), ("G", "valid"), ("R", "invalid")]
+    assert box["checks"][2]["core"]["G"] == [0, 1, 2]

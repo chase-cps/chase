@@ -735,10 +735,15 @@ it does for A -> G.
 - Refinement is nesting: a decomposition, or a contract, is drawn inside
   the box of the contract it refines. A quotient is a hatched hole next to
   the known parts, with what refines it inside.
-- An environment is a grey box on the left of what it drives.
-- The results of the checks are marks under the name of a box; the terms
-  of a core are marked in red.
-- The context of the checks is written above the diagram.
+- An environment is a grey box on the left of what it drives: the outside
+  of the design, checked against the assumptions only. Something that has a
+  contract of its own is a component.
+- The results of the checks are tags next to the name of a box: A
+  (compatible), G (consistent), A∧G (when the two cannot hold together), R
+  (realizable), M ⊨ C, E ⊨ A, and ⊑ (refines), green when the check holds,
+  red when it does not. A click on a red tag with a core keeps the terms of
+  the core and fades the others.
+- The context of the checks is a tag above the diagram.
 
 The structure comes from the contracts: each result of the algebra
 remembers its operands (`Contract.origin`). The page lays the boxes out
@@ -765,10 +770,10 @@ d = viz.diagram(s, q, greedy,
 viz.save(d, "plan.html")       # viz.show(d) opens the browser; in Jupyter, a system draws itself
 ```
 
-`checks` takes the result of `verify` (compatible, consistent), of
-`is_realizable` (realizable), any other result with a name, `(item, name,
-result)`, or a core; an unrealizable core marks the guarantees only, since
-it keeps all the assumptions. `environments` takes an LTL formula, a
+`checks` takes the result of `verify` (A, G, and A∧G), of `is_realizable`
+(R), any other result with a name, `(item, name, result)`, or a core; with
+`core=True`, the core comes with the check that fails. An unrealizable core
+shows the guarantees only, since it keeps all the assumptions. `environments` takes an LTL formula, a
 `Model`, or a `Component` whose implementation is the environment.
 
 On the command line, `chase-cps view FILE` writes the page of a

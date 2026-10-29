@@ -168,7 +168,7 @@ class _Scene:
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
                         model={"name": name, "fsm": fsm},
-                        badge={"text": "M implements C", "status": k.status},
+                        badge={"text": "M ⊨ C", "status": k.status},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
         return node
@@ -195,7 +195,7 @@ class _Scene:
             name, impl = env.name, env.implementation
         model = None if isinstance(impl, ltl.Node) else as_model(impl)
         node = dict(kind="environment", title=name, inputs=[], outputs=list(target.get("inputs", [])),
-                    badge={"text": "satisfies A", "status": status})
+                    badge={"text": "E ⊨ A", "status": status})
         if model is None:                   # a formula
             from .logic import _formula
             node["contract"] = {"name": name, "A": [], "G": [], "E": [ltl.to_str(_formula(impl))]}
@@ -226,13 +226,13 @@ class _Scene:
             if inner.get("contract"):         # the computed composition stays, under its own icon
                 inner["composed"] = inner["contract"]
             inner.update(kind="group", title=high.name, contract=self.terms(high),
-                         badge={"text": "refines it", "status": status})
+                         badge={"text": "⊑", "status": status})
             self.ids.setdefault(id(high), inner["id"])
             return inner
         return self.box(high, types=_types(high), kind="contract", title=high.name,
                         contract=self.terms(high), inputs=sorted(high.inputs), outputs=sorted(high.outputs),
                         children=[inner], edges=_through(inner, high.inputs, high.outputs),
-                        badge={"text": f"{inner['title']} refines it", "status": status})
+                        badge={"text": "⊑", "status": status})
 
 
 def _wires(children: list, inputs) -> list:
@@ -285,38 +285,36 @@ def _mark(result) -> str:
 
 
 def _checks(r, name: Optional[str] = None) -> list:
-    """[(name, result)]: verify gives compatible and consistent (and
-    whether A and G can hold together, when they cannot), a GR(1) result
-    realizable; a Core, or a result that carries one, its core."""
+    """[(label, result, core)]: verify gives A (compatible) and G
+    (consistent), and A∧G when the two cannot hold together; a GR(1) result
+    R (realizable). The core is the Core that explains a failure, or None."""
     from .checks import Verification
     from .logic import Core
+
+    def core_of(x):
+        c = getattr(x, "core", None)
+        return c if isinstance(c, Core) and c else None
     if isinstance(r, Verification):
-        out = [("compatible", r.compatible), ("consistent", r.consistent)]
+        out = [("A", r.compatible, core_of(r.compatible)), ("G", r.consistent, core_of(r.consistent))]
         if r.feasible is not None and not r.feasible:   # when they hold, A & G implies both
-            out.insert(0, ("A and G together", r.feasible))
-        core = next((x.core for x in (r.feasible, r.compatible, r.consistent)
-                     if x is not None and isinstance(x.core, Core) and x.core), None)
-        return out + ([("unsat core", core)] if core is not None else [])
+            out.insert(0, ("A∧G", r.feasible, core_of(r.feasible)))
+        return out
     if isinstance(r, Core):
-        return [(name or "unsat core", r)]
+        return [(name or "core", "invalid" if r else "unknown", r if r else None)]
     if name is None:
-        name = {"realizable": "realizable", "unrealizable": "realizable",
-                "separated": "well separated", "not_separated": "well separated",
-                "receptive": "receptive", "not_receptive": "receptive"}.get(_status(r), "check")
-    out = [(name, r)]
-    core = getattr(r, "core", None)
-    if isinstance(core, Core) and core:
-        out.append(("unrealizable core" if name == "realizable" else "unsat core", core))
-    return out
+        name = {"realizable": "R", "unrealizable": "R", "separated": "separated",
+                "not_separated": "separated", "receptive": "receptive",
+                "not_receptive": "receptive"}.get(_status(r), "check")
+    return [(name, r, core_of(r))]
 
 
-def _core(node: dict, core, kind: str) -> bool:
-    """Marks the terms of the core in the contract of the box, or in its
-    composed contract; False when they are not there. All the assumptions
-    are in an unrealizable core: only its guarantees are marked."""
+def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
+    """Where the terms of the core are in the box: in its contract or in its
+    composed contract, by index. All the assumptions are in an unrealizable
+    core: only its guarantees count."""
     c = core.core
     if isinstance(c, Contract):
-        want = {"A": {ltl.to_str(t) for t in c.assumptions} if kind != "unrealizable core" else set(),
+        want = {"A": set() if unrealizable else {ltl.to_str(t) for t in c.assumptions},
                 "G": {ltl.to_str(t) for t in c.guarantees}}
     else:                                   # formulas, assumptions or guarantees
         fs = {ltl.to_str(t) for t in c or []}
@@ -328,9 +326,8 @@ def _core(node: dict, core, kind: str) -> bool:
         hit = {p: [i for i, t in enumerate(terms[p]) if t in want[p]] for p in "AG"}
         found = {terms[p][i] for p in "AG" for i in hit[p]}
         if found and found >= want["A"] | want["G"]:
-            terms["core"] = dict(hit, kind=kind)
-            return True
-    return False
+            return dict(hit, part=key)
+    return None
 
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
@@ -383,7 +380,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             inner = scene.node(low)
             hole["children"].append(inner)
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
-            hole["badge"] = {"text": f"{inner['title']} refines it", "status": status}
+            hole["badge"] = {"text": "⊑", "status": status}
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
@@ -401,14 +398,14 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     for c in checks:
         obj, name, r = (c[0], None, c[1]) if len(c) == 2 else c
         node = box_of(obj)
-        for n, res in _checks(r, name):
-            if n.endswith("core"):
-                if not _core(node, res, n):
+        for label, res, core in _checks(r, name):
+            mark = {"name": label, "status": _mark(res), "reason": getattr(res, "reason", "") or ""}
+            if core is not None:
+                where = _core(node, core, unrealizable=label == "R")
+                if where is None:
                     raise ValueError(f"the terms of the core are not those of {node['title']}")
-                node.setdefault("checks", []).append({"name": n, "status": "core"})
-            else:
-                node.setdefault("checks", []).append(
-                    {"name": n, "status": _mark(res), "reason": getattr(res, "reason", "") or ""})
+                mark["core"] = where
+            node.setdefault("checks", []).append(mark)
 
     wires = []
     for e in environments:
@@ -422,7 +419,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             wires += [{"from": [env_node["id"], "out", v], "to": [node["id"], "in", v], "var": v}
                       for v in node.get("inputs", [])]
         else:
-            env_node["badge"]["text"] = f"satisfies A of {node['title']}"
+            env_node["badge"]["text"] = f"E ⊨ A of {node['title']}"
     if context is not None:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
@@ -531,19 +528,23 @@ _PAGE = r"""<!doctype html>
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
   header { padding:9px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:14px; align-items:center; }
   header b { font-size:14px; font-weight:600; flex:1; }
-  .tools { display:flex; gap:6px; align-items:center; }
-  .tools button, .tools label { font:12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); }
-  .tools button { border:1px solid #d5dddd; background:#fff; border-radius:6px; padding:3px 9px; cursor:pointer; }
-  .tools button:hover { border-color:var(--teal); color:var(--teal); }
-  .tools label { display:flex; gap:4px; align-items:center; padding:0 4px; cursor:pointer; }
-  .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 4px; }
+  .tools { display:flex; gap:2px; align-items:center; }
+  .tools button { width:28px; height:26px; border:1px solid transparent; background:none; border-radius:6px;
+                  cursor:pointer; color:var(--soft); display:flex; align-items:center; justify-content:center; padding:0; }
+  .tools button:hover { background:var(--fill); color:var(--teal); }
+  .tools button.on { background:#e6eeee; color:var(--teal); }
+  .tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
+               stroke-linecap:round; stroke-linejoin:round; }
+  .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
   #help { position:absolute; right:16px; top:44px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
           box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font-size:12px; color:var(--soft); display:none; z-index:11; }
   #help div { display:flex; gap:10px; align-items:center; margin:5px 0; }
   #help svg { flex:none; }
-  #context { margin:12px 18px 0; padding:7px 12px; border-left:3px solid var(--line); background:var(--fill);
-             font-size:12px; color:var(--soft); display:none; width:fit-content; max-width:calc(100% - 60px); }
-  #context .f { font:11.5px Menlo, Monaco, monospace; color:var(--ink); margin-left:8px; }
+  #context { margin:14px 18px 0; display:none; gap:8px; flex-wrap:wrap; }
+  #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
+                  padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink); }
+  #context i { font:600 9.5px -apple-system, Helvetica, Arial, sans-serif; font-style:normal; color:#fff;
+               background:#6f7f80; border-radius:4px; padding:2px 5px; }
   #view { overflow:auto; padding:18px; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
@@ -568,14 +569,15 @@ _PAGE = r"""<!doctype html>
 </style></head><body>
 <header><b>__TITLE__</b>
   <span class="tools">
-    <button onclick="openAll(true)">Open all</button><button onclick="openAll(false)">Close all</button>
+    <button title="Open all" onclick="openAll(true)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
+    <button title="Close all" onclick="openAll(false)"><svg viewBox="0 0 16 16"><path d="M4.5 3 8 6.5 11.5 3M4.5 13 8 9.5l3.5 3.5"/></svg></button>
     <span class="sep"></span>
-    <label><input type="checkbox" checked onchange="show.ports = this.checked; render()">ports</label>
-    <label><input type="checkbox" checked onchange="show.types = this.checked; render()">types</label>
-    <label><input type="checkbox" checked onchange="show.conditions = this.checked; for (const k in MODELS) delete MODELS[k]; render()">conditions</label>
-    <label><input type="checkbox" checked onchange="show.checks = this.checked; render()">checks</label>
+    <button class="on" title="Ports and their names" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
+    <button class="on" title="Types of the ports (bit vectors, ranges, reals)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
+    <button class="on" title="Conditions of the moves of the models" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
+    <button class="on" title="Results of the checks" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
-    <button onclick="help()">?</button>
+    <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
   </span></header>
 <div id="help"></div>
 <div id="context"></div>
@@ -595,6 +597,14 @@ const show = { ports: true, types: true, conditions: true, checks: true };
 // the model ("m:") of each box. At first, only the names show.
 const open = new Set();
 const toggle = key => () => { open.has(key) ? open.delete(key) : open.add(key); render(); };
+function flip(b, what) {
+  show[what] = !show[what]; b.classList.toggle("on", show[what]);
+  if (what === "conditions") for (const k in MODELS) delete MODELS[k];
+  render();
+}
+// The core in focus, by box: the index of the check whose core is shown.
+// Its terms are drawn as usual, the others faded.
+const focus = {};
 
 const byId = {};
 (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
@@ -622,37 +632,31 @@ function wrap(f) {
   out.push(rest); return out;
 }
 // Each part opens with a tag: A (assumes), G (guarantees), E (an environment).
-// The terms of a core are marked.
-function terms(c, out) {
-  const core = c.core || { A: [], G: [] };
+// With a core in focus, the terms out of it are faded: [kind, tag, text, faded].
+function terms(c, out, core) {
   const part = (tag, fs, hit) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
-    out.push(["f", i || j ? "" : tag, l, hit.includes(j)])));
-  part("A", c.A, core.A);
+    out.push(["f", i || j ? "" : tag, l, core ? !hit.includes(j) : false])));
+  part("A", c.A, core ? core.A : []);
   if (c.E) part("E", c.E, []);
-  else part("G", c.G.length ? c.G : ["true"], core.G);
-  if (c.core) out.push(["s", "", c.core.kind === "unrealizable core"
-    ? "marked: guarantees that no component can meet together, under the assumptions"
-    : "marked: terms that cannot hold together", true]);
+  else part("G", c.G.length ? c.G : ["true"], core ? core.G : []);
 }
+const focused = n => n.id in focus ? n.checks[focus[n.id]].core : null;
 
-// The lines under the name: [kind, tag, text]
+// The lines under the name
 function lines(n) {
-  const out = [];
+  const out = [], core = focused(n);
   if (n.note) out.push(["s", "", n.note]);
-  if (show.checks && n.checks) out.push(["k", "", n.checks]);
   if (n.contract && open.has("c:" + n.id)) {
     if (n.composed) out.push(["s", "", "the contract " + n.contract.name]);
-    terms(n.contract, out);
+    terms(n.contract, out, core && core.part === "contract" ? core : null);
   }
   if (n.composed && open.has("k:" + n.id)) {
     out.push(["s", "", "the composition " + n.composed.name]);
-    terms(n.composed, out);
+    terms(n.composed, out, core && core.part === "composed" ? core : null);
   }
   return out;
 }
-const checkText = c => c.status === "core" ? c.name : c.name + " " + mark(c.status)[0];
-const lineWidth = ([k, tag, t]) => k === "k" ? t.reduce((w, c) => w + textWidth(checkText(c), FONT_S) + 16, 0)
-  : (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
+const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
 
 function icons(n) {
   const out = [];
@@ -666,15 +670,36 @@ function icons(n) {
   }
   return out;
 }
-function mark(status) { return status === "valid" ? ["✓", "var(--ok)"] : status === "invalid" ? ["✗", "var(--bad)"]
-                         : status ? ["?", "var(--soft)"] : ["○", "var(--faint)"]; }
-const badgeText = n => n.badge ? n.badge.text + " " + mark(n.badge.status)[0] : "";
+// A tag with the result of a check: green when it holds, red when it does
+// not, grey when the check did not finish, white when it was not run.
+// Arial Unicode draws ∧, ⊨ and ⊑ as large as the letters; Helvetica does not.
+const FONT_T = "600 11px 'Arial Unicode MS', 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif";
+const COLOR = { valid: "var(--ok)", invalid: "var(--bad)", unknown: "var(--faint)" };
+const tagWidth = s => textWidth(s, FONT_T) + 12;
+function tag(g, x, y, s, status) {
+  const c = COLOR[status];
+  el("rect", { x, y, width: tagWidth(s), height: 16, rx: 4, fill: c || "#fff", stroke: c || "var(--line)",
+               "stroke-width": 1 }, g);
+  const t = text(g, x + 6, y + 11.8, "", s);
+  t.setAttribute("style", "font:" + FONT_T + ";fill:" + (c ? "#fff" : "var(--soft)"));
+  return tagWidth(s);
+}
+const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
+const WHAT = { "A": "A is satisfiable: the contract is compatible",
+               "G": "A → G is satisfiable: the contract is consistent",
+               "A∧G": "A and G can hold together",
+               "R": "the contract is realizable (GR(1))",
+               "M ⊨ C": "the model implements the contract",
+               "E ⊨ A": "the environment satisfies the assumptions",
+               "⊑": "what is inside refines this contract" };
+const checks = n => show.checks && n.checks ? n.checks : [];
 
 const MODELS = {};       // the layout of each open model drawn in its box
 function size(n) {
   const ls = lines(n);
   const top = textWidth(n.title, FONT_H) + icons(n).length * (ICON + 4) + 14
-            + (n.badge ? textWidth(badgeText(n), FONT_S) + 18 : 0);
+            + checks(n).reduce((w, c) => w + tagWidth(c.name) + 4, checks(n).length ? 6 : 0)
+            + (n.badge ? tagWidth(n.badge.text) + 18 : 0);
   let w = Math.max(top, ...ls.map(lineWidth)) + 2 * PAD;
   let h = HEAD + ls.length * LINE + (ls.length ? 8 : 0);
   const m = open.has("m:" + n.id) && MODELS[n.id];
@@ -773,31 +798,29 @@ function drawNode(g, e, ox, oy) {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
     if (key) c.onclick = kind === "model" && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
     ix += ICON + 4; });
-  if (n.badge) { const [m, col] = mark(n.badge.status);
-    const b = text(box, x + e.width - PAD, y + 18, "s", badgeText(n));
-    b.setAttribute("text-anchor", "end"); b.setAttribute("fill", col); }
-  sz.ls.forEach(([k, tag, s, core], i) => {
-    const ty = y + HEAD + 12 + i * LINE;
-    if (k === "k") {             // the checks: a name and a mark each
-      let cx = x + PAD;
-      s.forEach(c => {
-        const [m, col] = c.status === "core" ? ["", "var(--bad)"] : mark(c.status), w = textWidth(checkText(c), FONT_S) + 10;
-        const g2 = el("g", {}, box);
-        el("rect", { x: cx, y: ty - 11, width: w, height: 15, rx: 7.5, fill: "#fff", stroke: col, "stroke-width": 0.9 }, g2);
-        const t = text(g2, cx + 5, ty, "s", checkText(c)); t.setAttribute("fill", col);
-        tip(g2, c.status === "core" ? c.name + ": the terms are marked in the contract"
-                                    : c.name + ": " + c.status + (c.reason ? " (" + c.reason + ")" : ""));
-        if (c.status === "core" && n.contract) { g2.setAttribute("class", "icon");
-          g2.onclick = () => { open.add("c:" + n.id); if (n.composed && n.composed.core) open.add("k:" + n.id); render(); }; }
-        cx += w + 6; });
-    } else if (k === "f") {
-      if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#fbeceb" }, box);
-      if (tag) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3,
-                              fill: core ? "var(--bad)" : tag === "A" ? "#8a9a9b" : tag === "E" ? "#7f8f6a" : "var(--teal)" }, box);
-                 const t = text(box, x + PAD + 6.5, ty, "s", tag); t.setAttribute("text-anchor", "middle");
-                 t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
-      const t = text(box, x + PAD + 20, ty, "f", s); if (core) t.setAttribute("style", "fill:var(--bad)"); }
-    else { const t = text(box, x + PAD, ty, "s", s); if (core) t.setAttribute("fill", "var(--bad)"); } });
+  if (checks(n).length) ix += 6;
+  checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core
+    const t = el("g", {}, box), on = focus[n.id] === i;
+    ix += tag(t, ix, y + 6, c.name, c.status) + 4;
+    tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
+           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core, the terms that make it fail") : ""));
+    if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
+                         fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
+    if (c.core) { t.setAttribute("class", "icon");
+      t.onclick = () => { if (on) delete focus[n.id];
+        else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
+  if (n.badge) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
+    tag(b, x + e.width - PAD - w, y + 6, n.badge.text, n.badge.status);
+    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")); }
+  sz.ls.forEach(([k, label, s, faded], i) => {
+    const ty = y + HEAD + 12 + i * LINE, row = el("g", faded ? { opacity: 0.3 } : {}, box);
+    if (k === "f") {
+      if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3,
+                                fill: label === "A" ? "#8a9a9b" : label === "E" ? "#7f8f6a" : "var(--teal)" }, row);
+                   const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
+                   t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
+      text(row, x + PAD + 20, ty, "f", s); }
+    else text(row, x + PAD, ty, "s", s); });
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
     el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
@@ -961,15 +984,16 @@ function help() {
          "stroke-dasharray": "4 3" }, s); }, "the missing part of a quotient, with what refines it inside");
   sample(s => { el("rect", { x: 2, y: 2, width: 30, height: 16, rx: 5, fill: "#f5f7f7", stroke: "#17393b" }, s);
                 el("rect", { x: 9, y: 6, width: 16, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
-         "a box inside a box refines it (✓ proven, ✗ not, ○ not checked)");
+         "a box inside a box refines it");
   [["contract", "the contract: A assumes, G guarantees"], ["composed", "the contract computed by the composition"],
    ["model", "the model: its states and moves"]].forEach(([k, s]) => sample(svg => icon(svg, k, 9, 2, false, s), s));
-  sample(s => { el("rect", { x: 2, y: 3, width: 30, height: 14, rx: 7, fill: "#fff", stroke: "#2f7d4f", "stroke-width": 0.9 }, s);
-                text(s, 8, 14, "s", "✓").setAttribute("fill", "#2f7d4f"); },
-         "a check of the box: compatible, consistent, realizable");
-  sample(s => { el("rect", { x: 2, y: 4, width: 30, height: 12, rx: 3, fill: "#fbeceb" }, s);
-                el("rect", { x: 4, y: 5.5, width: 9, height: 9, rx: 2, fill: "#b03a2e" }, s); },
-         "a term of a core: the terms that make a check fail");
+  sample(s => { tag(s, 2, 2, "A", "valid"); tag(s, 20, 2, "R", "invalid"); },
+         "checks: A compatible, G consistent, A∧G both together, R realizable (green holds, red not, grey undecided)");
+  sample(s => { tag(s, 4, 2, "M ⊨ C", null); },
+         "M ⊨ C implements, E ⊨ A environment, ⊑ refines: the same colors");
+  sample(s => { const g = el("g", { opacity: 0.3 }, s); el("rect", { x: 2, y: 5, width: 30, height: 3, fill: "#1d2526" }, g);
+                el("rect", { x: 2, y: 12, width: 30, height: 3, fill: "#1d2526" }, s); },
+         "a click on a red check shows its core: the terms that make it fail stay, the others fade");
   sample(s => { el("line", { x1: 2, y1: 10, x2: 32, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
                 el("line", { x1: 13, y1: 15, x2: 21, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s); },
          "a bus (a bit vector), with its width");
@@ -984,8 +1008,8 @@ function svgDefsHatch(s) {
 
 if (DATA.context && DATA.context.length) {
   const c = document.getElementById("context"), esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  c.innerHTML = "context of the checks (holds in each of them):" + DATA.context.map(f => "<div class='f'>" + esc(f) + "</div>").join("");
-  c.style.display = "block";
+  c.innerHTML = DATA.context.map(f => "<span title='context: holds in every check'><i>context</i>" + esc(f) + "</span>").join("");
+  c.style.display = "flex";
 }
 render().catch(e => { document.getElementById("view").textContent = "Cannot draw the diagram: " + e; });
 </script>
