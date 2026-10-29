@@ -1,6 +1,6 @@
 # Changelog
 
-## Not released
+## 0.5.0 (2026-10-29)
 
 Added:
 
@@ -19,6 +19,15 @@ Added:
   of CHASE (the electric power system patterns of DATE18 and FDL2024) into
   a contract. The graph of the architecture is not part of the contract and
   is skipped.
+- `viz.diagram(..., open=[...])` and `chase-cps view --open` draw boxes open
+  when the page loads: the terms of a contract, the states of a small
+  model, and the core of a check that fails.
+
+Changed:
+
+- `ensure` of a contract without assumptions keeps its terms: (true, G and
+  the new guarantee), the same contract as before, instead of the saturated
+  formulas of the composition.
 
 Fixed:
 
