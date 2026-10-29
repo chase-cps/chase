@@ -794,7 +794,11 @@ the guarantees that name a vacuous output as its core), or `is_receptive`;
 with `core=True`, the core comes with the check that fails. An unrealizable
 core shows the guarantees only, since it keeps all the assumptions. A result
 that is unknown does not say which check it is: `(item, "realizable",
-result)`, or `well_separated`, `vacuous`, `receptive`. `environments` takes
+result)`, or `well_separated`, `vacuous`, `receptive`. The results of
+`is_compatible` and `is_consistent` (sat or unsat) always come with their
+name: `(item, "consistent", result)`. An item that refines several
+contracts is drawn inside each of them, and each candidate for a quotient
+gets a copy of the quotient with its own hole. `environments` takes
 an LTL formula, a `Model`, or a `Component` whose implementation is the
 environment.
 

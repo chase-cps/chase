@@ -314,9 +314,11 @@ def _mark(result) -> str:
     return "valid" if bool(result) else "invalid"
 
 
-CHECKS = "verify, is_realizable, is_well_separated, is_vacuous, or is_receptive"
+CHECKS = ("verify, is_realizable, is_well_separated, is_vacuous, or is_receptive; is_compatible "
+          "and is_consistent with their name, (item, 'consistent', result)")
 # The label of each check, by the name of the check (for a result that is unknown)
-KINDS = {"realizable": "R", "well_separated": "WS", "vacuous": "¬V", "receptive": "receptive"}
+KINDS = {"realizable": "R", "well_separated": "WS", "vacuous": "¬V", "receptive": "receptive",
+         "compatible": "A", "consistent": "G"}
 
 
 def _checks(r, kind: Optional[str] = None) -> list:
@@ -395,7 +397,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     ``is_well_separated`` (WS), ``is_vacuous`` (¬V), or ``is_receptive``;
     with core=True, the core comes with the check that fails. A result that
     is unknown does not say which check it is: (item, "realizable", result),
-    or well_separated, vacuous, receptive. ``environments`` lists (environment, item) or
+    or well_separated, vacuous, receptive; the results of ``is_compatible``
+    and ``is_consistent`` (sat or unsat) always come with their name,
+    (item, "consistent", result). ``environments`` lists (environment, item) or
     (environment, item, status): an LTL formula, a Model, or a Component
     whose implementation is the environment, drawn on the left of the item
     and driving its inputs; the status is that of ``is_environment``. The
@@ -440,6 +444,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                       if not any(x is not r and id(r[1]) in parts(x[0], set()) for x in todo)), todo[0])
         ordered.append(first)
         todo.remove(first)
+    refined = set()                     # the items already drawn inside what they refine
     for r in ordered:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
@@ -447,6 +452,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             if id(high) not in scene.ids:
                 add(high)
             hole = _find(nodes, scene.ids[id(high)])
+            if hole.get("children"):        # one candidate per hole: another one gets a copy of the quotient
+                again = scene.contract(high)
+                nodes.append(again)
+                hole = next(c for c in again["children"] if c["kind"] == "hole")
             inner = scene.node(low)
             hole["children"].append(inner)
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
@@ -465,11 +474,15 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                 if v == wrapped["id"]:
                     scene.ids[k] = keep
             continue
+        if id(low) in refined:              # it refines another contract too: drawn again, apart
+            nodes.append(scene.wrap(scene.node(low), high, status))
+            continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
         wrapped = scene.wrap(inner, high, status)
         replace(inner, wrapped)
         top[id(low)] = wrapped
+        refined.add(id(low))
 
     def box_of(obj) -> dict:              # an item drawn on its own first, then inside others
         if id(obj) in own:
@@ -1263,8 +1276,36 @@ function rootEdges() {      // from an environment to the box it drives
   return (DATA.edges || []).map((w, i) => { const id = "root:e" + i; KIND[id] = typeOf(ROOT, w.var);
     return { id, sources: [w.from.join(":")], targets: [w.to.join(":")] }; });
 }
+// The items of the diagram in rows, when one row would be much wider than
+// the window: null for one row, else the ids of the items of each row.
+let rootRows = null;
+function rowsOf(out) {
+  const up = {}, root = id => up[id] === id ? id : (up[id] = root(up[id]));
+  DATA.nodes.forEach(n => { up[n.id] = n.id; });
+  (DATA.edges || []).forEach(w => { up[root(w.from[0])] = root(w.to[0]); });   // an environment and its item
+  const size = {}; (out.children || []).forEach(c => { size[c.id] = c; });
+  const units = [];
+  DATA.nodes.forEach(n => { const r = root(n.id), u = units.find(u => u.r === r);
+    if (u) u.ids.push(n.id); else units.push({ r, ids: [n.id] }); });
+  units.forEach(u => { u.w = u.ids.reduce((w, id) => w + size[id].width, 0) + 40 * (u.ids.length - 1);
+                       u.h = Math.max(...u.ids.map(id => size[id].height)); });
+  const v = document.getElementById("view"), aspect = Math.max(1, v.clientWidth / Math.max(1, v.clientHeight - TOP));
+  const area = units.reduce((a, u) => a + u.w * u.h, 0), total = units.reduce((a, u) => a + u.w + 40, -40);
+  const width = Math.max(...units.map(u => u.w), Math.sqrt(area * aspect) * 1.2);
+  if (units.length < 2 || total <= width) return null;
+  const rows = [[]]; let used = 0;
+  units.forEach(u => {
+    if (used && used + 40 + u.w > width) { rows.push([]); used = 0; }
+    rows[rows.length - 1].push(...u.ids); used += (used ? 40 : 0) + u.w; });
+  return rows.length > 1 ? rows : null;
+}
 function layout() {
-  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i, 0)), edges: rootEdges(),
+  const items = rootRows
+    ? rootRows.map((ids, r) => ({ id: "root:row" + r, x: 0, y: r * 40, edges: [],
+        children: ids.map((id, i) => toElk(byId[id], i, 0)),
+        layoutOptions: Object.assign({}, FLOW, { "elk.padding": "[top=0,left=0,bottom=0,right=0]", "elk.alignment": "LEFT" }) }))
+    : DATA.nodes.map((n, i) => toElk(n, i, 0));
+  return new ELK().layout({ id: "root", children: items, edges: rootEdges(),
     // with INCLUDE_CHILDREN, every level takes the direction of the root
     layoutOptions: Object.assign({ "elk.algorithm": "layered", "elk.direction": "RIGHT",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN", "elk.edgeRouting": "ORTHOGONAL" }, FLOW,
@@ -1274,15 +1315,31 @@ async function render() {
   for (const n of boxes)
     if (open.has("m:" + n.id) && inlineModel(n) && !MODELS[n.id]) MODELS[n.id] = await layoutModel(n);
   widen = {};
+  rootRows = null;
   let out = await layout();
+  rootRows = rowsOf(out);
+  if (rootRows) out = await layout();
   for (let pass = 0; pass < 3; pass++) {
     const todo = []; (out.children || []).forEach(c => narrow(c, todo));
     if (!todo.length) break;
     out = await layout();
   }
+  if (rootRows) {             // the rows in their order, from the top: ELK may swap them
+    const rows = rootRows.map((_, r) => (out.children || []).find(c => c.id === "root:row" + r));
+    const of = {}; rootRows.forEach((ids, r) => ids.forEach(id => { of[id] = r; }));
+    const left = Math.min(...rows.map(c => c.x)), dx = [], dy = [];
+    let y = Math.min(...rows.map(c => c.y));
+    rows.forEach((c, r) => { dx[r] = left - c.x; dy[r] = y - c.y; c.x = left; c.y = y; y += c.height + 40; });
+    (out.edges || []).forEach(ed => {          // a wire from an environment moves with its row
+      const r = of[ed.sources[0].split(":")[0]];
+      (ed.sections || []).forEach(sec => [sec.startPoint, sec.endPoint, ...(sec.bendPoints || [])]
+        .forEach(p => { p.x += dx[r]; p.y += dy[r]; }));
+    });
+    out.height = y - 40;
+  }
   // the items with no wire between them start at the top
   const wired = new Set((DATA.edges || []).flatMap(w => [w.from[0], w.to[0]]));
-  const free = (out.children || []).filter(c => !wired.has(c.id));
+  const free = rootRows ? [] : (out.children || []).filter(c => !wired.has(c.id));
   if (free.length) {
     const top = Math.min(...(out.children || []).map(c => c.y));
     free.forEach(c => { c.y = top; });

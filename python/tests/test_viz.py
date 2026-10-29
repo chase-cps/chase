@@ -291,3 +291,25 @@ def test_a_specification_with_probabilities_is_refused_clearly(tmp_path, capsys)
     assert main(["view", str(spec), "-o", str(tmp_path / "p.html")]) == 2
     err = capsys.readouterr().err
     assert "contract C1: probabilities, P(...), are not supported" in err and "Traceback" not in err
+
+
+def test_one_item_refining_two_contracts_and_several_candidates_for_a_quotient():
+    a, b, top = contracts()
+    t2 = Contract.from_strings(name="Top2", inputs=["x"], outputs=["y", "z"], guarantees=["G (x -> F z)"])
+    ab = a.compose(b, name="AB")
+    nodes = viz.diagram(refines=[(ab, top, "invalid"), (ab, t2, "valid")])["nodes"]
+    assert [(n["title"], n["badge"]["status"]) for n in nodes] == [("Top", "invalid"), ("Top2", "valid")]
+    assert all([c["title"] for c in n["children"]] == ["A", "B"] for n in nodes)
+    # each candidate in a hole of its own
+    q = top.divide(a, name="Q")
+    b2 = Contract.from_strings(name="B2", inputs=["y"], outputs=["z"], guarantees=["G z"])
+    nodes = viz.diagram(q, refines=[(b, q, "invalid"), (b2, q, "valid")])["nodes"]
+    holes = [next(c for c in n["children"] if c["kind"] == "hole") for n in nodes]
+    assert [([c["title"] for c in h["children"]], h["badge"]["status"]) for h in holes] == [
+        (["B"], "invalid"), (["B2"], "valid")]
+    every = list(ids(nodes))
+    assert len(every) == len(set(every))
+    # compatibility and consistency, with their names
+    marks = viz.diagram(a, checks=[(a, "consistent", Result("unsat")), (a, "compatible", Result("sat"))])[
+        "nodes"][0]["checks"]
+    assert [(k["name"], k["status"]) for k in marks] == [("G", "invalid"), ("A", "valid")]
