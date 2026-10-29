@@ -46,7 +46,7 @@ RUN curl -fsSL https://nusmv.fbk.eu/distrib/NuSMV-2.6.0.tar.gz | tar xz -C /tmp 
     && cmake /tmp/NuSMV-2.6.0/NuSMV -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_ZCHAFF=OFF -DENABLE_READLINE=OFF -DENABLE_LIBXML2=OFF \
         -DENABLE_STATIC_LINK=ON -DBUILD_CMD_HELP=OFF -DCMAKE_INSTALL_PREFIX=/opt/nusmv \
-    && make -j"$(nproc)" && make install \
+    && (make -j"$(nproc)" || make) && make install \
     && cd / \
     && mkdir -p /opt/nusmv/doc \
     && cp /tmp/NuSMV-2.6.0/NuSMV/LGPL-2.1 /tmp/NuSMV-2.6.0/NuSMV/README_MiniSat.txt /opt/nusmv/doc/ \

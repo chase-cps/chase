@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs every CHASE demo; prints PASS/FAIL per check. Arg 1: demos dir.
 D=${1:-/opt/chase/demos}; W=$(mktemp -d); fail=0
-check() { if (eval "$2") >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; fail=1; fi; }
+check() { if (eval "$2") >$W/out 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; tail -8 $W/out | sed 's/^/      /'; fail=1; fi; }
 cd $D
 check "DATE21 unrealizable"   "dsl_tool -i DATE21/specs/template_0_unrealizable.txt -o $W/u -b gr1c && gr1c -r $W/u.spc | grep -qx 'Not realizable.'"
 check "DATE21 synthesizable"  "dsl_tool -i DATE21/specs/template_0_synthesizable.txt -o $W/s -b gr1c && gr1c -r $W/s.spc | grep -qx 'Realizable.' && gr1c -t dot $W/s.spc > $W/s.dot"
