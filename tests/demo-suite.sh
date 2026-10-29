@@ -48,12 +48,13 @@ build_boolean_model')" = "true true "
     check "LMFSM"                 "python3 LMFSM/fsm.py --expect"
     check "AHB"                   "python3 AHB/ahb.py --expect"
     check "Warehouse"             "python3 Warehouse/warehouse.py --expect"
+    check "Delegation"            "python3 Delegation/delegation.py --expect"
 else
-    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB, Warehouse (no nuXmv)"
+    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB, Warehouse, Delegation (no nuXmv)"
 fi
 # NuSMV, as without nuXmv (the image published on ghcr.io); BufferSwap needs Yosys
 if command -v NuSMV >/dev/null; then
-    for d in Charger/charger.py LMFSM/fsm.py AHB/ahb.py; do
+    for d in Charger/charger.py LMFSM/fsm.py AHB/ahb.py Delegation/delegation.py; do
         check "NuSMV: $d" "CHASE_BACKEND=nusmv python3 $d --expect"
     done
 fi
