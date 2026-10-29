@@ -778,12 +778,15 @@ d = viz.diagram(s, q, greedy,
 viz.save(d, "plan.html")       # viz.show(d) opens the browser; in Jupyter, a system draws itself
 ```
 
-`checks` takes the result of `verify` (A, G, and A∧G), of `is_realizable`
-(R), of `is_well_separated` (WS), of `is_vacuous` (¬V, with the guarantees
-that name a vacuous output as its core), any other result with a name, `(item, name, result)`, or a core; with
-`core=True`, the core comes with the check that fails. An unrealizable core
-shows the guarantees only, since it keeps all the assumptions. `environments` takes an LTL formula, a
-`Model`, or a `Component` whose implementation is the environment.
+`checks` takes `(item, result)` with the result of `verify` (A, G, and
+A∧G), `is_realizable` (R), `is_well_separated` (WS), `is_vacuous` (¬V, with
+the guarantees that name a vacuous output as its core), or `is_receptive`;
+with `core=True`, the core comes with the check that fails. An unrealizable
+core shows the guarantees only, since it keeps all the assumptions. A result
+that is unknown does not say which check it is: `(item, "realizable",
+result)`, or `well_separated`, `vacuous`, `receptive`. `environments` takes
+an LTL formula, a `Model`, or a `Component` whose implementation is the
+environment.
 
 On the command line, `chase-cps view FILE` writes the page of a
 specification; `--refines R A` draws R inside A, `--environment MODEL C`

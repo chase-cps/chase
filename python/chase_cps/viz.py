@@ -46,6 +46,7 @@ from typing import Iterable, Optional
 
 from . import ltl
 from .contract import Contract
+from .queries import Result
 from .system import Component, System
 
 # Operations drawn as a box with its operands inside, and the word used.
@@ -144,17 +145,19 @@ class _Scene:
             for ch in children:         # a viewpoint shares the ports of the box
                 if not ch.get("edges"):
                     ch["bare"] = True
+            parts = [ch for ch in children if not ch.get("bare")]   # decompositions: wired to the box
+            outputs = sorted(c.outputs)
             return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
                             op=operation,
                             title=c.name, note=f" {SIGNS[operation]} ".join(names),
                             layout="stack", contract=self.terms(c), inputs=sorted(c.inputs),
-                            outputs=sorted(c.outputs), children=children,
-                            edges=[w for ch in children if not ch.get("bare")   # a decomposition: fed by the box
-                                   for w in _through(ch, c.inputs, ())])
+                            outputs=outputs, children=children,
+                            edges=[w for ch in parts for w in _through(ch, c.inputs, outputs)])
+        outputs = _outside(children, c.outputs)
         return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
                         op=operation, title=c.name, note=f" {SIGNS[operation]} ".join(names),
-                        layout="row", contract=self.terms(c), inputs=sorted(c.inputs), outputs=[],
-                        children=children, edges=_wires(children, c.inputs))
+                        layout="row", contract=self.terms(c), inputs=sorted(c.inputs), outputs=outputs,
+                        children=children, edges=_wires(children, c.inputs) + _out(children, outputs))
 
     # Components and systems ------------------------------------------------------------
 
@@ -186,12 +189,13 @@ class _Scene:
         else:
             driven = {v for k in s.components for v in k.contract.outputs}
             inputs = {v for k in s.components for v in k.contract.inputs if v not in driven}
+        outputs = _outside(children, s.contract.outputs if s.contract else None)
         return self.box(s, types=_types(*(k.contract for k in s.components),
                                          *([s.contract] if s.contract else [])),
                         kind="group", op="system", title=s.name,
                         note=" ⊗ ".join(k.name for k in s.components), contract=None,
-                        inputs=sorted(inputs), outputs=[], children=children,
-                        edges=_wires(children, inputs))
+                        inputs=sorted(inputs), outputs=outputs, children=children,
+                        edges=_wires(children, inputs) + _out(children, outputs))
 
     def environment(self, env, target: dict, status) -> dict:
         """An environment of the box target: it drives the inputs of target."""
@@ -232,8 +236,11 @@ class _Scene:
         if inner["kind"] == "group":          # a decomposition: the group is the box
             if inner.get("contract"):         # the computed composition stays, under its own icon
                 inner["composed"] = inner["contract"]
+            outputs = _outside(inner["children"], high.outputs)   # the ports of the contract it refines
             inner.update(kind="group", title=high.name, contract=self.terms(high),
-                         badge={"text": "⪯", "status": status})
+                         badge={"text": "⪯", "status": status}, outputs=outputs,
+                         edges=[w for w in inner["edges"] if w.get("to", [0])[0] is not None]
+                         + _out(inner["children"], outputs))
             self.ids.setdefault(id(high), inner["id"])
             return inner
         return self.box(high, types=_types(high), kind="contract", title=high.name,
@@ -257,6 +264,20 @@ def _wires(children: list, inputs) -> list:
             else:
                 wires.append({"open": [ch["id"], "in", v], "var": v})
     return wires
+
+
+def _outside(children: list, outputs=None) -> list:
+    """The outputs of the box that holds the children: those of its contract
+    (all of them when there is none), as the children drive them; a signal
+    between two children is an output too, as in the composed contract."""
+    driven = {v for ch in children for v in ch.get("outputs", [])}
+    return sorted(driven if outputs is None else driven & set(outputs))
+
+
+def _out(children: list, outputs) -> list:
+    """The wires from the outputs of the children to those of the box."""
+    return [{"from": [ch["id"], "out", v], "to": [None, "out", v], "var": v}
+            for ch in children for v in ch.get("outputs", []) if v in outputs]
 
 
 def _through(inner: dict, inputs, outputs) -> list:
@@ -293,12 +314,18 @@ def _mark(result) -> str:
     return "valid" if bool(result) else "invalid"
 
 
-def _checks(r, name: Optional[str] = None) -> list:
+CHECKS = "verify, is_realizable, is_well_separated, is_vacuous, or is_receptive"
+# The label of each check, by the name of the check (for a result that is unknown)
+KINDS = {"realizable": "R", "well_separated": "WS", "vacuous": "¬V", "receptive": "receptive"}
+
+
+def _checks(r, kind: Optional[str] = None) -> list:
     """[(label, result, core)]: verify gives A (compatible) and G
-    (consistent), and A∧G when the two cannot hold together; a GR(1) result
-    R (realizable), WS (well-separated), or ¬V (no vacuous output). The core
-    explains a failure: a Core, the terms (A, G) of a vacuous output (its
-    guarantees, and the assumptions of its core), or None."""
+    (consistent), and A∧G (feasible) when the two cannot hold together;
+    is_realizable R, is_well_separated WS, is_vacuous ¬V (no vacuous output),
+    is_receptive receptive. The core explains a failure: a Core, the terms
+    (A, G) of a vacuous output (its guarantees, and the assumptions of its
+    core), or None."""
     from .checks import Verification
     from .gr1 import OutputVacuity
     from .logic import Core
@@ -311,19 +338,22 @@ def _checks(r, name: Optional[str] = None) -> list:
         if r.feasible is not None and not r.feasible:   # when they hold, A & G implies both
             out.insert(0, ("A∧G", r.feasible, core_of(r.feasible)))
         return out
-    if isinstance(r, Core):
-        return [(name or "core", "invalid" if r else "unknown", r if r else None)]
     if isinstance(r, OutputVacuity):
         terms = None
         if r.vacuous:
             a = [t for v in r.vacuous if v.core and v.core.core for t in v.core.core]
             terms = ([ltl.to_str(t) for t in a], [ltl.to_str(t) for v in r.vacuous for t in v.guarantees])
-        return [(name or "¬V", r, terms)]
-    if name is None:
-        name = {"realizable": "R", "unrealizable": "R", "separated": "WS",
-                "not_separated": "WS", "receptive": "receptive",
-                "not_receptive": "receptive"}.get(_status(r), "check")
-    return [(name, r, core_of(r))]
+        return [("¬V", r, terms)]
+    if kind is not None and kind not in KINDS:
+        raise ValueError(f"no check {kind!r}: the checks are {', '.join(KINDS)} (and verify)")
+    label = KINDS.get(kind) or {"realizable": "R", "unrealizable": "R", "separated": "WS",
+                                "not_separated": "WS", "receptive": "receptive",
+                                "not_receptive": "receptive"}.get(_status(r))
+    if label is None or not isinstance(r, Result):
+        raise TypeError(f"checks takes the results of {CHECKS}, not {r!r}"
+                        + ("; an unknown result needs the name of its check, as in "
+                           "(item, 'realizable', result)" if _status(r) == "unknown" else ""))
+    return [(label, r, core_of(r))]
 
 
 def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
@@ -360,11 +390,12 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     the abstract one is a quotient. A system with a contract is drawn inside
     its contract.
 
-    ``checks`` lists (item, result) or (item, name, result): the result of
-    ``verify`` (compatible, consistent), of ``is_realizable`` (realizable),
-    any other result under its name, or a ``Core``, whose terms are marked
-    in the contract ("unsat core", or "unrealizable core" for the result of
-    ``unrealizable_core``). ``environments`` lists (environment, item) or
+    ``checks`` lists (item, result): the result of ``verify`` (A, G, and
+    A∧G when they cannot hold together), ``is_realizable`` (R),
+    ``is_well_separated`` (WS), ``is_vacuous`` (¬V), or ``is_receptive``;
+    with core=True, the core comes with the check that fails. A result that
+    is unknown does not say which check it is: (item, "realizable", result),
+    or well_separated, vacuous, receptive. ``environments`` lists (environment, item) or
     (environment, item, status): an LTL formula, a Model, or a Component
     whose implementation is the environment, drawn on the left of the item
     and driving its inputs; the status is that of ``is_environment``. The
@@ -448,9 +479,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         return _find(nodes, scene.ids[id(obj)])
 
     for c in checks:
-        obj, name, r = (c[0], None, c[1]) if len(c) == 2 else c
+        obj, kind, r = (c[0], None, c[1]) if len(c) == 2 else c
         node = box_of(obj)
-        for label, res, core in _checks(r, name):
+        for label, res, core in _checks(r, kind):
             mark = {"name": label, "status": _mark(res), "reason": getattr(res, "reason", "") or ""}
             if core is not None:
                 where = _core(node, core, unrealizable=label == "R")

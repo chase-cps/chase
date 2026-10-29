@@ -173,8 +173,15 @@ def test_checks_and_cores_are_marked_on_the_box():
                          "states": ["s"], "transitions": [{"from": "s", "to": "s"}]})
     k = Component("K", c, m)
     s = System("S", [k])
-    group = viz.diagram(s, checks=[(c, "compatible", "sat")])["nodes"][0]
-    assert group["children"][0]["checks"] == [{"name": "compatible", "status": "valid", "reason": ""}]
+    group = viz.diagram(s, checks=[(c, Result("realizable"))])["nodes"][0]
+    assert group["children"][0]["checks"] == [{"name": "R", "status": "valid", "reason": ""}]
+    # the known checks only; an unknown result says its check
+    with pytest.raises(TypeError):
+        viz.diagram(c, checks=[(c, Result("valid"))])
+    with pytest.raises(TypeError):
+        viz.diagram(c, checks=[(c, Result("unknown"))])
+    assert viz.diagram(c, checks=[(c, "realizable", Result("unknown"))])["nodes"][0]["checks"][0][
+        "name"] == "R"
 
 
 def test_environments_drive_the_inputs_and_the_context_is_kept():

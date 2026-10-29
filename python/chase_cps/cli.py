@@ -321,7 +321,7 @@ def view(args) -> int:
             if args.verify:
                 marks.append((c, checks.verify(c, core=True, timeout=args.timeout)))
             if args.realizable:
-                marks.append((c, gr1.is_realizable(c, core=True, timeout=args.timeout)))
+                marks.append((c, "realizable", gr1.is_realizable(c, core=True, timeout=args.timeout)))
         environments = []
         for path, name in args.environment or []:
             c = get(name)
