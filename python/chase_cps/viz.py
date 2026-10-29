@@ -737,21 +737,37 @@ function terms(c, out, core) {
 }
 const focused = n => n.id in focus ? n.checks[focus[n.id]].core : null;
 
-// The lines under the name
+// The lines under the name. A long contract (a computed one, often) shows
+// its first lines; the rest opens in a panel.
+const LONG = 14, SHORT = 8;
 function lines(n) {
   const out = [], core = focused(n);
+  const part = (c, which) => {
+    const ts = [];
+    terms(c, ts, core && core.part === which ? core : null);
+    if (ts.length <= LONG) { out.push(...ts); return; }
+    out.push(...ts.slice(0, SHORT), ["more", "", "⋯ " + (ts.length - SHORT) + " more lines", c]);
+  };
   if (n.note) out.push(["s", "", n.note]);
   if (n.contract && open.has("c:" + n.id)) {
     if (n.composed) out.push(["s", "", "the contract " + n.contract.name]);
-    terms(n.contract, out, core && core.part === "contract" ? core : null);
+    part(n.contract, "contract");
   }
   if (n.composed && open.has("k:" + n.id)) {
     out.push(["s", "", "the composition " + n.composed.name]);
-    terms(n.composed, out, core && core.part === "composed" ? core : null);
+    part(n.composed, "composed");
   }
   return out;
 }
 const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
+function showTerms(n, c) {     // the whole contract, in the panel
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), ts = [];
+  terms(c, ts, null);
+  document.getElementById("poptitle").textContent = n.title + " · contract " + c.name;
+  document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t]) =>
+    "<tr><td class='st'>" + (tag || "") + "</td><td>" + esc(t) + "</td></tr>").join("") + "</table>";
+  document.getElementById("pop").style.display = "flex";
+}
 
 function icons(n) {
   const out = [];
@@ -839,14 +855,34 @@ const FLOW = { "elk.layered.spacing.nodeNodeBetweenLayers": "72", "elk.spacing.n
                "elk.layered.layering.strategy": "INTERACTIVE" };
 let widen = {};
 const KIND = {};
-function toElk(n, order) {
+// The column of each box inside n, by the flow of its wires: the longest
+// path from the inputs of n, a wire back to an earlier box (a loop) left out.
+// Viewpoints stacked in one box share a column.
+function columns(n) {
+  const col = {}, ids = n.children.map(c => c.id);
+  if (n.layout === "stack") { ids.forEach(id => { col[id] = 0; }); return col; }
+  const next = {};
+  ids.forEach(id => { next[id] = []; });
+  (n.edges || []).forEach(w => { if (w.from && w.from[0] && w.to[0] && next[w.from[0]] && w.from[0] !== w.to[0])
+    next[w.from[0]].push(w.to[0]); });
+  const state = {}, order = [];
+  const visit = id => { state[id] = 1;            // depth first, in the order of the list
+    next[id] = next[id].filter(t => state[t] !== 1);  // a wire back to a box on the path: a loop
+    next[id].forEach(t => { if (!state[t]) visit(t); });
+    state[id] = 2; order.unshift(id); };
+  ids.forEach(id => { if (!state[id]) visit(id); });
+  order.forEach(id => { col[id] = col[id] || 0; next[id].forEach(t => { col[t] = Math.max(col[t] || 0, col[id] + 1); }); });
+  return col;
+}
+function toElk(n, column, row) {
   const sz = size(n);
-  const base = { id: n.id, ports: ports(n), x: (order || 0) * 600, y: 0,
+  const base = { id: n.id, ports: ports(n), x: (column || 0) * 600, y: (row || 0) * 40,
     layoutOptions: { "elk.portConstraints": "FIXED_ORDER", "elk.nodeSize.constraints": "MINIMUM_SIZE",
       "elk.portLabels.placement": "OUTSIDE", "elk.spacing.portPort": "13",
       "elk.nodeSize.minimum": "(" + sz.w + "," + Math.max(sz.h, (Math.max((n.inputs || []).length, (n.outputs || []).length) + 1) * 17) + ")" } };
   if (!inside(n) || folded.has(n.id)) { base.width = sz.w; base.height = sz.h; return base; }
-  base.children = n.children.map((c, i) => toElk(c, n.layout === "stack" ? 0 : i));
+  const col = columns(n);
+  base.children = n.children.map((c, i) => toElk(c, col[c.id], i));
   base.edges = (n.edges || []).filter(w => !w.open).map((w, i) => {
     const id = n.id + ":e" + i; KIND[id] = typeOf(n, w.var);
     return { id, sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
@@ -947,6 +983,11 @@ function drawNode(g, e, ox, oy) {
                    const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
                    t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
       text(row, x + PAD + 20, ty, "f", s); }
+    else if (k === "more") {
+      const t = text(row, x + PAD + 20, ty, "s", s);
+      t.setAttribute("style", "fill:var(--teal);cursor:pointer;text-decoration:underline");
+      tip(t, "the whole contract");
+      t.onclick = () => showTerms(n, core); }
     else text(row, x + PAD, ty, "s", s); });
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
@@ -978,7 +1019,7 @@ function drawEdge(g, ed, ox, oy) {
         if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
       const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
       el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--wire)", "stroke-width": 1.3 }, g);
-      text(g, mx + 4, my - 6, "w", String(k.bus));
+      if (!show.types || !show.ports) text(g, mx + 4, my - 6, "w", String(k.bus));
     } });
 }
 
@@ -1055,7 +1096,7 @@ function rootEdges() {      // from an environment to the box it drives
     return { id, sources: [w.from.join(":")], targets: [w.to.join(":")] }; });
 }
 function layout() {
-  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i)), edges: rootEdges(),
+  return new ELK().layout({ id: "root", children: DATA.nodes.map((n, i) => toElk(n, i, 0)), edges: rootEdges(),
     // with INCLUDE_CHILDREN, every level takes the direction of the root
     layoutOptions: Object.assign({ "elk.algorithm": "layered", "elk.direction": "RIGHT",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN", "elk.edgeRouting": "ORTHOGONAL" }, FLOW,
@@ -1070,6 +1111,14 @@ async function render() {
     const todo = []; (out.children || []).forEach(c => narrow(c, todo));
     if (!todo.length) break;
     out = await layout();
+  }
+  // the items with no wire between them start at the top
+  const wired = new Set((DATA.edges || []).flatMap(w => [w.from[0], w.to[0]]));
+  const free = (out.children || []).filter(c => !wired.has(c.id));
+  if (free.length) {
+    const top = Math.min(...(out.children || []).map(c => c.y));
+    free.forEach(c => { c.y = top; });
+    out.height = Math.max(...out.children.map(c => c.y + c.height));
   }
   const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
