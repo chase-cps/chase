@@ -108,7 +108,14 @@ class _Scene:
         impl = None
         if k.implementation is not None:
             impl = getattr(k.implementation, "name", None) or type(k.implementation).__name__
-        node = self.leaf(k.contract, kind="component", impl=impl, status=k.status)
+        fsm = None
+        if k.implementation is not None:
+            try:
+                from .explicit import state_graph
+                fsm = state_graph(k.implementation)
+            except Exception:           # the diagram does without it
+                fsm = None
+        node = self.leaf(k.contract, kind="component", impl=impl, status=k.status, fsm=fsm)
         node["id"] = self.id(k)
         node["title"] = k.name
         node["contract"] = k.contract.name
@@ -312,13 +319,14 @@ _PAGE = r"""<!doctype html>
   .s { font-size:11px; fill:var(--soft); }
   .k { font-size:9.5px; font-weight:700; letter-spacing:.06em; fill:var(--soft); }
   .w { font-family:Menlo, Monaco, monospace; font-size:10.5px; fill:var(--soft); }
+  .l { font-size:11px; fill:#1c6a6f; cursor:pointer; text-decoration:underline; }
 </style></head><body>
 <header><b>__TITLE__</b><span>click a title to fold or unfold it</span></header>
 <div id="view"></div>
 <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
 <script>
 const DATA = __DATA__;
-const folded = new Set();
+const folded = new Set(), opened = new Set();
 const LINE = 16, PAD = 10, PORT = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
@@ -331,7 +339,9 @@ function lines(n) {
   if (n.kind === "component") {
     out.push(["s", "contract " + n.contract + (n.impl ? " · implementation " + n.impl : "")]);
   } else if (n.note) out.push(["s", n.note]);
-  if (folded.has(n.id)) { out.push(["s", n.A.length + " assumptions · " + n.G.length + " guarantees"]); return out; }
+  if (n.fsm) out.push(["l", n.fsm.too_many ? n.fsm.count + "+ states: too many to draw"
+                          : (opened.has(n.id) ? "▾ " : "▸ ") + "state machine (" + count(n.fsm.count, "state") + ")"]);
+  if (folded.has(n.id)) { out.push(["s", count(n.A.length, "assumption") + " · " + count(n.G.length, "guarantee")]); return out; }
   if (n.A.length) { out.push(["k", "ASSUMES"]); n.A.forEach(a => wrap(a).forEach(l => out.push(["f", l]))); }
   out.push(["k", "GUARANTEES"]);
   if (n.G.length) n.G.forEach(g => wrap(g).forEach(l => out.push(["f", l]))); else out.push(["f", "true"]);
@@ -357,13 +367,17 @@ function wrap(f) {
   lines.push(rest);
   return lines;
 }
-const fontOf = c => c === "f" ? FONT_F : c === "h" ? FONT_H : FONT_S;
+const count = (k, word) => k + " " + word + (k === 1 ? "" : "s");
+const fontOf = c => c === "f" ? FONT_F : c === "h" ? FONT_H : FONT_S;   // "l" and "k" as "s"
 
 // A box that holds a decomposition: the contract it refines, at the top.
 function heading(n) { return n.spec ? n.spec.title + "  =  " + n.note : n.title + "  =  " + n.note; }
 function specLines(n) {
   if (!n.spec) return [];
-  const out = [];
+  if (folded.has("spec:" + n.id))
+    return [["l", "▸ the contract " + n.spec.title + ": " + count(n.spec.A.length, "assumption") + " · "
+                  + count(n.spec.G.length, "guarantee")]];
+  const out = [["l", "▾ the contract " + n.spec.title]];
   if (n.spec.A.length) { out.push(["k", "ASSUMES"]); n.spec.A.forEach(a => wrap(a).forEach(l => out.push(["f", l]))); }
   out.push(["k", "GUARANTEES"]);
   n.spec.G.forEach(g => wrap(g).forEach(l => out.push(["f", l])));
@@ -405,6 +419,19 @@ function toElk(n) {
   const ls = lines(n);
   const w = Math.max(160, ...ls.map(([c, t]) => textWidth(t, fontOf(c)))) + 2 * PAD + 8;
   const h = ls.length * LINE + 2 * PAD + (n.kind === "component" ? 6 : 0);
+  if (n.fsm && n.fsm.states && opened.has(n.id)) {
+    base.children = n.fsm.states.map(st => { const id = n.id + ":" + st.id;
+      byId[id] = { kind: "state", id, label: st.label, init: st.init, inputs: [], outputs: [] };
+      return { id, width: textWidth(st.label, FONT_W) + 24, height: 26 }; });
+    base.edges = n.fsm.edges.map((t, i) => ({ id: n.id + ":t" + i,
+      sources: [n.id + ":" + t.from], targets: [n.id + ":" + t.to],
+      labels: t.label ? [{ text: t.label, width: textWidth(t.label, FONT_W), height: 12 }] : [] }));
+    Object.assign(base.layoutOptions, { "elk.direction": "RIGHT",
+      "elk.padding": "[top=" + (h + 12) + ",left=20,bottom=16,right=20]",
+      "elk.spacing.nodeNode": "28", "elk.layered.spacing.nodeNodeBetweenLayers": "70",
+      "elk.spacing.edgeLabel": "4", "elk.nodeSize.minimum": "(" + w + "," + h + ")" });
+    return base;
+  }
   base.layoutOptions["elk.nodeSize.minimum"] = "(" + w + "," + Math.max(h, (Math.max(n.inputs.length, n.outputs.length) + 1) * 18) + ")";
   base.width = w; base.height = h;
   return base;
@@ -412,6 +439,9 @@ function toElk(n) {
 
 const byId = {};
 (function index(ns) { ns.forEach(n => { byId[n.id] = n; if (n.children) index(n.children); }); })(DATA.nodes);
+// At first, every box shows its name only; a click on it shows the rest.
+Object.values(byId).forEach(n => { if (n.kind !== "group") folded.add(n.id);
+                                   if (n.spec) folded.add("spec:" + n.id); });
 
 const NS = "http://www.w3.org/2000/svg";
 function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag);
@@ -438,8 +468,16 @@ function drawNode(g, e, ox, oy) {
       const sl = specLines(n);
       el("rect", { x: x + PAD, y: y + 32, width: e.width - 2 * PAD, height: sl.length * LINE + 2 * PAD,
                    rx: 8, fill: "#fff", stroke: "var(--teal)", "stroke-width": 1 }, g);
-      sl.forEach(([c, s2], i) => text(g, x + 2 * PAD, y + 32 + PAD + 12 + i * LINE, c, s2));
+      sl.forEach(([c, s2], i) => { const tt = text(g, x + 2 * PAD, y + 32 + PAD + 12 + i * LINE, c, s2);
+        if (c === "l") tt.onclick = () => { const k = "spec:" + n.id;
+          folded.has(k) ? folded.delete(k) : folded.add(k); render(); }; });
     } else if (n.op === "system") text(g, x + PAD, y + 36, "s", "system");
+  } else if (n.kind === "state") {
+    el("rect", { x, y, width: e.width, height: e.height, rx: 13, fill: "#fff", stroke: "var(--teal)",
+                 "stroke-width": n.init ? 2.4 : 1.2 }, g);
+    const t = text(g, x + e.width / 2, y + 17, "w", n.label); t.setAttribute("text-anchor", "middle");
+    if (n.init) el("polyline", { points: (x - 16) + "," + (y + 13) + " " + (x - 2) + "," + (y + 13),
+                                 stroke: "var(--teal)", "stroke-width": 1.6, fill: "none", "marker-end": "url(#arrow)" }, g);
   } else {
     const hole = n.kind === "hole", comp = n.kind === "component";
     el("rect", { x, y, width: e.width, height: e.height, rx: comp ? 0 : 10,
@@ -447,7 +485,9 @@ function drawNode(g, e, ox, oy) {
                  "stroke-width": comp ? 2 : 1.4, "stroke-dasharray": hole ? "6 4" : "none" }, g);
     if (comp) el("rect", { x, y, width: e.width, height: LINE + PAD, fill: "var(--fill)", stroke: "none" }, g);
     lines(n).forEach(([c, s], i) => { const t = text(g, x + PAD, y + PAD + 12 + i * LINE, c, s);
-      if (c === "h") t.onclick = fold; });
+      if (c === "h") t.onclick = fold;
+      if (c === "l" && n.fsm && n.fsm.states) t.onclick = () => {
+        opened.has(n.id) ? opened.delete(n.id) : opened.add(n.id); render(); }; });
     if (comp) { const [m, col] = mark(n.status);
       const b = text(g, x + e.width - PAD - 52, y + PAD + 12, "s", "M ⊨ C " + m); b.setAttribute("fill", col); }
   }

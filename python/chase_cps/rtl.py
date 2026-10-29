@@ -114,7 +114,10 @@ def from_rtl(files, top: str, parameters: Optional[dict] = None,
         with open(os.path.join(tmp, "ports.json")) as f:
             design = json.load(f)
     module = design["modules"][top]
-    return _model(top, smv, module, reset, set(clocks), names or {})
+    model = _model(top, smv, module, reset, set(clocks), names or {})
+    model.source = {"kind": "rtl", "files": files, "top": top, "parameters": parameters,
+                    "defines": defines}
+    return model
 
 
 def _model(top, smv, module, reset, clocks, names) -> Model:

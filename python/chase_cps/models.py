@@ -118,6 +118,9 @@ class Model:
     variables: dict[str, VarType] = field(default_factory=dict)
     ivars: set[str] = field(default_factory=set)
     start: int = 0      # the steps of a reset: the contracts are checked after them
+    # Where the model comes from (RTL files, a controller), for the diagrams
+    # (chase_cps.explicit); not used by the checks.
+    source: Optional[dict] = field(default=None, compare=False, repr=False)
 
     @classmethod
     def from_smv(cls, source: str, name: Optional[str] = None) -> "Model":
@@ -280,6 +283,7 @@ class Model:
         lines.append(f"INIT {words.to_smv(init_f, variables)};")
         model = cls(name or "Controller", "\n".join(lines) + "\n", dict(variables), set())
         model.variables["chase_node"] = (0, max(len(order) - 1, 0))
+        model.source = {"kind": "controller", "controller": controller}
         return model
 
     def check_variables(self, needed, what: str, types: Optional[dict] = None) -> None:
