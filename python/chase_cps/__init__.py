@@ -39,7 +39,7 @@ All the names are also available from ``chase_cps`` itself.
 from . import backends, checks, gr1, logic, ltl, models, tools
 from .backends import check
 # 1. Contracts and their algebra.
-from .contract import Contract, load_spec, parse_spec, to_spec
+from .contract import Contract, load_dsl, load_spec, parse_spec, to_spec
 from .ltl import LTLSyntaxError
 from .sva import SVAError, SVAReading, parse_sva, to_sva
 # 2. Checks on contracts, and the queries on formulas they reduce to.
@@ -61,7 +61,7 @@ __version__ = "0.4.2"
 
 __all__ = [
     # 1. Contracts and their algebra
-    "Contract", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
+    "Contract", "load_dsl", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
     "parse_sva", "to_sva", "SVAReading", "SVAError",
     # 2. Checks on contracts
     "refines", "verify", "is_compatible", "is_consistent", "is_implementation",

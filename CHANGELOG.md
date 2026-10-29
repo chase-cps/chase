@@ -15,6 +15,10 @@ Added:
   implementation and the composition against the contract of the system. The
   page works offline with a local ELK (`elk=`, `--elk`); `viz.from_spec`
   draws a specification file, as `chase-cps view` does.
+- `load_dsl(path)` reads a problem written in the domain-specific language
+  of CHASE (the electric power system patterns of DATE18 and FDL2024) into
+  a contract. The graph of the architecture is not part of the contract and
+  is skipped.
 
 Fixed:
 

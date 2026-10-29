@@ -146,7 +146,10 @@ class Contract:
 
         def terms(domain_map) -> list[ltl.Node]:
             out = []
-            for spec in domain_map.values():
+            for domain, spec in domain_map.items():
+                # the formulas only: the DSL also puts its architecture there, as a graph
+                if type(spec).__name__ == "Graph":
+                    continue
                 out.extend(value(t) for t in ltl.conjuncts(ltl.from_pychase(spec)))
             return out
 
@@ -662,6 +665,19 @@ def _parse_file(path: str, name: str):
             message = message.rstrip(".") + ": " + "; ".join(syntax)
         raise RuntimeError(message) from None
     return system
+
+
+def load_dsl(path: str | os.PathLike) -> Contract:
+    """The contract of a problem written in the domain-specific language of
+    CHASE (dsl_tool: components, connections, and patterns of requirements),
+    with the formulas the patterns give. The architecture, a graph, is left
+    out."""
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"no such file: {os.fspath(path)}")
+    from ._native import _load
+    builder = _load("pychase_DSL").DSLSpecsBuilder()
+    builder.parseSpecificationFile(os.fspath(path))
+    return Contract.from_pychase(builder.getContract())
 
 
 def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Contract]:

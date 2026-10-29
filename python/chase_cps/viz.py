@@ -409,7 +409,7 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
-            context=None, title: Optional[str] = None) -> dict:
+            context=None, open: Iterable = (), title: Optional[str] = None) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -429,7 +429,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     whose implementation is the environment, drawn on the left of the item
     and driving its inputs; the status is that of ``is_environment``. The
     ``context`` of the checks (a formula or a list of formulas) is written
-    above the diagram."""
+    above the diagram. The items in ``open`` are drawn open: their contract,
+    their model when it is small, and the core of a check that fails."""
     scene = _Scene()
     nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
 
@@ -559,6 +560,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                       for v in node.get("inputs", [])]
         else:
             env_node["badge"]["text"] = f"E ⊨ A of {node['title']}"
+    for obj in open:
+        box_of(obj)["open"] = True
     if context is not None:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
@@ -609,7 +612,8 @@ def show(item, **kwargs) -> str:
 
 def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
-              realizable: bool = False, timeout: float = 60, title: Optional[str] = None) -> dict:
+              realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
+              open: Iterable = ()) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
     JSON). ``contracts`` are the contracts to draw (default: all), each a
     name or names joined by + for their composition; ``refines`` lists
@@ -617,7 +621,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     lists (model file, contract): an SMV or JSON state machine, or a
     controller of slugs. ``check`` checks the refinements and the
     environments; ``verify`` and ``realizable`` check each contract of the
-    file that is drawn, alone or as a part of a composition."""
+    file that is drawn, alone or as a part of a composition. ``open`` names
+    the contracts drawn open."""
     from . import checks as _checks_
     from . import gr1
     from .cli import _contract, _model, _read
@@ -653,7 +658,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         m = _model(model, c)
         envs.append((m, c, _checks_.is_environment(m, c, timeout=timeout).status if check else None))
     return diagram(*items, refines=pairs, checks=marks, environments=envs,
-                   title=title or os.path.basename(path))
+                   open=[get(e) for e in open], title=title or os.path.basename(path))
 
 
 def notebook(item, **kwargs) -> str:
@@ -828,6 +833,15 @@ const boxes = Object.values(byId);
 const states = n => n.model && n.model.fsm && n.model.fsm.states;
 const inlineModel = n => states(n) && n.model.fsm.count <= INLINE_STATES;
 let allOpen = false;
+// The boxes the diagram asks to open: the contract, a small model, a core.
+function openAsked() {
+  Object.values(byId).filter(n => n.open).forEach(n => {
+    if (n.contract) open.add("c:" + n.id);
+    if (inlineModel(n)) open.add("m:" + n.id);
+    const i = (n.checks || []).findIndex(c => c.core && c.status === "invalid");
+    if (i >= 0) { focus[n.id] = i; if (n.checks[i].core.part === "composed") open.add("k:" + n.id); }
+  });
+}
 function openAll(on) {
   boxes.forEach(n => ["c:", "k:", "m:"].forEach(p => {
     const key = p + n.id, there = p === "c:" ? n.contract : p === "k:" ? n.composed : inlineModel(n);
@@ -1477,6 +1491,7 @@ if (DATA.context && DATA.context.length) {
   c.innerHTML = DATA.context.map(f => "<span title='context: holds in every check'><i>context</i>" + esc(f) + "</span>").join("");
   c.style.display = "flex";
 }
+openAsked();
 render().catch(e => { document.getElementById("view").textContent = "Cannot draw the diagram: " + e; });
 </script>
 __RELOAD__

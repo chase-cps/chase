@@ -1198,3 +1198,15 @@ def test_release_in_a_specification():
     p = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
     assert p.returncode == 0, f"the parser crashed on R (exit {p.returncode})"
     assert p.stdout.strip().splitlines()[-1] == "['x R y', 'G !(!y | !x & X !y)']"
+
+
+@needs_native
+def test_a_problem_in_the_domain_specific_language():
+    from chase_cps import load_dsl
+    path = os.path.join(os.environ.get("CHASE_DEMOS", os.path.join(os.path.dirname(__file__), "..", "..", "demos")),
+                        "DATE18", "template_0_realizable.txt")
+    if not os.path.isfile(path):
+        pytest.skip("the demos are not here")
+    c = load_dsl(path)             # the architecture graph is left out, the formulas stay
+    assert len(c.inputs) == 11 and len(c.outputs) == 7
+    assert len(c.assumptions) == 24 and len(c.guarantees) == 26

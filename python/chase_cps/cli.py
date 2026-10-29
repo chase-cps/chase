@@ -303,7 +303,8 @@ def view(args) -> int:
     def page() -> str:
         return viz.html(viz.from_spec(args.file, args.contracts or (), args.refines or (),
                                       args.environment or (), check=args.check, verify=args.verify,
-                                      realizable=args.realizable, timeout=args.timeout),
+                                      realizable=args.realizable, timeout=args.timeout,
+                                      open=args.open or ()),
                         elk=args.elk)
 
     if not args.serve:
@@ -412,6 +413,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="check that each contract drawn is realizable (GR(1), slugs); when "
                         "it is not, mark the guarantees of the core")
     p.add_argument("-o", "--output", help="the page to write (default: FILE with .html)")
+    p.add_argument("--open", nargs="+", metavar="CONTRACT",
+                   help="draw these contracts open: their terms, and the core of a check "
+                        "that fails")
     p.add_argument("--elk", metavar="PATH",
                    help="put elk.bundled.js (elkjs 0.9) from PATH in the page, for a page that "
                         "works offline (default: load it from a CDN)")

@@ -61,6 +61,11 @@ CONTRACT Spec:
 All the binary operators have the same precedence, and `G`, `F`, `X` bind
 looser than them: `G a -> b` is `G (a -> b)`. Parentheses avoid surprises.
 
+A problem written in the domain-specific language of CHASE (the patterns of
+electric power systems, `DATE18/` and `FDL2024/` in the demos) is read by
+`chase_cps.load_dsl(path)` into one contract, with the formulas its
+patterns give; the architecture graph of the problem is left out.
+
 ## Formulas in Python
 
 The Python package, the command line (JSON files), and the MCP server read
@@ -801,13 +806,16 @@ contracts is drawn inside each of them, and each candidate for a quotient
 gets a copy of the quotient with its own hole. `environments` takes
 an LTL formula, a `Model`, or a `Component` whose implementation is the
 environment.
+`open` takes the items drawn open when the page loads: the terms of a
+contract, the states of a model (with 8 states or fewer), and the core of a
+check that fails.
 
 On the command line, `chase-cps view FILE` writes the page of a
 specification; `--refines R A` draws R inside A, `--environment MODEL C`
 draws an environment, `--check` checks the refinements and the
 environments, `--verify` and `--realizable` mark the checks of each
-contract drawn, and `--serve` draws the page again whenever the file
-changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
+contract drawn, `--open C...` draws contracts open, and `--serve` draws
+the page again whenever the file changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
 
 The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
 `chase-cps view --elk PATH` put a local `elk.bundled.js` in the page

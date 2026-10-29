@@ -325,3 +325,12 @@ def test_a_part_refined_by_another_contract_and_a_loop_are_drawn_apart():
     assert [c["title"] for c in nodes[0]["children"]] == ["A", "B"]
     assert [(n["title"], n["badge"]["status"], [c["title"] for c in n["children"]]) for n in nodes[1:]] == [
         ("A", "valid", ["A2"]), ("A2", "invalid", ["A"])]
+
+
+def test_open_draws_the_boxes_asked_open():
+    a, b, top = contracts()
+    s = System("S", [Component("a", a), Component("b", b)], contract=top)
+    d = viz.diagram(s, open=[b, top])
+    group = d["nodes"][0]
+    assert group.get("open") and group["children"][1].get("open") and not group["children"][0].get("open")
+    assert "openAsked();" in viz.html(d)
