@@ -84,6 +84,29 @@ def test_refinement_is_drawn_as_nesting():
     assert chain[0]["children"][0]["children"][0]["title"] == "A3"
 
 
+def test_viewpoints_inside_a_composition_and_refinement_on_four_levels():
+    a, b, top = contracts()
+    t = Contract.from_strings(name="At", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])
+    s = System("S", [Component("A", a.conjoin(t, name="A")), Component("B", b)])
+    group = viz.diagram(s)["nodes"][0]
+    both = group["children"][0]
+    assert both["op"] == "conjunction" and both["inputs"] == ["x"] and both["outputs"] == ["y"]
+    assert all(v["bare"] for v in both["children"])       # the viewpoints share its ports
+    assert {"from": [both["id"], "out", "y"], "to": [group["children"][1]["id"], "in", "y"],
+            "var": "y"} in group["edges"]
+    # S2 drawn inside L1, then refined in its own box, whatever the order of the pairs
+    C = lambda n, i, o: Contract.from_strings(name=n, inputs=[i], outputs=[o], guarantees=[f"G ({i} -> F {o})"])
+    t4, s1, s2, s21, s22 = C("T", "a", "e"), C("S1", "a", "b"), C("S2", "b", "e"), C("S21", "b", "c"), C("S22", "c", "e")
+    l1, l2 = s1.compose(s2, name="L1"), s21.compose(s22, name="L2")
+    for pairs in ([(l1, t4), (l2, s2)], [(l2, s2), (l1, t4)]):
+        nodes = viz.diagram(refines=pairs)["nodes"]
+        assert len(nodes) == 1 and nodes[0]["title"] == "T"
+        inner = nodes[0]["children"][1]
+        assert inner["title"] == "S2" and [c["title"] for c in inner["children"]] == ["S21", "S22"]
+        assert {"from": [nodes[0]["children"][0]["id"], "out", "b"], "to": [inner["id"], "in", "b"],
+                "var": "b"} in nodes[0]["edges"]
+
+
 def test_a_quotient_is_a_hole_that_holds_what_refines_it():
     a, b, top = contracts()
     q = top.divide(a, name="Q")

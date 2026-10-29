@@ -140,12 +140,17 @@ class _Scene:
 
     def group(self, c: Contract, operation: str, children: list, box_of=None) -> dict:
         names = [ch["title"] for ch in children]
-        if operation in STACKED:      # viewpoints of one component: the same ports, no wires
+        if operation in STACKED:      # viewpoints of one component: its ports, no wires inside
+            for ch in children:         # a viewpoint shares the ports of the box
+                if not ch.get("edges"):
+                    ch["bare"] = True
             return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
                             op=operation,
                             title=c.name, note=f" {SIGNS[operation]} ".join(names),
-                            layout="stack", contract=self.terms(c), inputs=[], outputs=[],
-                            children=children, edges=[])
+                            layout="stack", contract=self.terms(c), inputs=sorted(c.inputs),
+                            outputs=sorted(c.outputs), children=children,
+                            edges=[w for ch in children if not ch.get("bare")   # a decomposition: fed by the box
+                                   for w in _through(ch, c.inputs, ())])
         return self.box(box_of if box_of is not None else c, types=_types(c), kind="group",
                         op=operation, title=c.name, note=f" {SIGNS[operation]} ".join(names),
                         layout="row", contract=self.terms(c), inputs=sorted(c.inputs), outputs=[],
@@ -165,9 +170,10 @@ class _Scene:
         except Exception:                     # the diagram does without it
             fsm = None
         name = getattr(k.implementation, "name", None) or type(k.implementation).__name__
+        source = (getattr(k.implementation, "source", None) or {}).get("kind")
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
-                        model={"name": name, "fsm": fsm},
+                        model={"name": name, "fsm": fsm, "source": source},
                         badge={"text": "M ⊨ C", "status": k.status},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
@@ -206,7 +212,8 @@ class _Scene:
                 fsm = state_graph(model, inputs=target.get("outputs", []))
             except Exception:
                 fsm = None
-            node["model"] = {"name": getattr(model, "name", None) or "model", "fsm": fsm}
+            node["model"] = {"name": getattr(model, "name", None) or "model", "fsm": fsm,
+                             "source": (getattr(model, "source", None) or {}).get("kind")}
         return self.box(env, types=target.get("types"), **node)
 
     def node(self, obj) -> dict:
@@ -384,7 +391,25 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         node = add(item)
         if isinstance(item, System) and item.contract is not None:
             replace(node, scene.wrap(node, item.contract, item.status))
-    for r in refines:
+    def parts(obj, out):                 # the contracts drawn in the box of obj
+        out.add(id(obj))
+        if isinstance(obj, System):
+            for k in obj.components:
+                parts(k.contract, out)
+        elif isinstance(obj, Component):
+            parts(obj.contract, out)
+        elif isinstance(obj, Contract) and obj.origin:
+            for o in obj.origin[1]:
+                parts(o, out)
+        return out
+    # from the top down: a contract is refined after the refinement that draws it
+    todo, ordered = list(refines), []
+    while todo:
+        first = next((r for r in todo
+                      if not any(x is not r and id(r[1]) in parts(x[0], set()) for x in todo)), todo[0])
+        ordered.append(first)
+        todo.remove(first)
+    for r in ordered:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
         if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
@@ -395,6 +420,19 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             hole["children"].append(inner)
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
             hole["badge"] = {"text": "⪯", "status": status}
+            continue
+        drawn = _find(nodes, scene.ids[id(high)]) if id(high) in scene.ids else None
+        if drawn is not None and not drawn.get("children") and id(low) not in top:
+            # the contract is drawn inside another box already: its box takes what refines it
+            inner = scene.node(low)
+            wrapped = scene.wrap(inner, high, status)
+            keep = drawn["id"]
+            drawn.clear()
+            drawn.update(wrapped)
+            drawn["id"] = keep
+            for k, v in list(scene.ids.items()):
+                if v == wrapped["id"]:
+                    scene.ids[k] = keep
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
@@ -621,6 +659,10 @@ function flip(b, what) {
 // The core in focus, by box: the index of the check whose core is shown,
 // its terms on a red ground.
 const focus = {};
+// The boxes whose inner boxes are hidden (folded), by id.
+const folded = new Set();
+const inside = n => n.children && n.children.length;
+const fold = id => () => { folded.has(id) ? folded.delete(id) : folded.add(id); render(); };
 
 const byId = {};
 (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
@@ -632,6 +674,7 @@ function openAll(on) {
   boxes.forEach(n => ["c:", "k:", "m:"].forEach(p => {
     const key = p + n.id, there = p === "c:" ? n.contract : p === "k:" ? n.composed : inlineModel(n);
     if (on && there) open.add(key); else open.delete(key); }));
+  if (on) folded.clear();
   allOpen = on;
   const b = document.getElementById("all");
   b.title = on ? "Close all" : "Open all";
@@ -685,8 +728,10 @@ function icons(n) {
   if (n.composed) out.push(["composed", "k:" + n.id, "the composition " + n.composed.name]);
   if (n.model) {             // a model with nothing to draw has its icon, grey
     const f = n.model.fsm;
-    if (states(n)) out.push(["model", "m:" + n.id, "model " + n.model.name + ", " + f.count + " states"]);
-    else out.push(["model", null, "model " + n.model.name + (f && f.too_many
+    const from = { controller: " (synthesized by slugs)", rtl: " (RTL)", json: " (JSON)", smv: " (SMV)" }[n.model.source] || "";
+    const kind = n.model.source === "controller" ? "synth" : "model";
+    if (states(n)) out.push([kind, "m:" + n.id, "model " + n.model.name + from + ", " + f.count + " states"]);
+    else out.push([kind, null, "model " + n.model.name + from + (f && f.too_many
       ? ": more than " + f.count + " states, too many to show" : ": no registers, its outputs are functions of its inputs")]);
   }
   return out;
@@ -697,16 +742,18 @@ function icons(n) {
 const FONT_T = "600 11px 'Arial Unicode MS', 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif";
 const COLOR = { valid: "var(--ok)", invalid: "var(--bad)", unknown: "var(--faint)" };
 // ⪯ is drawn: at this size the fonts make it look like ≤
-const tagWidth = s => s === "⪯" ? 22 : textWidth(s, FONT_T) + 12;
+const REF = s => s.startsWith("⪯"), rest = s => s.slice(1).trim();
+const tagWidth = s => REF(s) ? 22 + (rest(s) ? textWidth(rest(s), FONT_T) + 2 : 0) : textWidth(s, FONT_T) + 12;
 function tag(g, x, y, s, status) {
   const c = COLOR[status], ink = c ? "#fff" : "var(--soft)";
   el("rect", { x, y, width: tagWidth(s), height: 16, rx: 4, fill: c || "#fff", stroke: c || "var(--line)",
                "stroke-width": 1 }, g);
-  if (s === "⪯")             // refinement as in the book: ≺, curved, over a bar
+  if (REF(s)) {               // refinement as in the book: ≺, curved, over a bar
     el("path", { d: `M${x + 15.8} ${y + 2.2} C${x + 14.6} ${y + 5.6} ${x + 11} ${y + 6.9} ${x + 6} ${y + 7.1}`
                     + ` C${x + 11} ${y + 7.3} ${x + 14.6} ${y + 8.6} ${x + 15.8} ${y + 12}`
                     + ` M${x + 6.2} ${y + 13.9} L${x + 15.8} ${y + 13.9}`,
                  fill: "none", stroke: ink, "stroke-width": 1.5, "stroke-linecap": "round" }, g);
+    if (rest(s)) text(g, x + 20, y + 11.8, "", rest(s)).setAttribute("style", "font:" + FONT_T + ";fill:" + ink); }
   else { const t = text(g, x + 6, y + 11.8, "", s);
          t.setAttribute("style", "font:" + FONT_T + ";fill:" + ink); }
   return tagWidth(s);
@@ -714,7 +761,7 @@ function tag(g, x, y, s, status) {
 const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
 const WHAT = { "A": "A is satisfiable: the contract is compatible",
                "G": "A → G is satisfiable: the contract is consistent",
-               "A∧G": "A and G can hold together",
+               "A∧G": "feasible: A ∧ G is satisfiable",
                "R": "the contract is realizable (GR(1))",
                "WS": "well-separated: the component cannot win by making the environment break A",
                "¬V": "no vacuous output: each liveness guarantee asks something of the component",
@@ -728,9 +775,10 @@ function size(n) {
   const ls = lines(n);
   const top = textWidth(n.title, FONT_H) + icons(n).length * (ICON + 4) + 14
             + checks(n).reduce((w, c) => w + tagWidth(c.name) + 4, checks(n).length ? 6 : 0)
-            + (n.badge ? tagWidth(n.badge.text) + 18 : 0);
+            + (n.badge ? tagWidth(n.badge.text) + 18 : 0) + (inside(n) ? ICON + 6 : 0);
   let w = Math.max(top, ...ls.map(lineWidth)) + 2 * PAD;
   let h = HEAD + ls.length * LINE + (ls.length ? 8 : 0);
+  if (folded.has(n.id)) h = Math.max(h, HEAD + 10);
   const m = open.has("m:" + n.id) && MODELS[n.id];
   if (m) { w = Math.max(w, m.w + 2 * PAD); h += m.h + 10; }
   return { ls, w: Math.max(w, 110), h, m };
@@ -738,6 +786,7 @@ function size(n) {
 
 const portText = (n, v) => { const t = show.types && n.types && n.types[v]; return t ? v + " " + t.label : v; };
 function ports(n) {
+  if (n.bare) return [];
   const ps = [], lab = v => show.ports ? [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 11 }] : [];
   (n.inputs || []).forEach((v, i) => ps.push({ id: n.id + ":in:" + v, width: PORT, height: PORT, labels: lab(v),
     layoutOptions: { "elk.port.side": "WEST", "elk.port.index": String(n.inputs.length - i) } }));
@@ -765,8 +814,8 @@ function toElk(n, order) {
     layoutOptions: { "elk.portConstraints": "FIXED_ORDER", "elk.nodeSize.constraints": "MINIMUM_SIZE",
       "elk.portLabels.placement": "OUTSIDE", "elk.spacing.portPort": "13",
       "elk.nodeSize.minimum": "(" + sz.w + "," + Math.max(sz.h, (Math.max((n.inputs || []).length, (n.outputs || []).length) + 1) * 17) + ")" } };
-  if (!(n.children && n.children.length)) { base.width = sz.w; base.height = sz.h; return base; }
-  base.children = n.children.map((c, i) => toElk(c, i));
+  if (!inside(n) || folded.has(n.id)) { base.width = sz.w; base.height = sz.h; return base; }
+  base.children = n.children.map((c, i) => toElk(c, n.layout === "stack" ? 0 : i));
   base.edges = (n.edges || []).filter(w => !w.open).map((w, i) => {
     const id = n.id + ":e" + i; KIND[id] = typeOf(n, w.var);
     return { id, sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
@@ -783,7 +832,7 @@ function text(parent, x, y, cls, s) { const t = el("text", { x, y, class: cls },
 function tip(parent, s) { el("title", {}, parent).textContent = s; }
 
 // The icons: a card for a contract, ⊗ for a computed composition, two
-// states and a move for a model.
+// states and a move for a model, with a spark when it was synthesized.
 function icon(g, kind, x, y, on, title, off) {
   const c = el("g", { class: off ? "" : "icon" }, g), ink = off ? "var(--line)" : "var(--teal)", fg = on ? "#fff" : ink;
   el("rect", { x, y, width: ICON, height: ICON, rx: 4, fill: on ? ink : "#fff",
@@ -796,7 +845,9 @@ function icon(g, kind, x, y, on, title, off) {
     el("circle", { cx: x + 8, cy: y + 8, r: 4.6, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
     el("path", { d: `M${x + 4.8} ${y + 4.8} L${x + 11.2} ${y + 11.2} M${x + 11.2} ${y + 4.8} L${x + 4.8} ${y + 11.2}`,
                  stroke: fg, "stroke-width": 1.1 }, c);
-  } else {
+  } else {                   // a model; synthesized: with a spark at the top left
+    if (kind === "synth") el("path", { d: `M${x + 4.5} ${y + 2.8} L${x + 4.5} ${y + 6.8} M${x + 2.5} ${y + 4.8} L${x + 6.5} ${y + 4.8}`,
+                                       stroke: fg, "stroke-width": 1.1, "stroke-linecap": "round" }, c);
     el("circle", { cx: x + 4.8, cy: y + 10.8, r: 2.3, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
     el("circle", { cx: x + 11.2, cy: y + 5.2, r: 2.3, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
     el("line", { x1: x + 6.6, y1: y + 9.2, x2: x + 9.4, y2: y + 6.8, stroke: fg, "stroke-width": 1.1 }, c);
@@ -826,7 +877,7 @@ function drawNode(g, e, ox, oy) {
   let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
-    if (key) c.onclick = kind === "model" && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
+    if (key) c.onclick = (kind === "model" || kind === "synth") && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
     ix += ICON + 4; });
   if (checks(n).length) ix += 6;
   checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core
@@ -839,9 +890,24 @@ function drawNode(g, e, ox, oy) {
     if (c.core) { t.setAttribute("class", "icon");
       t.onclick = () => { if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
+  let rx = x + e.width - PAD;
+  if (inside(n)) {             // fold: hide or show the boxes inside
+    const f = el("g", { class: "icon" }, box), shut = folded.has(n.id), cx = rx - ICON / 2, cy = y + 14;
+    el("rect", { x: rx - ICON, y: y + 6, width: ICON, height: ICON, rx: 4, fill: shut ? "var(--teal)" : "#fff",
+                 stroke: "var(--teal)", "stroke-width": 1.1 }, f);
+    el("path", { d: shut ? `M${cx - 3.5} ${cy - 1.5} L${cx} ${cy + 2} L${cx + 3.5} ${cy - 1.5}`
+                         : `M${cx - 3.5} ${cy + 1.5} L${cx} ${cy - 2} L${cx + 3.5} ${cy + 1.5}`,
+                 fill: "none", stroke: shut ? "#fff" : "var(--teal)", "stroke-width": 1.4,
+                 "stroke-linecap": "round", "stroke-linejoin": "round" }, f);
+    tip(f, (shut ? "Show the " : "Hide the ") + n.children.length + " boxes inside");
+    f.onclick = fold(n.id);
+    rx -= ICON + 6;
+  }
   if (n.badge) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
-    tag(b, x + e.width - PAD - w, y + 6, n.badge.text, n.badge.status);
-    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")); }
+    tag(b, rx - w, y + 6, n.badge.text, n.badge.status);
+    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")
+           + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
+    if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
   sz.ls.forEach(([k, label, s, core], i) => {
     const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
     if (k === "f") {
@@ -857,6 +923,7 @@ function drawNode(g, e, ox, oy) {
     (p.labels || []).forEach(l => text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text)); });
   (e.children || []).forEach(c => drawNode(g, c, x, y));
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
+  if (folded.has(n.id)) return;
   (n.edges || []).filter(w => w.open).forEach(w => {
     const c = (e.children || []).find(c => c.id === w.open[0]); if (!c) return;
     const p = (c.ports || []).find(p => p.id === w.open[0] + ":in:" + w.var); if (!p) return;
@@ -1015,13 +1082,17 @@ function help() {
                 el("rect", { x: 14, y: 6, width: 20, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
          "inside: refines the outer box");
   [["contract", "assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
-   ["model", "states of the model"]].forEach(([k, t]) => sample(svg => icon(svg, k, 16, 2, false, t), t));
+   ["model", "model given (RTL, JSON, SMV)"], ["synth", "model synthesized (slugs)"]].forEach(([k, t]) =>
+    sample(svg => icon(svg, k, 16, 2, false, t), t));
+  sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: 4, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
+                el("path", { d: "M20.5 11.5 L24 8 L27.5 11.5", fill: "none", stroke: "#17393b", "stroke-width": 1.4 }, s); },
+         "hide the boxes inside (or click ⪯)");
   // a check: green when it holds, red when not, grey when undecided
   const pair = (t, d) => { const d2 = document.createElement("div");
     const svg = el("svg", { width: 88, height: 20 }, d2), w = tagWidth(t);
     tag(svg, 44 - w - 2, 2, t, "valid"); tag(svg, 46, 2, t, "invalid");
     d2.appendChild(document.createTextNode(d)); h.appendChild(d2); };
-  [["A", "compatible"], ["G", "consistent"], ["A∧G", "A and G together"], ["R", "realizable"],
+  [["A", "compatible"], ["G", "consistent"], ["A∧G", "feasible"], ["R", "realizable"],
    ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"],
    ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) => pair(t, d));
   sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");

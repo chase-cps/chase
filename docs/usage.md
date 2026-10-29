@@ -731,22 +731,26 @@ it does for A -> G.
 - A contract is a rounded box; a click on its name shows its assumptions
   (A) and guarantees (G).
 - A component with a model (RTL, a state machine in JSON or SMV, or a
-  controller) is a square box; its model opens on its states and moves.
+  controller) is a square box; its model opens on its states and moves. The
+  icon of a synthesized model (a controller of slugs) has a spark.
 - Refinement is nesting: a decomposition, or a contract, is drawn inside
-  the box of the contract it refines. A quotient is a hatched hole next to
-  the known parts, with what refines it inside.
+  the box of the contract it refines, on as many levels as there are
+  refinements. A box with boxes inside folds them away (the button at its
+  top right, or a click on ⪯). A quotient is a hatched hole next to the
+  known parts, with what refines it inside.
 - An environment is a grey box on the left of what it drives: the outside
   of the design, checked against the assumptions only. Something that has a
   contract of its own is a component.
 - The results of the checks are tags next to the name of a box: A
-  (compatible), G (consistent), A∧G (when the two cannot hold together), R
+  (compatible), G (consistent), A∧G (feasible, shown when it fails), R
   (realizable), WS (well-separated), ¬V (no vacuous output), M ⊨ C, E ⊨ A,
   and ⪯ (refines), green when the check holds,
   red when it does not. A click on a red tag with a core puts the terms of
   the core on a red ground.
 - The operations are written as in Benveniste et al. (Contracts for System
-  Design, 2018): ⊗ composition, ∧ conjunction (viewpoints of one component,
-  drawn side by side in one box), / quotient, ⪯ refinement.
+  Design, 2018): ⊗ composition, ∧ conjunction and • merging (viewpoints of
+  one component: one box with the ports of the result, the viewpoints
+  inside), / quotient, ⪯ refinement.
 - The context of the checks is a tag above the diagram.
 
 The structure comes from the contracts: each result of the algebra
