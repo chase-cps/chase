@@ -47,14 +47,12 @@ build_boolean_model')" = "true true "
     check "LiftPlusCruise console" "lpc_console"
     check "LMFSM"                 "python3 LMFSM/fsm.py --expect"
     check "AHB"                   "python3 AHB/ahb.py --expect"
-    check "Warehouse robot"       "python3 WarehouseRobot/warehouse.py --expect"
-    check "AI agents"             "python3 AIAgents/agents.py --expect"
 else
-    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB, WarehouseRobot, AIAgents (no nuXmv)"
+    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB (no nuXmv)"
 fi
 # NuSMV, as without nuXmv (the image published on ghcr.io); BufferSwap needs Yosys
 if command -v NuSMV >/dev/null; then
-    for d in Charger/charger.py LMFSM/fsm.py AHB/ahb.py AIAgents/agents.py; do
+    for d in Charger/charger.py LMFSM/fsm.py AHB/ahb.py; do
         check "NuSMV: $d" "CHASE_BACKEND=nusmv python3 $d --expect"
     done
 fi

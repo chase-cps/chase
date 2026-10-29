@@ -9,12 +9,6 @@ Fixed:
   with "Invalid number format": the logics language reads `-0.8` as one
   token and rejects it. The formulas are now written with `(0 - 0.8)`.
 
-New:
-
-- The demo suite runs two new demos: Warehouse, the contract of a delegated
-  controller as a quotient, and Delegation, a task of an AI agent split
-  among three sub-agents.
-
 ## 0.4.2 (2026-10-28)
 
 Changed:
