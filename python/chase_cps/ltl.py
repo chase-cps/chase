@@ -401,6 +401,9 @@ def to_chase(node: Node) -> str:
     if isinstance(node, Var):
         return node.name + ("'" if node.primed else "")
     if isinstance(node, Num):
+        # The logics language reads -3 as one token, which it rejects.
+        if node.value < 0:
+            return f"(0 - {number_text(-node.value)})"
         return number_text(node.value)
     if isinstance(node, Unary):
         if node.op == "neg":

@@ -41,6 +41,18 @@ def test_no_real_variable_takes_the_old_path(monkeypatch):
         assert cc.implies("G a", "F a", {"a": "bool"}).status == "valid"
 
 
+def test_negative_constants_in_the_logics_language():
+    # the logics language reads -0.8 as one token and rejects it
+    assert ltl.to_chase(P("w >= -0.8")) == "(w >= (0 - 0.8))"
+    assert ltl.to_chase(P("n > -3")) == "(n > (0 - 3))"
+    a = Contract.from_strings(name="A", inputs={"w": "real", "n": (-5, 5)}, outputs={"z": "bool"},
+                              guarantees=["G (w >= -0.8 & n > -3 -> z)"])
+    b = Contract.from_strings(name="B", inputs={"z": "bool"}, outputs={"u": "bool"},
+                              guarantees=["G u"])
+    c = a.compose(b, name="C")     # through the C++ library
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (w >= 0 - 0.8 & n > 0 - 3 -> z)", "G u"]
+
+
 # Regions ----------------------------------------------------------------------
 
 def test_regions_of_a_query():

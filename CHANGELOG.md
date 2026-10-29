@@ -1,5 +1,19 @@
 # Changelog
 
+## Not released
+
+Fixed:
+
+- A negative constant (`w >= -0.8`, `n > -3`) made the operations computed
+  by the C++ library (composition without discharge, for instance) fail
+  with "Invalid number format": the logics language reads `-0.8` as one
+  token and rejects it. The formulas are now written with `(0 - 0.8)`.
+
+New:
+
+- The demo suite runs Warehouse, a new demo: the contract of a delegated
+  controller as a quotient.
+
 ## 0.4.2 (2026-10-28)
 
 Changed:
