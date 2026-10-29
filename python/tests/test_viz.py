@@ -35,14 +35,20 @@ def test_the_results_of_the_algebra_remember_their_operands():
 def test_a_composition_is_a_box_with_its_operands_connected_by_name():
     a, b, top = contracts()
     ab = a.compose(b, name="AB")
-    d = viz.diagram(ab, refines=[(ab, top, "valid")])
+    d = viz.diagram(ab, top, refines=[(ab, top, "valid")])
     group, upper = d["nodes"]
     assert group["kind"] == "group" and [c["title"] for c in group["children"]] == ["A", "B"]
     wires = {(w["from"][0], w["to"][0], w["var"]) for w in group["edges"] if "from" in w}
     ids = {c["title"]: c["id"] for c in group["children"]}
     assert (ids["A"], ids["B"], "y") in wires
     assert (None, ids["A"], "x") in wires            # the input of the box
-    assert d["refines"] == [{"from": group["id"], "to": upper["id"], "status": "valid"}]
+    # the composition refines Top: it is drawn inside Top, with no arrow
+    assert d["refines"] == [] and group["spec"] == {"title": "Top", "status": "valid", "A": [],
+                                                     "G": ["G (x -> z)"]}
+    # a contract that can replace another points to it
+    other = Contract.from_strings(name="A2", inputs=["x"], outputs=["y"], guarantees=["G y"])
+    arrows = viz.diagram(refines=[(other, a)])["refines"]
+    assert len(arrows) == 1 and arrows[0]["status"] is None
     # every box has its own id
     assert len({group["id"], upper["id"], *ids.values()}) == 4
 
@@ -66,7 +72,8 @@ def test_a_system_marks_its_components_and_open_inputs():
     group = d["nodes"][0]
     assert [k["status"] for k in group["children"]] == ["valid", None, None]
     assert any(w.get("open", [None])[0] == group["children"][2]["id"] for w in group["edges"])
-    assert len(d["refines"]) == 1                     # the system below its contract
+    # the system is drawn inside its contract, not below it
+    assert d["refines"] == [] and group["spec"]["title"] == "Top"
 
 
 def test_the_page_and_the_command_line(tmp_path):
@@ -79,4 +86,5 @@ def test_the_page_and_the_command_line(tmp_path):
     assert main(["view", str(spec), "--contracts", "A+B", "--refines", "A+B", "Top",
                  "-o", str(out)]) == 0
     d = data(out.read_text())
-    assert [n["title"] for n in d["nodes"]] == ["A_B", "Top"] and len(d["refines"]) == 1
+    # the composition refines Top: it is drawn inside it
+    assert len(d["nodes"]) == 1 and d["nodes"][0]["spec"]["title"] == "Top"

@@ -193,7 +193,7 @@ def diagram(*items, refines: Iterable = (), title: Optional[str] = None) -> dict
         status = getattr(status, "status", status)
         decomposed = isinstance(low, System) or (
             isinstance(low, Contract) and low.origin and low.origin[0] == "composition")
-        if decomposed and id(low) not in top:
+        if decomposed:
             add(low)
             inside(next(n for n in nodes if n["id"] == top[id(low)]), high, status)
         else:
