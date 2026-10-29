@@ -145,7 +145,9 @@ class Model:
             elif kw == "DEFINE":
                 for m in re.finditer(r"([A-Za-z_][\w$#-]*)\s*:=", _strip_comments(text)[start:stop]):
                     variables.setdefault(m.group(1), "define")
-        return cls(name or "M", text, variables, ivars)
+        model = cls(name or "M", text, variables, ivars)
+        model.source = {"kind": "smv"}
+        return model
 
     @classmethod
     def from_rtl(cls, files, top: str, **options) -> "Model":
@@ -217,6 +219,7 @@ class Model:
         lines.append("TRANS " + (" | ".join(cases) if cases else "FALSE") + ";")
         model = cls(name, "\n".join(lines) + "\n", dict(variables), set())
         model.variables["chase_state"] = "{" + ", ".join(states) + "}"
+        model.source = {"kind": "json", "dict": d}
         return model
 
     @classmethod

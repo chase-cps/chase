@@ -21,12 +21,18 @@ from typing import Optional
 CLOCKS = {"clk", "clk_i", "clock"}
 
 
-def state_graph(model, max_states: int = 24, max_inputs: int = 10) -> Optional[dict]:
+def state_graph(model, inputs=(), max_states: int = 24, max_inputs: int = 10) -> Optional[dict]:
     """{"states": [{"id", "label", "init"}], "edges": [{"from", "to",
     "label"}], "count"}, or {"count", "too_many": True} when more than
     max_states states are reachable, or None when the model cannot be
-    enumerated (no source, or too many inputs)."""
+    enumerated. ``inputs`` are the inputs of the contract of the model: in
+    SMV, the variables that are not states but the labels of the
+    transitions."""
     source = getattr(model, "source", None) or {}
+    if source.get("kind") == "json":
+        return _json(source["dict"], max_states)
+    if source.get("kind") == "smv" or (not source and getattr(model, "smv", None)):
+        return _smv(model, set(inputs), max_states, max_inputs)
     if source.get("kind") == "rtl":
         aig = _aiger(source)
         if aig is None or not aig["latches"]:     # no register: no state machine
@@ -162,6 +168,101 @@ def _cover(minterms, names) -> str:
         lits = [("" if x else "!") + nm for x, nm in zip(p, names) if x is not None]
         words.append(" & ".join(lits) or "true")
     return " | ".join(words)
+
+
+# State machines in JSON -----------------------------------------------------------------
+
+def _json(d: dict, max_states: int) -> dict:
+    states = list(d.get("states", []))
+    if len(states) > max_states:
+        return {"count": len(states), "too_many": True}
+    initial = d.get("initial", states[0] if states else None)
+    initial = {initial} if isinstance(initial, str) else set(initial or [])
+    labels = {}
+    for t in d.get("transitions", []):
+        when = t.get("when") or ""
+        outs = ", ".join(f"{o}={int(v) if isinstance(v, bool) else v}"
+                         for o, v in t.get("outputs", {}).items())
+        label = when + (" / " + outs if outs else "")
+        labels.setdefault((t["from"], t["to"]), []).append(label.strip())
+    return {"states": [{"id": s, "label": s, "init": s in initial} for s in states],
+            "edges": [{"from": a, "to": b, "label": "; ".join(l for l in ls if l)}
+                      for (a, b), ls in labels.items()],
+            "count": len(states)}
+
+
+# SMV ------------------------------------------------------------------------------------
+
+def _smv(model, inputs: set, max_states: int, max_inputs: int) -> Optional[dict]:
+    """The reachable states of an SMV model, and its transitions: nuXmv (or
+    NuSMV) lists the reachable states of the model with a copy of every
+    variable one step late, which are the reachable transitions."""
+    from .models import _smvtype
+    from .tools import find
+    binary = find("nuXmv") or find("NuSMV")
+    if binary is None:
+        return None
+    variables = {v: t for v, t in model.variables.items()
+                 if t != "define" and v not in model.ivars}
+    if any(t == "real" for t in variables.values()):
+        return None
+    ins = sorted(v for v in variables if v in inputs)
+    if len(ins) > max_inputs:
+        return None
+    lines = ["MODULE main", "VAR", "    chase_started : boolean;"]
+    lines += [f"    chase_prev_{v} : {_smvtype(t)};" for v, t in variables.items()]
+    lines += ["ASSIGN", "    init(chase_started) := FALSE;", "    next(chase_started) := TRUE;"]
+    lines += [f"    next(chase_prev_{v}) := {v};" for v in variables]
+    # the copies go right after MODULE main, before any other module
+    text = model.smv.replace("MODULE main", "\n".join(lines), 1)
+    with tempfile.TemporaryDirectory(prefix="chase_fsm_") as tmp:
+        path = os.path.join(tmp, "m.smv")
+        with open(path, "w") as f:
+            f.write(text)
+        p = subprocess.run([binary, "-int"], input=f"read_model -i {path}\ngo\n"
+                           "print_reachable_states -v\nquit\n", capture_output=True,
+                           text=True, timeout=120)
+    states, current = [], None
+    for line in p.stdout.splitlines():
+        line = line.strip()
+        if line.startswith("------- State"):
+            current = {}
+            states.append(current)
+        elif current is not None and " = " in line:
+            k, v = line.split(" = ", 1)
+            current[k.strip()] = v.strip()
+    if not states:
+        return None
+    keep = [v for v in variables if v not in inputs]
+
+    def part(st, prefix=""):
+        return tuple(st.get(prefix + v) for v in keep)
+
+    def label(key):
+        on = [f"{v}" if val == "TRUE" else f"{v}={val}" for v, val in zip(keep, key)
+              if val not in ("FALSE", "0")]
+        return " ".join(on) if on else "(all low)"
+    found, order, init, moves = {}, [], set(), {}
+    for st in states:
+        cur = part(st)
+        if cur not in found:
+            found[cur] = len(order)
+            order.append(cur)
+        if st.get("chase_started") == "FALSE":
+            init.add(cur)
+        else:
+            prev = part(st, "chase_prev_")
+            if prev not in found:
+                found[prev] = len(order)
+                order.append(prev)
+            values = tuple(1 if st.get("chase_prev_" + v) == "TRUE" else 0 for v in ins)
+            moves.setdefault((prev, cur), set()).add(values)
+    if len(order) > max_states:
+        return {"count": len(order), "too_many": True}
+    return {"states": [{"id": f"s{found[s]}", "label": label(s), "init": s in init} for s in order],
+            "edges": [{"from": f"s{found[a]}", "to": f"s{found[b]}", "label": _cover(sorted(ms), ins)}
+                      for (a, b), ms in moves.items()],
+            "count": len(order)}
 
 
 # Controllers -------------------------------------------------------------------------
