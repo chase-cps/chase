@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.2 (not released yet)
+## 0.4.2 (2026-10-28)
 
 Changed:
 
@@ -28,6 +28,8 @@ New:
   NuSMV, and BufferSwap.
 - `chase-cps install nusmv` says that the build of FBK is linked with
   zChaff, for non-commercial use only.
+- `CONTRIBUTING.md`: reporting bugs, building and testing, and proposing
+  changes.
 
 ## 0.4.1 (2026-10-28)
 
