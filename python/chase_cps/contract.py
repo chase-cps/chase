@@ -79,6 +79,9 @@ class Contract:
     outputs: dict[str, VarType] = field(default_factory=dict)
     assumptions: list[ltl.Node] = field(default_factory=list)
     guarantees: list[ltl.Node] = field(default_factory=list)
+    # How the contract was computed: (operation, operands), set by the
+    # operations of the algebra (see _recorded); chase_cps.viz draws it.
+    origin: tuple | None = field(default=None, compare=False, repr=False)
 
     # Construction ------------------------------------------------------------
 
@@ -765,3 +768,38 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     out.inputs = {v: t for v, t in variables.items() if v not in outputs}
     out.outputs = {v: t for v, t in variables.items() if v in outputs}
     return out
+
+
+# Provenance ------------------------------------------------------------------
+
+def _recorded(method, operation: str, binary: bool):
+    """The method, with its result remembering how it was computed."""
+    import functools
+
+    @functools.wraps(method)
+    def run(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        if isinstance(result, Contract) and result is not self:
+            operands = (self, args[0]) if binary and args else (self,)
+            result.origin = (operation, operands)
+        return result
+    return run
+
+
+for _method, _operation, _binary in (
+        ("compose", "composition", True), ("conjoin", "conjunction", True),
+        ("disjoin", "disjunction", True), ("merge", "merging", True),
+        ("divide", "quotient", True), ("separate", "separation", True),
+        ("imply", "implication", True), ("coimply", "coimplication", True),
+        ("invert", "reciprocal", False), ("saturate", "saturation", False),
+        ("simplify", "simplification", False)):
+    setattr(Contract, _method, _recorded(getattr(Contract, _method), _operation, _binary))
+
+
+def _repr_html_(self) -> str:
+    """The diagram of the contract, in Jupyter (chase_cps.viz)."""
+    from .viz import notebook
+    return notebook(self)
+
+
+Contract._repr_html_ = _repr_html_

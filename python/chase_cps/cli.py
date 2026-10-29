@@ -295,6 +295,44 @@ def check(args) -> int:
     return 0 if passed else 1
 
 
+def view(args) -> int:
+    """Draws the contracts of a specification; with --serve, in a page that
+    is drawn again whenever the file changes."""
+    from . import viz
+
+    def page() -> str:
+        contracts = _read(args.file)
+        made = {}
+
+        def get(expression):         # one box per expression
+            if expression not in made:
+                made[expression] = _contract(expression, contracts)
+            return made[expression]
+        items = [get(e) for e in (args.contracts or list(contracts))]
+        pairs = []
+        for low, high in args.refines or []:
+            a, b = get(low), get(high)
+            status = None
+            if args.check:
+                from .checks import refines
+                status = refines(a, b, timeout=args.timeout).status
+            pairs.append((a, b, status))
+        return viz.html(viz.diagram(*items, refines=pairs, title=os.path.basename(args.file)))
+
+    if not args.serve:
+        try:
+            text = page()
+        except (ValueError, RuntimeError) as e:
+            print(f"chase-cps view: {e}", file=sys.stderr)
+            return 2
+        out = args.output or os.path.splitext(args.file)[0] + ".html"
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(out)
+        return 0
+    return viz.serve(page, args.file, args.port, args.host)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="chase-cps", description="CHASE command line")
     parser.add_argument("--version", action="version", version=f"chase-cps {__version__}")
@@ -361,6 +399,29 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")
     p.set_defaults(run=check)
+
+    p = sub.add_parser(
+        "view", help="draw the contracts of a specification",
+        description="Draw the contracts of a specification in the logics language of CHASE, "
+        "or of a JSON file, as a web page. A contract argument can be NAME+NAME+... for the "
+        "composition of the contracts, drawn as a box with the contracts inside. With "
+        "--serve, the page is served on this computer and drawn again whenever the file "
+        "changes.")
+    p.add_argument("file")
+    p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
+                   help="the contracts to draw (default: all)")
+    p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
+                   help="draw ABSTRACT above REFINED (may be repeated)")
+    p.add_argument("--check", action="store_true",
+                   help="check the refinements and mark them (nuXmv or NuSMV)")
+    p.add_argument("-o", "--output", help="the page to write (default: FILE with .html)")
+    p.add_argument("--serve", action="store_true",
+                   help="serve the page, and draw it again when the file changes")
+    p.add_argument("--port", type=int, default=8765)
+    p.add_argument("--host", default="127.0.0.1",
+                   help="the address to serve on (0.0.0.0 in a Docker container)")
+    p.add_argument("--timeout", type=float, default=60, help="seconds per check")
+    p.set_defaults(run=view)
 
     args = parser.parse_args(argv)
     return args.run(args)

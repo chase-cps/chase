@@ -53,6 +53,9 @@ from .logic import Core, implies, is_satisfiable, unsat_core
 from .gr1 import (OutputVacuity, VacuousOutput, is_realizable, is_vacuous, is_well_separated,
                   synthesize, unrealizable_core)
 from .queries import Implies, Realizable, Result, Satisfiable, Trace
+# Components, systems, and their diagrams.
+from .system import Component, System
+from . import viz
 
 __version__ = "0.4.2"
 
@@ -70,6 +73,8 @@ __all__ = [
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
     "is_vacuous", "OutputVacuity", "VacuousOutput",
+    # Components, systems, diagrams
+    "Component", "System", "viz",
     # Results and back ends
     "Result", "Trace", "check", "backends", "checks", "logic", "gr1", "ltl", "tools",
     "Implies", "Satisfiable", "Realizable",
