@@ -21,3 +21,4 @@ output.smv
 *.egg-info/
 /dist/
 /wheelhouse/
+.gstack/
