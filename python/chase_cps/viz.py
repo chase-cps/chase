@@ -158,13 +158,15 @@ def _wires(children: list, inputs, outputs) -> list:
 def diagram(*items, refines: Iterable = (), title: Optional[str] = None) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
-    status), where the status is a string or the result of ``refines``: the
-    abstract one is drawn above. A system with a contract is drawn below it,
-    with the status of its last check."""
-    scene = _Scene()
-    nodes, arrows = [], []
+    status), where the status is a string or the result of ``refines``.
 
-    top = {}
+    A decomposition that refines a contract (a system with its contract, or
+    a composition in ``refines``) is drawn inside the contract: the box of
+    the contract, with its assumptions and guarantees at the top, holds the
+    components. Any other refinement, a contract that can replace another,
+    is an arrow from the refined contract to the one above it."""
+    scene = _Scene()
+    nodes, arrows, top = [], [], {}
 
     def add(obj):
         if id(obj) not in top:
@@ -173,15 +175,32 @@ def diagram(*items, refines: Iterable = (), title: Optional[str] = None) -> dict
             nodes.append(node)
         return top[id(obj)]
 
+    def inside(node, contract, status):
+        node["spec"] = {"title": contract.name, "status": status,
+                        "A": [ltl.to_str(a) for a in contract.assumptions],
+                        "G": [ltl.to_str(g) for g in contract.guarantees]}
+        node["inputs"] = sorted(v for v in contract.inputs
+                                if any(w.get("from", [0])[0] is None and w["var"] == v
+                                       for w in node["edges"]))
+
     for item in items:
         add(item)
         if isinstance(item, System) and item.contract is not None:
-            arrows.append({"from": add(item), "to": add(item.contract), "status": item.status})
+            inside(next(n for n in nodes if n["id"] == top[id(item)]), item.contract, item.status)
     for r in refines:
         low, high = r[0], r[1]
         status = r[2] if len(r) > 2 else None
         status = getattr(status, "status", status)
-        arrows.append({"from": add(low), "to": add(high), "status": status})
+        decomposed = isinstance(low, System) or (
+            isinstance(low, Contract) and low.origin and low.origin[0] == "composition")
+        if decomposed and id(low) not in top:
+            add(low)
+            inside(next(n for n in nodes if n["id"] == top[id(low)]), high, status)
+        else:
+            to = add(high)
+            if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
+                to = scene.ids[id(high)]        # the hole that it fills
+            arrows.append({"from": add(low), "to": to, "status": status})
     return {"title": title or "CHASE", "nodes": nodes, "refines": arrows}
 
 
@@ -340,6 +359,17 @@ function wrap(f) {
 }
 const fontOf = c => c === "f" ? FONT_F : c === "h" ? FONT_H : FONT_S;
 
+// A box that holds a decomposition: the contract it refines, at the top.
+function heading(n) { return n.spec ? n.spec.title + "  =  " + n.note : n.title + "  =  " + n.note; }
+function specLines(n) {
+  if (!n.spec) return [];
+  const out = [];
+  if (n.spec.A.length) { out.push(["k", "ASSUMES"]); n.spec.A.forEach(a => wrap(a).forEach(l => out.push(["f", l]))); }
+  out.push(["k", "GUARANTEES"]);
+  n.spec.G.forEach(g => wrap(g).forEach(l => out.push(["f", l])));
+  return out;
+}
+
 function ports(n) {
   const ps = [];
   const lab = v => [{ text: v, width: textWidth(v, FONT_W), height: 12 }];
@@ -355,7 +385,9 @@ function toElk(n) {
     layoutOptions: { "elk.portConstraints": "FIXED_ORDER", "elk.nodeSize.constraints": "MINIMUM_SIZE",
                      "elk.portLabels.placement": "OUTSIDE", "elk.spacing.portPort": "14" } };
   if (n.kind === "group" && !folded.has(n.id)) {
-    const titleW = textWidth(n.title + "  =  " + n.note, FONT_H) + 2 * PAD;
+    const sl = specLines(n);
+    const titleW = Math.max(textWidth(heading(n), FONT_H),
+                            ...sl.map(([c, t]) => textWidth(t, fontOf(c)) + 2 * PAD)) + 2 * PAD;
     base.children = n.children.map(toElk);
     base.edges = n.edges.filter(w => !w.open).map((w, i) => ({
       id: n.id + ":e" + i,
@@ -364,8 +396,9 @@ function toElk(n) {
       labels: [] }));
     Object.assign(base.layoutOptions, {
       "elk.direction": n.layout === "stack" ? "DOWN" : "RIGHT",
-      "elk.padding": "[top=46,left=26,bottom=18,right=26]",
+      "elk.padding": "[top=" + (46 + (sl.length ? sl.length * LINE + 2 * PAD + 10 : 0)) + ",left=26,bottom=18,right=26]",
       "elk.spacing.nodeNode": "36", "elk.layered.spacing.nodeNodeBetweenLayers": "90",
+      "elk.layered.cycleBreaking.strategy": "MODEL_ORDER",
       "elk.nodeSize.minimum": "(" + titleW + ",60)" });
     return base;
   }
@@ -392,10 +425,21 @@ function drawNode(g, e, ox, oy) {
   const n = byId[e.id], x = ox + e.x, y = oy + e.y;
   const fold = () => { folded.has(n.id) ? folded.delete(n.id) : folded.add(n.id); render(); };
   if (n.kind === "group" && !folded.has(n.id)) {
-    el("rect", { x, y, width: e.width, height: e.height, rx: 8, fill: "var(--fill)", stroke: "var(--line)" }, g);
-    const t = text(g, x + PAD, y + 20, "h", n.title); t.onclick = fold;
-    text(g, x + PAD + textWidth(n.title, FONT_H) + 8, y + 20, "s", "= " + n.note);
-    if (n.op === "system") text(g, x + PAD, y + 36, "s", "system");
+    const spec = n.spec;
+    el("rect", { x, y, width: e.width, height: e.height, rx: spec ? 12 : 8, fill: "var(--fill)",
+                 stroke: spec ? "var(--teal)" : "var(--line)", "stroke-width": spec ? 1.6 : 1 }, g);
+    const name = spec ? spec.title : n.title;
+    const t = text(g, x + PAD, y + 20, "h", name); t.onclick = fold;
+    text(g, x + PAD + textWidth(name, FONT_H) + 8, y + 20, "s", "= " + n.note);
+    if (spec) {
+      const [m, col] = mark(spec.status);
+      const b = text(g, x + e.width - PAD, y + 20, "s", "the decomposition refines it " + m);
+      b.setAttribute("text-anchor", "end"); b.setAttribute("fill", col);
+      const sl = specLines(n);
+      el("rect", { x: x + PAD, y: y + 32, width: e.width - 2 * PAD, height: sl.length * LINE + 2 * PAD,
+                   rx: 8, fill: "#fff", stroke: "var(--teal)", "stroke-width": 1 }, g);
+      sl.forEach(([c, s2], i) => text(g, x + 2 * PAD, y + 32 + PAD + 12 + i * LINE, c, s2));
+    } else if (n.op === "system") text(g, x + PAD, y + 36, "s", "system");
   } else {
     const hole = n.kind === "hole", comp = n.kind === "component";
     el("rect", { x, y, width: e.width, height: e.height, rx: comp ? 0 : 10,
