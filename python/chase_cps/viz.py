@@ -662,9 +662,9 @@ _PAGE = r"""<!doctype html>
 <html><head><meta charset="utf-8"><title>__TITLE__</title>
 <style>
   :root { --ink:#1d2526; --soft:#667374; --faint:#97a3a4; --teal:#17393b; --line:#b6c1c1; --fill:#f5f7f7;
-          --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; }
+          --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --grid:#d3dbdb; --ground:#fcfdfd; }
   html, body { height:100%; overflow:hidden; }
-  body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
+  body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--ground); }
   #top { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
          padding:10px 12px 0 18px; pointer-events:none; }
   #top > * { pointer-events:auto; }
@@ -1135,7 +1135,21 @@ function drawModel(g, m, ax, ay) {
 // scroll moves it), the buttons and the keys + - 0 too.
 let cam = null, size0 = { w: 0, h: 0 }, camera = null, refit = false;
 const TOP = 56;               // the room of the tools at the top
-function place() { if (camera && cam) camera.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.k})`); }
+// The background is a grid of dots that moves and scales with the diagram;
+// zoomed out, every other dot goes, so they stay 16 to 32 pixels apart.
+const DOT = 20;
+function place() {
+  if (!camera || !cam) return;
+  camera.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.k})`);
+  const dots = document.getElementById("dots");
+  if (dots) {
+    let step = DOT * cam.k;
+    while (step < 16) step *= 2;
+    while (step > 32) step /= 2;
+    dots.setAttribute("width", step); dots.setAttribute("height", step);
+    dots.setAttribute("patternTransform", `translate(${cam.x % step},${cam.y % step})`);
+  }
+}
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
   const k = Math.min(1, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
@@ -1193,6 +1207,9 @@ function svgIn(container, width, height) {
                             patternTransform: "rotate(45)" }, defs);
   el("rect", { width: 7, height: 7, fill: "#fff" }, h);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "#e6ecec", "stroke-width": 2 }, h);
+  const d = el("pattern", { id: "dots", width: DOT, height: DOT, patternUnits: "userSpaceOnUse" }, defs);
+  el("circle", { cx: 1, cy: 1, r: 1, fill: "var(--grid)" }, d);
+  el("rect", { width: "100%", height: "100%", fill: "url(#dots)" }, svg);
   camera = el("g", {}, svg);
   size0 = { w: width, h: height };
   if (cam && !refit) place(); else fit();  // the first drawing fits the window, and Open all; then the view stays
