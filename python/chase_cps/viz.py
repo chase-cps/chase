@@ -88,6 +88,7 @@ class _Scene:
     def __init__(self):
         self.count = 0
         self.ids = {}           # the first box of an object
+        self.objs = {}          # the object of each box
 
     def fresh(self, prefix="n") -> str:
         self.count += 1
@@ -97,6 +98,7 @@ class _Scene:
         node.setdefault("id", self.fresh())
         node["types"] = types or {}
         self.ids.setdefault(id(obj), node["id"])
+        self.objs[node["id"]] = id(obj)
         node.setdefault("children", [])
         node.setdefault("edges", [])
         node.setdefault("layout", "row")
@@ -289,6 +291,29 @@ def _through(inner: dict, inputs, outputs) -> list:
     return wires
 
 
+def _ancestors(nodes: list, node_id: str, path: tuple = ()) -> Optional[list]:
+    """The boxes that hold the box node_id, the outer first ([] at the top),
+    or None when it is not drawn."""
+    for n in nodes:
+        if n["id"] == node_id:
+            return list(path)
+        found = _ancestors(n.get("children", []), node_id, path + (n,))
+        if found is not None:
+            return found
+    return None
+
+
+def _parent(nodes: list, node_id: str) -> Optional[dict]:
+    """The box that holds the box node_id, or None at the top."""
+    path = _ancestors(nodes, node_id) or []
+    return path[-1] if path else None
+
+
+def _holds(node: dict, oid: int, objs: dict) -> bool:
+    """Whether the box, or a box inside it, draws the object oid."""
+    return objs.get(node["id"]) == oid or any(_holds(c, oid, objs) for c in node.get("children", []))
+
+
 def _find(nodes: list, node_id: str):
     for n in nodes:
         if n["id"] == node_id:
@@ -425,7 +450,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     for item in items:
         node = add(item)
         if isinstance(item, System) and item.contract is not None:
-            replace(node, scene.wrap(node, item.contract, item.status))
+            wrapped = scene.wrap(node, item.contract, item.status)
+            wrapped.update(title=item.name, note=f"contract {item.contract.name} · {node['note']}")
+            replace(node, wrapped)
     def parts(obj, out):                 # the contracts drawn in the box of obj
         out.add(id(obj))
         if isinstance(obj, System):
@@ -462,9 +489,21 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             hole["badge"] = {"text": "⪯", "status": status}
             continue
         drawn = _find(nodes, scene.ids[id(high)]) if id(high) in scene.ids else None
-        if drawn is not None and not drawn.get("children") and id(low) not in top:
-            # the contract is drawn inside another box already: its box takes what refines it
-            inner = scene.node(low)
+        # a part of a composition is refined in place by its decomposition only;
+        # another contract that refines it is drawn apart, and the composition stays
+        decomposition = isinstance(low, System) or (
+            isinstance(low, Contract) and bool(low.origin) and low.origin[0] == "composition")
+        part = drawn is not None and (_parent(nodes, drawn["id"]) or {}).get("kind") == "group"
+        loop = drawn is not None and any(scene.objs.get(n["id"]) == id(low)    # inside a box of low
+                                         for n in _ancestors(nodes, drawn["id"]))
+        if (drawn is not None and not drawn.get("children") and top.get(id(low)) is not drawn
+                and (decomposition or not part) and not loop):
+            # the contract is drawn already (inside another box, or as an item): its box takes what refines it
+            inner = top.pop(id(low), None)
+            if inner is not None:
+                nodes.remove(inner)
+            else:
+                inner = scene.node(low)
             wrapped = scene.wrap(inner, high, status)
             keep = drawn["id"]
             drawn.clear()
@@ -479,6 +518,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
+        if _holds(inner, id(high), scene.objs):  # a loop (each refines the other): drawn apart
+            top.setdefault(id(low), inner)
+            nodes.append(scene.wrap(scene.node(low), high, status))
+            continue
         wrapped = scene.wrap(inner, high, status)
         replace(inner, wrapped)
         top[id(low)] = wrapped
@@ -573,7 +616,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     (refined, abstract) names, drawn one inside the other; ``environments``
     lists (model file, contract): an SMV or JSON state machine, or a
     controller of slugs. ``check`` checks the refinements and the
-    environments; ``verify`` and ``realizable`` check each contract drawn."""
+    environments; ``verify`` and ``realizable`` check each contract of the
+    file that is drawn, alone or as a part of a composition."""
     from . import checks as _checks_
     from . import gr1
     from .cli import _contract, _model, _read
@@ -587,8 +631,18 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     items = [get(e) for e in (list(contracts) or list(spec))]
     pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
              for a, b in refines]
+    def written(c, out):              # the contracts of the file in c, in order
+        if c.origin:
+            for o in c.origin[1]:
+                written(o, out)
+        elif all(x is not c for x in out):
+            out.append(c)
+        return out
+    atoms = []
+    for c in items + [x for a, b, _ in pairs for x in (a, b)]:
+        written(c, atoms)
     marks = []
-    for c in items:
+    for c in atoms:                   # a composition is not GR(1): its parts are checked
         if verify:
             marks.append((c, _checks_.verify(c, core=True, timeout=timeout)))
         if realizable:

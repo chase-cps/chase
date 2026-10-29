@@ -138,7 +138,8 @@ def test_a_system_marks_its_components_and_open_inputs():
     assert kinds == [("component", "valid"), ("contract", None), ("contract", None)]
     assert group["children"][0]["model"]["fsm"]["count"] == 1
     assert any(w.get("open", [None])[0] == group["children"][2]["id"] for w in group["edges"])
-    assert group["title"] == "Top"                    # the system, inside its contract
+    assert group["title"] == "S" and group["contract"]["name"] == "Top"   # the system, in its contract
+    assert group["note"].startswith("contract Top")
 
 
 def test_checks_and_cores_are_marked_on_the_box():
@@ -193,7 +194,7 @@ def test_environments_drive_the_inputs_and_the_context_is_kept():
                                              {"from": "hi", "outputs": {"x": True}, "to": "lo"}]})
     d = viz.diagram(s, a, environments=[(pulse, s, "valid"), ("G F x", a)], context="G !(x & y)")
     kinds = [(n["kind"], n["title"]) for n in d["nodes"]]
-    assert kinds == [("environment", "Environment"), ("group", "Top"),
+    assert kinds == [("environment", "Environment"), ("group", "S"),
                      ("environment", "Environment"), ("contract", "A")]
     env, system = d["nodes"][0], d["nodes"][1]
     assert env["outputs"] == ["x"] and env["model"]["fsm"]["count"] == 2
@@ -313,3 +314,14 @@ def test_one_item_refining_two_contracts_and_several_candidates_for_a_quotient()
     marks = viz.diagram(a, checks=[(a, "consistent", Result("unsat")), (a, "compatible", Result("sat"))])[
         "nodes"][0]["checks"]
     assert [(k["name"], k["status"]) for k in marks] == [("G", "invalid"), ("A", "valid")]
+
+
+def test_a_part_refined_by_another_contract_and_a_loop_are_drawn_apart():
+    a, b, top = contracts()
+    a2 = Contract.from_strings(name="A2", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)", "G y"])
+    ab = a.compose(b, name="AB")
+    nodes = viz.diagram(ab, refines=[(a2, a, "valid"), (a, a2, "invalid")])["nodes"]
+    # the composition keeps its parts; each refinement is a box of its own
+    assert [c["title"] for c in nodes[0]["children"]] == ["A", "B"]
+    assert [(n["title"], n["badge"]["status"], [c["title"] for c in n["children"]]) for n in nodes[1:]] == [
+        ("A", "valid", ["A2"]), ("A2", "invalid", ["A"])]
