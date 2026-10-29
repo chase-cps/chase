@@ -134,6 +134,17 @@ def test_checks_and_cores_are_marked_on_the_box():
     mark = viz.diagram(c, checks=[(c, r)])["nodes"][0]["checks"][0]
     assert mark == {"name": "R", "status": "invalid", "reason": "",
                     "core": {"A": [], "G": [1], "part": "contract"}}
+    # well-separation and vacuity: the assumptions of the core, the guarantees of the vacuous output
+    from chase_cps.gr1 import OutputVacuity, VacuousOutput
+    ws = Result("not_separated", core=Core("found", Contract("C_core", dict(c.inputs), dict(c.outputs),
+                                                             c.assumptions[:1], [])))
+    ov = OutputVacuity("vacuous", [VacuousOutput("z", "never", [c.guarantees[1]],
+                                                 core=Core("found", c.assumptions[:1]))])
+    marks = viz.diagram(c, checks=[(c, ws), (c, ov), (c, OutputVacuity("not_vacuous"))])["nodes"][0]["checks"]
+    assert [(k["name"], k["status"], k.get("core")) for k in marks] == [
+        ("WS", "invalid", {"A": [0], "G": [], "part": "contract"}),
+        ("¬V", "invalid", {"A": [0], "G": [1], "part": "contract"}),
+        ("¬V", "valid", None)]
     # a check on the contract of a component goes to the box of the component
     m = Model.from_dict({"name": "M", "inputs": {"x": "bool"}, "outputs": {"y": "bool"},
                          "states": ["s"], "transitions": [{"from": "s", "to": "s"}]})

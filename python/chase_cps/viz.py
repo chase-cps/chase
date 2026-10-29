@@ -278,6 +278,8 @@ def _mark(result) -> str:
     status = _status(result)
     if status in (None, "unknown"):
         return "unknown"
+    if status in ("vacuous", "not_vacuous"):          # the check holds when nothing is vacuous
+        return "valid" if status == "not_vacuous" else "invalid"
     if isinstance(result, str):
         return "valid" if status in ("valid", "sat", "realizable", "separated", "receptive",
                                      "found") else "invalid"
@@ -287,8 +289,11 @@ def _mark(result) -> str:
 def _checks(r, name: Optional[str] = None) -> list:
     """[(label, result, core)]: verify gives A (compatible) and G
     (consistent), and A∧G when the two cannot hold together; a GR(1) result
-    R (realizable). The core is the Core that explains a failure, or None."""
+    R (realizable), WS (well-separated), or ¬V (no vacuous output). The core
+    explains a failure: a Core, the terms (A, G) of a vacuous output (its
+    guarantees, and the assumptions of its core), or None."""
     from .checks import Verification
+    from .gr1 import OutputVacuity
     from .logic import Core
 
     def core_of(x):
@@ -301,9 +306,15 @@ def _checks(r, name: Optional[str] = None) -> list:
         return out
     if isinstance(r, Core):
         return [(name or "core", "invalid" if r else "unknown", r if r else None)]
+    if isinstance(r, OutputVacuity):
+        terms = None
+        if r.vacuous:
+            a = [t for v in r.vacuous if v.core and v.core.core for t in v.core.core]
+            terms = ([ltl.to_str(t) for t in a], [ltl.to_str(t) for v in r.vacuous for t in v.guarantees])
+        return [(name or "¬V", r, terms)]
     if name is None:
-        name = {"realizable": "R", "unrealizable": "R", "separated": "separated",
-                "not_separated": "separated", "receptive": "receptive",
+        name = {"realizable": "R", "unrealizable": "R", "separated": "WS",
+                "not_separated": "WS", "receptive": "receptive",
                 "not_receptive": "receptive"}.get(_status(r), "check")
     return [(name, r, core_of(r))]
 
@@ -311,13 +322,16 @@ def _checks(r, name: Optional[str] = None) -> list:
 def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
     """Where the terms of the core are in the box: in its contract or in its
     composed contract, by index. All the assumptions are in an unrealizable
-    core: only its guarantees count."""
-    c = core.core
-    if isinstance(c, Contract):
+    core: only its guarantees count. The core is a Core, or the texts of its
+    assumptions and guarantees."""
+    if isinstance(core, tuple):
+        want = {"A": set(core[0]), "G": set(core[1])}
+    elif isinstance(core.core, Contract):
+        c = core.core
         want = {"A": set() if unrealizable else {ltl.to_str(t) for t in c.assumptions},
                 "G": {ltl.to_str(t) for t in c.guarantees}}
     else:                                   # formulas, assumptions or guarantees
-        fs = {ltl.to_str(t) for t in c or []}
+        fs = {ltl.to_str(t) for t in core.core or []}
         want = {"A": fs, "G": fs}
     for key in ("contract", "composed"):
         terms = node.get(key)
@@ -526,27 +540,30 @@ _PAGE = r"""<!doctype html>
   :root { --ink:#1d2526; --soft:#667374; --faint:#97a3a4; --teal:#17393b; --line:#b6c1c1; --fill:#f5f7f7;
           --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
-  header { padding:9px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:14px; align-items:center; }
-  header b { font-size:14px; font-weight:600; flex:1; }
-  .tools { display:flex; gap:2px; align-items:center; }
+  #top { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
+         padding:10px 12px 0 18px; pointer-events:none; }
+  #top > * { pointer-events:auto; }
+  .tools { display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e3e8e8; border-radius:8px;
+           padding:2px; box-shadow:0 1px 4px rgba(0,0,0,.06); position:relative; margin-left:auto; }
   .tools button { width:28px; height:26px; border:1px solid transparent; background:none; border-radius:6px;
                   cursor:pointer; color:var(--soft); display:flex; align-items:center; justify-content:center; padding:0; }
   .tools button:hover { background:var(--fill); color:var(--teal); }
   .tools button.on { background:#e6eeee; color:var(--teal); }
-  .tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
+  .tools button svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
                stroke-linecap:round; stroke-linejoin:round; }
   .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
-  #help { position:absolute; right:16px; top:44px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
+  #help { position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
           box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font:12px 'Arial Unicode MS', Helvetica, Arial, sans-serif;
           color:var(--soft); display:none; z-index:11; }
   #help div { display:flex; gap:10px; align-items:center; margin:6px 0; white-space:nowrap; }
   #help svg { flex:none; }
-  #context { margin:14px 18px 0; display:none; gap:8px; flex-wrap:wrap; }
+  #context { display:none; gap:8px; flex-wrap:wrap; padding-top:4px; }
   #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
-                  padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink); }
+                  padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink);
+                  white-space:nowrap; background:#fff; }
   #context i { font:600 9.5px -apple-system, Helvetica, Arial, sans-serif; font-style:normal; color:#fff;
                background:#6f7f80; border-radius:4px; padding:2px 5px; }
-  #view { overflow:auto; padding:18px; }
+  #view { overflow:auto; padding:6px 18px 18px; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
   .h { font-weight:600; font-size:12.5px; fill:var(--ink); cursor:pointer; }
@@ -557,7 +574,8 @@ _PAGE = r"""<!doctype html>
   #pop { position:fixed; left:50%; top:12%; transform:translateX(-50%); max-width:min(860px, 90vw); max-height:72vh;
          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 10px 36px rgba(0,0,0,.16);
          display:none; flex-direction:column; z-index:10; }
-  #pop header { gap:20px; }
+  #pop header { padding:9px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
+  #pop header b { font-size:13px; font-weight:600; flex:1; }
   #pop button { font:12px -apple-system, Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
                 border-radius:6px; padding:2px 10px; cursor:pointer; color:var(--soft); }
   #popview { overflow:auto; padding:6px 18px 16px; }
@@ -568,7 +586,7 @@ _PAGE = r"""<!doctype html>
   table.fsm td.st { color:var(--teal); font-weight:600; border-bottom:1px solid #e3e8e8; }
   table.fsm td.when { color:var(--soft); }
 </style></head><body>
-<header><b>__TITLE__</b>
+<div id="top"><div id="context"></div>
   <span class="tools">
     <button id="all" title="Open all" onclick="openAll(!allOpen)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
     <span class="sep"></span>
@@ -578,9 +596,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Results of the checks" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
-  </span></header>
-<div id="help"></div>
-<div id="context"></div>
+  </span><div id="help"></div></div>
 <div id="view"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
@@ -680,14 +696,17 @@ function icons(n) {
 // Arial Unicode draws ∧, ⊨ and ⊑ as large as the letters; Helvetica does not.
 const FONT_T = "600 11px 'Arial Unicode MS', 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif";
 const COLOR = { valid: "var(--ok)", invalid: "var(--bad)", unknown: "var(--faint)" };
+// ⪯ is drawn: at this size the fonts make it look like ≤
 const tagWidth = s => s === "⪯" ? 22 : textWidth(s, FONT_T) + 12;
 function tag(g, x, y, s, status) {
   const c = COLOR[status], ink = c ? "#fff" : "var(--soft)";
   el("rect", { x, y, width: tagWidth(s), height: 16, rx: 4, fill: c || "#fff", stroke: c || "var(--line)",
                "stroke-width": 1 }, g);
-  if (s === "⪯")             // refinement, as in the book: drawn, since fonts draw it small
-    el("path", { d: `M${x + 15} ${y + 3.5} L${x + 7} ${y + 7.5} L${x + 15} ${y + 11.5} M${x + 7} ${y + 13} L${x + 15} ${y + 13}`,
-                 fill: "none", stroke: ink, "stroke-width": 1.6, "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
+  if (s === "⪯")             // refinement as in the book: ≺, curved, over a bar
+    el("path", { d: `M${x + 15.8} ${y + 2.2} C${x + 14.6} ${y + 5.6} ${x + 11} ${y + 6.9} ${x + 6} ${y + 7.1}`
+                    + ` C${x + 11} ${y + 7.3} ${x + 14.6} ${y + 8.6} ${x + 15.8} ${y + 12}`
+                    + ` M${x + 6.2} ${y + 13.9} L${x + 15.8} ${y + 13.9}`,
+                 fill: "none", stroke: ink, "stroke-width": 1.5, "stroke-linecap": "round" }, g);
   else { const t = text(g, x + 6, y + 11.8, "", s);
          t.setAttribute("style", "font:" + FONT_T + ";fill:" + ink); }
   return tagWidth(s);
@@ -697,6 +716,8 @@ const WHAT = { "A": "A is satisfiable: the contract is compatible",
                "G": "A → G is satisfiable: the contract is consistent",
                "A∧G": "A and G can hold together",
                "R": "the contract is realizable (GR(1))",
+               "WS": "well-separated: the component cannot win by making the environment break A",
+               "¬V": "no vacuous output: each liveness guarantee asks something of the component",
                "M ⊨ C": "the model implements the contract",
                "E ⊨ A": "the environment satisfies the assumptions",
                "⪯": "what is inside refines this contract" };
@@ -812,7 +833,7 @@ function drawNode(g, e, ox, oy) {
     const t = el("g", {}, box), on = focus[n.id] === i;
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
-           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core, the terms that fail together") : ""));
+           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
     if (c.core) { t.setAttribute("class", "icon");
@@ -982,7 +1003,7 @@ function help() {
   const h = document.getElementById("help");
   if (h.style.display === "block") { h.style.display = "none"; return; }
   const sample = (draw, s) => { const d = document.createElement("div");
-    const svg = el("svg", { width: 48, height: 20 }, d); draw(svg); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
+    const svg = el("svg", { width: 88, height: 20 }, d); draw(el("g", { transform: "translate(20,0)" }, svg)); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
   const box = (rx, fill, stroke, w, dash) => s => el("rect", { x: 4, y: 3, width: 40, height: 14, rx, fill, stroke,
     "stroke-width": w, "stroke-dasharray": dash || "none" }, s);
   h.innerHTML = "";
@@ -995,13 +1016,23 @@ function help() {
          "inside: refines the outer box");
   [["contract", "assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
    ["model", "states of the model"]].forEach(([k, t]) => sample(svg => icon(svg, k, 16, 2, false, t), t));
+  // a check: green when it holds, red when not, grey when undecided
+  const pair = (t, d) => { const d2 = document.createElement("div");
+    const svg = el("svg", { width: 88, height: 20 }, d2), w = tagWidth(t);
+    tag(svg, 44 - w - 2, 2, t, "valid"); tag(svg, 46, 2, t, "invalid");
+    d2.appendChild(document.createTextNode(d)); h.appendChild(d2); };
   [["A", "compatible"], ["G", "consistent"], ["A∧G", "A and G together"], ["R", "realizable"],
-   ["M ⊨ C", "implements"], ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) =>
-    sample(s => tag(s, 24 - tagWidth(t) / 2, 2, t, "valid"), d));
-  sample(s => { tag(s, 4, 2, "R", "valid"); tag(s, 26, 2, "R", "invalid"); }, "holds, does not hold");
+   ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"],
+   ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) => pair(t, d));
   sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");
+  const wire = (w, d) => sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#7d8c8d", "stroke-width": w }, s), d);
+  wire(1.1, "Boolean");
+  wire(1.8, "integer or real");
   sample(s => { el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
-                el("line", { x1: 20, y1: 15, x2: 28, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s); }, "bus, with its width");
+                el("line", { x1: 20, y1: 15, x2: 28, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s);
+                text(s, 29, 7, "w", "8"); }, "bus, with its width");
+  sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#c07a14", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, s),
+         "input that nobody drives");
   h.style.display = "block";
 }
 function svgDefsHatch(s) {

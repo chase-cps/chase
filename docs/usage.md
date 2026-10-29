@@ -740,7 +740,8 @@ it does for A -> G.
   contract of its own is a component.
 - The results of the checks are tags next to the name of a box: A
   (compatible), G (consistent), A∧G (when the two cannot hold together), R
-  (realizable), M ⊨ C, E ⊨ A, and ⪯ (refines), green when the check holds,
+  (realizable), WS (well-separated), ¬V (no vacuous output), M ⊨ C, E ⊨ A,
+  and ⪯ (refines), green when the check holds,
   red when it does not. A click on a red tag with a core puts the terms of
   the core on a red ground.
 - The operations are written as in Benveniste et al. (Contracts for System
@@ -774,7 +775,8 @@ viz.save(d, "plan.html")       # viz.show(d) opens the browser; in Jupyter, a sy
 ```
 
 `checks` takes the result of `verify` (A, G, and A∧G), of `is_realizable`
-(R), any other result with a name, `(item, name, result)`, or a core; with
+(R), of `is_well_separated` (WS), of `is_vacuous` (¬V, with the guarantees
+that name a vacuous output as its core), any other result with a name, `(item, name, result)`, or a core; with
 `core=True`, the core comes with the check that fails. An unrealizable core
 shows the guarantees only, since it keeps all the assumptions. `environments` takes an LTL formula, a
 `Model`, or a `Component` whose implementation is the environment.
