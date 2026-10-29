@@ -334,3 +334,26 @@ def test_open_draws_the_boxes_asked_open():
     group = d["nodes"][0]
     assert group.get("open") and group["children"][1].get("open") and not group["children"][0].get("open")
     assert "openAsked();" in viz.html(d)
+
+
+def test_a_loop_is_drawn_next_to_its_item_and_open_skips_the_parts():
+    x, y, z = {"x": "bool"}, {"y": "bool"}, {"z": "bool"}
+    a = Contract.from_strings(name="A", inputs=x, outputs=y, assumptions=["G F x"], guarantees=["G F y"])
+    b = Contract.from_strings(name="B", inputs=x, outputs=y, assumptions=["G F x"], guarantees=["G y"])
+    c = Contract.from_strings(name="C", inputs=y, outputs=z, guarantees=["G (y -> z)"])
+    d = viz.diagram(a, b, b.compose(c), refines=[(b, a, "valid"), (a, b, "invalid")], open=[b])
+    assert [n["title"] for n in d["nodes"]] == ["A", "B", "B_C"]
+    assert d["nodes"][0]["children"][0].get("open") and d["nodes"][1].get("open")
+    assert not d["nodes"][2]["children"][0].get("open")
+
+
+def test_open_reaches_each_hole_of_a_quotient():
+    x, y, z = {"x": "bool"}, {"y": "bool"}, {"z": "bool"}
+    a = Contract.from_strings(name="A", inputs=x, outputs=y, guarantees=["G (y -> x)"])
+    s = Contract.from_strings(name="S", inputs=x, outputs={**y, **z}, guarantees=["G (z <-> y)"])
+    q = s.divide(a, name="Q")
+    c1 = Contract.from_strings(name="C1", inputs=y, outputs=z, guarantees=["G z"])
+    c2 = Contract.from_strings(name="C2", inputs=y, outputs=z, guarantees=["G (z <-> y)"])
+    d = viz.diagram(q, refines=[(c1, q, "invalid"), (c2, q, "valid")], open=[q])
+    assert [n.get("open") for n in d["nodes"]] == [None, None]     # not the dividend
+    assert all(ch.get("open") for n in d["nodes"] for ch in n["children"] if ch["kind"] == "hole")

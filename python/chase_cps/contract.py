@@ -457,6 +457,9 @@ class Contract:
         al., arXiv 2309.08875, Section 4, computed as the composition of
         (true, b) with the contract. The result refines the contract."""
         b = _single_term(self, formula, assumption=False)
+        if not self.assumptions:        # (true, G) composed with (true, b) is (true, G & b): keep the terms
+            return Contract(name or f"{self.name}_ensure", dict(self.inputs), dict(self.outputs),
+                            [], list(self.guarantees) + list(b.guarantees))
         return _algebra("composition", self, b, name or f"{self.name}_ensure")
 
 

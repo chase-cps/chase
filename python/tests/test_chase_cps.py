@@ -547,6 +547,16 @@ def test_assume_and_ensure():
         c.assume("G z")
 
 
+def test_ensure_without_assumptions_keeps_the_terms():
+    from chase_cps import refines
+    from chase_cps.contract import _algebra, _single_term
+    c = Contract.from_strings(inputs=["a"], outputs=["b"], guarantees=["G (a -> b)"], name="C")
+    e = c.ensure("G (b -> X b)")
+    assert e.assumptions == [] and len(e.guarantees) == 2
+    composed = _algebra("composition", c, _single_term(c, "G (b -> X b)", assumption=False), "K")
+    assert refines(e, composed).status == "valid" and refines(composed, e).status == "valid"
+
+
 @needs_native
 @needs_mc
 def test_quotient_composed_with_divisor_refines():

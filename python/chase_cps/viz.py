@@ -314,6 +314,12 @@ def _holds(node: dict, oid: int, objs: dict) -> bool:
     return objs.get(node["id"]) == oid or any(_holds(c, oid, objs) for c in node.get("children", []))
 
 
+def _boxes(nodes: list):
+    for n in nodes:
+        yield n
+        yield from _boxes(n.get("children", []))
+
+
 def _find(nodes: list, node_id: str):
     for n in nodes:
         if n["id"] == node_id:
@@ -454,6 +460,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             wrapped = scene.wrap(node, item.contract, item.status)
             wrapped.update(title=item.name, note=f"contract {item.contract.name} · {node['note']}")
             replace(node, wrapped)
+    def after(box, new):                # new, next to the item that holds box
+        i = next((i for i, n in enumerate(nodes) if n is box or _find([n], box["id"]) is not None), None)
+        nodes.insert(len(nodes) if i is None else i + 1, new)
+
     def parts(obj, out):                 # the contracts drawn in the box of obj
         out.add(id(obj))
         if isinstance(obj, System):
@@ -515,13 +525,13 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                     scene.ids[k] = keep
             continue
         if id(low) in refined:              # it refines another contract too: drawn again, apart
-            nodes.append(scene.wrap(scene.node(low), high, status))
+            after(top[id(low)], scene.wrap(scene.node(low), high, status))
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
         if _holds(inner, id(high), scene.objs):  # a loop (each refines the other): drawn apart
             top.setdefault(id(low), inner)
-            nodes.append(scene.wrap(scene.node(low), high, status))
+            after(inner, scene.wrap(scene.node(low), high, status))
             continue
         wrapped = scene.wrap(inner, high, status)
         replace(inner, wrapped)
@@ -560,8 +570,13 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                       for v in node.get("inputs", [])]
         else:
             env_node["badge"]["text"] = f"E ⊨ A of {node['title']}"
-    for obj in open:
-        box_of(obj)["open"] = True
+    for obj in open:                    # its first box, and its other boxes but the parts of a composition
+        first = box_of(obj)
+        boxes = [first] + [n for n in _boxes(nodes) if scene.objs.get(n["id"]) == id(obj) and n is not first
+                           and (_parent(nodes, n["id"]) or {}).get("kind") != "group"]
+        holes = [n for n in _boxes(nodes) if n["kind"] == "hole" and scene.objs.get(n["id"]) == id(obj)]
+        for n in holes or boxes:        # a quotient: its holes, not the box of the dividend
+            n["open"] = True
     if context is not None:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
@@ -887,7 +902,16 @@ function lines(n) {
     const ts = [];
     terms(c, ts, core && core.part === which ? core : null);
     if (ts.length <= LONG) { out.push(...ts); return; }
-    out.push(...ts.slice(0, SHORT), ["more", "", "⋯ " + (ts.length - SHORT) + " more lines", c]);
+    const parts = [];                  // A and G cut apart: the first lines of each
+    ts.forEach(t => (t[1] || !parts.length) ? parts.push([t]) : parts[parts.length - 1].push(t));
+    let left = SHORT;
+    parts.forEach((p, i) => {
+      const rest = parts.slice(i + 1).reduce((s, q) => s + q.length, 0);
+      const keep = Math.max(1, i === parts.length - 1 ? left : Math.max(Math.floor(SHORT / parts.length), SHORT - rest));
+      out.push(...p.slice(0, keep));
+      if (p.length > keep) out.push(["more", "", "⋯ " + (p.length - keep) + " more lines", c]);
+      left -= Math.min(keep, p.length);
+    });
   };
   if (n.note) out.push(["s", "", n.note]);
   if (n.contract && open.has("c:" + n.id)) {
