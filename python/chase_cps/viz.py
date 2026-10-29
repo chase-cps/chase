@@ -717,9 +717,7 @@ _PAGE = r"""<!doctype html>
   <span class="tools">
     <button id="all" title="Open all" onclick="openAll(!allOpen)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
     <span class="sep"></span>
-    <button title="Zoom out (-)" onclick="zoomBy(1 / 1.25)"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14M4.8 7h4.4"/></svg></button>
-    <button title="Fit the diagram to the window (0)" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
-    <button title="Zoom in (+)" onclick="zoomBy(1.25)"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14M4.8 7h4.4M7 4.8v4.4"/></svg></button>
+    <button title="Fit the diagram to the window (0); the wheel zooms where it points, a drag moves" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
     <span class="sep"></span>
     <button class="on" title="Ports and their names" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (bit vectors, ranges, reals)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
@@ -1169,8 +1167,8 @@ function drawModel(g, m, ax, ay) {
 }
 
 // The camera: the diagram moves and scales in the window, as in a map. A
-// drag on the background moves it, the wheel or a pinch zooms (a trackpad
-// scroll moves it), the buttons and the keys + - 0 too.
+// drag on the background moves it; the wheel, a scroll or a pinch zooms
+// around the pointer; the button and the key 0 fit it, + and - zoom.
 let cam = null, size0 = { w: 0, h: 0 }, camera = null, refit = false;
 const TOP = 56;               // the room of the tools at the top
 // The background is a grid of dots that moves and scales with the diagram;
@@ -1191,7 +1189,7 @@ function place() {
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
   const k = Math.min(1, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
-  cam = { k, x: Math.max(20, (W - size0.w * k) / 2), y: TOP + 10 };
+  cam = { k, x: Math.max(20, (W - size0.w * k) / 2), y: TOP + Math.max(10, (H - size0.h * k) / 2) };
   place();
 }
 function zoomAt(px, py, f) {
@@ -1218,11 +1216,8 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
   v.addEventListener("wheel", e => {
     if (!cam) return;
     e.preventDefault();
-    // a pinch, or a mouse wheel (whole lines, or big steps up and down): zoom
-    const mouse = e.deltaMode !== 0 || (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 50);
-    if (e.ctrlKey || e.metaKey || mouse)
-      zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)));
-    else { cam.x -= e.deltaX; cam.y -= e.deltaY; place(); }   // a trackpad scroll moves it
+    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;  // lines, pages
+    zoomAt(e.clientX, e.clientY, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)));          // a pinch comes with ctrl
   }, { passive: false });
   document.addEventListener("keydown", e => {
     if (e.target.closest && e.target.closest("input, textarea")) return;
@@ -1326,7 +1321,7 @@ function help() {
     const svg = el("svg", { width: 88, height: 20 }, d); draw(el("g", { transform: "translate(20,0)" }, svg)); d.appendChild(document.createTextNode(s)); h.appendChild(d); };
   const box = (rx, fill, stroke, w, dash) => s => el("rect", { x: 4, y: 3, width: 40, height: 14, rx, fill, stroke,
     "stroke-width": w, "stroke-dasharray": dash || "none" }, s);
-  h.innerHTML = "<div>drag to move · wheel or pinch to zoom · 0 fits the window</div>";
+  h.innerHTML = "<div>drag to move · the wheel zooms where it points · 0 fits the window</div>";
   sample(box(5, "#fff", "#17393b", 1.2), "contract");
   sample(box(1, "#fff", "#1d2526", 1.8), "component with a model");
   sample(box(1, "#f5f7f7", "#667374", 1.4), "environment");

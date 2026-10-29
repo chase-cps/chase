@@ -18,6 +18,14 @@ Added:
 
 Fixed:
 
+- `R` (release) in a specification file crashed the parser of logics_tool
+  (exit code 134 or 138): it built only `U`.
+- The interval of a temporal operator in a specification file
+  (`G[0,3] p`, `x U[1,2] y`) was dropped, so `G[0,3] p` was read as
+  `G p`. The Python package now unfolds it into `X`, and refuses an
+  interval that is not a range of whole steps, and `X[a,b]`.
+- A probability, `P(...)`, now gives the name of the contract and says
+  that probabilities are not checked, instead of a traceback.
 - A negative constant (`w >= -0.8`, `n > -3`) made the operations computed
   by the C++ library (composition without discharge, for instance) fail
   with "Invalid number format": the logics language reads `-0.8` as one

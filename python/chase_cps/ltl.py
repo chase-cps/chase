@@ -501,10 +501,16 @@ def from_pychase(obj) -> Node:
     if name == "UnaryTemporalFormula":
         op = {R.TemporalOperator.op_globally: "G", R.TemporalOperator.op_future: "F",
               R.TemporalOperator.op_next: "X"}[obj.getOp()]
-        return Unary(op, from_pychase(obj.getFormula()))
+        arg = from_pychase(obj.getFormula())
+        steps = _interval(obj.getString().lstrip()[1:], op)
+        return Unary(op, arg) if steps is None else _bounded(op, steps, arg)
     if name == "BinaryTemporalFormula":
         op = {R.TemporalOperator.op_until: "U", R.TemporalOperator.op_release: "R"}[obj.getOp()]
-        return Binary(op, from_pychase(obj.getFormula1()), from_pychase(obj.getFormula2()))
+        left, right = obj.getFormula1(), obj.getFormula2()
+        rest = obj.getString()[len(left.getString()):].lstrip()[1:]   # after the U or the R
+        steps = _interval(rest, op)
+        f1, f2 = from_pychase(left), from_pychase(right)
+        return Binary(op, f1, f2) if steps is None else _bounded(op, steps, f1, f2)
     if name == "BinaryBooleanFormula":
         return _boolean(obj.getOp(), [from_pychase(obj.getOp1()), from_pychase(obj.getOp2())])
     if name == "LargeBooleanFormula":
@@ -518,6 +524,73 @@ def from_pychase(obj) -> Node:
     if name == "ProbabilityFunction":
         raise ValueError("probabilities, P(...), are not supported: chase-cps checks LTL only")
     raise ValueError(f"unsupported CHASE formula node: {name}")
+
+
+# Bounded temporal operators: G[a,b] p, F[a,b] p, p U[a,b] q, p R[a,b] q,
+# with ] or [ for open ends. In discrete time the bounds count steps, and the
+# operators unfold into X: G[a,b] p is X^a p & ... & X^b p.
+
+_INTERVAL = re.compile(r"^\s*([\[\]])\s*([^,\[\]]+?)\s*,\s*([^,\[\]]+?)\s*([\[\]])")
+MAX_STEPS = 1000
+
+
+def _interval(text: str, op: str):
+    """The steps (first, last) of the interval at the start of text, or None
+    when there is no interval."""
+    m = _INTERVAL.match(text)
+    if not m:
+        return None
+    if op == "X":
+        raise ValueError(f"X with an interval ({m.group(0).strip()}) is not supported: write X X p")
+    bounds = []
+    for b in (m.group(2), m.group(3)):
+        try:
+            v = float(b)
+        except ValueError:
+            raise ValueError(f"the interval {m.group(0).strip()} of {op} has a bound that is not "
+                             "a number of steps") from None
+        if v != int(v) or v < 0:
+            raise ValueError(f"the interval {m.group(0).strip()} of {op}: the bounds count steps, "
+                             "whole numbers from 0")
+        bounds.append(int(v))
+    first = bounds[0] + (1 if m.group(1) == "]" else 0)      # ]a: a left out
+    last = bounds[1] - (1 if m.group(4) == "[" else 0)       # b[: b left out
+    if last - first > MAX_STEPS:
+        raise ValueError(f"the interval {m.group(0).strip()} of {op} spans more than "
+                         f"{MAX_STEPS} steps")
+    return first, last
+
+
+def _next(f: Node, k: int) -> Node:
+    for _ in range(k):
+        f = Unary("X", f)
+    return f
+
+
+def _bounded(op: str, steps, f: Node, g: Optional[Node] = None) -> Node:
+    first, last = steps
+    if op in ("G", "F"):
+        if first > last:              # no step: G holds, F does not
+            return Const(op == "G")
+        terms = [_next(f, k) for k in range(first, last + 1)]
+        return conjunction(terms) if op == "G" else _disjunction(terms)
+    if op == "R":                     # p R q = !(!p U !q)
+        return Unary("!", _bounded("U", steps, Unary("!", f), Unary("!", g)))
+    if first > last:
+        return Const(False)
+    # p U[0,n] q: q now, or p now and p U[0,n-1] q next
+    u = g
+    for _ in range(last - first):
+        u = Binary("|", g, Binary("&", f, Unary("X", u)))
+    # p U[a,b] q: p for the first a steps, then p U[0,b-a] q
+    return conjunction([_next(f, k) for k in range(first)] + [_next(u, first)])
+
+
+def _disjunction(terms: list) -> Node:
+    out = terms[0]
+    for t in terms[1:]:
+        out = Binary("|", out, t)
+    return out
 
 
 _EXPRESSION_OPS = {"op_eq": "=", "op_neq": "!=", "op_lt": "<", "op_le": "<=",

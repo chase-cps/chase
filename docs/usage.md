@@ -47,10 +47,16 @@ CONTRACT Spec:
   propositions as `proposition p is x > 3;`.
 - `Assumptions:` and `Guarantees:` list formulas, each ending with `;`.
 - Formulas: `!` (or `~`), `&` (or `/\`), `|` (or `\/`), `->`, `<->`, `G`,
-  `F`, `X`, `U`, `R`,
-  `P(...)` (probability), `true`, `false`, the relations
+  `F`, `X`, `U`, `R`, `true`, `false`, the relations
   `= != < <= > >=`, the arithmetic `+ - * /`, and `x'` for the value of `x`
   in the next step. `#` starts a comment.
+- `G`, `F`, `U`, and `R` take an interval of steps: `G[0,3] p` is `p` now
+  and in the next three steps, `F]1,4] p` is `p` in one of the steps 2 to 4
+  (`]` or `[` facing out leaves the bound out). The bounds are whole
+  numbers, and the Python package unfolds the operator into `X`:
+  `G[0,2] p` is read as `p`, `X p`, `X X p`.
+- `P(...)` (a probability) is read by logics_tool, but no check takes it:
+  the Python package refuses a contract that has one.
 
 All the binary operators have the same precedence, and `G`, `F`, `X` bind
 looser than them: `G a -> b` is `G (a -> b)`. Parentheses avoid surprises.
@@ -753,8 +759,9 @@ it does for A -> G.
   inside), / quotient, ⪯ refinement.
 - The context of the checks is a tag above the diagram.
 
-The diagram fills the window: drag to move it, the wheel or a pinch zooms,
-and the button with four corners (or the key 0) fits it to the window.
+The diagram fills the window: drag to move it, the wheel (or a pinch) zooms
+around the pointer, and the button with four corners (or the key 0) fits it
+to the window, centered.
 
 The structure comes from the contracts: each result of the algebra
 remembers its operands (`Contract.origin`). The page lays the boxes out

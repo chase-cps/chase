@@ -1151,3 +1151,50 @@ def test_layers_and_the_names_before_0_3_1():
     for name in ("unsat_core", "unrealizable_core", "gr1_kind", "gr1_roles", "Core"):
         assert getattr(cores, name) is getattr(logic, name, None) or \
             getattr(cores, name) is getattr(gr1, name)
+
+
+def _guarantees_of(*terms):
+    from chase_cps import parse_spec
+    body = "\n".join(f"        {t};" for t in terms)
+    spec = ("NAME: t;\nCONTRACT C:\n    input boolean variable x;\n    input boolean variable z;\n"
+            f"    output boolean variable y;\n    Assumptions:\n        true;\n    Guarantees:\n{body}\n")
+    return [ltl.to_str(g) for g in parse_spec(spec)["C"].guarantees]
+
+
+@needs_native
+def test_bounded_temporal_operators_unfold_into_next():
+    assert _guarantees_of("G[0,2] (x -> y)") == ["x -> y", "X (x -> y)", "X X (x -> y)"]
+    assert _guarantees_of("G(x -> F]1,2] y)") == ["G (x -> X X y)"]     # ]1: step 1 left out
+    assert _guarantees_of("(x U[0,2] y)") == ["y | x & X (y | x & X y)"]
+    assert _guarantees_of("(x U[1,2] y)") == ["x", "X (y | x & X y)"]
+    assert _guarantees_of("F[2,2[ y") == ["false"]                       # no step
+    for bad, why in [("X[0,2] y", "X with an interval"), ("G[0,2.5] y", "whole numbers"),
+                     ("G[0,5000] y", "more than 1000 steps")]:
+        with pytest.raises(ValueError, match=why):
+            _guarantees_of(bad)
+
+
+@needs_native
+@needs_mc
+def test_bounded_until_and_release_mean_what_they_say():
+    from chase_cps import implies
+    v = {"x": "bool", "y": "bool", "z": "bool"}
+    u = ltl.parse(_guarantees_of("(x U[0,2] y)")[0])
+    assert implies(ltl.parse("x & X x & X X y"), u, v).status == "valid"
+    assert implies(u, ltl.parse("y | X y | X X y"), v).status == "valid"
+    assert implies(ltl.parse("!y & X !y & X X !y"), ltl.Unary("!", u), v).status == "valid"
+    r = ltl.parse(_guarantees_of("(x R[0,1] y)")[0])
+    assert implies(r, ltl.parse("y & (x | X y)"), v).status == "valid"
+    assert implies(ltl.parse("y & (x | X y)"), r, v).status == "valid"
+
+
+@needs_native
+def test_release_in_a_specification():
+    # R crashed the parser of logics_tool: run it apart, so that a crash fails this test only
+    import subprocess
+    import sys
+    code = ("import sys; sys.path.insert(0, %r); import test_chase_cps as t; "
+            "print(t._guarantees_of('(x R y)', 'G (x R[0,1] y)'))" % os.path.dirname(__file__))
+    p = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+    assert p.returncode == 0, f"the parser crashed on R (exit {p.returncode})"
+    assert p.stdout.strip().splitlines()[-1] == "['x R y', 'G !(!y | !x & X !y)']"
