@@ -510,10 +510,20 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     return {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
 
 
-def html(item, **kwargs) -> str:
-    """The page that draws a diagram (or a contract, component, or system)."""
+ELK = '<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>'
+
+
+def html(item, elk: Optional[str] = None, **kwargs) -> str:
+    """The page that draws a diagram (or a contract, component, or system).
+    The page loads ELK from a CDN; ``elk`` is the path of elk.bundled.js
+    (elkjs 0.9) to put in the page instead, for a page that works offline."""
     d = item if isinstance(item, dict) and "nodes" in item else diagram(item, **kwargs)
-    return (_PAGE.replace("__TITLE__", _html.escape(d["title"]))
+    script = ELK
+    if elk is not None:
+        with open(elk, encoding="utf-8") as f:
+            script = "<script>" + f.read().replace("</script", "<\\/script") + "</script>"
+    return (_PAGE.replace("__ELK__", script)
+                 .replace("__TITLE__", _html.escape(d["title"]))
                  .replace("__RELOAD__", _RELOAD)
                  .replace("__DATA__", json.dumps(d).replace("</", "<\\/")))
 
@@ -526,12 +536,57 @@ def save(item, path: str, **kwargs) -> str:
 
 
 def show(item, **kwargs) -> str:
-    """Writes the page to a temporary file and opens it in the browser."""
+    """Writes the page to a temporary file and opens it in the browser. When
+    CHASE_VIZ_OUTPUT names a file, the page goes there and no browser opens
+    (the VS Code extension of CHASE shows it in the editor), with the ELK of
+    CHASE_VIZ_ELK when it is set."""
+    out = os.environ.get("CHASE_VIZ_OUTPUT")
+    if out:                            # CHASE_VIZ_ELK: the ELK the page takes, offline
+        kwargs.setdefault("elk", os.environ.get("CHASE_VIZ_ELK") or None)
+        return save(item, out, **kwargs)
     fd, path = tempfile.mkstemp(prefix="chase-", suffix=".html")
     os.close(fd)
     save(item, path, **kwargs)
     webbrowser.open("file://" + path)
     return path
+
+
+def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
+              environments: Iterable = (), check: bool = False, verify: bool = False,
+              realizable: bool = False, timeout: float = 60, title: Optional[str] = None) -> dict:
+    """The diagram of a specification file (the logics language of CHASE, or
+    JSON). ``contracts`` are the contracts to draw (default: all), each a
+    name or names joined by + for their composition; ``refines`` lists
+    (refined, abstract) names, drawn one inside the other; ``environments``
+    lists (model file, contract): an SMV or JSON state machine, or a
+    controller of slugs. ``check`` checks the refinements and the
+    environments; ``verify`` and ``realizable`` check each contract drawn."""
+    from . import checks as _checks_
+    from . import gr1
+    from .cli import _contract, _model, _read
+    spec = _read(path)
+    made = {}
+
+    def get(expression):              # one box per expression
+        if expression not in made:
+            made[expression] = _contract(expression, spec)
+        return made[expression]
+    items = [get(e) for e in (list(contracts) or list(spec))]
+    pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
+             for a, b in refines]
+    marks = []
+    for c in items:
+        if verify:
+            marks.append((c, _checks_.verify(c, core=True, timeout=timeout)))
+        if realizable:
+            marks.append((c, "realizable", gr1.is_realizable(c, core=True, timeout=timeout)))
+    envs = []
+    for model, name in environments:
+        c = get(name)
+        m = _model(model, c)
+        envs.append((m, c, _checks_.is_environment(m, c, timeout=timeout).status if check else None))
+    return diagram(*items, refines=pairs, checks=marks, environments=envs,
+                   title=title or os.path.basename(path))
 
 
 def notebook(item, **kwargs) -> str:
@@ -668,7 +723,7 @@ _PAGE = r"""<!doctype html>
   </span><div id="help"></div></div>
 <div id="view"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
-<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+__ELK__
 <script>
 const DATA = __DATA__;
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;

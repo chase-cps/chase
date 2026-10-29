@@ -256,3 +256,24 @@ def test_the_command_line_marks_the_checks_and_draws_environments(tmp_path):
     assert [(k["name"], k["status"]) for k in box["checks"]] == [
         ("A", "valid"), ("G", "valid"), ("R", "invalid")]
     assert box["checks"][2]["core"]["G"] == [0, 1, 2]
+
+
+def test_offline_pages_the_output_variable_and_specification_files(tmp_path, monkeypatch):
+    a, b, top = contracts()
+    elk = tmp_path / "elk.bundled.js"
+    elk.write_text("var ELK = function () {};")
+    page = viz.html(a, elk=str(elk))
+    assert "var ELK = function () {};" in page and "cdn.jsdelivr" not in page
+    assert "cdn.jsdelivr.net/npm/elkjs@0.9.3" in viz.html(a)
+    # with CHASE_VIZ_OUTPUT, show writes the page there and opens no browser
+    out = tmp_path / "out.html"
+    monkeypatch.setenv("CHASE_VIZ_OUTPUT", str(out))
+    monkeypatch.setattr("webbrowser.open", lambda *_: pytest.fail("a browser opened"))
+    assert viz.show(a) == str(out) and data(out.read_text())["nodes"][0]["title"] == "A"
+    # a specification file, as the command line and the MCP server draw it
+    spec = tmp_path / "s.json"
+    spec.write_text(json.dumps({"contracts": [a.to_dict(), b.to_dict(), top.to_dict()]}))
+    d = viz.from_spec(str(spec), ["A+B"], [("A+B", "Top")])
+    assert [n["title"] for n in d["nodes"]] == ["Top"] and d["title"] == "s.json"
+    assert main(["view", str(spec), "--elk", str(elk), "-o", str(out)]) == 0
+    assert "var ELK" in out.read_text()

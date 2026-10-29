@@ -12,7 +12,9 @@ Added:
   tags on the boxes, with their cores. Each result of the algebra
   remembers its operands (`Contract.origin`). `Component` and `System`
   bind contracts to implementations; `System.check` checks each
-  implementation and the composition against the contract of the system.
+  implementation and the composition against the contract of the system. The
+  page works offline with a local ELK (`elk=`, `--elk`); `viz.from_spec`
+  draws a specification file, as `chase-cps view` does.
 
 Fixed:
 

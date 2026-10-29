@@ -301,35 +301,10 @@ def view(args) -> int:
     from . import viz
 
     def page() -> str:
-        contracts = _read(args.file)
-        made = {}
-
-        def get(expression):         # one box per expression
-            if expression not in made:
-                made[expression] = _contract(expression, contracts)
-            return made[expression]
-        items = [get(e) for e in (args.contracts or list(contracts))]
-        pairs = []
-        for low, high in args.refines or []:
-            a, b = get(low), get(high)
-            status = None
-            if args.check:
-                status = checks.refines(a, b, timeout=args.timeout).status
-            pairs.append((a, b, status))
-        marks = []
-        for c in items:
-            if args.verify:
-                marks.append((c, checks.verify(c, core=True, timeout=args.timeout)))
-            if args.realizable:
-                marks.append((c, "realizable", gr1.is_realizable(c, core=True, timeout=args.timeout)))
-        environments = []
-        for path, name in args.environment or []:
-            c = get(name)
-            m = _model(path, c)
-            status = checks.is_environment(m, c, timeout=args.timeout).status if args.check else None
-            environments.append((m, c, status))
-        return viz.html(viz.diagram(*items, refines=pairs, checks=marks, environments=environments,
-                                    title=os.path.basename(args.file)))
+        return viz.html(viz.from_spec(args.file, args.contracts or (), args.refines or (),
+                                      args.environment or (), check=args.check, verify=args.verify,
+                                      realizable=args.realizable, timeout=args.timeout),
+                        elk=args.elk)
 
     if not args.serve:
         try:
@@ -437,6 +412,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="check that each contract drawn is realizable (GR(1), slugs); when "
                         "it is not, mark the guarantees of the core")
     p.add_argument("-o", "--output", help="the page to write (default: FILE with .html)")
+    p.add_argument("--elk", metavar="PATH",
+                   help="put elk.bundled.js (elkjs 0.9) from PATH in the page, for a page that "
+                        "works offline (default: load it from a CDN)")
     p.add_argument("--serve", action="store_true",
                    help="serve the page, and draw it again when the file changes")
     p.add_argument("--port", type=int, default=8765)

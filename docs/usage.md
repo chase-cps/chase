@@ -793,7 +793,18 @@ specification; `--refines R A` draws R inside A, `--environment MODEL C`
 draws an environment, `--check` checks the refinements and the
 environments, `--verify` and `--realizable` mark the checks of each
 contract drawn, and `--serve` draws the page again whenever the file
-changes.
+changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
+
+The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
+`chase-cps view --elk PATH` put a local `elk.bundled.js` in the page
+instead, for a page that works offline. With `CHASE_VIZ_OUTPUT=FILE` in the
+environment, `viz.show` writes the page to FILE and opens no browser
+(`CHASE_VIZ_ELK=PATH` puts ELK in it).
+
+The diagrams are also drawn by the MCP server of CHASE (the `visualize`
+tool of chase-mcp, for AI agents) and by the CHASE extension of VS Code,
+which shows the diagram of a specification, or of a Python script that
+calls `viz.show`, beside the editor and draws it again on save.
 
 ## Results
 
