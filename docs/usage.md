@@ -797,13 +797,18 @@ q = top.divide(a, name="Q")    # what the part next to a must do
 greedy = Contract.from_strings(name="Greedy", inputs=["r1", "r2"], outputs=["g1", "g2"],
                                guarantees=["G !(g1 & g2)", "G (r1 -> g1)", "G (r2 -> g2)"])
 k = "G !(r1 & r2)"             # the requests never come together
-d = viz.diagram(s, q, greedy,
-                refines=[(b, q, refines(b, q))],
-                checks=[(greedy, verify(greedy, context=k)), (greedy, is_realizable(greedy, core=True))],
-                environments=[("G F x", s)],
-                context=k)
+refines(b, q)                  # each check keeps its result on the contract
+verify(greedy, context=k)
+is_realizable(greedy, core=True)
+d = viz.diagram(s, q, greedy, refines=[(b, q)], environments=[("G F x", s)], context=k)
 viz.save(d, "plan.html")       # viz.show(d) opens the browser; in Jupyter, a system draws itself
 ```
+
+A check keeps its result on the contract it checks (`Contract.checked()`),
+with what the contract said then: the diagram draws the results that still
+hold, and a refinement given without its status takes the one kept. When
+the contract changes, its results no longer show; `results=False` draws only
+what is given.
 
 `checks` takes `(item, result)` with the result of `verify` (A, G, and
 A∧G), `is_realizable` (R), `is_well_separated` (WS), `is_vacuous` (¬V, with

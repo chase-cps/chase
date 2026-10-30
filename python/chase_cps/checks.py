@@ -383,3 +383,12 @@ from .models import Model, is_receptive  # noqa: E402,F401
 # GR(1) synthesis, in chase_cps.gr1 (kept here for the code written before
 # 0.3.1).
 from .gr1 import is_realizable, is_well_separated, synthesize  # noqa: E402,F401
+
+
+# The results are kept on the contracts checked, for the diagrams (chase_cps.viz).
+from .contract import _remembered  # noqa: E402
+
+refines = _remembered("refines", "abstract")(refines)
+is_consistent = _remembered("consistent")(is_consistent)
+is_compatible = _remembered("compatible")(is_compatible)
+verify = _remembered("verify")(verify)

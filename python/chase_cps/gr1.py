@@ -502,3 +502,12 @@ def unrealizable_core(guarantees, inputs=None, outputs=None, assumptions=(),
         return Core(FOUND, core, checks=search.checks)
     return Core(FOUND, Contract(f"{c.name}_core", dict(c.inputs), dict(c.outputs),
                                 list(c.assumptions), core), checks=search.checks)
+
+
+# The results are kept on the contracts checked, for the diagrams (chase_cps.viz).
+from .contract import _remembered  # noqa: E402
+
+is_realizable = _remembered("realizable")(is_realizable)
+synthesize = _remembered("realizable")(synthesize)
+is_well_separated = _remembered("well_separated")(is_well_separated)
+is_vacuous = _remembered("vacuous")(is_vacuous)

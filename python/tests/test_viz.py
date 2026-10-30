@@ -413,3 +413,20 @@ def test_a_systemverilog_file_says_where(tmp_path, capsys):
                           "  assert property (@(posedge clk) a |-> c);\nendmodule\n")
     assert main(["view", str(undeclared)]) == 2
     assert "line 2:40:" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(not HAS_MC, reason="nuXmv/NuSMV not installed")
+def test_the_checks_are_kept_on_the_contracts():
+    from chase_cps import refines, verify
+    a = Contract.from_strings(name="A", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])
+    b = Contract.from_strings(name="B", inputs=["x"], outputs=["y"], guarantees=["G (x -> F y)"])
+    refines(a, b)
+    verify(a)
+    d = viz.diagram(b, refines=[(a, b)])              # no result given: the ones kept
+    outer, = d["nodes"]
+    inner, = outer["children"]
+    assert outer["badge"]["status"] == "valid"
+    assert {c["name"]: c["status"] for c in inner["checks"]} == {"A": "valid", "G": "valid"}
+    assert not viz.diagram(a, results=False)["nodes"][0].get("checks")
+    a.guarantees.append(a.guarantees[0])              # changed: what was checked no longer holds
+    assert a.checked() == [] and not viz.diagram(a)["nodes"][0].get("checks")

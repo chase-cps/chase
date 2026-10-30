@@ -89,12 +89,14 @@ class _Scene:
         self.count = 0
         self.ids = {}           # the first box of an object
         self.objs = {}          # the object of each box
+        self.drawn = {}         # the objects drawn, by id
 
     def fresh(self, prefix="n") -> str:
         self.count += 1
         return f"{prefix}{self.count}"
 
     def box(self, obj, types=None, **node) -> dict:
+        self.drawn.setdefault(id(obj), obj)
         node.setdefault("id", self.fresh())
         node["types"] = types or {}
         self.ids.setdefault(id(obj), node["id"])
@@ -182,6 +184,7 @@ class _Scene:
                         badge={"text": "M ⊨ C", "status": k.status},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
+        self.drawn.setdefault(id(k.contract), k.contract)
         return node
 
     def system(self, s: System) -> dict:
@@ -415,7 +418,8 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
-            context=None, open: Iterable = (), title: Optional[str] = None) -> dict:
+            context=None, open: Iterable = (), title: Optional[str] = None,
+            results: bool = True) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -436,8 +440,16 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     and driving its inputs; the status is that of ``is_environment``. The
     ``context`` of the checks (a formula or a list of formulas) is written
     above the diagram. The items in ``open`` are drawn open: their contract,
-    their model when it is small, and the core of a check that fails."""
+    their model when it is small, and the core of a check that fails.
+
+    The checks run on a contract are kept on it (``Contract.checked``), with
+    what it said then: with ``results`` (the default), a contract drawn that
+    is not in ``checks`` shows the results kept on it that still hold (for
+    the same ``context``), and a refinement given without its status takes
+    the one kept. A contract that has changed since a check shows nothing of
+    it."""
     scene = _Scene()
+    checks = list(checks)
     nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
 
     def add(obj):
@@ -486,6 +498,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     for r in ordered:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
+        if status is None and results and isinstance(low, Contract) and isinstance(high, Contract):
+            kept = [res for kind, other, res in low.checked(context) if kind == "refines" and other is high]
+            status = _status(kept[-1]) if kept else None
         if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
             if id(high) not in scene.ids:
                 add(high)
@@ -545,6 +560,14 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             return add(obj)
         return _find(nodes, scene.ids[id(obj)])
 
+    if results:                       # the checks kept on the contracts drawn, but those given here
+        given = {id(c[0]) for c in checks}
+        for oid, obj in list(scene.drawn.items()):
+            if oid in given or not isinstance(obj, Contract):
+                continue
+            for kind, _, res in obj.checked(context):
+                if kind != "refines":
+                    checks.append((obj, None if kind == "verify" else kind, res))
     for c in checks:
         obj, kind, r = (c[0], None, c[1]) if len(c) == 2 else c
         node = box_of(obj)

@@ -28,6 +28,9 @@ Added:
   (`--no-checks`); with `--serve`, the page takes each new drawing in place
   and keeps its view, and keeps the last diagram when the file cannot be
   drawn. The explanations of the page show in the webview of an editor too.
+- The checks keep their results on the contracts they check, with what the
+  contract said then (`Contract.checked()`): a diagram draws them with no
+  `checks=`, and drops them when the contract changes.
 - A name that is not declared in a specification file is reported with
   its contract and its line.
 - `viz.diagram(..., open=[...])` and `chase-cps view --open` draw boxes open

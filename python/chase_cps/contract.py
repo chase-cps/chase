@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -83,6 +84,29 @@ class Contract:
     # How the contract was computed: (operation, operands), set by the
     # operations of the algebra (see _recorded); chase_cps.viz draws it.
     origin: tuple | None = field(default=None, compare=False, repr=False)
+    # The results of the checks run on the contract, with what it said then
+    # (see _remembered); chase_cps.viz draws those that still hold.
+    results: dict = field(default_factory=dict, compare=False, repr=False)
+
+    def says(self) -> str:
+        """What the contract says, without its name: its variables and its
+        terms. A check run on the contract holds while this stays the same."""
+        return json.dumps([sorted((k, str(v)) for k, v in self.inputs.items()),
+                           sorted((k, str(v)) for k, v in self.outputs.items()),
+                           [ltl.to_str(a) for a in self.assumptions],
+                           [ltl.to_str(g) for g in self.guarantees]])
+
+    def checked(self, context=None) -> list:
+        """The results of the checks run on the contract that still hold, with
+        the context given (or with none, which hold in any context): [(check,
+        other contract or None, result)], the latest of each check. A result
+        no longer holds when the contract, or the other contract of a
+        refinement, has changed since."""
+        now, out, want = self.says(), [], _context_key(context)
+        for (kind, _, ctx), (said, other, other_said, result) in self.results.items():
+            if said == now and ctx in (None, want) and (other is None or other.says() == other_said):
+                out.append((kind, other, result))
+        return out
 
     # Construction ------------------------------------------------------------
 
@@ -847,6 +871,39 @@ for _method, _operation, _binary in (
         ("invert", "reciprocal", False), ("saturate", "saturation", False),
         ("simplify", "simplification", False)):
     setattr(Contract, _method, _recorded(getattr(Contract, _method), _operation, _binary))
+
+
+def _context_key(context) -> str | None:
+    if context is None:
+        return None
+    items = [context] if isinstance(context, (str, ltl.Node)) else list(context)
+    return json.dumps(sorted(ltl.to_str(ltl.parse(f) if isinstance(f, str) else f) for f in items))
+
+
+def _remembered(check: str, other: str | None = None):
+    """The check function, with its result kept on the contract it checks
+    (its first argument), with what the contract said then: the check of a
+    contract is drawn on it until the contract changes. ``other`` names the
+    argument that is the other contract (refines: the abstract one)."""
+    import functools
+    import inspect
+
+    def wrap(f):
+        names = list(inspect.signature(f).parameters)
+
+        @functools.wraps(f)
+        def run(*args, **kwargs):
+            result = f(*args, **kwargs)
+            given = dict(zip(names, args), **kwargs)
+            c = given.get(names[0])
+            if isinstance(c, Contract):
+                o = given.get(other) if other else None
+                ctx = given.get("context")
+                c.results[(check, id(o) if o is not None else None, _context_key(ctx))] = (
+                    c.says(), o, o.says() if isinstance(o, Contract) else None, result)
+            return result
+        return run
+    return wrap
 
 
 def _repr_html_(self) -> str:
