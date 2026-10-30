@@ -529,3 +529,39 @@ def test_a_contract_drawn_inside_another_is_not_drawn_again(tmp_path):
     assert tops == ["C"]
     assert main(["view", str(spec), "--format", "json", "--no-checks", "--contracts", "A", "-o", str(out)]) == 0
     assert "A" in [n["title"] for n in json.loads(out.read_text())["nodes"]]
+
+
+def _contracts(ports):
+    return {n: Contract.from_strings(name=n, inputs=i, outputs=o, guarantees=["true"]) for n, (i, o) in ports.items()}
+
+
+def test_the_contracts_go_together_by_their_ports():
+    # Charger: two robots and the first of the arbiters with the same ports make the system
+    spec = _contracts({"Robot1": (["grant1", "low1"], ["req1"]), "Robot2": (["grant2", "low2"], ["req2"]),
+                       "Greedy": (["req1", "req2"], ["grant1", "grant2"]),
+                       "Fair": (["req1", "req2"], ["grant1", "grant2"]),
+                       "System": (["low1", "low2"], ["grant1", "grant2", "req1", "req2"])})
+    assert viz._structure(spec) == ([("Robot1+Robot2+Greedy", "System")], ["System"])
+    # LMFSM: the signals between the parts are not outputs of the system
+    spec = _contracts({"Autopilot": (["apfail", "good"], ["MODE", "pullup"]),
+                       "Sensor": (["MODE", "limits"], ["good"]),
+                       "System": (["apfail", "limits"], ["pullup"])})
+    assert viz._structure(spec)[0] == [("Autopilot+Sensor", "System")]
+    # a part that reads what the system does not give is not a part of it
+    spec = _contracts({"A": (["x"], ["y"]), "B": (["y", "w"], ["z"]), "S": (["x"], ["y", "z"])})
+    assert viz._structure(spec) == ([], ["A", "B", "S"])
+
+
+@needs_native
+def test_a_file_is_drawn_wired_and_checked(tmp_path):
+    spec = tmp_path / "w.ltl"
+    spec.write_text("NAME: w;\n"
+                    "CONTRACT A:\n  input boolean variable x;\n  output boolean variable y;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> y);\n"
+                    "CONTRACT B:\n  input boolean variable y;\n  output boolean variable z;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (y -> z);\n"
+                    "CONTRACT D:\n  input boolean variable z;\n  output boolean variable u;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (z -> u);\n")
+    d = viz.from_spec(str(spec))
+    assert [n["title"] for n in d["nodes"]] == ["A", "B", "D"]
+    assert sorted(w["var"] for w in d["edges"]) == ["y", "z"]

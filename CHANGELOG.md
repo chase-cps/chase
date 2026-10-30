@@ -28,6 +28,12 @@ Added:
   (`--no-checks`); with `--serve`, the page takes each new drawing in place
   and keeps its view, and keeps the last diagram when the file cannot be
   drawn. The explanations of the page show in the webview of an editor too.
+- `chase-cps view` puts the contracts of a file together by their ports,
+  as Lingua Franca does: an output and an input of the same name are wired,
+  contracts with the same ports are versions of one part (the first one is
+  wired), and a contract whose outputs several parts drive has them drawn
+  inside it, its refinement checked with `--check` (and on save in an
+  editor). The MCP tool `visualize` checks these refinements by default.
 - `chase-cps view --implementation MODEL C` draws C as a component with
   its model (SMV, JSON, or RTL read with Yosys), checked with `--check`; a
   Verilog or SystemVerilog file with no assertions is drawn as its module.

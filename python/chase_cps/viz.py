@@ -420,7 +420,7 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
             context=None, open: Iterable = (), title: Optional[str] = None,
-            results: bool = True) -> dict:
+            results: bool = True, connect: Iterable = ()) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -448,7 +448,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     is not in ``checks`` shows the results kept on it that still hold (for
     the same ``context``), and a refinement given without its status takes
     the one kept. A contract that has changed since a check shows nothing of
-    it."""
+    it. The items in ``connect`` are wired side by side: an output of one to
+    the inputs of the others with the same name."""
     scene = _Scene()
     checks = list(checks)
     nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
@@ -594,6 +595,13 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                       for v in node.get("inputs", [])]
         else:
             env_node["badge"]["text"] = f"E ⊨ A of {node['title']}"
+    tops = [box_of(c) for c in connect]  # boxes side by side: an output to the inputs of the same name
+    tops = [n for n in tops if n in nodes]
+    for a in tops:
+        for b in tops:
+            if a is not b:
+                wires += [{"from": [a["id"], "out", v], "to": [b["id"], "in", v], "var": v}
+                          for v in a.get("outputs", []) if v in b.get("inputs", [])]
     for obj in open:                    # its first box, and its other boxes but the parts of a composition
         first = box_of(obj)
         boxes = [first] + [n for n in _boxes(nodes) if scene.objs.get(n["id"]) == id(obj) and n is not first
@@ -649,6 +657,60 @@ def show(item, **kwargs) -> str:
     return path
 
 
+def _structure(spec: dict) -> tuple[list, list]:
+    """How the contracts of a file go together, from their ports alone, as
+    one draws them without being told: ([(parts, system)], [names]). The
+    contracts are in the order of the file.
+
+    Contracts with the same inputs and outputs are versions of one part
+    (fixes, or candidates): the first one in the file stands for them. A
+    contract is the contract of a composition of parts when the parts drive
+    its outputs (and maybe signals between them), and read from outside
+    only its inputs: the parts are then drawn inside it ("A+B", "C"). The
+    names are those drawn side by side, wired by name: the first versions,
+    and the systems."""
+    ports = {n: (frozenset(c.inputs), frozenset(c.outputs)) for n, c in spec.items()}
+    first = {}
+    for n in spec:
+        first.setdefault(ports[n], n)
+    reps = [n for n in spec if first[ports[n]] == n]
+    systems, used = [], set()
+    for s in reps:
+        if s in used:
+            continue
+        ins, outs = ports[s]
+        parts, driven = [], set()
+        while True:                   # what the system and the parts need, and nobody drives yet
+            need = (outs | set().union(*(ports[p][0] for p in parts))) - driven - ins
+            if not need:
+                break
+            p = next((p for p in reps if p != s and p not in used and p not in parts
+                      and all(p != x for x, _ in systems) and ports[p][1] & need
+                      and not ports[p][1] & driven), None)
+            if p is None:
+                break
+            parts.append(p)
+            driven |= ports[p][1]
+        if len(parts) >= 2 and not need:
+            systems.append((s, parts))
+            used |= set(parts) | {s}
+    inside = {p for _, parts in systems for p in parts}
+    return ([("+".join(parts), s) for s, parts in systems], [n for n in reps if n not in inside])
+
+
+def _in_file_order(spec: dict, path: str) -> dict:
+    """The contracts of spec in the order the file declares them."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return spec
+    at = {}
+    for m in re.finditer(r"^\s*(?:CONTRACT|module)\s+([A-Za-z_]\w*)", text, re.M):
+        at.setdefault(m.group(1), m.start())
+    return dict(sorted(spec.items(), key=lambda kv: at.get(kv[0], len(text))))
+
+
 def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
@@ -687,6 +749,11 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         elif all(x is not c for x in out):
             out.append(c)
         return out
+    if isinstance(spec, dict):
+        spec = _in_file_order(spec, path)
+    found, connect = _structure(spec) if isinstance(spec, dict) else ([], [])
+    if not refines and not contracts:     # nothing said: as the ports of the contracts say
+        refines = found
     pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
              for a, b in refines]
     if contracts:
@@ -716,8 +783,10 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         if check:
             k.status = _checks_.is_implementation(m, c, timeout=timeout).status
         shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
+    drawn = {id(x) for x in items}
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
-                open=[get(e) for e in open], title=title or os.path.basename(path))
+                open=[get(e) for e in open], title=title or os.path.basename(path),
+                connect=[get(n) for n in connect if id(get(n)) in drawn])
     _place_in_source(d, path)
     return d
 
@@ -1409,6 +1478,7 @@ function drawNode(g, e, ox, oy) {
       if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9" }, row);
       if (at) {             // its lines in the file: the editor goes there, and marks it from there
         row.setAttribute("class", "trow"); row.setAttribute("data-line", at[0]); row.setAttribute("data-last", at[1]);
+        el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, fill: "transparent" }, row);   // the whole line
         frame(row);
         tip(row, (at[0] === at[1] ? "line " + at[0] : "lines " + at[0] + "–" + at[1])
                  + (inEditor() ? " · double click: there in the editor" : "")); }
@@ -1666,12 +1736,29 @@ function rowsOf(out) {
     rows[rows.length - 1].push(...u.ids); used += (used ? 40 : 0) + u.w; });
   return rows.length > 1 ? rows : null;
 }
+// Boxes wired to each other at the top are laid out by ELK in columns: the
+// column of each box, and its place in it, stay those of the first drawing.
+let colPlan = null;              // key -> [column, place]
+function colsOf(out) {
+  if (!(DATA.edges || []).length) return null;
+  const keys = keysOf(DATA.nodes), cs = out.children || [], xs = [];
+  cs.forEach(c => { if (!xs.some(x => Math.abs(x - c.x) < 20)) xs.push(c.x); });
+  xs.sort((a, b) => a - b);
+  const col = c => xs.findIndex(x => Math.abs(x - c.x) < 20), plan = {};
+  cs.forEach(c => { const same = cs.filter(d => col(d) === col(c)).sort((a, b) => a.y - b.y);
+                    plan[keys[c.id]] = [col(c), same.indexOf(c)]; });
+  return plan;
+}
 function layout() {
+  const keys = colPlan ? keysOf(DATA.nodes) : {};
   const items = rootRows
     ? rootRows.map((ids, r) => ({ id: "root:row" + r, x: 0, y: r * 40, edges: [],
         children: ids.map((id, i) => toElk(byId[id], i, 0)),
         layoutOptions: Object.assign({}, FLOW, { "elk.padding": "[top=0,left=0,bottom=0,right=0]", "elk.alignment": "LEFT" }) }))
-    : DATA.nodes.map((n, i) => toElk(n, i, 0));
+    : DATA.nodes.map((n, i) => { const e = toElk(n, i, 0), at = colPlan && colPlan[keys[n.id]];
+        if (at) Object.assign(e.layoutOptions, { "elk.layered.layering.layerChoiceConstraint": String(at[0]),
+                                                 "elk.layered.crossingMinimization.positionChoiceConstraint": String(at[1]) });
+        return e; });
   return new ELK().layout({ id: "root", children: items, edges: rootEdges(),
     // with INCLUDE_CHILDREN, every level takes the direction of the root
     layoutOptions: Object.assign({ "elk.algorithm": "layered", "elk.direction": "RIGHT",
@@ -1682,7 +1769,8 @@ async function render() {
   for (const n of boxes)
     if (open.has("m:" + n.id) && inlineModel(n) && !MODELS[n.id]) MODELS[n.id] = await layoutModel(n);
   widen = {};
-  if (rowPlan === undefined) { rootRows = null; rowPlan = planOf(rowsOf(await layout())); }
+  if (rowPlan === undefined) { rootRows = null; colPlan = null; const first = await layout();
+                                rowPlan = planOf(rowsOf(first)); colPlan = rowPlan ? null : colsOf(first); }
   rootRows = rowsFromPlan();
   let out = await layout();
   for (let pass = 0; pass < 3; pass++) {
@@ -1809,13 +1897,6 @@ function help() {
                 text(s, 29, 7, "w", "8"); }, "bus, with its width");
   sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#c07a14", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, s),
          "input that nobody drives");
-  if (DATA.nodes.some(n => n.source)) {   // drawn from a file: how to draw more of it
-    const d = document.createElement("div");
-    d.style.cssText = "margin-top:8px; line-height:1.5";
-    d.innerHTML = "to draw A and B composed, inside C, and check it, write at the top of the file:<br>"
-      + "<code># view: --refines A+B C --check</code>";
-    h.appendChild(d);
-  }
   h.style.display = "block";
 }
 function svgDefsHatch(s) {

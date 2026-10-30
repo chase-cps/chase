@@ -835,7 +835,7 @@ makes the same diagram in Python. The options:
 
 - `--contracts C...`: the contracts drawn (`NAME+NAME` for a composition).
   By default, all the contracts of the file, but those drawn inside another
-  box by `--refines`.
+  box.
 - `--refines R A`: draws R inside A.
 - `--implementation MODEL C`: draws C as a component with its model: SMV,
   JSON, or RTL read with Yosys (`FILE:MODULE` when the file has several
@@ -853,6 +853,17 @@ makes the same diagram in Python. The options:
 - `--serve` (`--host`, `--port`): serves the page and draws it again in
   place whenever the file changes, with the view kept; when the file cannot
   be drawn, the page keeps the last diagram and says why.
+
+Without `--refines` and `--contracts`, the contracts are put together by
+their ports:
+
+- an output and an input with the same name are wired;
+- contracts with the same inputs and outputs are versions of one part
+  (fixes, or candidates): the first one in the file is wired, the others
+  are drawn apart;
+- a contract whose outputs are driven by several parts, which read from
+  outside only its inputs, is the contract of their composition: the parts
+  are drawn inside it, and `--check` checks the refinement.
 
 An error in the file names the line and the column (`line 16:16`), and the
 contract when it is a name that is not declared.

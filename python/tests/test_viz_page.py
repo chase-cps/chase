@@ -64,7 +64,14 @@ def posted(page):
 
 
 def rows(page):
-    """The top boxes in rows (by their top), each row from left to right."""
+    """Where the top boxes are: wired to each other, the column of each and
+    its place in it; else the rows (by their top), each from left to right."""
+    if page.evaluate("(DATA.edges || []).length > 0"):
+        return page.evaluate("""() => { const bs = DATA.nodes.map(n => {
+            const r = document.querySelector(`[data-box="${n.id}"] > rect`).getBoundingClientRect(); return [n.id, r.x, r.y]; });
+          const xs = []; bs.forEach(b => { if (!xs.some(x => Math.abs(x - b[1]) < 8)) xs.push(b[1]); }); xs.sort((a, b) => a - b);
+          const col = b => xs.findIndex(x => Math.abs(x - b[1]) < 8);
+          return bs.map(b => [b[0], col(b), bs.filter(d => col(d) === col(b)).sort((p, q) => p[2] - q[2]).indexOf(b)]); }""")
     tops = page.evaluate("""() => DATA.nodes.map(n => {
         const r = document.querySelector(`[data-box="${n.id}"] > rect`);
         return r ? [n.id, r.getBoundingClientRect().y, r.getBoundingClientRect().x] : null; }).filter(Boolean)""")
@@ -89,6 +96,12 @@ def term_rows(page, box_id):
                   x: b.x + 30, y: b.y + b.height / 2}; })""", box_id)
 
 
+def name_of(page, b):
+    """The middle of the name of box b, where a click opens it."""
+    return page.evaluate("""id => { const t = document.querySelector(`[data-box="${id}"] > text`);
+        const r = t.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", b["id"])
+
+
 def bring(page, b):
     """b in the window: the view moved so that its head is at the middle."""
     page.evaluate("""([id]) => {
@@ -105,9 +118,9 @@ def test_each_box_and_term_goes_to_its_line(browser, tmp_path, path, monkeypatch
     first = rows(page)
     for b in [b for b in boxes(page) if b["source"] and b["contract"]]:
         b = bring(page, b)
-        page.mouse.dblclick(b["x"] + b["w"] - 12, b["y"] + b["h"] - 6)        # the body
+        page.mouse.dblclick(b["x"] + min(b["w"], 300) - 12, b["y"] + min(b["h"] - 6, 40))   # the body
         assert posted(page) == [{"type": "chase-reveal", "line": b["source"]["line"]}], b["title"]
-        page.mouse.click(b["x"] + 14, b["y"] + 18)                             # the name: open
+        page.mouse.click(*name_of(page, b))                             # the name: open
         page.wait_for_timeout(50)
         assert rows(page) == first, f"opening {b['title']} moved the boxes to other rows"
         ts = term_rows(page, b["id"])
@@ -115,7 +128,10 @@ def test_each_box_and_term_goes_to_its_line(browser, tmp_path, path, monkeypatch
         shown = {(t["line"], t["last"]) for t in ts}
         assert shown <= {tuple(x) for x in want}, b["title"]
         if shown != {tuple(x) for x in want}:                                 # a long contract: the rest in the panel
-            page.click(f'[data-box="{b["id"]}"] text >> text=/more lines/')
+            more = page.evaluate("""id => { const t = [...document.querySelectorAll(`[data-box="${id}"] text`)]
+                .find(t => /more lines/.test(t.textContent) && t.closest('[data-box]').getAttribute('data-box') === id);
+                const r = t.getBoundingClientRect(); return [r.x + 10, r.y + r.height / 2]; }""", b["id"])
+            page.mouse.click(*more)
             trs = page.evaluate("""() => [...document.querySelectorAll('#popview tr[data-line]')].map(r => {
                 const b = r.getBoundingClientRect(); return [+r.getAttribute('data-line'), b.x + 40, b.y + b.height / 2]; })""")
             assert sorted({t[0] for t in trs}) == sorted({x[0] for x in want}), b["title"]
@@ -138,7 +154,7 @@ def test_each_box_and_term_goes_to_its_line(browser, tmp_path, path, monkeypatch
             assert b["id"] in sel[0]                     # the term, or the line of the hidden terms, is marked
             assert sel[1] and all(any(x <= z <= y for x, y in rs) for rs in sel[1]), (b["title"], z, sel[1])
         b = next(x for x in boxes(page) if x["id"] == b["id"])
-        page.mouse.click(b["x"] + 14, b["y"] + 18)                             # close
+        page.mouse.click(*name_of(page, b))                             # close
         page.wait_for_timeout(50)
     assert rows(page) == first
     assert not errors, errors
@@ -178,7 +194,7 @@ def test_a_new_drawing_keeps_the_view(browser, tmp_path, monkeypatch):
     d = viz.from_spec(path)
     page, errors = open_page(browser, tmp_path, d)
     b = next(b for b in boxes(page) if b["title"] == "Greedy")
-    page.mouse.click(b["x"] + 14, b["y"] + 18)
+    page.mouse.click(*name_of(page, b))
     first, view = rows(page), page.evaluate("() => [cam.x, cam.y, cam.k]")
     page.evaluate("d => window.postMessage({type: 'chase-data', data: d}, '*')", d)    # the same file again
     page.wait_for_timeout(300)
@@ -195,7 +211,7 @@ def test_a_core_goes_to_its_lines(browser, tmp_path, monkeypatch):
         pytest.skip("slugs, or the demos, not found")
     path = next(f for f in SPECS if f.endswith("charger.ltl"))
     monkeypatch.chdir(os.path.dirname(path))
-    d = viz.from_spec(path, realizable=True, open=["Greedy"])
+    d = viz.from_spec(path, ["Greedy"], realizable=True, open=["Greedy"])
     page, errors = open_page(browser, tmp_path, d)
     g = next(n for n in d["nodes"] if n["title"] == "Greedy")
     core = next(c["core"] for c in g["checks"] if c.get("core"))
