@@ -844,6 +844,29 @@ types, and the checks when the file is saved. An error in the file names
 the line and the column (`line 16:16`), and the contract when it is a name
 that is not declared. `viz.from_spec(path, ...)` makes the same diagram in Python.
 
+`--implementation MODEL C` draws the contract C as a component with its
+model: SMV, JSON, or RTL (`.v`, `.sv`; `FILE:MODULE` when the file has
+several modules), read with Yosys; with `--check`, the model is checked
+against C (M ⊨ C). A Verilog or SystemVerilog file with no assertions is
+drawn as its module, with the state machine of its registers.
+
+The options can be written in the file, in comments at its top, so that
+the file says how it is drawn (and an editor draws it so):
+
+```
+# view: --implementation models/arb.json Arb --environment models/req.json Arb
+# view: --check --open Arb
+CONTRACT Arb ...
+```
+
+In Verilog the comment is `// view: ...`. The files named there are taken
+from the folder of the file; the options given on the command line add to
+them.
+
+The button with an arrow saves the diagram as SVG, PNG, or PDF (the print
+dialog of the browser), the whole diagram as it is drawn, not only what the
+window shows.
+
 The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
 `chase-cps view --elk PATH` put a local `elk.bundled.js` in the page
 instead, for a page that works offline. With `CHASE_VIZ_OUTPUT=FILE` in the
@@ -853,7 +876,9 @@ environment, `viz.show` writes the page to FILE and opens no browser
 The diagrams are also drawn by the MCP server of CHASE (the `visualize`
 tool of chase-mcp, for AI agents). An extension for VS Code, which shows
 the diagram of a specification, or of a Python script that calls
-`viz.show`, beside the editor and draws it again on save, will follow.
+`viz.show`, beside the editor, will follow: it draws the structure again as
+one types and the checks on save, marks the errors in the text, goes from a
+box to its text (a double click) and from the text to its box (the cursor).
 
 ## Results
 

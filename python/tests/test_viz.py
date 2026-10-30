@@ -15,6 +15,11 @@ try:
 except ImportError:
     HAS_NATIVE = False
 needs_native = pytest.mark.skipif(not HAS_NATIVE, reason="CHASE modules not installed")
+try:
+    from chase_cps.rtl import yosys as _yosys
+    HAS_YOSYS = _yosys() is not None
+except Exception:
+    HAS_YOSYS = False
 from chase_cps.backends import ADAPTERS
 from chase_cps.logic import Core
 
@@ -430,3 +435,55 @@ def test_the_checks_are_kept_on_the_contracts():
     assert not viz.diagram(a, results=False)["nodes"][0].get("checks")
     a.guarantees.append(a.guarantees[0])              # changed: what was checked no longer holds
     assert a.checked() == [] and not viz.diagram(a)["nodes"][0].get("checks")
+
+
+ARB_SPEC = """# view: --implementation models/arb.json Arb --open Arb
+NAME: arb;
+
+CONTRACT Arb:
+    input boolean variable req;
+    output boolean variable grant;
+    Assumptions:
+        G F !req;
+    Guarantees:
+        G (req -> F grant);
+"""
+ARB_MODEL = {"name": "ArbImpl", "inputs": {"req": "bool"}, "outputs": {"grant": "bool"},
+             "states": ["s"], "initial": "s",
+             "transitions": [{"from": "s", "to": "s", "outputs": {"grant": True}}]}
+
+
+@needs_native
+def test_the_file_says_how_to_draw_it(tmp_path, monkeypatch):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "arb.json").write_text(json.dumps(ARB_MODEL))
+    spec = tmp_path / "arb.ltl"
+    spec.write_text(ARB_SPEC)
+    monkeypatch.chdir("/")                             # the files of the options are next to the spec
+    out = tmp_path / "arb.json"
+    assert main(["view", str(spec), "--format", "json", "-o", str(out)]) == 0
+    box, = json.loads(out.read_text())["nodes"]
+    assert box["kind"] == "component" and box["open"] and box["source"] == {"line": 4}
+    copy = tmp_path / "editor" / "arb.ltl"               # the text of an editor, drawn from a copy
+    copy.parent.mkdir()
+    copy.write_text(ARB_SPEC)
+    monkeypatch.chdir(tmp_path)
+    assert main(["view", str(copy), "--format", "json", "-o", str(out)]) == 0
+    assert json.loads(out.read_text())["nodes"][0]["kind"] == "component"
+
+
+@pytest.mark.skipif(not HAS_YOSYS, reason="Yosys not installed")
+def test_a_module_is_drawn_with_its_state_machine(tmp_path):
+    rtl = tmp_path / "toggle.v"
+    rtl.write_text("module toggle(input clk, input en, output reg q);\n"
+                   "  initial q = 0;\n  always @(posedge clk) if (en) q <= !q;\nendmodule\n")
+    out = tmp_path / "t.json"
+    assert main(["view", str(rtl), "--format", "json", "-o", str(out)]) == 0
+    box, = json.loads(out.read_text())["nodes"]
+    assert box["kind"] == "component" and box["inputs"] == ["en"] and box["outputs"] == ["q"]
+    assert box["source"] == {"line": 1} and box["model"]["fsm"]["count"] == 2
+
+
+def test_the_page_goes_to_the_text_and_back():
+    page = viz.html(Contract.from_strings(name="A", inputs=["x"], outputs=["y"], guarantees=["G y"]))
+    assert '"chase-reveal"' in page and '"chase-select"' in page and "function exportAs" in page

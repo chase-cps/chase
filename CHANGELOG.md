@@ -28,6 +28,13 @@ Added:
   (`--no-checks`); with `--serve`, the page takes each new drawing in place
   and keeps its view, and keeps the last diagram when the file cannot be
   drawn. The explanations of the page show in the webview of an editor too.
+- `chase-cps view --implementation MODEL C` draws C as a component with
+  its model (SMV, JSON, or RTL read with Yosys), checked with `--check`; a
+  Verilog or SystemVerilog file with no assertions is drawn as its module.
+  The options of `view` can be written at the top of the file
+  (`# view: ...`, `// view: ...` in Verilog). The page saves the diagram as
+  SVG, PNG, or PDF, and in an editor a double click on a box goes to its
+  text.
 - The checks keep their results on the contracts they check, with what the
   contract said then (`Contract.checked()`): a diagram draws them with no
   `checks=`, and drops them when the contract changes.

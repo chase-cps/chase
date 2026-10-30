@@ -248,9 +248,36 @@ def _checks(args, contracts):
     return out
 
 
+def _modules(path: str) -> list[str]:
+    """The names of the modules of a Verilog or SystemVerilog file."""
+    with open(path, encoding="utf-8", errors="replace") as f:
+        text = re.sub(r"//[^\n]*|/\*.*?\*/", "", f.read(), flags=re.S)
+    return re.findall(r"^\s*module\s+(?:automatic\s+)?([A-Za-z_]\w*)", text, re.M)
+
+
+def _rtl(path: str, name: Optional[str] = None):
+    """The model of the RTL in path: its module, or the module called name
+    (path:top names it), read with Yosys."""
+    if ":" in os.path.basename(path):
+        path, name = path.rsplit(":", 1)
+    modules = _modules(path)
+    top = name if name in modules else modules[0] if len(modules) == 1 else None
+    if top is None:
+        raise ValueError(f"{os.path.basename(path)} has the modules {', '.join(modules) or 'none'}: "
+                         "name one as FILE:MODULE")
+    return models.Model.from_rtl(path, top)
+
+
 def _model(path: str, contract):
-    """The model in an SMV file, or in a JSON file: a state machine, or a
-    controller of slugs (synthesized from the contract)."""
+    """The model in an SMV file, in a JSON file (a state machine, or a
+    controller of slugs synthesized from the contract), or in Verilog or
+    SystemVerilog (.v, .sv: the module of the contract's name, or the only
+    one, or FILE:MODULE), read with Yosys."""
+    base = path.rsplit(":", 1)[0] if path.rsplit(":", 1)[0].endswith((".v", ".sv")) else path
+    if base.endswith((".v", ".sv")):
+        if not os.path.exists(base):
+            raise ValueError(f"no file {base}")
+        return _rtl(path, getattr(contract, "name", None))
     if not os.path.exists(path):
         raise ValueError(f"no file {path}")
     if path.endswith(".json"):
@@ -370,6 +397,50 @@ def _quiet(run):
         os.close(saved)
 
 
+_VIEW_LINE = re.compile(r"^\s*(?:#|//)\s*view:(.*)$")
+_PATH_OPTIONS = {"--environment", "--implementation", "--elk"}
+
+
+def _file_options(path: str) -> list[str]:
+    """The options of chase-cps view written in the file, in comments at its
+    top ("# view: ..." in the logics language, "// view: ..." in Verilog),
+    with their files taken from the folder of the file when they are there
+    (an editor draws its text from a copy elsewhere, in the folder of the
+    file: the names then stay as they are)."""
+    import shlex
+    found = []
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                m = _VIEW_LINE.match(line)
+                if m:
+                    found += shlex.split(m.group(1))
+                elif line.strip() and not line.lstrip().startswith(("#", "//")):
+                    break                       # the options are at the top
+    except OSError:
+        return []
+    out, after = [], None
+    for t in found:
+        if after in _PATH_OPTIONS and not t.startswith("-") and not os.path.isabs(t):
+            near = os.path.join(os.path.dirname(os.path.abspath(path)), t)
+            if os.path.exists(re.sub(r"(\.s?v):\w+$", r"\1", near)):
+                t = near
+        out.append(t)
+        after = t if t.startswith("-") else None
+    return out
+
+
+def _with_file_options(argv: list[str]) -> list[str]:
+    """argv of chase-cps view, with the options written in the file first
+    (those given on the command line come after, and add to them)."""
+    if not argv or argv[0] != "view":
+        return argv
+    for i, a in enumerate(argv[1:], 1):
+        if not a.startswith("-") and os.path.isfile(a):
+            return argv[:i + 1] + _file_options(a) + argv[i + 1:]
+    return argv
+
+
 def view(args) -> int:
     """Draws the contracts of a specification; with --serve, in a page that
     is drawn again whenever the file changes."""
@@ -382,11 +453,13 @@ def view(args) -> int:
                                                 args.environment or (), check=args.check and checks,
                                                 verify=args.verify and checks,
                                                 realizable=args.realizable and checks,
-                                                timeout=args.timeout, open=args.open or ()))
+                                                timeout=args.timeout, open=args.open or (),
+                                                implementations=args.implementation or ()))
         return viz.from_spec(args.file, args.contracts or (), args.refines or (),
                              args.environment or (), check=args.check and checks,
                              verify=args.verify and checks, realizable=args.realizable and checks,
-                             timeout=args.timeout, open=args.open or ())
+                             timeout=args.timeout, open=args.open or (),
+                             implementations=args.implementation or ())
 
     if args.serve:
         return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
@@ -491,6 +564,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
                    help="draw the state machine in MODEL as an environment of CONTRACT, on "
                         "its left (may be repeated)")
+    p.add_argument("--implementation", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+                   help="draw CONTRACT as a component with its model: SMV, JSON, or RTL (.v, "
+                        ".sv, FILE:MODULE), read with Yosys (may be repeated)")
     p.add_argument("--check", action="store_true",
                    help="check the refinements and the environments, and mark them (nuXmv "
                         "or NuSMV)")
@@ -521,7 +597,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, default=60, help="seconds per check")
     p.set_defaults(run=view)
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_with_file_options(sys.argv[1:] if argv is None else list(argv)))
     return args.run(args)
 
 

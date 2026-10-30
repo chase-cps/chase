@@ -116,7 +116,9 @@ def from_rtl(files, top: str, parameters: Optional[dict] = None,
     module = design["modules"][top]
     model = _model(top, smv, module, reset, set(clocks), names or {})
     model.source = {"kind": "rtl", "files": files, "top": top, "parameters": parameters,
-                    "defines": defines}
+                    "defines": defines,
+                    "outputs": [(names or {}).get(p, p) for p, port in module["ports"].items()
+                                if port["direction"] != "input"]}
     return model
 
 

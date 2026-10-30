@@ -40,6 +40,7 @@ from __future__ import annotations
 import html as _html
 import json
 import os
+import re
 import tempfile
 import webbrowser
 from typing import Iterable, Optional
@@ -651,16 +652,23 @@ def show(item, **kwargs) -> str:
 def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
-              open: Iterable = ()) -> dict:
+              open: Iterable = (), implementations: Iterable = ()) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
     JSON). ``contracts`` are the contracts to draw (default: all), each a
     name or names joined by + for their composition; ``refines`` lists
     (refined, abstract) names, drawn one inside the other; ``environments``
     lists (model file, contract): an SMV or JSON state machine, or a
-    controller of slugs. ``check`` checks the refinements and the
-    environments; ``verify`` and ``realizable`` check each contract of the
-    file that is drawn, alone or as a part of a composition. ``open`` names
-    the contracts drawn open."""
+    controller of slugs. ``implementations`` lists (model file, contract):
+    the contract is drawn as a component with its model (SMV, JSON, or RTL
+    in .v or .sv, read with Yosys). ``check`` checks the refinements, the
+    environments, and the implementations; ``verify`` and ``realizable``
+    check each contract of the file that is drawn, alone or as a part of a
+    composition. ``open`` names the contracts drawn open. Each box of a
+    contract of the file says where it is written (its line), for an editor.
+    A Verilog or SystemVerilog file with no assertion is drawn as its module
+    with its state machine."""
+    if path.endswith((".v", ".sv")) and not _has_assertions(path):
+        return _rtl_diagram(path, check=check, timeout=timeout, title=title)
     from . import checks as _checks_
     from . import gr1
     from .cli import _contract, _model, _read
@@ -695,8 +703,61 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         c = get(name)
         m = _model(model, c)
         envs.append((m, c, _checks_.is_environment(m, c, timeout=timeout).status if check else None))
-    return diagram(*items, refines=pairs, checks=marks, environments=envs,
-                   open=[get(e) for e in open], title=title or os.path.basename(path))
+    shown = list(items)
+    for model, name in implementations:   # a contract drawn with its model, as a component
+        c = get(name)
+        m = _model(model, c)
+        k = Component(c.name, c, m)
+        if check:
+            k.status = _checks_.is_implementation(m, c, timeout=timeout).status
+        shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
+    d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
+                open=[get(e) for e in open], title=title or os.path.basename(path))
+    _place_in_source(d, path)
+    return d
+
+
+def _has_assertions(path: str) -> bool:
+    with open(path, encoding="utf-8", errors="replace") as f:
+        text = re.sub(r"//[^\n]*|/\*.*?\*/", "", f.read(), flags=re.S)
+    return re.search(r"\b(assert|assume)\s+property\b", text) is not None
+
+
+def _rtl_diagram(path: str, check: bool = False, timeout: float = 60,
+                 title: Optional[str] = None) -> dict:
+    """The diagram of the RTL of a file: its module, with its ports and its
+    state machine (drawn open when it is small)."""
+    from .cli import _rtl
+    m = _rtl(path)
+    outputs = (m.source or {}).get("outputs", [])
+    c = Contract(m.name, {v: m.variables[v] for v in sorted(m.ivars)},
+                 {v: m.variables[v] for v in outputs if v in m.variables}, [], [])
+    k = Component(m.name, c, m)
+    d = diagram(k, open=[k], title=title or os.path.basename(path))
+    _place_in_source(d, path)
+    return d
+
+
+def _place_in_source(d: dict, path: str) -> None:
+    """Writes in each box of a contract (or a module) of the file the line
+    where it starts, for an editor to go from the box to the text."""
+    lines = {}
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for number, line in enumerate(f, 1):
+                m = re.match(r"\s*(?:CONTRACT|module)\s+([A-Za-z_]\w*)", line)
+                if m and m.group(1) not in lines:
+                    lines[m.group(1)] = number
+    except OSError:
+        return
+
+    def walk(nodes):
+        for n in nodes:
+            name = (n.get("contract") or {}).get("name") or n.get("title")
+            if name in lines and n.get("kind") in ("contract", "component", "group"):
+                n["source"] = {"line": lines[name]}
+            walk(n.get("children", []))
+    walk(d["nodes"])
 
 
 def notebook(item, **kwargs) -> str:
@@ -820,6 +881,7 @@ _PAGE = r"""<!doctype html>
   .tools button svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
                stroke-linecap:round; stroke-linejoin:round; }
   .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
+  [data-box].sel > rect:first-of-type { stroke:var(--teal); stroke-width:3px; }
   #export { display:none; position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd;
             border-radius:8px; padding:4px; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:7; }
   #export button { font:600 12px Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
@@ -1213,6 +1275,7 @@ function drawNode(g, e, ox, oy) {
   }
   const n = byId[e.id], x = ox + e.x, y = oy + e.y, sz = size(n);
   const box = el("g", { "data-box": n.id }, g);
+  if (n.source) box.addEventListener("dblclick", e => { e.stopPropagation(); reveal(n); });
   const st = n.kind === "group" && n.badge ? Object.assign({}, STYLE.group, { stroke: "var(--teal)", width: 1.2 })
                                            : STYLE[n.kind] || STYLE.contract;
   el("rect", { x, y, width: e.width, height: e.height, rx: st.rx, fill: st.fill, stroke: st.stroke,
@@ -1220,7 +1283,11 @@ function drawNode(g, e, ox, oy) {
   if (n.kind === "component" || n.kind === "environment") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
   const name = text(box, x + PAD, y + 18, "h", n.title);
-  if (n.contract) { name.onclick = toggle("c:" + n.id); tip(name, "Click: open or close the contract"); }
+  if (n.contract) {
+    name.onclick = toggle("c:" + n.id);
+    tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
+                                                     ? " · double click: its text in the editor" : ""));
+  }
   let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
@@ -1541,6 +1608,32 @@ async function render() {
   const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
   (out.edges || []).forEach(ed => drawEdge(g, ed, 0, 0));
+  select(selectedLine, false);
+}
+
+// From the diagram to the text, and back: a double click on a box asks the
+// editor to show where it is written; the editor tells the line of the
+// cursor, and the box written there is marked (and brought into view).
+let selectedLine = null;
+function reveal(n) {
+  if (typeof acquireVsCodeApi !== "function" || !n.source) return;
+  vscodeApi = vscodeApi || acquireVsCodeApi();
+  vscodeApi.postMessage({ type: "chase-reveal", line: n.source.line });
+}
+function select(line, bring) {
+  selectedLine = line;
+  let hit = null;
+  document.querySelectorAll("[data-box]").forEach(e => {
+    const n = byId[e.getAttribute("data-box")], on = !!(line && n && n.source && n.source.line === line);
+    e.classList.toggle("sel", on);
+    if (on && !hit) hit = e;
+  });
+  if (!hit || !bring || !cam) return;
+  const r = hit.getBoundingClientRect(), v = document.getElementById("view").getBoundingClientRect();
+  if (r.left >= v.left && r.right <= v.right && r.top >= v.top + TOP && r.bottom <= v.bottom) return;
+  cam.x += (v.left + v.width / 2) - (r.left + r.width / 2);
+  cam.y += (v.top + TOP + (v.height - TOP) / 2) - (r.top + r.height / 2);
+  place();
 }
 
 // A model with more states is shown in a panel, as a table of moves.
@@ -1705,6 +1798,7 @@ window.addEventListener("message", e => {
   if (m.type === "chase-data") setData(m.data).catch(err => stale("Cannot draw the diagram: " + err));
   else if (m.type === "chase-checks") setChecks(m.data).catch(err => stale("Cannot draw the checks: " + err));
   else if (m.type === "chase-stale") stale(m.reason);
+  else if (m.type === "chase-select") select(m.line, true);
   else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
 });
 // Export: the whole diagram as it is drawn (what is open stays open), on a
@@ -1721,6 +1815,7 @@ function exported() {
   svg.setAttribute("xmlns", NS);
   svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
   [...svg.children].filter(c => c.tagName === "rect").forEach(c => c.remove());   // the dots
+  svg.querySelectorAll(".sel").forEach(e => e.classList.remove("sel"));            // the box of the cursor
   const g = [...svg.children].find(c => c.tagName === "g");
   g.setAttribute("transform", `translate(${pad - box.x},${pad - box.y})`);
   const ground = document.createElementNS(NS, "rect");
