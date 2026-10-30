@@ -849,7 +849,8 @@ _PAGE = r"""<!doctype html>
     <span class="sep"></span>
     <button title="Fit the diagram to the window (0); the wheel zooms where it points, a drag moves" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
     <span class="sep"></span>
-    <button class="on" title="Names of the ports, with their types (bit vectors, ranges, reals)" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
+    <button class="on" title="Names of the ports" onclick="flip(this, 'names')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
+    <button class="on" title="Types of the ports (ranges, reals, bit vectors)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
@@ -868,7 +869,7 @@ const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
       FONT_S = "11px 'Arial Unicode MS', Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
-const show = { ports: true, conditions: true, checks: true };
+const show = { names: true, types: true, conditions: true, checks: true };
 
 // What is open: the contract ("c:"), the computed composition ("k:"), and
 // the model ("m:") of each box. At first, only the names show.
@@ -1044,10 +1045,12 @@ function size(n) {
   return { ls, w: Math.max(w, 110), h, m };
 }
 
-const portText = (n, v) => { const t = n.types && n.types[v]; return t ? v + " " + t.label : v; };
+// The label of a port: its name, its type, both, or nothing, as the two buttons say.
+const portText = (n, v) => { const t = show.types && n.types && n.types[v];
+  return [show.names ? v : null, t ? t.label : null].filter(x => x).join(" "); };
 function ports(n) {
   if (n.bare) return [];
-  const ps = [], lab = v => show.ports ? [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 11 }] : [];
+  const ps = [], lab = v => portText(n, v) ? [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 11 }] : [];
   (n.inputs || []).forEach((v, i) => ps.push({ id: n.id + ":in:" + v, width: PORT, height: PORT, labels: lab(v),
     layoutOptions: { "elk.port.side": "WEST", "elk.port.index": String(n.inputs.length - i) } }));
   (n.outputs || []).forEach((v, i) => ps.push({ id: n.id + ":out:" + v, width: PORT, height: PORT, labels: lab(v),
@@ -1271,7 +1274,7 @@ function drawEdge(g, ed, ox, oy) {
         if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
       const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
       el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--wire)", "stroke-width": 1.3 }, g);
-      if (!show.ports) text(g, mx + 4, my - 6, "w", String(k.bus));
+      if (!show.types) text(g, mx + 4, my - 6, "w", String(k.bus));
     } });
 }
 
@@ -1420,6 +1423,25 @@ function rootEdges() {      // from an environment to the box it drives
 // The items of the diagram in rows, when one row would be much wider than
 // the window: null for one row, else the ids of the items of each row.
 let rootRows = null;
+// The rows of the first drawing stay: a box keeps its row and its place in
+// it when another one opens, closes, or changes; a new box goes at the end.
+let rowPlan;                     // the keys of the items of each row, or null for one row
+function planOf(rows) {
+  if (!rows) return null;
+  const keys = keysOf(DATA.nodes);
+  return rows.map(ids => ids.map(id => keys[id]));
+}
+function rowsFromPlan() {
+  if (!rowPlan) return null;
+  const keys = keysOf(DATA.nodes), idOf = {}, placed = new Set();
+  for (const id in keys) idOf[keys[id]] = id;
+  const rows = rowPlan.map(r => r.map(k => idOf[k]).filter(id => id && DATA.nodes.some(n => n.id === id)));
+  rows.forEach(r => r.forEach(id => placed.add(id)));
+  const extra = DATA.nodes.filter(n => !placed.has(n.id)).map(n => n.id);
+  if (extra.length) rows[rows.length - 1].push(...extra);
+  const kept = rows.filter(r => r.length);
+  return kept.length > 1 ? kept : null;
+}
 function rowsOf(out) {
   const up = {}, root = id => up[id] === id ? id : (up[id] = root(up[id]));
   DATA.nodes.forEach(n => { up[n.id] = n.id; });
@@ -1456,10 +1478,9 @@ async function render() {
   for (const n of boxes)
     if (open.has("m:" + n.id) && inlineModel(n) && !MODELS[n.id]) MODELS[n.id] = await layoutModel(n);
   widen = {};
-  rootRows = null;
+  if (rowPlan === undefined) { rootRows = null; rowPlan = planOf(rowsOf(await layout())); }
+  rootRows = rowsFromPlan();
   let out = await layout();
-  rootRows = rowsOf(out);
-  if (rootRows) out = await layout();
   for (let pass = 0; pass < 3; pass++) {
     const todo = []; (out.children || []).forEach(c => narrow(c, todo));
     if (!todo.length) break;
