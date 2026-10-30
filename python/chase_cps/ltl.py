@@ -411,8 +411,8 @@ def to_chase(node: Node) -> str:
         if bits(node) or function(node):
             raise ValueError(f"{'bits' if bits(node) else function(node)} of a word "
                              f"({to_str(node)}) are not in the logics language of CHASE")
-        # In the CHASE grammar G, F and X bind more loosely than the binary
-        # Boolean operators (G a -> b is G (a -> b)): always parenthesize.
+        # Always parenthesized: the logics language before 0.5.1 read
+        # G a -> b as G (a -> b).
         return f"({node.op} ({to_chase(node.arg)}))"
     op = node.op
     if op in WORD_OPS:

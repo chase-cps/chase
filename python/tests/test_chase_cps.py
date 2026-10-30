@@ -1223,3 +1223,17 @@ def test_a_problem_in_the_domain_specific_language():
     assert len(c.inputs) == 11 and len(c.outputs) == 7
     assert len(c.assumptions) == 24 and len(c.guarantees) == 26
     assert c.name == "template_0_realizable" and load_dsl(path, name="EPS").name == "EPS"
+
+
+@needs_native
+@pytest.mark.parametrize("formula", [
+    "G a -> b", "a | b & c", "X a | b", "a & b U c", "a -> b -> c", "!a U b",
+    "a U b U c", "F a <-> G b | c", "n + 2 * m > 3", "n - m - 1 = 0"])
+def test_specification_files_read_formulas_as_python(formula):
+    # the logics language has the precedence of LTL tools, as the Python syntax
+    from chase_cps import ltl, parse_spec
+    text = ("NAME: t;\ninput boolean variable a;\ninput boolean variable b;\n"
+            "output boolean variable c;\ninput integer variable n;\ninput integer variable m;\n"
+            f"CONTRACT C:\nAssumptions:\ntrue;\nGuarantees:\n{formula};\n")
+    got = parse_spec(text)["C"].guarantee
+    assert ltl.to_str(got) == ltl.to_str(ltl.conjunction(ltl.conjuncts(ltl.parse(formula))))

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+Changed:
+
+- The logics language (specification files, `.ltl`) has the precedence of
+  LTL tools and of the Python syntax: from the tightest, `! G F X`, then
+  `U R`, `&`, `|`, `->`, `<->`; `U`, `R`, `->` group to the right. Before,
+  all the binary operators had the same precedence and `G`, `F`, `X` were
+  looser than them, so `G a -> b` was `G (a -> b)`; it is now
+  `(G a) -> b`. In arithmetic, `*` and `/` now come before `+` and `-`.
+  Every specification file of the demos and the tests reads the same as
+  before (they have parentheses).
+
 Fixed:
 
 - `a = b` and `a != b` between Booleans (`G (w != c)`, `G (w -> (c' = c))`)
