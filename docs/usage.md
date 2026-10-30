@@ -827,31 +827,38 @@ environment.
 contract, the states of a model (with 8 states or fewer), and the core of a
 check that fails.
 
-On the command line, `chase-cps view FILE` writes the page of a
-specification: a file of the logics language, a JSON file, or SystemVerilog
-Assertions (`.sv`) (`-o PAGE`, by default FILE with `.html`); `--contracts C...`
-chooses the contracts drawn (`NAME+NAME` for a composition), `--refines R A`
-draws R inside A, `--environment MODEL C` draws an environment, `--check`
-checks the refinements and the environments, `--verify` and `--realizable`
-mark the checks of each contract drawn (each check stopped after
-`--timeout` seconds), `--open C...` draws contracts open, and `--serve`
-serves the page (`--host`, `--port`) and draws it again whenever the file
-changes: the page takes the new drawing in place and keeps its view, and
-when the file cannot be drawn it keeps the last diagram and says why.
-`--format json` writes the data of the diagram instead of the page, and
-`--no-checks` leaves out the checks: an editor draws the structure as one
-types, and the checks when the file is saved. An error in the file names
-the line and the column (`line 16:16`), and the contract when it is a name
-that is not declared. `viz.from_spec(path, ...)` makes the same diagram in Python.
+On the command line, `chase-cps view FILE` writes the page of a file: a
+specification in the logics language, in JSON, or in SystemVerilog
+Assertions (`.sv`), or a Verilog module (`.v`, or `.sv` without assertions),
+drawn with the state machine of its registers. `viz.from_spec(path, ...)`
+makes the same diagram in Python. The options:
 
-`--implementation MODEL C` draws the contract C as a component with its
-model: SMV, JSON, or RTL (`.v`, `.sv`; `FILE:MODULE` when the file has
-several modules), read with Yosys; with `--check`, the model is checked
-against C (M ⊨ C). A Verilog or SystemVerilog file with no assertions is
-drawn as its module, with the state machine of its registers.
+- `--contracts C...`: the contracts drawn (default: all; `NAME+NAME` for a
+  composition).
+- `--refines R A`: draws R inside A.
+- `--implementation MODEL C`: draws C as a component with its model: SMV,
+  JSON, or RTL read with Yosys (`FILE:MODULE` when the file has several
+  modules).
+- `--environment MODEL C`: draws the model as an environment of C.
+- `--open C...`: draws these contracts open.
+- `--check`: checks the refinements, the implementations (M ⊨ C), and the
+  environments.
+- `--verify`, `--realizable`: check each contract drawn.
+- `--timeout S`: seconds for each check.
+- `--no-checks`: leaves the checks out (an editor draws the structure as
+  one types, and the checks when the file is saved).
+- `-o PAGE`: the page written (default: FILE with `.html`).
+- `--format json`: writes the data of the diagram instead of the page.
+- `--serve` (`--host`, `--port`): serves the page and draws it again in
+  place whenever the file changes, with the view kept; when the file cannot
+  be drawn, the page keeps the last diagram and says why.
 
-The options can be written in the file, in comments at its top, so that
-the file says how it is drawn (and an editor draws it so):
+An error in the file names the line and the column (`line 16:16`), and the
+contract when it is a name that is not declared.
+
+The options can also be written at the top of the file, in comments
+(`// view:` in Verilog). The files named there are taken from the folder of
+the file, and the options given on the command line add to them:
 
 ```
 # view: --implementation models/arb.json Arb --environment models/req.json Arb
@@ -859,13 +866,8 @@ the file says how it is drawn (and an editor draws it so):
 CONTRACT Arb ...
 ```
 
-In Verilog the comment is `// view: ...`. The files named there are taken
-from the folder of the file; the options given on the command line add to
-them.
-
-The button with an arrow saves the diagram as SVG, PNG, or PDF (the print
-dialog of the browser), the whole diagram as it is drawn, not only what the
-window shows.
+The button with an arrow saves the whole diagram as SVG, PNG, or PDF (the
+print dialog of the browser).
 
 The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
 `chase-cps view --elk PATH` put a local `elk.bundled.js` in the page

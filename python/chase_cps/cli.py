@@ -565,7 +565,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser(
         "view", help="draw the contracts of a specification",
         description="Draw the contracts of a specification in the logics language of CHASE, "
-        "of a JSON file, or of SystemVerilog Assertions (.sv), as a web page. A contract argument can be NAME+NAME+... for the "
+        "of a JSON file, or of SystemVerilog Assertions (.sv), or a Verilog module (.v), as a web "
+        "page. Options can be written at the top of the file (# view: ...). A contract argument can be NAME+NAME+... for the "
         "composition of the contracts, drawn as a box with the contracts inside. With "
         "--serve, the page is served on this computer and drawn again whenever the file "
         "changes.")
@@ -573,7 +574,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
                    help="the contracts to draw (default: all)")
     p.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
-                   help="draw ABSTRACT above REFINED (may be repeated)")
+                   help="draw REFINED inside ABSTRACT (may be repeated)")
     p.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
                    help="draw the state machine in MODEL as an environment of CONTRACT, on "
                         "its left (may be repeated)")
