@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import tempfile
 import warnings
@@ -666,8 +667,36 @@ def _parse_file(path: str, name: str):
         message = str(failure).replace(path, name)
         if syntax:
             message = message.rstrip(".") + ": " + "; ".join(syntax)
+        else:
+            message = _where_undeclared(path, message)
         raise RuntimeError(message) from None
     return system
+
+
+def _where_undeclared(path: str, message: str) -> str:
+    """The message of the parser for a name it does not know, with the
+    contract and the line (line:column, as for a syntax error) where the
+    name is first used."""
+    m = re.match(r"\s*(\w+?) ?is not declared in the current scope", message)
+    if not m:
+        return message
+    word = re.compile(r"(?<![\w'])" + re.escape(m.group(1)) + r"(?!\w)")
+    contract = None
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for number, line in enumerate(f, 1):
+            code = line.split("#", 1)[0]
+            head = re.match(r"\s*CONTRACT\s+(\w+)", code)
+            if head:
+                contract = head.group(1)
+                continue
+            if re.match(r"\s*(input|output)?\s*(boolean|integer|real|word)", code):
+                continue                # a declaration
+            hit = word.search(code)
+            if hit:
+                where = f"contract {contract}, " if contract else ""
+                return (f"{where}line {number}:{hit.start()}: {m.group(1)} is not declared "
+                        "in the current scope")
+    return message
 
 
 def load_dsl(path: str | os.PathLike, name: str | None = None) -> Contract:

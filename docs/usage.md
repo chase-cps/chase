@@ -823,14 +823,21 @@ contract, the states of a model (with 8 states or fewer), and the core of a
 check that fails.
 
 On the command line, `chase-cps view FILE` writes the page of a
-specification (`-o PAGE`, by default FILE with `.html`); `--contracts C...`
+specification: a file of the logics language, a JSON file, or SystemVerilog
+Assertions (`.sv`) (`-o PAGE`, by default FILE with `.html`); `--contracts C...`
 chooses the contracts drawn (`NAME+NAME` for a composition), `--refines R A`
 draws R inside A, `--environment MODEL C` draws an environment, `--check`
 checks the refinements and the environments, `--verify` and `--realizable`
 mark the checks of each contract drawn (each check stopped after
 `--timeout` seconds), `--open C...` draws contracts open, and `--serve`
 serves the page (`--host`, `--port`) and draws it again whenever the file
-changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
+changes: the page takes the new drawing in place and keeps its view, and
+when the file cannot be drawn it keeps the last diagram and says why.
+`--format json` writes the data of the diagram instead of the page, and
+`--no-checks` leaves out the checks: an editor draws the structure as one
+types, and the checks when the file is saved. An error in the file names
+the line and the column (`line 16:16`), and the contract when it is a name
+that is not declared. `viz.from_spec(path, ...)` makes the same diagram in Python.
 
 The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
 `chase-cps view --elk PATH` put a local `elk.bundled.js` in the page

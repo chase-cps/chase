@@ -8,6 +8,13 @@ import pytest
 
 from chase_cps import Component, Contract, Model, Result, System, Verification, viz
 from chase_cps.cli import main
+
+try:
+    from chase_cps import _native  # noqa: F401
+    HAS_NATIVE = True
+except ImportError:
+    HAS_NATIVE = False
+needs_native = pytest.mark.skipif(not HAS_NATIVE, reason="CHASE modules not installed")
 from chase_cps.backends import ADAPTERS
 from chase_cps.logic import Core
 
@@ -29,7 +36,7 @@ def contracts():
 
 
 def data(page: str) -> dict:
-    return json.loads(re.search(r"const DATA = (.*?);\n", page).group(1))
+    return json.loads(re.search(r"(?:const|let) DATA = (.*?);\n", page).group(1))
 
 
 def ids(nodes):
@@ -357,3 +364,37 @@ def test_open_reaches_each_hole_of_a_quotient():
     d = viz.diagram(q, refines=[(c1, q, "invalid"), (c2, q, "valid")], open=[q])
     assert [n.get("open") for n in d["nodes"]] == [None, None]     # not the dividend
     assert all(ch.get("open") for n in d["nodes"] for ch in n["children"] if ch["kind"] == "hole")
+
+
+def test_an_editor_draws_as_one_types(tmp_path, capsys):
+    a, b, top = contracts()
+    spec = tmp_path / "s.json"
+    spec.write_text(json.dumps({"contracts": [a.to_dict(), b.to_dict()]}))
+    # the data only, without the checks: an editor draws it again in place
+    assert main(["view", str(spec), "--format", "json", "--no-checks", "--verify", "--realizable"]) == 0
+    d = json.loads(capsys.readouterr().out)
+    assert [n["title"] for n in d["nodes"]] == ["A", "B"] and not any(n.get("checks") for n in d["nodes"])
+    page = viz.html(d)
+    assert "function setData" in page and '"chase-data"' in page and '"chase-stale"' in page
+
+
+def test_what_view_reads(tmp_path, capsys):
+    sv = tmp_path / "arbiter.sv"
+    sv.write_text("module arbiter(input logic clk, input logic req, output logic gnt);\n"
+                  "  assert property (@(posedge clk) req |=> gnt);\nendmodule\n")
+    assert main(["view", str(sv), "--format", "json", "-o", "-"]) == 0
+    assert json.loads(capsys.readouterr().out)["nodes"][0]["title"] == "arbiter"
+    model = tmp_path / "m.smv"
+    model.write_text("MODULE main\n")
+    assert main(["view", str(model)]) == 2
+    assert "is not a specification" in capsys.readouterr().err
+
+
+@needs_native
+def test_an_undeclared_name_is_placed(tmp_path):
+    from chase_cps import load_spec
+    spec = tmp_path / "s.ltl"
+    spec.write_text("NAME: s;\nCONTRACT B:\n    input boolean variable y;\n    output boolean variable z;\n"
+                    "    Assumptions:\n        true;\n    Guarantees:\n        G (y -> w);\n")
+    with pytest.raises(RuntimeError, match=r"contract B, line 8:16: w is not declared"):
+        load_spec(spec)

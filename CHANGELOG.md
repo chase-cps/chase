@@ -23,6 +23,13 @@ Added:
   of slugs (its structured format) or of gr1c, for users who run a GR(1)
   solver themselves; for gr1c, relations with arithmetic or between
   integers are written as the values that satisfy them.
+- `chase-cps view` reads SystemVerilog Assertions (`.sv`), writes the data
+  of the diagram (`--format json`), and draws the structure only
+  (`--no-checks`); with `--serve`, the page takes each new drawing in place
+  and keeps its view, and keeps the last diagram when the file cannot be
+  drawn. The explanations of the page show in the webview of an editor too.
+- A name that is not declared in a specification file is reported with
+  its contract and its line.
 - `viz.diagram(..., open=[...])` and `chase-cps view --open` draw boxes open
   when the page loads: the terms of a contract, the states of a small
   model, and the core of a check that fails.

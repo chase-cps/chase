@@ -97,17 +97,28 @@ def install(args) -> int:
 # check -----------------------------------------------------------------------
 
 def _read(path: str) -> dict[str, Contract]:
-    """The contracts of a specification (logics language) or of a JSON file
-    (one contract, a list of contracts, or {"contracts": [...]})."""
+    """The contracts of a specification (logics language), of a JSON file
+    (one contract, a list of contracts, or {"contracts": [...]}), or of a
+    SystemVerilog file (.sv, .sva: its assumptions and assertions)."""
     if not os.path.isfile(path):
         raise ValueError(f"no such file: {path}")
-    if path.endswith(".json"):
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".json":
         with open(path) as f:
             data = json.load(f)
         if isinstance(data, dict):
             data = data.get("contracts", [data])
         contracts = [Contract.from_dict(d) for d in data]
         return {c.name: c for c in contracts}
+    if ext in (".sv", ".sva", ".svh"):
+        from .sva import parse_sva
+        with open(path, encoding="utf-8") as f:
+            c = parse_sva(f.read()).contract
+        return {c.name: c}
+    if ext in (".smv", ".v", ".vhd", ".py"):
+        raise ValueError(f"{os.path.basename(path)} is not a specification: CHASE reads contracts "
+                         "from .ltl (the logics language), .json, and .sv files; a model (.smv, "
+                         "RTL) is drawn as the implementation of a contract")
     return load_spec(path)
 
 
@@ -299,26 +310,33 @@ def view(args) -> int:
     """Draws the contracts of a specification; with --serve, in a page that
     is drawn again whenever the file changes."""
     from . import viz
+    checks = not args.no_checks
 
-    def page() -> str:
-        return viz.html(viz.from_spec(args.file, args.contracts or (), args.refines or (),
-                                      args.environment or (), check=args.check, verify=args.verify,
-                                      realizable=args.realizable, timeout=args.timeout,
-                                      open=args.open or ()),
-                        elk=args.elk)
+    def make() -> dict:
+        return viz.from_spec(args.file, args.contracts or (), args.refines or (),
+                             args.environment or (), check=args.check and checks,
+                             verify=args.verify and checks, realizable=args.realizable and checks,
+                             timeout=args.timeout, open=args.open or ())
 
-    if not args.serve:
-        try:
-            text = page()
-        except (ValueError, RuntimeError) as e:
-            print(f"chase-cps view: {e}", file=sys.stderr)
-            return 2
-        out = args.output or os.path.splitext(args.file)[0] + ".html"
-        with open(out, "w", encoding="utf-8") as f:
-            f.write(text)
-        print(out)
-        return 0
-    return viz.serve(page, args.file, args.port, args.host)
+    if args.serve:
+        return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
+    try:
+        d = make()
+    except (ValueError, RuntimeError) as e:
+        print(f"chase-cps view: {e}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        text = json.dumps(d)
+        if args.output in (None, "-"):
+            print(text)
+            return 0
+    else:
+        text = viz.html(d, elk=args.elk)
+    out = args.output or os.path.splitext(args.file)[0] + ".html"
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(out)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -391,7 +409,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser(
         "view", help="draw the contracts of a specification",
         description="Draw the contracts of a specification in the logics language of CHASE, "
-        "or of a JSON file, as a web page. A contract argument can be NAME+NAME+... for the "
+        "of a JSON file, or of SystemVerilog Assertions (.sv), as a web page. A contract argument can be NAME+NAME+... for the "
         "composition of the contracts, drawn as a box with the contracts inside. With "
         "--serve, the page is served on this computer and drawn again whenever the file "
         "changes.")
@@ -416,6 +434,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--open", nargs="+", metavar="CONTRACT",
                    help="draw these contracts open: their terms, and the core of a check "
                         "that fails")
+    p.add_argument("--format", choices=("html", "json"), default="html",
+                   help="the page (html), or the data of the diagram (json; on the standard "
+                        "output without -o), for a page that draws it again in place")
+    p.add_argument("--no-checks", action="store_true",
+                   help="draw the structure only: leave out --check, --verify, and --realizable "
+                        "(an editor draws as one types, and checks on save)")
     p.add_argument("--elk", metavar="PATH",
                    help="put elk.bundled.js (elkjs 0.9) from PATH in the page, for a page that "
                         "works offline (default: load it from a CDN)")

@@ -682,15 +682,16 @@ def notebook(item, **kwargs) -> str:
     return f'<iframe srcdoc="{page}" style="width:100%;height:520px;border:0"></iframe>'
 
 
-def serve(page, path: str, port: int = 8765, host: str = "127.0.0.1") -> int:
-    """Serves page() on http://host:port, and draws it again whenever the
-    file at path changes; the page in the browser reloads by itself. Stops
-    with Ctrl-C."""
+def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
+          elk: Optional[str] = None) -> int:
+    """Serves the diagram make() on http://host:port, and draws it again
+    whenever the file at path changes: the page in the browser takes the new
+    drawing in place, and keeps the view. When the file cannot be drawn, the
+    page keeps the last diagram and says why. Stops with Ctrl-C."""
     import http.server
     import threading
-    import time
 
-    state = {"mtime": None, "version": 0, "page": ""}
+    state = {"mtime": None, "version": 0, "data": None, "error": None, "page": None}
     lock = threading.Lock()
 
     def refresh():
@@ -698,24 +699,39 @@ def serve(page, path: str, port: int = 8765, host: str = "127.0.0.1") -> int:
         if mtime == state["mtime"]:
             return
         try:
-            text = page()
-        except Exception as e:          # an error in the file is shown in the page
-            text = ("<!doctype html><meta charset=utf-8><pre style='color:#b03a2e;padding:16px'>"
-                    + _html.escape(f"{type(e).__name__}: {e}") + "</pre>" + _RELOAD)
+            d, error = make(), None
+        except Exception as e:          # the error goes to the page, the last diagram stays
+            d, error = None, f"{type(e).__name__}: {e}"
         with lock:
-            state.update(mtime=mtime, page=text, version=state["version"] + 1)
+            state.update(mtime=mtime, version=state["version"] + 1, error=error)
+            if d is not None:
+                state["data"] = d
+                if state["page"] is None:
+                    state["page"] = html(d, elk=elk)
+
+    def body(route):
+        if route == "/version":
+            return "text/plain", str(state["version"])
+        if route == "/data":
+            reply = {"error": state["error"]} if state["error"] else {"data": state["data"]}
+            return "application/json", json.dumps(reply)
+        if state["page"] is None:       # nothing could be drawn yet
+            return "text/html; charset=utf-8", (
+                "<!doctype html><meta charset=utf-8><pre style='color:#b03a2e;padding:16px'>"
+                + _html.escape(state["error"] or "") + "</pre>" + _RELOAD)
+        return "text/html; charset=utf-8", state["page"]
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
             refresh()
             with lock:
-                body = (str(state["version"]) if self.path == "/version" else state["page"]).encode()
+                kind, text = body(self.path)
+            data = text.encode()
             self.send_response(200)
-            self.send_header("Content-Type", "text/plain" if self.path == "/version"
-                             else "text/html; charset=utf-8")
+            self.send_header("Content-Type", kind)
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
-            self.wfile.write(body)
+            self.wfile.write(data)
 
         def log_message(self, *args):
             pass
@@ -732,14 +748,22 @@ def serve(page, path: str, port: int = 8765, host: str = "127.0.0.1") -> int:
     return 0
 
 
-# Served pages ask for /version every second, and reload when it changes.
+# Served pages ask for /version every second; when it changes they take the
+# new drawing in place (the view stays), or say why the file cannot be drawn.
 _RELOAD = """<script>
 (function () {
   if (!location.protocol.startsWith("http")) return;
   let seen = null;
   setInterval(async () => {
-    try { const v = await (await fetch("/version", { cache: "no-store" })).text();
-          if (seen === null) seen = v; else if (v !== seen) location.reload(); } catch (e) {}
+    try {
+      const v = await (await fetch("/version", { cache: "no-store" })).text();
+      if (seen === null) { seen = v; return; }
+      if (v === seen) return;
+      seen = v;
+      if (typeof setData !== "function") { location.reload(); return; }
+      const r = await (await fetch("/data", { cache: "no-store" })).json();
+      if (r.data) await setData(r.data); else stale(r.error);
+    } catch (e) {}
   }, 1000);
 })();
 </script>"""
@@ -770,6 +794,16 @@ _PAGE = r"""<!doctype html>
   #help div { display:flex; gap:10px; align-items:center; margin:6px 0; white-space:nowrap; }
   #help svg { flex:none; }
   #context { display:none; gap:8px; flex-wrap:wrap; padding-top:4px; }
+  #stale { display:none; position:fixed; left:12px; bottom:12px; max-width:min(720px, 70%); z-index:6;
+           background:#fff6f4; border:1px solid var(--bad); border-radius:6px; padding:7px 10px;
+           font:12px/1.45 Helvetica, Arial, sans-serif; color:#7a2a20; white-space:pre-wrap; }
+  #stale b { display:block; margin-bottom:2px; }
+  #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
+         background:#1d2526; color:#fff; border-radius:4px; padding:5px 8px;
+         font:12px/1.4 Helvetica, Arial, sans-serif; white-space:pre-wrap; }
+  #toolbar button.dep { opacity:.35; }
+  #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:4px 10px;
+          border-radius:12px; background:#eef3f3; color:var(--faint); font:12px Helvetica, Arial, sans-serif; }
   #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
                   padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink);
                   white-space:nowrap; background:#fff; }
@@ -806,18 +840,21 @@ _PAGE = r"""<!doctype html>
     <span class="sep"></span>
     <button title="Fit the diagram to the window (0); the wheel zooms where it points, a drag moves" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
     <span class="sep"></span>
-    <button class="on" title="Ports and their names" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
-    <button class="on" title="Types of the ports (bit vectors, ranges, reals)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
+    <button class="on" title="Ports, with their names (and types)" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
+    <button class="on" id="types" title="Types of the ports (bit vectors, ranges, reals), after their names" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
   </span><div id="help"></div></div>
 <div id="view"></div>
+<div id="stale"></div>
+<div id="busy">checking…</div>
+<div id="tip"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
 __ELK__
 <script>
-const DATA = __DATA__;
+let DATA = __DATA__;
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
@@ -831,6 +868,8 @@ const open = new Set();
 const toggle = key => () => { open.has(key) ? open.delete(key) : open.add(key); render(); };
 function flip(b, what) {
   show[what] = !show[what]; b.classList.toggle("on", show[what]);
+  if (what === "ports")                // the types are written after the names of the ports
+    document.getElementById("types").classList.toggle("dep", !show.ports);
   if (what === "conditions") for (const k in MODELS) delete MODELS[k];
   render();
 }
@@ -844,7 +883,7 @@ const fold = id => () => { folded.has(id) ? folded.delete(id) : folded.add(id); 
 
 const byId = {};
 (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
-const boxes = Object.values(byId);
+let boxes = Object.values(byId);
 const states = n => n.model && n.model.fsm && n.model.fsm.states;
 const inlineModel = n => states(n) && n.model.fsm.count <= INLINE_STATES;
 let allOpen = false;
@@ -864,7 +903,7 @@ function openAll(on) {
   if (on) folded.clear();
   allOpen = on; refit = true;
   const b = document.getElementById("all");
-  b.title = on ? "Close all" : "Open all";
+  b.setAttribute("data-tip", on ? "Close all" : "Open all");
   b.querySelector("path").setAttribute("d", on ? "M4.5 3 8 6.5 11.5 3M4.5 13 8 9.5l3.5 3.5" : "M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5");
   render();
 }
@@ -1091,7 +1130,8 @@ const NS = "http://www.w3.org/2000/svg";
 function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag);
   for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
 function text(parent, x, y, cls, s) { const t = el("text", { x, y, class: cls }, parent); t.textContent = s; return t; }
-function tip(parent, s) { el("title", {}, parent).textContent = s; }
+// The explanation of a part, shown when the pointer rests on it (see #tip).
+function tip(parent, s) { parent.setAttribute("data-tip", s); }
 
 // The icons: a card for a contract, ⊗ for a computed composition, two
 // states and a move for a model, with a spark when it was synthesized.
@@ -1513,11 +1553,73 @@ function svgDefsHatch(s) {
   el("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "#dfe6e6", "stroke-width": 2 }, p);
 }
 
-if (DATA.context && DATA.context.length) {
+function drawContext() {
   const c = document.getElementById("context"), esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  c.innerHTML = DATA.context.map(f => "<span title='context: holds in every check'><i>context</i>" + esc(f) + "</span>").join("");
-  c.style.display = "flex";
+  const fs = DATA.context || [];
+  c.innerHTML = fs.map(f => "<span data-tip='context: holds in every check'><i>context</i>" + esc(f) + "</span>").join("");
+  c.style.display = fs.length ? "flex" : "none";
 }
+// A new drawing of the same file, sent by an editor or by chase-cps view
+// --serve as the file changes: the view, and what is open or folded, stay.
+let drawing = Promise.resolve();        // one drawing at a time, in the order they come
+function setData(data) {
+  drawing = drawing.catch(() => {}).then(() => load(data));
+  return drawing;
+}
+function load(data) {
+  DATA = data;
+  for (const k in byId) delete byId[k];
+  (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
+  boxes = Object.values(byId);
+  ROOT.children = DATA.nodes;
+  for (const k in MODELS) delete MODELS[k];
+  for (const k of [...open]) if (!byId[k.slice(2)]) open.delete(k);
+  for (const k of [...folded]) if (!byId[k]) folded.delete(k);
+  for (const k in focus) if (!byId[k] || !(byId[k].checks || [])[focus[k]]) delete focus[k];
+  document.title = DATA.title;
+  drawContext();
+  stale(null);
+  return render();
+}
+// The file cannot be drawn as it is now: the diagram of the last version
+// that could be drawn stays, with the reason.
+function stale(reason) {
+  const b = document.getElementById("stale");
+  if (!reason) { b.style.display = "none"; return; }
+  b.innerHTML = "<b>The diagram is of the last version that could be drawn.</b>";
+  b.appendChild(document.createTextNode(reason));
+  b.style.display = "block";
+}
+window.addEventListener("message", e => {
+  const m = e.data || {};
+  if (m.type === "chase-data") setData(m.data).catch(err => stale("Cannot draw the diagram: " + err));
+  else if (m.type === "chase-stale") stale(m.reason);
+  else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
+});
+// The explanations: shown by the page itself, since the tooltips of the
+// browser do not show in the webview of an editor.
+(function () {
+  const box = document.getElementById("tip");
+  document.querySelectorAll("[title]").forEach(b => {
+    b.setAttribute("data-tip", b.title); b.setAttribute("aria-label", b.title); b.removeAttribute("title"); });
+  let timer = null, x = 0, y = 0;
+  const hide = () => { clearTimeout(timer); box.style.display = "none"; };
+  const place = () => {
+    const w = box.offsetWidth, h = box.offsetHeight;
+    box.style.left = Math.max(4, Math.min(x + 12, innerWidth - w - 8)) + "px";
+    box.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px";
+  };
+  document.addEventListener("mouseover", e => {
+    const t = e.target.closest && e.target.closest("[data-tip]");
+    hide();
+    if (t) timer = setTimeout(() => { box.textContent = t.getAttribute("data-tip"); box.style.display = "block"; place(); }, 400);
+  });
+  document.addEventListener("mousemove", e => { x = e.clientX; y = e.clientY; if (box.style.display === "block") place(); });
+  document.addEventListener("mousedown", hide);
+  document.addEventListener("wheel", hide, { passive: true });
+  document.addEventListener("mouseleave", hide);
+})();
+drawContext();
 openAsked();
 render().catch(e => { document.getElementById("view").textContent = "Cannot draw the diagram: " + e; });
 </script>
