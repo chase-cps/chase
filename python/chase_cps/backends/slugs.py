@@ -52,7 +52,7 @@ class SlugsAdapter(Adapter):
         """The structured-slugs specification, written by the CHASE back end."""
         from .._native import pychase_backends
         from ..contract import _parse_contracts
-        holder = _parse_contracts([query.contract])
+        holder = _parse_contracts([_iff(query.contract)])
         try:
             with tempfile.TemporaryDirectory(prefix="chase_cps_") as tmp:
                 path = os.path.join(tmp, "spec.structuredSlugs")
@@ -133,3 +133,33 @@ class SlugsAdapter(Adapter):
                               seconds=time.monotonic() - start)
         result.seconds = time.monotonic() - start
         return result
+
+
+def _iff(contract):
+    """The contract with a = b written a <-> b, and a != b !(a <-> b), when
+    a and b are Booleans: structured slugs compares only numbers."""
+    from dataclasses import replace
+    booleans = {v for v, t in contract.variables.items() if t == "bool"}
+
+    def boolean(n) -> bool:          # a formula, not a number
+        if isinstance(n, ltl.Num):
+            return False
+        if isinstance(n, ltl.Var):
+            return n.name in booleans
+        if isinstance(n, ltl.Unary):
+            return n.op != "neg"
+        if isinstance(n, ltl.Binary):
+            return n.op not in ltl.ARITHMETIC + ltl.WORD_OPS
+        return True
+
+    def fix(n):
+        if isinstance(n, ltl.Unary):
+            return ltl.Unary(n.op, fix(n.arg))
+        if isinstance(n, ltl.Binary):
+            if n.op in ("=", "!=") and boolean(n.left) and boolean(n.right):
+                same = ltl.Binary("<->", fix(n.left), fix(n.right))
+                return same if n.op == "=" else ltl.Unary("!", same)
+            return ltl.Binary(n.op, fix(n.left), fix(n.right))
+        return n
+    return replace(contract, assumptions=[fix(t) for t in contract.assumptions],
+                   guarantees=[fix(t) for t in contract.guarantees])

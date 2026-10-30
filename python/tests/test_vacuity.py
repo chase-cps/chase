@@ -116,3 +116,16 @@ def test_a_controller_that_can_force_a_deadlock_is_not_well_separated():
     r = is_well_separated(c, core=True)
     assert r.status == "not_separated"
     assert len(r.core.core.assumptions) == 3
+
+
+@needs_slugs
+@pytest.mark.parametrize("guarantee, status", [
+    ("G (w != c)", "realizable"), ("G (w -> (c' = c))", "realizable"),
+    ("G (w' = !w)", "realizable"), ("G (w = c')", "unrealizable"),
+    ("G ((w = c) & (w != c))", "unrealizable")])
+def test_booleans_compared_with_equality(guarantee, status):
+    # structured slugs compares only numbers: a = b on Booleans is a <-> b
+    from chase_cps import is_realizable
+    c = Contract.from_strings(name="T", inputs={"c": "bool"}, outputs={"w": "bool"},
+                              guarantees=[guarantee])
+    assert is_realizable(c).status == status
