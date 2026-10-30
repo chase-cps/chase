@@ -19,9 +19,10 @@ Added:
   of CHASE (the electric power system patterns of DATE18 and FDL2024) into
   a contract, named after the file (or `name=`). The graph of the
   architecture is not part of the contract and is skipped.
-- `to_gr1c(c)` writes a GR(1) contract as the input of gr1c, for users who
-  run another GR(1) solver; relations with arithmetic or between integers
-  are written as the values that satisfy them.
+- `to_gr1(c, format="slugs" | "gr1c")` writes a GR(1) contract as the input
+  of slugs (its structured format) or of gr1c, for users who run a GR(1)
+  solver themselves; for gr1c, relations with arithmetic or between
+  integers are written as the values that satisfy them.
 - `viz.diagram(..., open=[...])` and `chase-cps view --open` draw boxes open
   when the page loads: the terms of a contract, the states of a small
   model, and the core of a check that fails.
@@ -34,6 +35,13 @@ Changed:
 
 Fixed:
 
+- A copy of a temporal formula lost its interval, so an operation of the
+  console (compose, for instance) turned `G[0,2] p` into `G p`.
+- The console commands `stl` and `synthesize` crashed without a contract,
+  or with the name of no contract.
+- `synthesize C file gr1c` wrote a broken file when a relation compares
+  two variables or has arithmetic, which gr1c cannot read; it now writes
+  nothing and says to use `to_gr1(c, format="gr1c")`.
 - `R` (release) in a specification file crashed the parser of logics_tool
   (exit code 134 or 138): it built only `U`.
 - The interval of a temporal operator in a specification file

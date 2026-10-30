@@ -25,8 +25,10 @@ at once. Each module is developed in its own repository.
   represent design problems and systems, and their Python bindings
   ([chase-cps/core-library][CORE]).
 - `modules/chase-backends`: the backends encoding CHASE problems into external
-  tools, i.e., Slugs, GR1C, the SMV language of nuXmv, and PySTL
-  ([chase-cps/chase-backends][BACKENDS]).
+  tools, i.e., Slugs, GR1C, and the SMV language of nuXmv
+  ([chase-cps/chase-backends][BACKENDS]). It also has a printer for PySTL,
+  written for an early version of PyCASSE: the scripts it writes do not run
+  with the current PyCASSE.
 - `modules/DSL_tool`: the tool using a Domain Specific Language to specify
   discrete timed problems over architectures modeled as graphs
   ([chase-cps/DSL_tool][DSL]).

@@ -637,11 +637,14 @@ contract is unrealizable; `synthesize` also builds the controller. The
 console writes the input file of slugs or gr1c, which decide realizability
 and build the controller.
 
-For another GR(1) solver, `to_gr1c(c)` writes the contract as the input of
-gr1c, to run by hand (`gr1c -r spec.spc`), as `to_sva` does for the tools
-of SystemVerilog. The inputs are the variables of the environment and the
-outputs those of the system. gr1c compares an integer only with a constant
-and starts its domains at 0, so a relation with arithmetic or between
+`to_gr1(c, format=...)` writes a GR(1) contract as the input of a GR(1)
+solver, to run by hand, as `to_sva` does for the tools of SystemVerilog.
+`format="slugs"` (the default) is the file that chase-cps gives to slugs,
+in the structured format of slugs; `format="gr1c"` is the input of gr1c
+(`gr1c -r spec.spc`). The inputs are the variables of the environment and
+the outputs those of the system. Structured slugs has no subtraction or
+multiplication; gr1c compares an integer only with a constant and starts
+its domains at 0, so for gr1c a relation with arithmetic or between
 variables is written as the values that satisfy it, and an integer is
 written from 0.
 
