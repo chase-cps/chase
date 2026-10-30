@@ -1275,7 +1275,6 @@ function drawNode(g, e, ox, oy) {
   }
   const n = byId[e.id], x = ox + e.x, y = oy + e.y, sz = size(n);
   const box = el("g", { "data-box": n.id }, g);
-  if (n.source) box.addEventListener("dblclick", e => { e.stopPropagation(); reveal(n); });
   const st = n.kind === "group" && n.badge ? Object.assign({}, STYLE.group, { stroke: "var(--teal)", width: 1.2 })
                                            : STYLE[n.kind] || STYLE.contract;
   el("rect", { x, y, width: e.width, height: e.height, rx: st.rx, fill: st.fill, stroke: st.stroke,
@@ -1284,7 +1283,8 @@ function drawNode(g, e, ox, oy) {
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
   const name = text(box, x + PAD, y + 18, "h", n.title);
   if (n.contract) {
-    name.onclick = toggle("c:" + n.id);
+    const flip = toggle("c:" + n.id);
+    name.onclick = e => { flip(); if (e.detail === 2) reveal(n); };   // a double click opens and closes: as it was
     tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
                                                      ? " · double click: its text in the editor" : ""));
   }
@@ -1457,16 +1457,29 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
   const v = document.getElementById("view");
   let drag = null;
   const live = t => { for (let e = t; e && e !== v; e = e.parentNode) if (e.onclick) return true; return false; };
+  // the pointer is held by the view once it moves, not before: a click or a
+  // double click on a box still reaches the box
   v.addEventListener("pointerdown", e => {
     if (!cam || e.button !== 0 || live(e.target)) return;
-    drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
-    v.setPointerCapture(e.pointerId); v.classList.add("moving");
+    drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, id: e.pointerId, held: false };
   });
   v.addEventListener("pointermove", e => {
     if (!drag) return;
+    if (!drag.held) {
+      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 4) return;
+      drag.held = true; v.setPointerCapture(drag.id); v.classList.add("moving");
+    }
     cam.x = drag.cx + e.clientX - drag.x; cam.y = drag.cy + e.clientY - drag.y; place();
   });
   const stop = () => { drag = null; v.classList.remove("moving"); };
+  // a double click on a box (not on its name, which opens it): its text
+  v.addEventListener("dblclick", e => {
+    for (let t = e.target; t && t !== v; t = t.parentNode) {
+      if (t.onclick) return;
+      const id = t.getAttribute && t.getAttribute("data-box");
+      if (id && byId[id] && byId[id].source) { reveal(byId[id]); return; }
+    }
+  });
   v.addEventListener("pointerup", stop); v.addEventListener("pointercancel", stop);
   v.addEventListener("wheel", e => {
     if (!cam) return;
