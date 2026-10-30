@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+Added:
+
+- Robustness (`chase_cps.robustness`): how much a trace satisfies or
+  violates a formula, by the quantitative semantics of signal temporal
+  logic in discrete time, on lasso traces. `Contract.robustness(trace)`
+  gives it for the assumptions, the guarantees, and the contract. A
+  refinement that fails names the terms its counterexample violates, with
+  how much for the terms that compare numbers (`violated`).
+
 ## 0.5.0 (2026-10-30)
 
 Added:

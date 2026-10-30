@@ -612,6 +612,43 @@ same reason a contract with words cannot be written in the logics language
 (`to_spec`). State machines (`Model`) may declare words. slugs does not
 take them: GR(1) synthesis needs integer ranges.
 
+### Robustness
+
+The robustness of a formula on a trace says how much the trace satisfies
+it (a positive number) or violates it (a negative number), in the unit of
+the terms. It is the quantitative semantics of signal temporal logic, in
+discrete time, on the traces of the checks:
+
+- a comparison is the distance to its boundary: `x <= 30` is `30 - x`,
+  `x >= 10` is `x - 10`, `x = c` is `-|x - c|`, and `x != c` is
+  `|x - c|`;
+- `!` is the opposite, `&` the minimum, `|` the maximum;
+- `X` is the value at the next step, `G` the minimum over the steps to
+  come, `F` the maximum, and `U` the maximum over the steps j of the
+  right side at j, bounded by the left side before j.
+
+0 is the boundary: the formula may hold or not (`holds` says which). A
+Boolean variable is `inf` when true and `-inf` when false. So the
+robustness is useful only for formulas that compare numbers (integers,
+reals, words): for a contract over Booleans it says no more than whether
+the formula holds.
+
+```python
+from chase_cps.robustness import robustness, holds, violated
+robustness("G (p <= 30)", trace)          # 2.5: p stays 2.5 below 30
+c.robustness(trace)                        # assumptions, guarantees, A -> G
+violated(c.guarantees, trace, c.variables) # the terms the trace violates
+```
+
+A refinement that fails gives the terms that its counterexample violates
+(`violated` in the result): the assumptions of the refined contract, or
+the guarantees of the abstract one, each with its robustness when it
+compares numbers (`None` otherwise). For instance a guarantee `G (p >= 12)`
+violated with `-4` is missed by 4 at some step of the trace.
+
+A trace whose loop is empty repeats its last state. `past(x, n)` is not
+read.
+
 ## 3. GR(1) synthesis
 
 | Analysis | logics_tool | Python | chase-cps check | MCP tool |

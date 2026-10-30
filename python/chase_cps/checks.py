@@ -59,6 +59,7 @@ class RefinementResult:
     status: str                    # valid, invalid, unknown
     assumptions: Result            # A_abstract -> A_refined
     guarantees: Result             # (A_refined -> G_refined) -> (A_abstract -> G_abstract)
+    violated: list = field(default_factory=list)   # the terms the counterexample violates
 
     def __bool__(self) -> bool:
         return self.status == VALID
@@ -82,6 +83,10 @@ class RefinementResult:
              "guarantees": self.guarantees.to_dict()}
         if self.reals:
             d["reals"] = self.reals
+        if self.violated:
+            from .robustness import json_number
+            d["violated"] = [{"term": v["term"], "robustness": json_number(v["robustness"])}
+                             for v in self.violated]
         return d
 
 
@@ -99,7 +104,25 @@ def refines(refined: Contract, abstract: Contract, backend: str = "auto",
         status = INVALID
     else:
         status = UNKNOWN
-    return RefinementResult(status, a, g)
+    return RefinementResult(status, a, g, _violated(refined, abstract, a, g, variables))
+
+
+def _violated(refined, abstract, a: Result, g: Result, variables) -> list:
+    """The terms that the counterexample of a failed refinement violates: of
+    the assumptions of the refined contract (an environment it does not
+    accept), or of the guarantees of the abstract one; with the robustness
+    of the terms that compare numbers (see ``chase_cps.robustness``)."""
+    from .robustness import violated
+    if a.status == INVALID and a.trace is not None:
+        terms, trace = refined.assumptions, a.trace
+    elif g.status == INVALID and g.trace is not None:
+        terms, trace = abstract.guarantees, g.trace
+    else:
+        return []
+    try:
+        return violated(terms, trace, variables)
+    except (ValueError, KeyError, ZeroDivisionError, RecursionError):
+        return []     # a trace that the semantics here cannot read: no detail
 
 
 def is_consistent(contract: Contract, backend: str = "auto", core: bool = False,

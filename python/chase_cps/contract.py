@@ -228,6 +228,15 @@ class Contract:
             return self.guarantee
         return ltl.Binary("->", self.assumption, self.guarantee)
 
+    def robustness(self, trace) -> dict:
+        """How much a trace satisfies the assumptions, the guarantees, and
+        the contract (A -> G); see ``chase_cps.robustness``."""
+        from .robustness import robustness
+        v = self.variables
+        return {"assumptions": robustness(self.assumption, trace, v),
+                "guarantees": robustness(self.guarantee, trace, v),
+                "contract": robustness(self.saturated_guarantee, trace, v)}
+
     def to_dict(self) -> dict:
         def t(v):
             return v if isinstance(v, str) else list(v)
