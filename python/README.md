@@ -48,7 +48,10 @@ All the names are also in `chase_cps`. `load_spec` and `parse_spec` read the
 contracts of a specification written in the logics language of CHASE, and
 `to_spec` writes one. `parse_sva` reads the `assume property` and `assert
 property` statements of SystemVerilog as a contract, and `to_sva` writes a
-contract as a checker module. The variables are Booleans, integer ranges,
+contract as a checker module. `to_gr1(c, format="slugs" | "gr1c")` writes a
+GR(1) contract for a solver you run yourself, and `load_dsl` reads a problem
+written in the domain-specific language of CHASE. The variables are
+Booleans, integer ranges,
 reals, and words (`"word[8]"`, `"signed word[8]"`); `past(x, n)` is the
 value of x n steps before. nuXmv runs IC3 and BDDs at the same time; the
 option `engine` chooses one. The details are in
@@ -95,6 +98,24 @@ Where nuXmv cannot be used (e.g. for commercial purposes), the checks run
 with [NuSMV][NUSMV] (LGPL) instead: `chase-cps install nusmv` installs it on
 Linux x86_64, or set `CHASE_NUSMV`.
 
+## Diagrams
+
+`chase_cps.viz` draws contracts, components, and systems as a web page:
+a box inside another is checked against it, a quotient is a dashed box, a
+model opens on its states, and the results of the checks are tags on the
+boxes, with their cores highlighted.
+
+```python
+from chase_cps import Contract, refines, viz
+
+spec = Contract.from_strings(inputs=["req"], outputs=["grant"], assumptions=["G F !req"],
+                             guarantees=["G (req -> F grant)"], name="Spec")
+impl = Contract.from_strings(inputs=["req"], outputs=["grant"],
+                             guarantees=["G (req -> X grant)"], name="Impl")
+d = viz.diagram(spec, refines=[(impl, spec, refines(impl, spec))], open=[spec])
+viz.save(d, "plan.html")       # viz.show(d) opens it in a browser
+```
+
 ## Command line
 
 `chase-cps check` checks the contracts of a specification written in the
@@ -108,6 +129,8 @@ $> chase-cps check specs.ltl --implementation joint1.smv Joint1 --receptive join
 ````
 
 The exit status is 0 when every check passes, and 1 when a check fails.
+`chase-cps view specs.ltl --check --realizable` writes the diagram of a
+specification, and `--serve` draws it again whenever the file changes.
 
 The source code and the installation instructions are in the
 [chase][REPO] repository.

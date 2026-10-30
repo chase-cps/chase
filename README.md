@@ -55,7 +55,7 @@ $>  docker pull ghcr.io/chase-cps/chase
 $>  docker run --rm -it ghcr.io/chase-cps/chase
 ````
 
-The container starts in the directory of the demos. All the demos can be run
+The container starts in the directory of the demos. The demos can be run
 and checked with:
 
 ````
@@ -171,7 +171,9 @@ in the standard LTL syntax, in three layers:
 A failed check returns a counterexample trace. The variables are Booleans,
 integer ranges, reals, and words (bit vectors of a fixed width). Contracts
 are read and written in the logics language of CHASE and in SystemVerilog
-Assertions.
+Assertions, and GR(1) contracts are written for slugs or gr1c (`to_gr1`).
+`chase_cps.viz` and `chase-cps view` draw contracts, components, and
+systems as a web page, with the results of the checks on the boxes.
 
 The package, together with the compiled CHASE modules, is installed with:
 

@@ -47,8 +47,13 @@ build_boolean_model')" = "true true "
     check "LiftPlusCruise console" "lpc_console"
     check "LMFSM"                 "python3 LMFSM/fsm.py --expect"
     check "AHB"                   "python3 AHB/ahb.py --expect"
+    check "PaymentAssistant"      "python3 PaymentAssistant/assistant.py --expect"
+    check "WarehouseRobot"        "python3 WarehouseRobot/warehouse.py --expect"
+    if command -v yosys >/dev/null || command -v yowasp-yosys >/dev/null; then
+        check "Escalation"        "python3 Escalation/escalation.py --expect"
+    fi
 else
-    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB (no nuXmv)"
+    echo "SKIP  reals: nuXmv go_msat, Charger, LiftPlusCruise, LMFSM, AHB, PaymentAssistant, WarehouseRobot, Escalation (no nuXmv)"
 fi
 # NuSMV, as without nuXmv (the image published on ghcr.io); BufferSwap needs Yosys
 if command -v NuSMV >/dev/null; then
@@ -59,6 +64,7 @@ fi
 if command -v yosys >/dev/null || command -v yowasp-yosys >/dev/null; then
     check "BufferSwap"            "python3 BufferSwap/bufferswap.py --expect"
 fi
+check "DATE18 in Python"      "python3 DATE18/eps.py --expect"
 check "command line"          "chase-cps --version"
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail

@@ -64,7 +64,8 @@ looser than them: `G a -> b` is `G (a -> b)`. Parentheses avoid surprises.
 A problem written in the domain-specific language of CHASE (the patterns of
 electric power systems, `DATE18/` and `FDL2024/` in the demos) is read by
 `chase_cps.load_dsl(path)` into one contract, with the formulas its
-patterns give; the architecture graph of the problem is left out.
+patterns give, named after the file (or `name=`); the architecture graph of
+the problem is left out.
 
 ## Formulas in Python
 
@@ -822,11 +823,14 @@ contract, the states of a model (with 8 states or fewer), and the core of a
 check that fails.
 
 On the command line, `chase-cps view FILE` writes the page of a
-specification; `--refines R A` draws R inside A, `--environment MODEL C`
-draws an environment, `--check` checks the refinements and the
-environments, `--verify` and `--realizable` mark the checks of each
-contract drawn, `--open C...` draws contracts open, and `--serve` draws
-the page again whenever the file changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
+specification (`-o PAGE`, by default FILE with `.html`); `--contracts C...`
+chooses the contracts drawn (`NAME+NAME` for a composition), `--refines R A`
+draws R inside A, `--environment MODEL C` draws an environment, `--check`
+checks the refinements and the environments, `--verify` and `--realizable`
+mark the checks of each contract drawn (each check stopped after
+`--timeout` seconds), `--open C...` draws contracts open, and `--serve`
+serves the page (`--host`, `--port`) and draws it again whenever the file
+changes. `viz.from_spec(path, ...)` makes the same diagram in Python.
 
 The page loads ELK (elkjs 0.9.3) from a CDN. `viz.html(d, elk=PATH)` and
 `chase-cps view --elk PATH` put a local `elk.bundled.js` in the page
@@ -835,9 +839,9 @@ environment, `viz.show` writes the page to FILE and opens no browser
 (`CHASE_VIZ_ELK=PATH` puts ELK in it).
 
 The diagrams are also drawn by the MCP server of CHASE (the `visualize`
-tool of chase-mcp, for AI agents) and by the CHASE extension of VS Code,
-which shows the diagram of a specification, or of a Python script that
-calls `viz.show`, beside the editor and draws it again on save.
+tool of chase-mcp, for AI agents). An extension for VS Code, which shows
+the diagram of a specification, or of a Python script that calls
+`viz.show`, beside the editor and draws it again on save, will follow.
 
 ## Results
 

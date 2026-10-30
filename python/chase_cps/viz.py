@@ -612,7 +612,7 @@ def save(item, path: str, **kwargs) -> str:
 def show(item, **kwargs) -> str:
     """Writes the page to a temporary file and opens it in the browser. When
     CHASE_VIZ_OUTPUT names a file, the page goes there and no browser opens
-    (the VS Code extension of CHASE shows it in the editor), with the ELK of
+    (for an editor that shows the page itself), with the ELK of
     CHASE_VIZ_ELK when it is set."""
     out = os.environ.get("CHASE_VIZ_OUTPUT")
     if out:                            # CHASE_VIZ_ELK: the ELK the page takes, offline

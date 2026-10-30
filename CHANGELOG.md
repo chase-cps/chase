@@ -29,6 +29,9 @@ Added:
 
 Changed:
 
+- Demos: AIAgents is now PaymentAssistant; DATE18 and DATE21 use slugs
+  instead of gr1c; `DATE18/eps.py` checks the power system in Python; the
+  READMEs show each step with its diagram, as the website does.
 - `ensure` of a contract without assumptions keeps its terms: (true, G and
   the new guarantee), the same contract as before, instead of the saturated
   formulas of the composition.
