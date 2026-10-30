@@ -250,7 +250,7 @@ def test_functions():
 
 @needs_mc
 def test_past():
-    assert ltl.to_str(ltl.parse("G X X (y = past(x, 2))")) == "G X X y = past(x, 2)"
+    assert ltl.to_str(ltl.parse("G X X (y = past(x, 2))")) == "G X X (y = past(x, 2))"
     with pytest.raises(ltl.LTLSyntaxError, match="takes a variable"):
         ltl.parse("past(x + 1, 2) = 0")
     with pytest.raises(ltl.LTLSyntaxError, match="steps n > 0"):

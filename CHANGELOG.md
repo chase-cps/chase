@@ -12,6 +12,11 @@ Changed:
   `(G a) -> b`. In arithmetic, `*` and `/` now come before `+` and `-`.
   Every specification file of the demos and the tests reads the same as
   before (they have parentheses).
+- Formulas are printed with the parentheses a reader needs, whatever the
+  precedence: two different logical operators (`a -> (b | c)`,
+  `(a & b) U c`), and a comparison or a binary formula under a unary
+  operator (`G (x <= 4)`, `X (x' = y)`). The diagrams, the results, and the
+  messages show them so.
 
 Fixed:
 
