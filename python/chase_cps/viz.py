@@ -734,7 +734,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
               open: Iterable = (), implementations: Iterable = (), results: Optional[str] = None,
-              budget: Optional[float] = None) -> dict:
+              budget: Optional[float] = None, progress=None) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
     JSON). ``contracts`` are the contracts to draw (default: all, but those
     drawn inside another box by ``refines``), each a
@@ -750,7 +750,9 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     contract drawn too. ``results`` is the file where the results of
     ``check`` are kept (see ``chase_cps.record``): a check whose contracts
     and models have not changed is not run again. With ``budget`` (seconds),
-    no check starts after that time; those left are not marked. ``open`` names the contracts drawn open. Each box of a
+    no check starts after that time; those left are not marked. ``progress``
+    is called with each result as soon as it is known ({"check", "result",
+    and what it is about}), for an editor that shows them one by one. ``open`` names the contracts drawn open. Each box of a
     contract of the file says where it is written (its line), for an editor.
     A Verilog or SystemVerilog file with no assertion is drawn as its module
     with its state machine."""
@@ -789,12 +791,15 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     def kept(kind, k, run, **about):    # a result kept in the file, or the check run and kept
         e = rec.get(k) if rec is not None else None
         if e is not None:
-            return _record.as_result(e)
-        if not check or (deadline is not None and time.monotonic() > deadline):
+            r = _record.as_result(e)
+        elif not check or (deadline is not None and time.monotonic() > deadline):
             return None
-        r = run()
-        if rec is not None:
-            rec.put(k, kind, r, **about)
+        else:
+            r = run()
+            if rec is not None:
+                rec.put(k, kind, r, **about)
+        if progress is not None:
+            progress(dict(check=kind, result=r.status, **about))
         return r
 
     def feasible(c):                  # A ∧ G, and the core when they cannot hold together
@@ -1174,6 +1179,7 @@ __ELK__
 <script>
 let DATA = __DATA__;
 let busy = false;               // checks running in the editor (setBusy)
+let progressed = {};            // the results known while they run: contract name -> {tag: status}
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
@@ -1533,8 +1539,10 @@ function drawNode(g, e, ox, oy) {
     if (c.core) { t.setAttribute("class", "icon");
       t.onclick = () => { if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
-  if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A"))
-    ix += pending(el("g", {}, box), ix, y + 6, "A∧G") + 4;    // A ∧ G, being checked
+  if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A")) {
+    const known = (progressed[n.contract.name] || {})["A∧G"];   // A ∧ G: known already, or being checked
+    ix += (known ? tag(el("g", {}, box), ix, y + 6, "A∧G", known) : pending(el("g", {}, box), ix, y + 6, "A∧G")) + 4;
+  }
   let rx = x + e.width - PAD;
   if (inside(n)) {             // fold: hide or show the boxes inside
     const f = el("g", { class: "icon" }, box), shut = folded.has(n.id), cx = rx - ICON / 2, cy = y + 14;
@@ -1549,8 +1557,9 @@ function drawNode(g, e, ox, oy) {
     rx -= ICON + 6;
   }
   if (n.badge && show.checks) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
-    if (busy && !n.badge.status) pending(b, rx - w, y + 6, n.badge.text);
-    else tag(b, rx - w, y + 6, n.badge.text, n.badge.status);
+    const known = busy && !n.badge.status && n.contract && (progressed[n.contract.name] || {})[n.badge.text];
+    if (busy && !n.badge.status && !known) pending(b, rx - w, y + 6, n.badge.text);
+    else tag(b, rx - w, y + 6, n.badge.text, n.badge.status || known);
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
            + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
     if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
@@ -2086,6 +2095,7 @@ window.addEventListener("message", e => {
   else if (m.type === "chase-stale") stale(m.reason);
   else if (m.type === "chase-select") select(m.line, true, m.at);
   else if (m.type === "chase-busy") setBusy(m.on);
+  else if (m.type === "chase-progress") progress(m.event);
 });
 // Export: the whole diagram as it is drawn (what is open stays open), on a
 // white ground, the colors written out, so that the file stands alone.
@@ -2121,10 +2131,22 @@ let vscodeApi = null;
 // the places where their results will be show three dots meanwhile.
 function setBusy(on) {
   busy = !!on;
+  progressed = {};
   document.getElementById("run").classList.toggle("busy", busy);
   document.getElementById("run").title = busy ? "Checking… Click to stop"
     : "Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn";
   if (DATA) render();
+}
+// A result known while the checks run: on its box at once (a few at a time).
+const TAGS = { feasible: ["of", "A∧G"], refines: ["abstract", "⪯"] };
+let redraw = null;
+function progress(e) {
+  const where = TAGS[e.check];
+  if (!where || !busy) return;
+  const status = { sat: "valid", valid: "valid", unsat: "invalid", invalid: "invalid" }[e.result] || "unknown";
+  (progressed[e[where[0]]] = progressed[e[where[0]]] || {})[where[1]] = status;
+  clearTimeout(redraw);
+  redraw = setTimeout(() => { if (DATA) render(); }, 60);
 }
 function runChecks() {
   if (!inEditor()) return;

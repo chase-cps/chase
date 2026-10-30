@@ -462,6 +462,10 @@ def view(args) -> int:
     checks = not args.no_checks
     results = None if args.no_results else (args.results or results_path(args.file))
 
+    def progress(event):              # each result as soon as it is known, for an editor
+        print("progress: " + json.dumps(event), file=sys.stderr, flush=True)
+    shown = progress if args.progress else None
+
     def make() -> dict:
         if args.format == "json" and args.output in (None, "-"):    # the JSON alone on the standard output
             return _quiet(lambda: viz.from_spec(args.file, args.contracts or (), args.refines or (),
@@ -470,13 +474,14 @@ def view(args) -> int:
                                                 realizable=args.realizable and checks,
                                                 timeout=args.timeout, open=args.open or (),
                                                 implementations=args.implementation or (),
-                                                results=results, budget=args.budget))
+                                                results=results, budget=args.budget,
+                                                progress=shown))
         return viz.from_spec(args.file, args.contracts or (), args.refines or (),
                              args.environment or (), check=args.check and checks,
                              verify=args.verify and checks, realizable=args.realizable and checks,
                              timeout=args.timeout, open=args.open or (),
                              implementations=args.implementation or (), results=results,
-                             budget=args.budget)
+                             budget=args.budget, progress=shown)
 
     if args.serve:
         return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
@@ -620,6 +625,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="where the results of --check are kept (default: FILE.results.json next "
                         "to the file); a check of contracts that have not changed is not run again")
     p.add_argument("--no-results", action="store_true", help="keep no results")
+    p.add_argument("--progress", action="store_true",
+                   help="write each result of --check on the standard error as soon as it is "
+                        "known (lines 'progress: {json}'), for an editor")
     p.set_defaults(run=view)
 
     args = parser.parse_args(_with_file_options(sys.argv[1:] if argv is None else list(argv)))

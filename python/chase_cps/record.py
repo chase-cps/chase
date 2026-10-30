@@ -96,10 +96,14 @@ class Record:
         status = getattr(result, "status", None)
         if status is None or status == "unknown":
             return {}
-        e = {"key": k, "check": check, **about, "result": status,
-             "tool": getattr(result, "backend", "") or "",
-             "seconds": round(getattr(result, "seconds", 0.0) or 0.0, 2),
-             "at": datetime.datetime.now().isoformat(timespec="seconds")}
+        parts = [getattr(result, x) for x in ("assumptions", "guarantees")   # a refinement: two checks
+                 if getattr(getattr(result, x, None), "status", None) is not None]
+        tool = getattr(result, "backend", "") or next((p.backend for p in parts if p.backend), "")
+        seconds = getattr(result, "seconds", 0.0) or sum(p.seconds or 0.0 for p in parts)
+        e = {"key": k, "check": check, **about, "result": status, "tool": tool,
+             "seconds": round(seconds, 2), "at": datetime.datetime.now().isoformat(timespec="seconds")}
+        if getattr(result, "failed", None):
+            e["failed"] = result.failed           # the assumptions or the guarantees
         core = getattr(result, "core", None)
         terms = getattr(core, "core", None)
         if isinstance(terms, Contract):

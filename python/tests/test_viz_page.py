@@ -242,6 +242,15 @@ def test_the_check_button_and_the_checks_running(browser, tmp_path, monkeypatch)
     assert dots == boxes_with_contract + 1
     widths = page.evaluate("""() => [...document.querySelectorAll('.pending rect')].map(r => +r.getAttribute('width'))""")
     assert set(widths) <= {page.evaluate("tagWidth('A∧G')"), page.evaluate("tagWidth('⪯')")}
+    # results known one by one: in place of their dots at once
+    for e in ({"check": "feasible", "result": "unsat", "of": "Greedy"},
+              {"check": "refines", "result": "valid", "refined": "Robot1+Robot2+Greedy", "abstract": "System"}):
+        page.evaluate("m => window.postMessage(m, '*')", {"type": "chase-progress", "event": e})
+    page.wait_for_timeout(400)
+    assert page.evaluate("document.querySelectorAll('.pending').length") == dots - 2
+    tags = page.evaluate("""() => [...document.querySelectorAll('[data-box]')].map(b => [byId[b.getAttribute('data-box')].title,
+        [...b.querySelectorAll(':scope > g > rect')].filter(r => r.getAttribute('fill') === COLOR.invalid).length]).filter(x => x[1])""")
+    assert ["Greedy", 1] in tags
     run.click()                                                            # while busy: stop
     assert page.evaluate("window.posted.splice(0)") == [{"type": "chase-stop"}]
     page.evaluate("m => window.postMessage(m, '*')", {"type": "chase-busy", "on": False})

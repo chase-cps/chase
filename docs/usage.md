@@ -854,6 +854,9 @@ makes the same diagram in Python. The options:
   next to the file (`charger.ltl` → `charger.results.json`). A check whose
   contracts and models have not changed is not run again: its result is
   read from the file. `--no-results` keeps none.
+- `--progress`: writes each result of `--check` on the standard error as
+  soon as it is known (`progress: {...}`, one line each), so that an
+  editor shows the results one by one.
 - `--no-checks`: leaves the checks out (an editor draws the structure as
   one types, and the checks when the file is saved).
 - `-o PAGE`: the page written (default: FILE with `.html`).
