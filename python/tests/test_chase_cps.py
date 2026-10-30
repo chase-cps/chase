@@ -1237,3 +1237,28 @@ def test_specification_files_read_formulas_as_python(formula):
             f"CONTRACT C:\nAssumptions:\ntrue;\nGuarantees:\n{formula};\n")
     got = parse_spec(text)["C"].guarantee
     assert ltl.to_str(got) == ltl.to_str(ltl.conjunction(ltl.conjuncts(ltl.parse(formula))))
+
+
+@pytest.mark.parametrize("formula", [
+    "G[0,2] p", "F[1,3] (n >= 2)", "p U[0,2] q", "p R[1,2] q", "G (p -> F[0,3] q)",
+    "G]0,2] p", "F[0,2[ q", "G[2,0] p"])
+def test_intervals_in_python_as_in_specification_files(formula):
+    from chase_cps import ltl
+    node = ltl.parse(formula)
+    assert "[" not in ltl.to_str(node)          # unfolded into X
+    if HAS_NATIVE:
+        from chase_cps import parse_spec
+        text = ("NAME: t;\ninput boolean variable p;\noutput boolean variable q;\n"
+                "input integer variable n;\n"
+                f"CONTRACT C:\nAssumptions:\ntrue;\nGuarantees:\n{formula};\n")
+        got = parse_spec(text)["C"].guarantee
+        assert ltl.to_str(got) == ltl.to_str(ltl.conjunction(ltl.conjuncts(node)))
+
+
+@pytest.mark.parametrize("formula, error", [
+    ("X[0,1] p", "write X X p"), ("p W[0,1] q", "W with an interval"),
+    ("G[0,2.5] p", "whole numbers"), ("G[0,2 p", "ends with")])
+def test_intervals_that_are_refused(formula, error):
+    from chase_cps import ltl
+    with pytest.raises(ltl.LTLSyntaxError, match=error):
+        ltl.parse(formula)

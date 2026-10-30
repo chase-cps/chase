@@ -17,7 +17,10 @@ robustness of a formula without comparisons of numbers is ``inf`` or
 ``-inf``: it says no more than whether it holds. The robustness of a
 comparison of numbers is a number, in the unit of its terms.
 
-A trace whose loop is empty repeats its last state.
+A trace whose loop is empty repeats its last state. ``past(x, n)`` is the
+value of x n steps before: the history variable of nuXmv in the trace
+(``chase_past2_x``) when it is there, else the state n steps before; in
+the first n steps it has none.
 """
 
 from __future__ import annotations
@@ -36,13 +39,20 @@ Number = Union[int, Fraction, float]
 def robustness(formula, trace: Trace, variables: Optional[dict] = None, at: int = 0) -> Number:
     """The robustness of a formula (text or tree) on a trace, at a step of
     the trace (0: the first state)."""
-    return _Lasso(trace, variables).value(_node(formula), at)
+    node = _node(formula)
+    return _Lasso(trace, variables, _history(node)).value(node, at)
 
 
 def holds(formula, trace: Trace, variables: Optional[dict] = None, at: int = 0) -> bool:
     """Whether a trace satisfies a formula (also on the boundary, where the
     robustness is 0)."""
-    return _Lasso(trace, variables).holds(_node(formula), at)
+    node = _node(formula)
+    return _Lasso(trace, variables, _history(node)).holds(node, at)
+
+
+def _history(node) -> int:
+    """The most steps a past(x, n) of the formula looks back."""
+    return max((n for _, n in ltl.pasts(node)), default=0)
 
 
 def numeric(formula, variables: Optional[dict] = None) -> bool:
@@ -76,9 +86,9 @@ def violated(terms, trace: Trace, variables: Optional[dict] = None) -> list[dict
     """The terms that a trace violates, each with its robustness when the
     term compares numbers (how much it is violated: a negative number or 0),
     else None."""
-    lasso, out = _Lasso(trace, variables), []
-    for t in terms:
-        node = _node(t)
+    nodes = [_node(t) for t in terms]
+    lasso, out = _Lasso(trace, variables, max(map(_history, nodes), default=0)), []
+    for node in nodes:
         if not lasso.holds(node, 0):
             r = lasso.value(node, 0) if numeric(node, variables) else None
             out.append({"term": ltl.to_str(node), "robustness": r})
@@ -92,11 +102,17 @@ def _node(formula):
 class _Lasso:
     """The states of a lasso trace, with the step after each one."""
 
-    def __init__(self, trace: Trace, variables: Optional[dict]):
-        self.states = list(trace.prefix) + list(trace.loop)
+    def __init__(self, trace: Trace, variables: Optional[dict], history: int = 0):
+        prefix, loop = list(trace.prefix), list(trace.loop)
+        if history and loop:
+            # the loop once more in the prefix for every len(loop) steps of
+            # history: in the loop, the state n steps before is then the same
+            # at every turn
+            prefix += loop * -(-history // len(loop))
+        self.states = prefix + loop
         if not self.states:
             raise ValueError("the trace has no state")
-        self.start = len(trace.prefix) if trace.loop else len(self.states) - 1
+        self.start = len(prefix) if loop else len(self.states) - 1
         self.variables = variables or {}
         self.memo: dict = {}
 
@@ -218,7 +234,7 @@ class _Lasso:
             if node.op == "neg":
                 return -self._term(node.arg, i)
             if ltl.function(node) == "past":
-                raise ValueError(f"{ltl.to_str(node)}: past values are not supported here")
+                return self._past(node, i)
             raise ValueError(f"{ltl.to_str(node)} is not a term of numbers")
         a, b = self._term(node.left, i), self._term(node.right, i)
         if node.op == "+":
@@ -234,6 +250,15 @@ class _Lasso:
                 return int(Fraction(a, b))
             return Fraction(a) / Fraction(b)
         raise ValueError(f"{ltl.to_str(node)} is not a term of numbers")
+
+    def _past(self, node, i: int):
+        name, n = ltl.past_name(node), ltl.extension(node)
+        if name in self.states[i]:                  # the history variable of nuXmv
+            return self.states[i][name]
+        if i < n:
+            raise ValueError(f"{ltl.to_str(node)} has no value at step {i} of the trace: "
+                             f"give {name} in its states")
+        return self.states[i - n][node.arg.name]
 
     def _read(self, var, i: int):
         state = self.states[self.next(i) if var.primed else i]

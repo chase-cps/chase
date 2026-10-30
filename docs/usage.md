@@ -80,7 +80,9 @@ until) and the aliases `[]` (`G`), `<>` (`F`), `&&`, `||`, `=>`, `<=>`,
 `==`. They
 have the usual precedence, from the loosest: `<->`, `->`, `|` `xor`, `&`,
 `U R W`, the unary operators, the relations, `<< >>`, `+ -`, `* / mod`,
-`::`, the bits `x[7:0]`. `->` and `U R W` group to the right. So
+`::`, the bits `x[7:0]`. `->` and `U R W` group to the right. `G`, `F`,
+`U`, `R` take an interval of steps as in specification files (`G[0,3] p`,
+`F]0,2] p`, `p U[1,2] q`), unfolded into `X`. So
 `G a -> b` is `(G a) -> b`, in Python and in specification files. Names cannot be
 keywords of either syntax (`G`, `F`, `X`, `U`, `R`, `W`, `P`, `NAME`,
 `CONTRACT`, `mod`, `xor`, ...). Numbers may have a fraction (`20.5`); they
@@ -640,10 +642,18 @@ reals, words): for a contract over Booleans it says no more than whether
 the formula holds.
 
 ```python
-from chase_cps.robustness import robustness, holds, violated
-robustness("G (p <= 30)", trace)          # 2.5: p stays 2.5 below 30
-c.robustness(trace)                        # assumptions, guarantees, A -> G
-violated(c.guarantees, trace, c.variables) # the terms the trace violates
+from chase_cps import Contract
+from chase_cps.queries import Trace
+from chase_cps.robustness import holds, robustness, violated
+
+trace = Trace(prefix=[{"p": 20}], loop=[{"p": 27.5}, {"p": 25}])  # 20, then 27.5, 25, ...
+assert robustness("G (p <= 30)", trace) == 2.5      # p stays 2.5 below 30
+assert robustness("F[0,1] (p >= 27.5)", trace) == 0  # reached, on the boundary
+assert holds("F[0,1] (p >= 27.5)", trace)
+c = Contract.from_strings(inputs={"n": (0, 9)}, outputs={"p": "real"},
+                          guarantees=["G (p <= 26)", "G (p >= 10)"])
+c.robustness(trace)                          # the assumptions, the guarantees, A -> G
+assert violated(c.guarantees, trace, c.variables) == [{"term": "G (p <= 26)", "robustness": -1.5}]
 ```
 
 A refinement that fails gives the terms that its counterexample violates
@@ -652,8 +662,9 @@ the guarantees of the abstract one, each with its robustness when it
 compares numbers (`None` otherwise). For instance a guarantee `G (p >= 12)`
 violated with `-4` is missed by 4 at some step of the trace.
 
-A trace whose loop is empty repeats its last state. `past(x, n)` is not
-read.
+A trace whose loop is empty repeats its last state. `past(x, n)` is the
+history variable of nuXmv in the trace (`chase_past2_x`) when it is there,
+else the value n steps before; it has none in the first n steps.
 
 ## 3. GR(1) synthesis
 

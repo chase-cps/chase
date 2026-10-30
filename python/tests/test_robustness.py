@@ -70,7 +70,7 @@ def test_numeric_and_violated():
     assert numeric("G (x <= 4)", v) and not numeric("G (b -> F c)", v) and not numeric("b = c", v)
     assert numeric("b = c") and not numeric("G b")
     assert violated(["G (x <= 4)", "G F b", "F G b", "x >= 0"], T, v) == [
-        {"term": "G x <= 4", "robustness": -1}, {"term": "F G b", "robustness": None}]
+        {"term": "G (x <= 4)", "robustness": -1}, {"term": "F G b", "robustness": None}]
 
 
 # A second evaluation, from the definitions: the steps of the lasso unrolled
@@ -171,7 +171,7 @@ def test_a_failed_refinement_says_how_much_a_term_is_violated():
     r = refines(gen, spec)
     assert r.failed == "guarantees"
     [v] = r.to_dict()["violated"]
-    assert v["term"] == "G p >= 12" and v["robustness"] < 0
+    assert v["term"] == "G (p >= 12)" and v["robustness"] < 0
     # the trace is the counterexample: the term is violated on it by that much
     assert robustness("G (p >= 12)", r.guarantees.trace) == v["robustness"]
     assert gen.robustness(r.guarantees.trace)["contract"] >= 0
@@ -186,8 +186,31 @@ def test_a_failed_refinement_of_the_assumptions_and_of_booleans():
     r = refines(part, spec)
     assert r.failed == "assumptions"
     [v] = r.violated
-    assert v["term"] == "G t <= 40" and -10 <= v["robustness"] < 0
+    assert v["term"] == "G (t <= 40)" and -10 <= v["robustness"] < 0
     lazy = Contract.from_strings(name="Lazy", inputs={"t": "real"}, outputs={"ok": "bool"},
                                  assumptions=["G (t <= 50)"], guarantees=["F ok"])
     r = refines(lazy, spec)
     assert r.failed == "guarantees" and r.to_dict()["violated"] == [{"term": "G ok", "robustness": None}]
+
+
+def test_past_from_the_states_or_from_the_history_of_nuxmv():
+    t = Trace(prefix=[{"x": 0}, {"x": 4}], loop=[{"x": 1}, {"x": 7}])
+    # x two steps before: at step 2 it is 0, at 3 it is 4, then 1, 7, ...
+    assert robustness("X X (x - past(x, 2) <= 1)", t) == 0
+    assert robustness("X X G (x - past(x, 2) <= 6)", t) == 3        # 7 - 4 at step 3
+    # the step at which the loop starts has another history at each later turn
+    t3 = Trace(prefix=[{"x": 0}], loop=[{"x": 1}, {"x": 5}, {"x": 2}])
+    assert robustness("X F (x - past(x, 1) = -1)", t3) == 0          # 1 - 2, not 1 - 0
+    with pytest.raises(ValueError, match="no value at step 0"):
+        robustness("x = past(x, 1)", t)
+    t = Trace(prefix=[{"x": 0, "chase_past1_x": 9}], loop=[{"x": 3, "chase_past1_x": 0}])
+    assert robustness("x <= past(x, 1)", t) == 9
+
+
+def test_intervals_of_signal_temporal_logic():
+    # x: 1, then 5, 3, 5, 3, ...
+    assert robustness("G[0,2] (x <= 5)", T) == 0
+    assert robustness("F[0,1] (x >= 4)", T) == 1
+    assert robustness("G[1,2] (x >= 2)", T) == 1
+    assert robustness("(x <= 4) U[0,2] (x >= 5)", T) == 0
+    assert robustness("G (x >= 3 -> F[0,1] (x = 5))", T) == 0

@@ -213,8 +213,11 @@ class _Parser:
             if prec < min_prec:
                 return left
             self.take()
+            steps = self.interval(op) if op in ("U", "R", "W") else None
             right = self.expression(prec if right_assoc else prec + 1)
-            if op == "W":   # a W b == (a U b) | G a
+            if steps is not None:
+                left = _bounded(op, steps, left, right)
+            elif op == "W":   # a W b == (a U b) | G a
                 left = Binary("|", Binary("U", left, right), Unary("G", left))
             else:
                 left = Binary(op, left, right)
@@ -249,11 +252,43 @@ class _Parser:
             self.expect(")")
             return self.bits(node)
         if kind == "op" and val in ("!", "G", "F", "X"):
-            return Unary(val, self.expression(_UNARY_PRECEDENCE))
+            steps = self.interval(val) if val != "!" else None
+            arg = self.expression(_UNARY_PRECEDENCE)
+            return Unary(val, arg) if steps is None else _bounded(val, steps, arg)
         if kind == "op" and val == "-":
             arg = self.expression(_BINARY["*"][0] + 1)
             return Num(-arg.value) if isinstance(arg, Num) else Unary("neg", arg)
         raise LTLSyntaxError(f"unexpected {val or 'end of formula'!r} in {self.text!r}")
+
+    def interval(self, op: str):
+        """The steps (first, last) of an interval after G, F, U, R: [a,b],
+        with ] or [ facing out to leave a bound out (]a,b], [a,b[); None when
+        there is none."""
+        if self.peek() not in (("op", "["), ("op", "]")):
+            return None
+        if op in ("X", "W"):
+            raise LTLSyntaxError(f"{op} with an interval is not supported"
+                                 + (": write X X p" if op == "X" else "") + f", in {self.text!r}")
+        opening = self.take()[1]
+        bounds = []
+        for k in range(2):
+            kind, n = self.take()
+            if kind != "num" or not n.isdigit():
+                raise LTLSyntaxError(f"the interval of {op} counts steps, whole numbers from 0, "
+                                     f"not {n or 'end of formula'!r}, in {self.text!r}")
+            bounds.append(int(n))
+            if k == 0:
+                self.expect(",")
+        kind, closing = self.take()
+        if closing not in ("[", "]"):
+            raise LTLSyntaxError(f"the interval of {op} ends with ] or [, not "
+                                 f"{closing or 'end of formula'!r}, in {self.text!r}")
+        first = bounds[0] + (1 if opening == "]" else 0)
+        last = bounds[1] - (1 if closing == "[" else 0)
+        if last - first > MAX_STEPS:
+            raise LTLSyntaxError(f"the interval of {op} spans more than {MAX_STEPS} steps, "
+                                 f"in {self.text!r}")
+        return first, last
 
     def bits(self, node: Node) -> Node:
         """Bit selections after an operand: x[7:0], x[3]."""

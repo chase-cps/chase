@@ -10,6 +10,12 @@ Added:
   gives it for the assumptions, the guarantees, and the contract. A
   refinement that fails names the terms its counterexample violates, with
   how much for the terms that compare numbers (`violated`).
+- The Python syntax (and so the command line and the MCP server) takes the
+  intervals of steps of the specification files: `G[0,3] p`, `F]0,2] p`,
+  `p U[1,2] q`, `p R[0,2] q`, unfolded into `X`. With robustness, this is
+  signal temporal logic in discrete time.
+- Robustness reads `past(x, n)`: the history variable of nuXmv in the
+  trace, or the value n steps before.
 
 Changed:
 
