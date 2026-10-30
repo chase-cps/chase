@@ -801,7 +801,6 @@ _PAGE = r"""<!doctype html>
   #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
          background:#1d2526; color:#fff; border-radius:4px; padding:5px 8px;
          font:12px/1.4 Helvetica, Arial, sans-serif; white-space:pre-wrap; }
-  #toolbar button.dep { opacity:.35; }
   #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:4px 10px;
           border-radius:12px; background:#eef3f3; color:var(--faint); font:12px Helvetica, Arial, sans-serif; }
   #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
@@ -840,8 +839,7 @@ _PAGE = r"""<!doctype html>
     <span class="sep"></span>
     <button title="Fit the diagram to the window (0); the wheel zooms where it points, a drag moves" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
     <span class="sep"></span>
-    <button class="on" title="Ports, with their names (and types)" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
-    <button class="on" id="types" title="Types of the ports (bit vectors, ranges, reals), after their names" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
+    <button class="on" title="Names of the ports, with their types (bit vectors, ranges, reals)" onclick="flip(this, 'ports')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
@@ -860,7 +858,7 @@ const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
       FONT_S = "11px 'Arial Unicode MS', Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
-const show = { ports: true, types: true, conditions: true, checks: true };
+const show = { ports: true, conditions: true, checks: true };
 
 // What is open: the contract ("c:"), the computed composition ("k:"), and
 // the model ("m:") of each box. At first, only the names show.
@@ -868,8 +866,6 @@ const open = new Set();
 const toggle = key => () => { open.has(key) ? open.delete(key) : open.add(key); render(); };
 function flip(b, what) {
   show[what] = !show[what]; b.classList.toggle("on", show[what]);
-  if (what === "ports")                // the types are written after the names of the ports
-    document.getElementById("types").classList.toggle("dep", !show.ports);
   if (what === "conditions") for (const k in MODELS) delete MODELS[k];
   render();
 }
@@ -1038,7 +1034,7 @@ function size(n) {
   return { ls, w: Math.max(w, 110), h, m };
 }
 
-const portText = (n, v) => { const t = show.types && n.types && n.types[v]; return t ? v + " " + t.label : v; };
+const portText = (n, v) => { const t = n.types && n.types[v]; return t ? v + " " + t.label : v; };
 function ports(n) {
   if (n.bare) return [];
   const ps = [], lab = v => show.ports ? [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 11 }] : [];
@@ -1265,7 +1261,7 @@ function drawEdge(g, ed, ox, oy) {
         if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
       const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
       el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--wire)", "stroke-width": 1.3 }, g);
-      if (!show.types || !show.ports) text(g, mx + 4, my - 6, "w", String(k.bus));
+      if (!show.ports) text(g, mx + 4, my - 6, "w", String(k.bus));
     } });
 }
 
