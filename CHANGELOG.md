@@ -37,6 +37,8 @@ Added:
   (of a core, for instance), goes to its line in the file.
 - RTL read with Yosys finds the files named by `` `include `` next to the
   sources, not only `.svh` and `.vh` headers.
+- `chase-cps view` of a Verilog module that uses modules of other files
+  takes the files next to it that have them.
 - The checks keep their results on the contracts they check, with what the
   contract said then (`Contract.checked()`): a diagram draws them with no
   `checks=`, and drops them when the contract changes.

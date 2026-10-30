@@ -1122,7 +1122,9 @@ function lines(n) {
       const shown = p.filter(t => t[3] || room-- > 0);
       if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3], shown[0][4]];
       out.push(...shown);
-      if (p.length > shown.length) out.push(["more", "", "⋯ " + (p.length - shown.length) + " more lines", c]);
+      if (p.length > shown.length)   // with the lines of the terms it hides, for the cursor
+        out.push(["more", "", "⋯ " + (p.length - shown.length) + " more lines", c,
+                  p.filter(t => !shown.includes(t) && t[4]).map(t => t[4])]);
       left -= Math.min(keep, shown.length);
     });
   };
@@ -1395,13 +1397,14 @@ function drawNode(g, e, ox, oy) {
            + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
     if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
   sz.ls.forEach(([k, label, s, core, at], i) => {
+    const frame = r => el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3,
+                                     fill: "none", stroke: "var(--teal)", "stroke-width": 1.5 }, r);
     const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
     if (k === "f") {
       if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9" }, row);
       if (at) {             // its lines in the file: the editor goes there, and marks it from there
         row.setAttribute("class", "trow"); row.setAttribute("data-line", at[0]); row.setAttribute("data-last", at[1]);
-        el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "none",
-                     stroke: "var(--teal)", "stroke-width": 1.5 }, row);
+        frame(row);
         tip(row, (at[0] === at[1] ? "line " + at[0] : "lines " + at[0] + "–" + at[1])
                  + (inEditor() ? " · double click: there in the editor" : "")); }
       if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3, fill: "var(--teal)" }, row);
@@ -1409,6 +1412,7 @@ function drawNode(g, e, ox, oy) {
                    t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
       text(row, x + PAD + 20, ty, "f", s); }
     else if (k === "more") {
+      if (at && at.length) { row.setAttribute("class", "trow"); row.setAttribute("data-hidden", JSON.stringify(at)); frame(row); }
       const t = text(row, x + PAD + 20, ty, "s", s);
       t.setAttribute("style", "fill:var(--teal);cursor:pointer;text-decoration:underline");
       tip(t, "the whole contract");
@@ -1728,8 +1732,9 @@ function select(line, bring, at) {
     if (on && !hit) hit = e;
   });
   document.querySelectorAll(".trow").forEach(r => {
-    const box = r.closest("[data-box]"), on = !!(selectedAt && box && box.classList.contains("sel")
-      && +r.getAttribute("data-line") <= selectedAt && selectedAt <= +r.getAttribute("data-last"));
+    const box = r.closest("[data-box]"), hidden = r.getAttribute("data-hidden");
+    const ranges = hidden ? JSON.parse(hidden) : [[+r.getAttribute("data-line"), +r.getAttribute("data-last")]];
+    const on = !!(selectedAt && box && box.classList.contains("sel") && ranges.some(([a, z]) => a <= selectedAt && selectedAt <= z));
     r.classList.toggle("sel", on);
   });
   if (!hit || !bring || !cam) return;

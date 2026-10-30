@@ -265,7 +265,20 @@ def _rtl(path: str, name: Optional[str] = None):
     if top is None:
         raise ValueError(f"{os.path.basename(path)} has the modules {', '.join(modules) or 'none'}: "
                          "name one as FILE:MODULE")
-    return models.Model.from_rtl(path, top)
+    from .rtl import RTLError
+    files, near = [path], None
+    while True:
+        try:
+            return models.Model.from_rtl(files, top)
+        except RTLError as e:   # a module of another file: the file next to it that has it
+            m = re.search(r"Module `\\?(\w+)' referenced", str(e))
+            if near is None:
+                d = os.path.dirname(os.path.abspath(path))
+                near = {mod: os.path.join(d, f) for f in sorted(os.listdir(d)) if f.endswith((".v", ".sv"))
+                        for mod in _modules(os.path.join(d, f))}
+            if not m or m.group(1) not in near or near[m.group(1)] in files:
+                raise
+            files.append(near[m.group(1)])
 
 
 def _model(path: str, contract):

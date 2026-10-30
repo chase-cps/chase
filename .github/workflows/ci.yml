@@ -76,6 +76,13 @@ jobs:
           if [ ! -e ~/.chase/bin/slugs ]; then $PYTHON -m chase_cps install slugs; fi
           $PYTHON -m chase_cps doctor || true
 
+      # test_viz_page.py: the page of a diagram with the input of a user
+      - name: A browser for the tests of the diagram page (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          $PYTHON -m pip install playwright || $PYTHON -m pip install --break-system-packages playwright
+          $PYTHON -m playwright install --with-deps chromium
+
       - name: Python tests (with nuXmv and slugs)
         run: |
           $PYTHON -m pip install pytest z3-solver yowasp-yosys || $PYTHON -m pip install --break-system-packages pytest z3-solver yowasp-yosys

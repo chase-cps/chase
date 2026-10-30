@@ -56,7 +56,27 @@ $> CHASE_INSTALL_DIR=/tmp/chase PYTHONPATH=python python3 -m pytest -q python/te
 
 The tests that need a back end that is not installed are skipped. The
 property tests draw random contracts; `CHASE_PROPERTY_RUNS=100` runs more of
-them. The demos are run by `tests/demo-suite.sh`, also in the Docker image:
+them.
+
+The diagrams are tested on three levels:
+
+- `test_viz.py` and `test_viz_files.py`: the data of the diagrams. Each
+  file of the demos is drawn, and each box and each term must point to its
+  lines in the file. A file broken as by typing (a line, or the end of a
+  line, gone) must give a diagram or an error, never a crash;
+  `CHASE_FUZZ=40` runs 40 broken files for each file instead of 3.
+- `test_viz_page.py`: the page in a browser, with the mouse and keys of a
+  user (Playwright: `pip install playwright`, `playwright install
+  chromium`; skipped without it). Each box and term of the demos is double
+  clicked, each box opened (the others must stay in their rows), the cursor
+  of an editor marks its term, the view moves and is exported.
+  `CHASE_TEST_ELK=PATH` uses a local `elk.bundled.js` instead of the CDN.
+- The extension for VS Code has its own tests (`node --test test/`), and a
+  test in a running VS Code (`editor-test/run.sh`: typing, the marks of the
+  errors, saving, the box of the cursor), run before a release on a `.ltl`,
+  a `.sv`, a `.v`, and a Python script.
+
+The demos are run by `tests/demo-suite.sh`, also in the Docker image:
 
 ```
 $> docker build -t chase . && docker run --rm chase /opt/chase/tests/demo-suite.sh
