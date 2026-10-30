@@ -159,3 +159,11 @@ def test_verilog_2005(tmp_path):
                             "guarantees": ["q = 0", "G (en -> q' = q + 1)",
                                            "G (wrap <-> q = 15 & en)"]})
     assert is_implementation(m, c).status == "valid"
+
+
+def test_an_included_file_is_found(tmp_path):
+    (tmp_path / "defs.sv").write_text("`define W 1\n")
+    f = tmp_path / "inc.sv"
+    f.write_text('`include "defs.sv"\nmodule inc(input logic clk, input logic [`W-1:0] a, output logic [`W-1:0] q);\n'
+                 "  always_ff @(posedge clk) q <= a;\nendmodule\n")
+    assert from_rtl(str(f), "inc").ivars == {"a"}

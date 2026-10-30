@@ -738,24 +738,93 @@ def _rtl_diagram(path: str, check: bool = False, timeout: float = 60,
     return d
 
 
+def _term_lines(text: str) -> dict:
+    """{contract: {"A": [[first, last], ...], "G": [...]}}: the lines of each
+    term of the contracts of a file of the logics language. A statement (up
+    to its ";") gives a term for each of its top-level conjuncts, and none
+    when it is true, as the contract has them."""
+    out, name, part, start, body = {}, None, None, None, []
+    def end(last):
+        try:
+            n = len([t for t in ltl.conjuncts(ltl.parse(" ".join(body))) if ltl.to_str(t) != "true"])
+        except Exception:
+            n = 0 if " ".join(body).strip() == "true" else 1
+        out[name][part].extend([[start, last]] * n)
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = re.sub(r"(//|#).*", "", raw)
+        m = re.match(r"\s*CONTRACT\s+([A-Za-z_]\w*)", line)
+        if m:
+            name, part, start = m.group(1), None, None
+            out[name] = {"A": [], "G": []}
+            continue
+        m = re.match(r"\s*(Assumptions|Guarantees)\s*:", line)
+        if m and name:
+            part, start = m.group(1)[0], None
+            line = line[m.end():]
+        if not part:
+            continue
+        for piece in re.split(r"(;)", line):
+            if piece == ";":
+                if start is not None:
+                    end(number)
+                start = None
+            elif piece.strip():
+                if start is None:
+                    start, body = number, []
+                body.append(piece)
+    return out
+
+
+def _sva_term_lines(text: str) -> dict:
+    """{module: {"A": [[first, last], ...], "G": [...]}}: the lines of each
+    assume and assert property of a SystemVerilog file, in order."""
+    text = re.sub(r"//[^\n]*|/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
+    line_of = lambda i: text.count("\n", 0, i) + 1
+    out, name = {}, None
+    for m in re.finditer(r"\bmodule\s+(?:automatic\s+)?([A-Za-z_]\w*)|\bendmodule\b|"
+                         r"\b(assume|assert)\s+property\b", text):
+        if m.group(1):
+            name = m.group(1)
+            out[name] = {"A": [], "G": []}
+        elif m.group(0) == "endmodule":
+            name = None
+        elif name:
+            depth, i = 0, m.end()
+            while i < len(text) and not (text[i] == ";" and depth == 0):
+                depth += {"(": 1, ")": -1}.get(text[i], 0)
+                i += 1
+            start = text.rfind("\n", 0, m.start()) + 1          # a label or initial before it
+            first = line_of(start + len(text[start:m.start()]) - len(text[start:m.start()].lstrip()))
+            out[name]["A" if m.group(2) == "assume" else "G"].append([first, line_of(i)])
+    return out
+
+
 def _place_in_source(d: dict, path: str) -> None:
     """Writes in each box of a contract (or a module) of the file the line
-    where it starts, for an editor to go from the box to the text."""
+    where it starts, and the lines of its terms, for an editor to go from the
+    box to the text."""
     lines = {}
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
-            for number, line in enumerate(f, 1):
-                m = re.match(r"\s*(?:CONTRACT|module)\s+([A-Za-z_]\w*)", line)
-                if m and m.group(1) not in lines:
-                    lines[m.group(1)] = number
+            text = f.read()
     except OSError:
         return
+    for number, line in enumerate(text.splitlines(), 1):
+        m = re.match(r"\s*(?:CONTRACT|module)\s+([A-Za-z_]\w*)", line)
+        if m and m.group(1) not in lines:
+            lines[m.group(1)] = number
+    terms = (_sva_term_lines(text) if path.endswith((".v", ".sv", ".sva"))
+             else {} if path.endswith(".json") else _term_lines(text))
 
     def walk(nodes):
         for n in nodes:
-            name = (n.get("contract") or {}).get("name") or n.get("title")
+            c = n.get("contract") or {}
+            name = c.get("name") or n.get("title")
             if name in lines and n.get("kind") in ("contract", "component", "group"):
                 n["source"] = {"line": lines[name]}
+                for p in "AG":   # the terms of the file, when they are the terms of the box
+                    if name in terms and c.get(p) is not None and len(c[p]) == len(terms[name][p]):
+                        n["source"][p] = terms[name][p]
             walk(n.get("children", []))
     walk(d["nodes"])
 
@@ -882,6 +951,7 @@ _PAGE = r"""<!doctype html>
                stroke-linecap:round; stroke-linejoin:round; }
   .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
   [data-box].sel > rect:first-of-type { stroke:var(--teal); stroke-width:3px; }
+  .trow > .hl { display:none; } .trow.sel > .hl { display:inline; }
   #export { display:none; position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd;
             border-radius:8px; padding:4px; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:7; }
   #export button { font:600 12px Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
@@ -910,7 +980,7 @@ _PAGE = r"""<!doctype html>
                   white-space:nowrap; background:#fff; }
   #context i { font:600 9.5px -apple-system, Helvetica, Arial, sans-serif; font-style:normal; color:#fff;
                background:#6f7f80; border-radius:4px; padding:2px 5px; }
-  #view { position:fixed; inset:0; overflow:hidden; cursor:grab; touch-action:none; }
+  #view { position:fixed; inset:0; overflow:hidden; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   #view.moving { cursor:grabbing; }
   #view > svg { display:block; width:100%; height:100%; }
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -1023,12 +1093,13 @@ function wrap(f) {
 }
 // Each part opens with a tag: A (assumes), G (guarantees), E (an environment).
 // With a core in focus, its terms are on a red ground: [kind, tag, text, in the core].
-function terms(c, out, core) {
-  const part = (tag, fs, hit) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
-    out.push(["f", i || j ? "" : tag, l, hit.includes(j)])));
-  part("A", c.A, core ? core.A : []);
+// src: the lines of the terms in the file, [first, last], when known.
+function terms(c, out, core, src) {
+  const part = (tag, fs, hit, at) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
+    out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
+  part("A", c.A, core ? core.A : [], src && src.A);
   if (c.E) part("E", c.E, []);
-  else part("G", c.G.length ? c.G : ["true"], core ? core.G : []);
+  else part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
 }
 const focused = n => show.checks && n.id in focus ? n.checks[focus[n.id]].core : null;
 
@@ -1039,7 +1110,7 @@ function lines(n) {
   const out = [], core = focused(n);
   const part = (c, which) => {
     const ts = [];
-    terms(c, ts, core && core.part === which ? core : null);
+    terms(c, ts, core && core.part === which ? core : null, which === "contract" ? n.source : null);
     if (ts.length <= LONG) { out.push(...ts); return; }
     const parts = [];                  // A and G cut apart: the first lines of each
     ts.forEach(t => (t[1] || !parts.length) ? parts.push([t]) : parts[parts.length - 1].push(t));
@@ -1049,7 +1120,7 @@ function lines(n) {
       const keep = Math.max(1, i === parts.length - 1 ? left : Math.max(Math.floor(SHORT / parts.length), SHORT - rest));
       let room = keep - p.filter(t => t[3]).length;   // the lines of a core in focus are kept first
       const shown = p.filter(t => t[3] || room-- > 0);
-      if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3]];
+      if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3], shown[0][4]];
       out.push(...shown);
       if (p.length > shown.length) out.push(["more", "", "⋯ " + (p.length - shown.length) + " more lines", c]);
       left -= Math.min(keep, shown.length);
@@ -1069,10 +1140,11 @@ function lines(n) {
 const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
 function showTerms(n, c) {     // the whole contract, in the panel
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), ts = [];
-  terms(c, ts, null);
+  terms(c, ts, null, c === n.contract ? n.source : null);
   document.getElementById("poptitle").textContent = n.title + " · contract " + c.name;
-  document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t]) =>
-    "<tr><td class='st'>" + (tag || "") + "</td><td>" + esc(t) + "</td></tr>").join("") + "</table>";
+  document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t, , at]) =>
+    "<tr" + (at ? " data-line='" + at[0] + "'" + (inEditor() ? " title='double click: line " + at[0] + "'" : "") : "")
+    + "><td class='st'>" + (tag || "") + "</td><td>" + esc(t) + "</td></tr>").join("") + "</table>";
   document.getElementById("pop").style.display = "flex";
 }
 
@@ -1284,7 +1356,7 @@ function drawNode(g, e, ox, oy) {
   const name = text(box, x + PAD, y + 18, "h", n.title);
   if (n.contract) {
     const flip = toggle("c:" + n.id);
-    name.onclick = e => { flip(); if (e.detail === 2) reveal(n); };   // a double click opens and closes: as it was
+    name.onclick = e => { flip(); if (e.detail === 2) reveal(n.source && n.source.line); };   // a double click opens and closes: as it was
     tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
                                                      ? " · double click: its text in the editor" : ""));
   }
@@ -1322,10 +1394,16 @@ function drawNode(g, e, ox, oy) {
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
            + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
     if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
-  sz.ls.forEach(([k, label, s, core], i) => {
+  sz.ls.forEach(([k, label, s, core, at], i) => {
     const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
     if (k === "f") {
       if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9" }, row);
+      if (at) {             // its lines in the file: the editor goes there, and marks it from there
+        row.setAttribute("class", "trow"); row.setAttribute("data-line", at[0]); row.setAttribute("data-last", at[1]);
+        el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "none",
+                     stroke: "var(--teal)", "stroke-width": 1.5 }, row);
+        tip(row, (at[0] === at[1] ? "line " + at[0] : "lines " + at[0] + "–" + at[1])
+                 + (inEditor() ? " · double click: there in the editor" : "")); }
       if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3, fill: "var(--teal)" }, row);
                    const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
                    t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
@@ -1476,9 +1554,15 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
   v.addEventListener("dblclick", e => {
     for (let t = e.target; t && t !== v; t = t.parentNode) {
       if (t.onclick) return;
+      const line = t.getAttribute && t.getAttribute("data-line");   // a term: its line
+      if (line) { reveal(+line); return; }
       const id = t.getAttribute && t.getAttribute("data-box");
-      if (id && byId[id] && byId[id].source) { reveal(byId[id]); return; }
+      if (id && byId[id] && byId[id].source) { reveal(byId[id].source.line); return; }
     }
+  });
+  document.getElementById("popview").addEventListener("dblclick", e => {
+    const tr = e.target.closest && e.target.closest("tr[data-line]");
+    if (tr) reveal(+tr.getAttribute("data-line"));
   });
   v.addEventListener("pointerup", stop); v.addEventListener("pointercancel", stop);
   v.addEventListener("wheel", e => {
@@ -1621,25 +1705,32 @@ async function render() {
   const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
   (out.edges || []).forEach(ed => drawEdge(g, ed, 0, 0));
-  select(selectedLine, false);
+  select(selectedLine, false, selectedAt);
 }
 
 // From the diagram to the text, and back: a double click on a box asks the
 // editor to show where it is written; the editor tells the line of the
 // cursor, and the box written there is marked (and brought into view).
-let selectedLine = null;
-function reveal(n) {
-  if (typeof acquireVsCodeApi !== "function" || !n.source) return;
+let selectedLine = null, selectedAt = null;
+const inEditor = () => typeof acquireVsCodeApi === "function";
+function reveal(line) {
+  if (!inEditor() || !line) return;
   vscodeApi = vscodeApi || acquireVsCodeApi();
-  vscodeApi.postMessage({ type: "chase-reveal", line: n.source.line });
+  vscodeApi.postMessage({ type: "chase-reveal", line });
 }
-function select(line, bring) {
-  selectedLine = line;
+// line: where the contract of the cursor starts; at: the line of the cursor
+function select(line, bring, at) {
+  selectedLine = line; selectedAt = at || null;
   let hit = null;
   document.querySelectorAll("[data-box]").forEach(e => {
     const n = byId[e.getAttribute("data-box")], on = !!(line && n && n.source && n.source.line === line);
     e.classList.toggle("sel", on);
     if (on && !hit) hit = e;
+  });
+  document.querySelectorAll(".trow").forEach(r => {
+    const box = r.closest("[data-box]"), on = !!(selectedAt && box && box.classList.contains("sel")
+      && +r.getAttribute("data-line") <= selectedAt && selectedAt <= +r.getAttribute("data-last"));
+    r.classList.toggle("sel", on);
   });
   if (!hit || !bring || !cam) return;
   const r = hit.getBoundingClientRect(), v = document.getElementById("view").getBoundingClientRect();
@@ -1811,7 +1902,7 @@ window.addEventListener("message", e => {
   if (m.type === "chase-data") setData(m.data).catch(err => stale("Cannot draw the diagram: " + err));
   else if (m.type === "chase-checks") setChecks(m.data).catch(err => stale("Cannot draw the checks: " + err));
   else if (m.type === "chase-stale") stale(m.reason);
-  else if (m.type === "chase-select") select(m.line, true);
+  else if (m.type === "chase-select") select(m.line, true, m.at);
   else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
 });
 // Export: the whole diagram as it is drawn (what is open stays open), on a

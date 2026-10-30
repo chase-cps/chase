@@ -69,6 +69,19 @@ def from_rtl(files, top: str, parameters: Optional[dict] = None,
     # the headers next to the sources are copied too, for `include
     headers = [os.path.join(d, f) for d in dict.fromkeys(os.path.dirname(f) for f in files)
                for f in sorted(os.listdir(d)) if f.endswith((".svh", ".vh"))]
+    todo = list(files) + headers        # and the files they `include, next to them
+    while todo:
+        f = todo.pop()
+        try:
+            with open(f, encoding="utf-8", errors="replace") as src:
+                named = re.findall(r'^\s*`include\s+"([^"]+)"', src.read(), re.M)
+        except OSError:
+            continue
+        for n in named:
+            g = os.path.join(os.path.dirname(f), n)
+            if os.path.isfile(g) and g not in headers and g not in files:
+                headers.append(g)
+                todo.append(g)
     for f in files:
         if not os.path.exists(f):
             raise RTLError(f"no file {f}")

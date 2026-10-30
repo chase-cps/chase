@@ -878,7 +878,11 @@ tool of chase-mcp, for AI agents). An extension for VS Code, which shows
 the diagram of a specification, or of a Python script that calls
 `viz.show`, beside the editor, will follow: it draws the structure again as
 one types and the checks on save, marks the errors in the text, goes from a
-box to its text (a double click) and from the text to its box (the cursor).
+box, or a term of an open box (the terms of a core among them), to its line
+(a double click), and from the text to its box and term (the cursor). The
+terms of a file of the logics language or of SystemVerilog Assertions know
+their lines; a term drawn from a file shows its line when the pointer rests
+on it.
 
 ## Results
 

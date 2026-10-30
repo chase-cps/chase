@@ -463,7 +463,7 @@ def test_the_file_says_how_to_draw_it(tmp_path, monkeypatch):
     out = tmp_path / "arb.json"
     assert main(["view", str(spec), "--format", "json", "-o", str(out)]) == 0
     box, = json.loads(out.read_text())["nodes"]
-    assert box["kind"] == "component" and box["open"] and box["source"] == {"line": 4}
+    assert box["kind"] == "component" and box["open"] and box["source"]["line"] == 4
     copy = tmp_path / "editor" / "arb.ltl"               # the text of an editor, drawn from a copy
     copy.parent.mkdir()
     copy.write_text(ARB_SPEC)
@@ -481,9 +481,33 @@ def test_a_module_is_drawn_with_its_state_machine(tmp_path):
     assert main(["view", str(rtl), "--format", "json", "-o", str(out)]) == 0
     box, = json.loads(out.read_text())["nodes"]
     assert box["kind"] == "component" and box["inputs"] == ["en"] and box["outputs"] == ["q"]
-    assert box["source"] == {"line": 1} and box["model"]["fsm"]["count"] == 2
+    assert box["source"]["line"] == 1 and box["model"]["fsm"]["count"] == 2
 
 
 def test_the_page_goes_to_the_text_and_back():
     page = viz.html(Contract.from_strings(name="A", inputs=["x"], outputs=["y"], guarantees=["G y"]))
     assert '"chase-reveal"' in page and '"chase-select"' in page and "function exportAs" in page
+
+
+def test_each_term_knows_its_lines():
+    # true gives no term, a conjunction gives one term for each part
+    text = ("CONTRACT C:\n  input boolean variable x;\n  output boolean variable y;\n"
+            "  Assumptions:\n    true;\n    G (x ->\n       X x);\n"
+            "  Guarantees:\n    !y & G (x -> y);  # R1\n    G F y;\n")
+    assert viz._term_lines(text) == {"C": {"A": [[6, 7]], "G": [[9, 9], [9, 9], [10, 10]]}}
+    sva = ("module m (input logic clk, input logic x, output logic y);\n"
+           "  // a comment: assert property (x);\n"
+           "  A1: assume property (@(posedge clk)\n    x |=> x);\n"
+           "  initial G1: assert property (@(posedge clk) !y);\nendmodule\n")
+    assert viz._sva_term_lines(sva) == {"m": {"A": [[3, 4]], "G": [[5, 5]]}}
+
+
+@needs_native
+def test_the_terms_of_a_file_go_to_their_lines(tmp_path):
+    spec = tmp_path / "c.ltl"
+    spec.write_text("CONTRACT C:\n  input boolean variable x;\n  output boolean variable y;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    !y & G (x -> y);\n    G F y;\n")
+    box, = viz.from_spec(str(spec))["nodes"]
+    assert box["source"] == {"line": 1, "A": [], "G": [[7, 7], [7, 7], [8, 8]]}
+    page = viz.html(viz.from_spec(str(spec)))
+    assert 'data-line' in page and '"chase-select"' in page

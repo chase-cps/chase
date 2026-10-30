@@ -33,8 +33,10 @@ Added:
   Verilog or SystemVerilog file with no assertions is drawn as its module.
   The options of `view` can be written at the top of the file
   (`# view: ...`, `// view: ...` in Verilog). The page saves the diagram as
-  SVG, PNG, or PDF, and in an editor a double click on a box goes to its
-  text.
+  SVG, PNG, or PDF, and in an editor a double click on a box, or on a term
+  (of a core, for instance), goes to its line in the file.
+- RTL read with Yosys finds the files named by `` `include `` next to the
+  sources, not only `.svh` and `.vh` headers.
 - The checks keep their results on the contracts they check, with what the
   contract said then (`Contract.checked()`): a diagram draws them with no
   `checks=`, and drops them when the contract changes.
