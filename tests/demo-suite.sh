@@ -9,7 +9,7 @@ check "DATE18 realizable"     "dsl_tool -i DATE18/template_0_realizable.txt -o $
 check "DATE18 unrealizable"   "dsl_tool -i DATE18/template_0_unrealizable.txt -o $W/n -b gr1c && gr1c -r $W/n.spc | grep -qx 'Not realizable.'"
 check "DATE18 slugs"          "dsl_tool -i DATE18/template_0_realizable.txt -o $W/sl && python3 $SLUGSCOMPILER $W/sl.structuredSlugs > $W/sl.in && slugs $W/sl.in 2>&1 | grep -q 'is realizable'"
 check "FDL2024 realizable"    "dsl_tool -i FDL2024/dsl_factory_realizable.txt -o $W/f -b gr1c && gr1c -r $W/f.spc | grep -qx 'Realizable.'"
-check "DATE21 logics script"  "cd DATE21 && logics_tool -i specs/robotic_arm.ltl -o $W/d21 -c solution.script && cd .. && test -s $W/d21/TM.smv -a -s $W/d21/MT.smv -a -s $W/d21/system.smv && gr1c -r $W/d21/coordinator.spc | grep -qx 'Realizable.'"
+check "DATE21 logics script"  "cd DATE21 && logics_tool -i specs/robotic_arm.ltl -o $W/d21 -c solution.script && cd .. && test -s $W/d21/TM.smv -a -s $W/d21/MT.smv -a -s $W/d21/system.smv && python3 $SLUGSCOMPILER $W/d21/coordinator.structuredSlugs > $W/d21/c.in && slugs $W/d21/c.in 2>&1 | grep -q 'is realizable'"
 check "RoboticJoints verify"  "cd RoboticJoints && logics_tool -i specs.ltl -o $W/rj -c verification.chase && cd .. && test -s $W/rj/refinement.smv"
 check "RoboticJoints synth"   "cd RoboticJoints && logics_tool -i specs.ltl -o $W/rj -c synthesis.chase && cd .. && for k in 1 2 3; do python3 $SLUGSCOMPILER $W/rj/joint\$k.structuredSlugs > $W/rj/j\$k.in && slugs $W/rj/j\$k.in 2>&1 | grep -q 'is realizable' || exit 1; done"
 check "CPSWeek22 verify"      "cd CPSWeek22 && logics_tool -i specs.ltl -o $W/c -c verification.chase && cd .. && test -s $W/c/refinement.smv"
