@@ -1220,3 +1220,4 @@ def test_a_problem_in_the_domain_specific_language():
     c = load_dsl(path)             # the architecture graph is left out, the formulas stay
     assert len(c.inputs) == 11 and len(c.outputs) == 7
     assert len(c.assumptions) == 24 and len(c.guarantees) == 26
+    assert c.name == "template_0_realizable" and load_dsl(path, name="EPS").name == "EPS"

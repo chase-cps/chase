@@ -17,8 +17,11 @@ Added:
   draws a specification file, as `chase-cps view` does.
 - `load_dsl(path)` reads a problem written in the domain-specific language
   of CHASE (the electric power system patterns of DATE18 and FDL2024) into
-  a contract. The graph of the architecture is not part of the contract and
-  is skipped.
+  a contract, named after the file (or `name=`). The graph of the
+  architecture is not part of the contract and is skipped.
+- `to_gr1c(c)` writes a GR(1) contract as the input of gr1c, for users who
+  run another GR(1) solver; relations with arithmetic or between integers
+  are written as the values that satisfy them.
 - `viz.diagram(..., open=[...])` and `chase-cps view --open` draw boxes open
   when the page loads: the terms of a contract, the states of a small
   model, and the core of a check that fails.

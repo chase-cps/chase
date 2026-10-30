@@ -670,17 +670,19 @@ def _parse_file(path: str, name: str):
     return system
 
 
-def load_dsl(path: str | os.PathLike) -> Contract:
+def load_dsl(path: str | os.PathLike, name: str | None = None) -> Contract:
     """The contract of a problem written in the domain-specific language of
     CHASE (dsl_tool: components, connections, and patterns of requirements),
     with the formulas the patterns give. The architecture, a graph, is left
-    out."""
+    out. The contract is named ``name``, or after the file."""
     if not os.path.isfile(path):
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
     from ._native import _load
     builder = _load("pychase_DSL").DSLSpecsBuilder()
     builder.parseSpecificationFile(os.fspath(path))
-    return Contract.from_pychase(builder.getContract())
+    c = Contract.from_pychase(builder.getContract())
+    c.name = name or os.path.splitext(os.path.basename(os.fspath(path)))[0]
+    return c
 
 
 def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Contract]:

@@ -637,6 +637,14 @@ contract is unrealizable; `synthesize` also builds the controller. The
 console writes the input file of slugs or gr1c, which decide realizability
 and build the controller.
 
+For another GR(1) solver, `to_gr1c(c)` writes the contract as the input of
+gr1c, to run by hand (`gr1c -r spec.spc`), as `to_sva` does for the tools
+of SystemVerilog. The inputs are the variables of the environment and the
+outputs those of the system. gr1c compares an integer only with a constant
+and starts its domains at 0, so a relation with arithmetic or between
+variables is written as the values that satisfy it, and an integer is
+written from 0.
+
 ### Unrealizable cores
 
 `unrealizable_core(c)` gives a minimal set of guarantees that is

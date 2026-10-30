@@ -908,9 +908,12 @@ function lines(n) {
     parts.forEach((p, i) => {
       const rest = parts.slice(i + 1).reduce((s, q) => s + q.length, 0);
       const keep = Math.max(1, i === parts.length - 1 ? left : Math.max(Math.floor(SHORT / parts.length), SHORT - rest));
-      out.push(...p.slice(0, keep));
-      if (p.length > keep) out.push(["more", "", "⋯ " + (p.length - keep) + " more lines", c]);
-      left -= Math.min(keep, p.length);
+      let room = keep - p.filter(t => t[3]).length;   // the lines of a core in focus are kept first
+      const shown = p.filter(t => t[3] || room-- > 0);
+      if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3]];
+      out.push(...shown);
+      if (p.length > shown.length) out.push(["more", "", "⋯ " + (p.length - shown.length) + " more lines", c]);
+      left -= Math.min(keep, shown.length);
     });
   };
   if (n.note) out.push(["s", "", n.note]);
