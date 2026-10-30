@@ -660,10 +660,11 @@ def show(item, **kwargs) -> str:
     return path
 
 
-def _structure(spec: dict) -> tuple[list, list]:
+def _structure(spec: dict) -> tuple[list, list, list]:
     """How the contracts of a file go together, from their ports alone, as
-    one draws them without being told: ([(parts, system)], [names]). The
-    contracts are in the order of the file.
+    one draws them without being told: ([(parts, system)], [names],
+    [(parts, system)] with a part missing). The contracts are in the order
+    of the file.
 
     Contracts with the same inputs and outputs are versions of one part
     (fixes, or candidates): the first one in the file stands for them. A
@@ -671,34 +672,49 @@ def _structure(spec: dict) -> tuple[list, list]:
     its outputs (and maybe signals between them), and read from outside
     only its inputs: the parts are then drawn inside it ("A+B", "C"). The
     names are those drawn side by side, wired by name: the first versions,
-    and the systems."""
+    and the systems. When two parts or more are found but some outputs of
+    the contract are driven by none (a part not written yet), the missing
+    part is the quotient of the contract by the parts."""
     ports = {n: (frozenset(c.inputs), frozenset(c.outputs)) for n, c in spec.items()}
     first = {}
     for n in spec:
         first.setdefault(ports[n], n)
     reps = [n for n in spec if first[ports[n]] == n]
-    systems, used = [], set()
-    for s in reps:
-        if s in used:
-            continue
+    def gather(s, used, taken):       # the parts of s, as long as some of its signals lack a driver
         ins, outs = ports[s]
         parts, driven = [], set()
         while True:                   # what the system and the parts need, and nobody drives yet
             need = (outs | set().union(*(ports[p][0] for p in parts))) - driven - ins
             if not need:
                 break
-            p = next((p for p in reps if p != s and p not in used and p not in parts
-                      and all(p != x for x, _ in systems) and ports[p][1] & need
-                      and not ports[p][1] & driven), None)
+            p = next((p for p in reps if p != s and p not in used and p not in parts and p not in taken
+                      and ports[p][1] & need and not ports[p][1] & driven), None)
             if p is None:
                 break
             parts.append(p)
             driven |= ports[p][1]
+        return parts, driven, need
+
+    systems, missing, used = [], [], set()
+    for s in reps:                    # first the systems whose parts are all written
+        if s in used:
+            continue
+        parts, _, need = gather(s, used, {x for x, _ in systems})
         if len(parts) >= 2 and not need:
             systems.append((s, parts))
             used |= set(parts) | {s}
-    inside = {p for _, parts in systems for p in parts}
-    return ([("+".join(parts), s) for s, parts in systems], [n for n in reps if n not in inside])
+    for s in reps:                    # then those with a part missing
+        if s in used:
+            continue
+        ins, outs = ports[s]
+        parts, driven, need = gather(s, used, {x for x, _ in systems})
+        read = set().union(*(ports[p][0] for p in parts)) if parts else set()
+        if len(parts) >= 2 and need and read <= ins | outs | driven:
+            missing.append((s, parts))
+            used |= set(parts) | {s}
+    inside = {p for _, parts in systems + missing for p in parts}
+    return ([("+".join(parts), s) for s, parts in systems], [n for n in reps if n not in inside],
+            [("+".join(parts), s) for s, parts in missing])
 
 
 def _in_file_order(spec: dict, path: str) -> dict:
@@ -759,18 +775,22 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         return out
     if isinstance(spec, dict):
         spec = _in_file_order(spec, path)
-    found, connect = _structure(spec) if isinstance(spec, dict) else ([], [])
+    found, connect, missing = _structure(spec) if isinstance(spec, dict) else ([], [], [])
+    holes = {}                            # system -> the system with the missing part as a hole
     if not refines and not contracts:     # nothing said: as the ports of the contracts say
         refines = found
+        for parts, system in missing:     # closed form: no check, a few milliseconds
+            holes[system] = get(system).divide(get(parts), name="?")
     from . import record as _record
-    rec = _record.Record(results, path) if results and check else None
+    # the results kept: shown when what they read has not changed, also with no check run
+    rec = _record.Record(results, path) if results and (check or os.path.exists(results)) else None
     deadline = time.monotonic() + budget if budget is not None else None
 
     def kept(kind, k, run, **about):    # a result kept in the file, or the check run and kept
         e = rec.get(k) if rec is not None else None
         if e is not None:
             return _record.as_result(e)
-        if deadline is not None and time.monotonic() > deadline:
+        if not check or (deadline is not None and time.monotonic() > deadline):
             return None
         r = run()
         if rec is not None:
@@ -788,19 +808,21 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         items = [get(e) for e in contracts]
     else:                             # all, but those drawn inside another box
         inside = [x for r, _, _ in pairs for x in written(r, [])]
-        items = [get(e) for e in spec if all(get(e) is not x for x in inside)]
+        inside += [x for parts, _ in missing if holes for x in written(get(parts), [])]
+        items = [holes.get(e) or get(e) for e in spec if all(get(e) is not x for x in inside)]
     atoms = []
     for c in items + [x for a, b, _ in pairs for x in (a, b)]:
         written(c, atoms)
     marks = []
-    for c in atoms if check and not verify else ():     # verify checks A ∧ G too
+    kept_or_checked = check or rec is not None
+    for c in atoms if kept_or_checked and not verify else ():     # verify checks A ∧ G too
         r = kept("feasible", _record.key("feasible", c), lambda c=c: feasible(c), of=c.name)
         if r is not None:
             marks.append((c, "feasible", r))
     status = lambda r: r.status if r is not None else None
     pairs = [(a, b, status(kept("refines", _record.key("refines", a, b),
                                 lambda a=a, b=b: _checks_.refines(a, b, timeout=timeout),
-                                refined=x, abstract=y)) if check else None)
+                                refined=x, abstract=y)) if kept_or_checked else None)
              for (a, b, _), (x, y) in zip(pairs, refines)]
     for c in atoms:                   # a composition is not GR(1): its parts are checked
         if verify:
@@ -813,13 +835,13 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         m = _model(model, c)
         envs.append((m, c, status(kept("environment", _record.key("environment", _record.model_bytes(model), c),
                                        lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
-                                       model=model, contract=name)) if check else None))
+                                       model=model, contract=name)) if kept_or_checked else None))
     shown = list(items)
     for model, name in implementations:   # a contract drawn with its model, as a component
         c = get(name)
         m = _model(model, c)
         k = Component(c.name, c, m)
-        if check:
+        if kept_or_checked:
             k.status = status(kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
                                    lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
                                    model=model, contract=name))
@@ -829,7 +851,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                 open=[get(e) for e in open], title=title or os.path.basename(path),
                 connect=[get(n) for n in connect if id(get(n)) in drawn])
     _place_in_source(d, path)
-    if rec is not None:               # the whole file checked: the results of old versions go
+    if rec is not None and check:     # the whole file checked: the results of old versions go
         rec.save(prune=not contracts and (deadline is None or time.monotonic() <= deadline))
     return d
 

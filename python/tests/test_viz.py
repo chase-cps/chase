@@ -541,7 +541,7 @@ def test_the_contracts_go_together_by_their_ports():
                        "Greedy": (["req1", "req2"], ["grant1", "grant2"]),
                        "Fair": (["req1", "req2"], ["grant1", "grant2"]),
                        "System": (["low1", "low2"], ["grant1", "grant2", "req1", "req2"])})
-    assert viz._structure(spec) == ([("Robot1+Robot2+Greedy", "System")], ["System"])
+    assert viz._structure(spec) == ([("Robot1+Robot2+Greedy", "System")], ["System"], [])
     # LMFSM: the signals between the parts are not outputs of the system
     spec = _contracts({"Autopilot": (["apfail", "good"], ["MODE", "pullup"]),
                        "Sensor": (["MODE", "limits"], ["good"]),
@@ -549,7 +549,16 @@ def test_the_contracts_go_together_by_their_ports():
     assert viz._structure(spec)[0] == [("Autopilot+Sensor", "System")]
     # a part that reads what the system does not give is not a part of it
     spec = _contracts({"A": (["x"], ["y"]), "B": (["y", "w"], ["z"]), "S": (["x"], ["y", "z"])})
-    assert viz._structure(spec) == ([], ["A", "B", "S"])
+    assert viz._structure(spec) == ([], ["A", "B", "S"], [])
+    # the arbiter not written yet: the system with the robots, and a part missing
+    spec = _contracts({"Robot1": (["grant1", "low1"], ["req1"]), "Robot2": (["grant2", "low2"], ["req2"]),
+                       "System": (["low1", "low2"], ["grant1", "grant2", "req1", "req2"])})
+    assert viz._structure(spec) == ([], ["System"], [("Robot1+Robot2", "System")])
+    # one part only, or a part that reads a signal nobody gives: not a missing part
+    spec = _contracts({"A": (["x", "m"], ["y"]), "S": (["x"], ["y", "z"])})
+    assert viz._structure(spec)[2] == []
+    spec = _contracts({"A": (["x"], ["y"]), "B": (["w"], ["z"]), "S": (["x"], ["y", "z", "u"])})
+    assert viz._structure(spec)[2] == []
 
 
 @needs_native
@@ -593,6 +602,9 @@ def test_the_results_of_the_checks_are_kept_next_to_the_file(tmp_path, monkeypat
     monkeypatch.setattr(logic, "is_satisfiable", lambda *a, **k: calls.append(1) or real(*a, **k))
     assert main(["view", str(spec), "--check", "--format", "json", "-o", str(out)]) == 0
     assert calls == [] and marks()["A"] == [("A∧G", "valid", None)]
+    # with no check at all (as one types): the results kept are shown all the same
+    assert main(["view", str(spec), "--no-checks", "--format", "json", "-o", str(out)]) == 0
+    assert calls == [] and marks()["A"] == [("A∧G", "valid", None)]
     # a term changed: A is checked again, with its core, and its old result goes
     spec.write_text(text.replace("G (x -> y);\nCONTRACT B", "G (x -> y);\n    G !y;\nCONTRACT B"))
     assert main(["view", str(spec), "--check", "--format", "json", "-o", str(out)]) == 0
@@ -604,3 +616,21 @@ def test_the_results_of_the_checks_are_kept_next_to_the_file(tmp_path, monkeypat
     kept.unlink()
     assert main(["view", str(spec), "--check", "--budget", "0", "--format", "json", "-o", str(out)]) == 0
     assert marks() == {"A": [], "B": []} and not kept.exists()
+
+
+
+@needs_native
+def test_a_part_not_written_yet_is_a_hole(tmp_path):
+    spec = tmp_path / "h.ltl"
+    spec.write_text("NAME: h;\n"
+                    "CONTRACT A:\n  input boolean variable x;\n  output boolean variable y;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> y);\n"
+                    "CONTRACT B:\n  input boolean variable y;\n  output boolean variable z;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (y -> z);\n"
+                    "CONTRACT S:\n  input boolean variable x;\n"
+                    "  output boolean variable y;\n  output boolean variable z;\n  output boolean variable u;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> F u);\n")
+    top, = viz.from_spec(str(spec))["nodes"]
+    assert top["title"] == "S" and [n["kind"] for n in top["children"]] == ["contract", "contract", "hole"]
+    hole = top["children"][2]
+    assert hole["outputs"] == ["u"]

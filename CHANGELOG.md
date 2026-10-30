@@ -33,8 +33,11 @@ Added:
   cannot), and the refinements, implementations, and environments drawn.
   The results are kept next to the file (`FILE.results.json`, readable
   JSON), found by a hash of what each check reads: a check of contracts that
-  have not changed is not run again. `--budget` limits the time of the
-  checks.
+  have not changed is not run again, and a diagram drawn without checks
+  shows the results kept. `--budget` limits the time of the checks.
+- A part not written yet (the contract of a system with some outputs that
+  none of its parts drives) is drawn as a hole: the quotient of the
+  contract by the parts.
 - `chase-cps view` puts the contracts of a file together by their ports,
   as Lingua Franca does: an output and an input of the same name are wired,
   contracts with the same ports are versions of one part (the first one is
