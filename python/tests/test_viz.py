@@ -398,3 +398,18 @@ def test_an_undeclared_name_is_placed(tmp_path):
                     "    Assumptions:\n        true;\n    Guarantees:\n        G (y -> w);\n")
     with pytest.raises(RuntimeError, match=r"contract B, line 8:16: w is not declared"):
         load_spec(spec)
+
+
+def test_a_systemverilog_file_says_where(tmp_path, capsys):
+    bad = tmp_path / "m.sv"
+    bad.write_text("module m(input logic clk, input logic a, output logic b);\n"
+                   "  assert property (@(posedge clk) a |=> b);\n"
+                   "  assert property (@(posedge clk) s_eventually (!a && || b));\n"
+                   "endmodule\n")
+    assert main(["view", str(bad), "--format", "json", "-o", str(tmp_path / "m.json")]) == 0
+    assert "warning: line 3: not read" in capsys.readouterr().err
+    undeclared = tmp_path / "u.sv"
+    undeclared.write_text("module u(input logic clk, input logic a, output logic b);\n"
+                          "  assert property (@(posedge clk) a |-> c);\nendmodule\n")
+    assert main(["view", str(undeclared)]) == 2
+    assert "line 2:40:" in capsys.readouterr().err

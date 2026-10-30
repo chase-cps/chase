@@ -14,7 +14,9 @@ import argparse
 import json
 import os
 import platform
+import re
 import sys
+from typing import Optional
 import textwrap
 
 from . import __version__, checks, gr1, ltl, models, tools
@@ -111,15 +113,63 @@ def _read(path: str) -> dict[str, Contract]:
         contracts = [Contract.from_dict(d) for d in data]
         return {c.name: c for c in contracts}
     if ext in (".sv", ".sva", ".svh"):
-        from .sva import parse_sva
-        with open(path, encoding="utf-8") as f:
-            c = parse_sva(f.read()).contract
-        return {c.name: c}
+        return _read_sva(path)
     if ext in (".smv", ".v", ".vhd", ".py"):
         raise ValueError(f"{os.path.basename(path)} is not a specification: CHASE reads contracts "
                          "from .ltl (the logics language), .json, and .sv files; a model (.smv, "
                          "RTL) is drawn as the implementation of a contract")
     return load_spec(path)
+
+
+def _place(text: str, word: str) -> Optional[tuple[int, int]]:
+    """The line (from 1) and column (from 0) where word first appears."""
+    pattern = re.compile(r"(?<![\w$])" + re.escape(word) + r"(?!\w)")
+    for number, line in enumerate(text.splitlines(), 1):
+        m = pattern.search(line.split("//", 1)[0])
+        if m:
+            return number, m.start()
+    return None
+
+
+_TOKEN = re.compile(r"[A-Za-z_$][\w$]*|\d+'?\w*|&&|\|\||[^\s\w]")
+
+
+def _statement_line(text: str, statement: str) -> Optional[int]:
+    """The line (from 1) where the tokens of statement appear in text; of
+    several places, one not read as a statement of its own (whose first word
+    is not assert, assume, or cover)."""
+    tokens = [(m.group(0), n) for n, line in enumerate(text.splitlines(), 1)
+              for m in _TOKEN.finditer(line.split("//", 1)[0])]
+    want = _TOKEN.findall(statement)
+    if not want:
+        return None
+    found = [i for i in range(len(tokens) - len(want) + 1)
+             if [t for t, _ in tokens[i:i + len(want)]] == want]
+    if not found:
+        return None
+    alone = [i for i in found if i == 0 or tokens[i - 1][0] not in ("assert", "assume", "cover")]
+    return tokens[(alone or found)[0]][1]
+
+
+def _read_sva(path: str) -> dict[str, Contract]:
+    """The contract of a SystemVerilog file. A signal whose direction is not
+    known is placed in the file; a statement that is not read is said on the
+    standard error, with its line, as a warning."""
+    from .sva import SVAError, parse_sva
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    try:
+        reading = parse_sva(text)
+    except SVAError as e:
+        m = re.search(r"\['([\w.$]+)'", str(e))
+        where = _place(text, m.group(1)) if m else None
+        raise ValueError(f"line {where[0]}:{where[1]}: {e}" if where else str(e)) from None
+    for k in reading.skipped:
+        where = _statement_line(text, k.text)
+        line = f"line {where}: " if where else ""
+        print(f"warning: {line}not read ({k.reason}): {k.text}", file=sys.stderr)
+    c = reading.contract
+    return {c.name: c}
 
 
 def _contract(expression: str, contracts: dict[str, Contract]) -> Contract:
@@ -306,6 +356,20 @@ def check(args) -> int:
     return 0 if passed else 1
 
 
+def _quiet(run):
+    """run(), with what the CHASE libraries print on the standard output sent
+    to the standard error."""
+    sys.stdout.flush()
+    saved = os.dup(1)
+    os.dup2(2, 1)
+    try:
+        return run()
+    finally:
+        sys.stdout.flush()
+        os.dup2(saved, 1)
+        os.close(saved)
+
+
 def view(args) -> int:
     """Draws the contracts of a specification; with --serve, in a page that
     is drawn again whenever the file changes."""
@@ -313,6 +377,12 @@ def view(args) -> int:
     checks = not args.no_checks
 
     def make() -> dict:
+        if args.format == "json" and args.output in (None, "-"):    # the JSON alone on the standard output
+            return _quiet(lambda: viz.from_spec(args.file, args.contracts or (), args.refines or (),
+                                                args.environment or (), check=args.check and checks,
+                                                verify=args.verify and checks,
+                                                realizable=args.realizable and checks,
+                                                timeout=args.timeout, open=args.open or ()))
         return viz.from_spec(args.file, args.contracts or (), args.refines or (),
                              args.environment or (), check=args.check and checks,
                              verify=args.verify and checks, realizable=args.realizable and checks,

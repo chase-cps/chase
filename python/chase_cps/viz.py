@@ -694,14 +694,23 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
     state = {"mtime": None, "version": 0, "data": None, "error": None, "page": None}
     lock = threading.Lock()
 
+    drawing = threading.Lock()          # one drawing at a time: the others serve what is there
+
     def refresh():
         mtime = os.path.getmtime(path) if os.path.exists(path) else None
-        if mtime == state["mtime"]:
+        if mtime == state["mtime"] or not drawing.acquire(blocking=False):
             return
+        try:
+            _draw(mtime)
+        finally:
+            drawing.release()
+
+    def _draw(mtime):
         try:
             d, error = make(), None
         except Exception as e:          # the error goes to the page, the last diagram stays
-            d, error = None, f"{type(e).__name__}: {e}"
+            d, error = None, (str(e) if isinstance(e, (ValueError, RuntimeError))
+                              else f"{type(e).__name__}: {e}")
         with lock:
             state.update(mtime=mtime, version=state["version"] + 1, error=error)
             if d is not None:
@@ -738,7 +747,7 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
 
     refresh()
     server = http.server.ThreadingHTTPServer((host, port), Handler)
-    print(f"Drawing {path} on http://{host}:{port} (Ctrl-C to stop)")
+    print(f"Drawing {path} on http://{host}:{port} (Ctrl-C to stop)", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -801,8 +810,9 @@ _PAGE = r"""<!doctype html>
   #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
          background:#1d2526; color:#fff; border-radius:4px; padding:5px 8px;
          font:12px/1.4 Helvetica, Arial, sans-serif; white-space:pre-wrap; }
-  #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:4px 10px;
-          border-radius:12px; background:#eef3f3; color:var(--faint); font:12px Helvetica, Arial, sans-serif; }
+  #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:5px 12px;
+          border-radius:12px; background:var(--teal); color:#fff; font:600 12px Helvetica, Arial, sans-serif;
+          box-shadow:0 1px 4px rgba(0,0,0,.2); }
   #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
                   padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink);
                   white-space:nowrap; background:#fff; }
@@ -1009,12 +1019,12 @@ function tag(g, x, y, s, status) {
   return tagWidth(s);
 }
 const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
-const WHAT = { "A": "A is satisfiable: the contract is compatible",
-               "G": "A → G is satisfiable: the contract is consistent",
+const WHAT = { "A": "compatible: the assumptions A are satisfiable",
+               "G": "consistent: A → G is satisfiable",
                "A∧G": "feasible: A ∧ G is satisfiable",
-               "R": "the contract is realizable (GR(1))",
+               "R": "realizable (GR(1))",
                "WS": "well-separated: the component cannot win by making the environment break A",
-               "¬V": "no vacuous output: each liveness guarantee asks something of the component",
+               "¬V": "not vacuous: each liveness guarantee asks something of the component",
                "M ⊨ C": "the model implements the contract",
                "E ⊨ A": "the environment satisfies the assumptions",
                "⪯": "what is inside refines this contract" };
@@ -1176,7 +1186,7 @@ function drawNode(g, e, ox, oy) {
   if (n.kind === "component" || n.kind === "environment") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
   const name = text(box, x + PAD, y + 18, "h", n.title);
-  if (n.contract) name.onclick = toggle("c:" + n.id);
+  if (n.contract) { name.onclick = toggle("c:" + n.id); tip(name, "Click: open or close the contract"); }
   let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
@@ -1186,7 +1196,7 @@ function drawNode(g, e, ox, oy) {
   checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core
     const t = el("g", {}, box), on = focus[n.id] === i;
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
-    tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
+    tip(t, (WHAT[c.name] || c.name) + " — " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
            + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
@@ -1208,7 +1218,7 @@ function drawNode(g, e, ox, oy) {
   }
   if (n.badge && show.checks) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
     tag(b, rx - w, y + 6, n.badge.text, n.badge.status);
-    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")
+    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
            + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
     if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
   sz.ls.forEach(([k, label, s, core], i) => {
@@ -1557,29 +1567,81 @@ function drawContext() {
 }
 // A new drawing of the same file, sent by an editor or by chase-cps view
 // --serve as the file changes: the view, and what is open or folded, stay.
-let drawing = Promise.resolve();        // one drawing at a time, in the order they come
+// A box is known from one drawing to the next by the names from the top
+// down to it (with its rank among the boxes of the same name), not by its
+// number, which moves when a contract is added. What it says, without the
+// results, tells whether the results of a check still hold for it.
+function keysOf(nodes) {
+  const keys = {};
+  (function walk(ns, prefix) {
+    const seen = {};
+    ns.forEach(n => { seen[n.title] = (seen[n.title] || 0) + 1;
+                      keys[n.id] = prefix + "/" + n.title + "#" + seen[n.title];
+                      walk(n.children || [], keys[n.id]); });
+  })(nodes, "");
+  return keys;
+}
+function says(n) {
+  return JSON.stringify([n.kind, n.title, n.note, n.contract, n.composed, n.inputs, n.outputs,
+                         n.model && n.model.name, (n.children || []).map(says)]);
+}
+// The results of the boxes of results that say the same, by key.
+function resultsOf(nodes) {
+  const keys = keysOf(nodes), out = {};
+  (function walk(ns) { ns.forEach(n => { out[keys[n.id]] = n; walk(n.children || []); }); })(nodes);
+  return out;
+}
+function carry(n, old) {               // the results of old, when n says the same
+  if (!old || says(old) !== says(n)) return;
+  if (!(n.checks && n.checks.length) && old.checks) n.checks = old.checks;
+  if (n.badge && !n.badge.status && old.badge && old.badge.text === n.badge.text) n.badge.status = old.badge.status;
+}
+let drawing = Promise.resolve(), told = 0, staleAt = 0;   // one drawing at a time, in order
 function setData(data) {
-  drawing = drawing.catch(() => {}).then(() => load(data));
+  const token = ++told;
+  drawing = drawing.catch(() => {}).then(() => load(data, token));
   return drawing;
 }
-function load(data) {
+// The results of the checks of the saved file, for the boxes that say the same now.
+function setChecks(data) {
+  drawing = drawing.catch(() => {}).then(() => {
+    const was = resultsOf(data.nodes), keys = keysOf(DATA.nodes);
+    for (const id in byId) {
+      const n = byId[id], c = was[keys[id]];
+      if (c && says(c) === says(n)) { n.checks = c.checks; if (n.badge && c.badge) n.badge.status = c.badge.status; }
+    }
+    return render();
+  });
+  return drawing;
+}
+function load(data, token) {
+  const keys = keysOf(DATA.nodes), was = resultsOf(DATA.nodes);
+  const openKeys = [...open].map(k => [k.slice(0, 2), keys[k.slice(2)]]);
+  const foldedKeys = [...folded].map(id => keys[id]);
+  const focusKeys = Object.entries(focus).map(([id, i]) => [keys[id], byId[id] && byId[id].checks && byId[id].checks[i]]);
   DATA = data;
   for (const k in byId) delete byId[k];
   (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
   boxes = Object.values(byId);
   ROOT.children = DATA.nodes;
   for (const k in MODELS) delete MODELS[k];
-  for (const k of [...open]) if (!byId[k.slice(2)]) open.delete(k);
-  for (const k of [...folded]) if (!byId[k]) folded.delete(k);
-  for (const k in focus) if (!byId[k] || !(byId[k].checks || [])[focus[k]]) delete focus[k];
+  const now = keysOf(DATA.nodes), idOf = {};
+  for (const id in now) { idOf[now[id]] = id; carry(byId[id], was[now[id]]); }
+  open.clear(); openKeys.forEach(([p, k]) => { if (idOf[k]) open.add(p + idOf[k]); });
+  folded.clear(); foldedKeys.forEach(k => { if (idOf[k]) folded.add(idOf[k]); });
+  for (const k in focus) delete focus[k];
+  focusKeys.forEach(([k, c]) => { const n = byId[idOf[k]];
+    const i = n && c ? (n.checks || []).findIndex(x => x.name === c.name && x.core) : -1;
+    if (i >= 0) focus[n.id] = i; });
   document.title = DATA.title;
   drawContext();
-  stale(null);
+  if (token > staleAt) stale(null);    // a newer reason stays
   return render();
 }
 // The file cannot be drawn as it is now: the diagram of the last version
 // that could be drawn stays, with the reason.
 function stale(reason) {
+  if (reason) staleAt = told;
   const b = document.getElementById("stale");
   if (!reason) { b.style.display = "none"; return; }
   b.innerHTML = "<b>The diagram is of the last version that could be drawn.</b>";
@@ -1589,6 +1651,7 @@ function stale(reason) {
 window.addEventListener("message", e => {
   const m = e.data || {};
   if (m.type === "chase-data") setData(m.data).catch(err => stale("Cannot draw the diagram: " + err));
+  else if (m.type === "chase-checks") setChecks(m.data).catch(err => stale("Cannot draw the checks: " + err));
   else if (m.type === "chase-stale") stale(m.reason);
   else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
 });
@@ -1598,20 +1661,23 @@ window.addEventListener("message", e => {
   const box = document.getElementById("tip");
   document.querySelectorAll("[title]").forEach(b => {
     b.setAttribute("data-tip", b.title); b.setAttribute("aria-label", b.title); b.removeAttribute("title"); });
-  let timer = null, x = 0, y = 0;
+  let timer = null, x = 0, y = 0, over = null;
   const hide = () => { clearTimeout(timer); box.style.display = "none"; };
   const place = () => {
+    box.style.left = "0px"; box.style.top = "0px";          // measured at its full width
     const w = box.offsetWidth, h = box.offsetHeight;
     box.style.left = Math.max(4, Math.min(x + 12, innerWidth - w - 8)) + "px";
     box.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px";
   };
   document.addEventListener("mouseover", e => {
     const t = e.target.closest && e.target.closest("[data-tip]");
+    if (t === over) return;                                  // still on the same part
+    over = t;
     hide();
     if (t) timer = setTimeout(() => { box.textContent = t.getAttribute("data-tip"); box.style.display = "block"; place(); }, 400);
   });
   document.addEventListener("mousemove", e => { x = e.clientX; y = e.clientY; if (box.style.display === "block") place(); });
-  document.addEventListener("mousedown", hide);
+  document.addEventListener("mousedown", () => { hide(); over = null; });
   document.addEventListener("wheel", hide, { passive: true });
   document.addEventListener("mouseleave", hide);
 })();
