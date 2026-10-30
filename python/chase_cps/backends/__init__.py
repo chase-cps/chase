@@ -12,12 +12,14 @@ from ..queries import UNKNOWN, Result
 from .base import Adapter
 from .nusmv import NuSMVAdapter
 from .slugs import SlugsAdapter
+from .z3 import Z3Adapter
 
 # Order matters: the first available adapter answering a query is used.
 ADAPTERS: dict[str, Adapter] = {
     "nuxmv": NuSMVAdapter(tool="nuxmv"),
     "nusmv": NuSMVAdapter(tool="nusmv"),
     "slugs": SlugsAdapter(),
+    "z3": Z3Adapter(),        # static formulas only; check() sends them there first
 }
 
 
@@ -38,13 +40,21 @@ def check(query, backend: str = "auto", **options) -> Result:
     """Answer a query with the given back end, or the first available one.
 
     With backend "auto", the environment variable CHASE_BACKEND, when set,
-    names the back end to use for the queries it answers. A back end may name
+    names the back end to use for the queries it answers. Otherwise a formula
+    without temporal operators goes to z3 when it is installed (see
+    ``chase_cps.backends.z3``). A back end may name
     its engine, as in "nuxmv/bdd" (see ``chase_cps.backends.nusmv``). A query with real
     variables goes through ``chase_cps.reals``; the others go straight to the
     back ends.
     """
     from .. import reals
     from ..queries import Holds
+    from .z3 import why_not
+    if backend == "auto" and not os.environ.get("CHASE_BACKEND") and "z3" in ADAPTERS \
+            and isinstance(query, ADAPTERS["z3"].answers) and not why_not(query) \
+            and all(hasattr(ADAPTERS["z3"], k) for k in options):
+        # a formula without temporal operators: arithmetic, for z3
+        return _configured(ADAPTERS["z3"], options).run(query)
     if not isinstance(query, Holds) and reals.has_real_variables(query):
         return reals.check(query, backend, **options)
     return dispatch(query, backend, **options)
@@ -97,5 +107,5 @@ def _configured(adapter: Adapter, options: dict) -> Adapter:
     return a
 
 
-__all__ = ["ADAPTERS", "Adapter", "NuSMVAdapter", "SlugsAdapter", "check", "dispatch",
+__all__ = ["ADAPTERS", "Adapter", "NuSMVAdapter", "SlugsAdapter", "Z3Adapter", "check", "dispatch",
            "register", "adapters_for"]

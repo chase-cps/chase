@@ -31,6 +31,8 @@ NEEDED_FOR = {
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
     "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis), "
              "is_well_separated, is_vacuous",
+    "z3": "the checks of formulas without temporal operators (static contracts), and "
+          "the real variables of the other checks (optional)",
 }
 
 
@@ -38,11 +40,17 @@ def _location(name: str) -> str | None:
     adapter = ADAPTERS[name]
     if not adapter.available():
         return None
+    if not hasattr(adapter, "binary"):          # a Python package (z3)
+        import importlib
+        module = importlib.import_module(adapter.name)
+        return f"the Python package, version {module.get_version_string()}"
     found = adapter.binary()
     return found[0] if isinstance(found, tuple) else found
 
 
 def _how_to_install(name: str) -> str:
+    if name == "z3":
+        return "pip install chase-cps[reals]"
     if tools.installable(name):
         flag = " --accept-license" if name == "nuxmv" else ""
         note = " (academic and non-commercial use only)" if name == "nuxmv" else ""
@@ -73,7 +81,7 @@ def doctor(args=None) -> int:
             missing.append(name)
 
     model_checker = any(_location(n) for n in ("nuxmv", "nusmv"))
-    missing = [n for n in missing if n != "nusmv"]      # NuSMV is optional
+    missing = [n for n in missing if n not in ("nusmv", "z3")]      # optional
     if model_checker:   # one model checker is enough
         missing = [n for n in missing if n != "nuxmv"]
     if missing:

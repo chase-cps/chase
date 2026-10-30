@@ -523,6 +523,39 @@ do not take a context: whether a
 formula constrains the environment or the component is a question of
 roles, which a context does not say.
 
+### Formulas without temporal operators
+
+A formula with no `G`, `F`, `X`, `U`, `R`, no `x'` and no `past(x, n)` says
+something about one step: it is a constraint, and a contract made of such
+formulas is a static contract (a budget, a sizing, a choice of parts). When
+z3 is installed (`pip install chase-cps[z3]`), the checks of such formulas
+go to z3 instead of nuXmv: `verify`, `refines`, `implies`,
+`is_satisfiable`, and the others built on them. The result names `z3` as
+its back end, and its trace has one state, repeated. z3 is exact for linear
+arithmetic over the integers and the reals, with any Boolean structure
+(`a <= 1 | b <= 1` is not a polyhedron, and is checked as written); words
+stay with nuXmv. `backend="nuxmv"` still sends them to nuXmv, and
+`CHASE_BACKEND` too.
+
+`minimize(term, constraints)` and `maximize(term, constraints)` give the
+best value of a term where the constraints hold, and the values of the
+variables that reach it. The constraints are a formula, a list of
+formulas, or a contract (A & G):
+
+```python
+from chase_cps import Contract, maximize, minimize
+
+gen = Contract.from_strings(name="Gen", inputs={"n": (0, 20)}, outputs={"p": "real"},
+                            assumptions=["n <= 4"], guarantees=["p >= 2.5 * n", "p <= 30"])
+best = maximize("n", gen)            # optimal, 4, with n = 4, p = 10
+margin = minimize("p - 2.5 * n", gen)  # 0: the guarantee p >= 2.5 n is tight
+print(best.status, best.value, best.to_dict().get("values"))
+```
+
+The status is `optimal`, `not_attained` (the bound of a strict inequality:
+`minimize("x", "x > 1")` is 1), `unbounded`, `infeasible`, or `unknown`
+with the reason.
+
 ### Real variables
 
 A variable of type `"real"` (`real variable x;`) takes any real value. The

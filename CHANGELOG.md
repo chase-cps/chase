@@ -16,6 +16,12 @@ Added:
   signal temporal logic in discrete time.
 - Robustness reads `past(x, n)`: the history variable of nuXmv in the
   trace, or the value n steps before.
+- z3 back end (`pip install chase-cps[z3]`): the checks of formulas
+  without temporal operators (static contracts) go to z3 when it is
+  installed, exact for linear arithmetic over the integers and the reals
+  with any Boolean structure. `minimize` and `maximize` give the best value
+  of a term under such constraints (a formula, or a contract), with the
+  values that reach it. `chase-cps doctor` lists z3.
 
 Changed:
 

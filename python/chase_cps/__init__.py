@@ -50,6 +50,7 @@ from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, 
                      verify)
 from .models import Model, is_receptive
 from .logic import Core, implies, is_satisfiable, unsat_core
+from .optimize import Optimum, maximize, minimize
 # 3. GR(1) synthesis.
 from .gr1 import (OutputVacuity, VacuousOutput, is_realizable, is_vacuous, is_well_separated,
                   synthesize, unrealizable_core)
@@ -72,6 +73,8 @@ __all__ = [
     "Model", "is_receptive",
     #    and on formulas
     "implies", "is_satisfiable", "unsat_core", "Core",
+    #    best values (formulas without temporal operators)
+    "minimize", "maximize", "Optimum",
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
     "is_vacuous", "OutputVacuity", "VacuousOutput",
