@@ -458,7 +458,9 @@ def view(args) -> int:
     """Draws the contracts of a specification; with --serve, in a page that
     is drawn again whenever the file changes."""
     from . import viz
+    from .record import results_path
     checks = not args.no_checks
+    results = None if args.no_results else (args.results or results_path(args.file))
 
     def make() -> dict:
         if args.format == "json" and args.output in (None, "-"):    # the JSON alone on the standard output
@@ -467,12 +469,14 @@ def view(args) -> int:
                                                 verify=args.verify and checks,
                                                 realizable=args.realizable and checks,
                                                 timeout=args.timeout, open=args.open or (),
-                                                implementations=args.implementation or ()))
+                                                implementations=args.implementation or (),
+                                                results=results, budget=args.budget))
         return viz.from_spec(args.file, args.contracts or (), args.refines or (),
                              args.environment or (), check=args.check and checks,
                              verify=args.verify and checks, realizable=args.realizable and checks,
                              timeout=args.timeout, open=args.open or (),
-                             implementations=args.implementation or ())
+                             implementations=args.implementation or (), results=results,
+                             budget=args.budget)
 
     if args.serve:
         return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
@@ -582,8 +586,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="draw CONTRACT as a component with its model: SMV, JSON, or RTL (.v, "
                         ".sv, FILE:MODULE), read with Yosys (may be repeated)")
     p.add_argument("--check", action="store_true",
-                   help="check the refinements and the environments, and mark them (nuXmv "
-                        "or NuSMV)")
+                   help="check that the assumptions and the guarantees of each contract can "
+                        "hold together (A∧G, with the core when they cannot), and the "
+                        "refinements, implementations, and environments drawn (nuXmv or NuSMV)")
     p.add_argument("--verify", action="store_true",
                    help="check that each contract drawn is compatible and consistent; when "
                         "its terms cannot hold together, mark them")
@@ -609,6 +614,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default="127.0.0.1",
                    help="the address to serve on (0.0.0.0 in a Docker container)")
     p.add_argument("--timeout", type=float, default=60, help="seconds per check")
+    p.add_argument("--budget", type=float, metavar="SECONDS",
+                   help="start no check after SECONDS; the checks left are not marked")
+    p.add_argument("--results", metavar="FILE",
+                   help="where the results of --check are kept (default: FILE.results.json next "
+                        "to the file); a check of contracts that have not changed is not run again")
+    p.add_argument("--no-results", action="store_true", help="keep no results")
     p.set_defaults(run=view)
 
     args = parser.parse_args(_with_file_options(sys.argv[1:] if argv is None else list(argv)))

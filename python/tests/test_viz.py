@@ -151,7 +151,7 @@ def test_a_system_marks_its_components_and_open_inputs():
     assert group["children"][0]["model"]["fsm"]["count"] == 1
     assert any(w.get("open", [None])[0] == group["children"][2]["id"] for w in group["edges"])
     assert group["title"] == "S" and group["contract"]["name"] == "Top"   # the system, in its contract
-    assert group["note"].startswith("contract Top")
+    assert group["note"].startswith("Contract Top")
 
 
 def test_checks_and_cores_are_marked_on_the_box():
@@ -565,3 +565,42 @@ def test_a_file_is_drawn_wired_and_checked(tmp_path):
     d = viz.from_spec(str(spec))
     assert [n["title"] for n in d["nodes"]] == ["A", "B", "D"]
     assert sorted(w["var"] for w in d["edges"]) == ["y", "z"]
+
+
+@needs_native
+@pytest.mark.skipif(not ADAPTERS["nuxmv"].available() and not ADAPTERS["nusmv"].available(),
+                    reason="no model checker")
+def test_the_results_of_the_checks_are_kept_next_to_the_file(tmp_path, monkeypatch):
+    from chase_cps import record
+    spec = tmp_path / "k.ltl"
+    text = ("NAME: k;\n"
+            "CONTRACT A:\n  input boolean variable x;\n  output boolean variable y;\n"
+            "  Assumptions:\n    F(x);\n  Guarantees:\n    G (x -> y);\n"
+            "CONTRACT B:\n  input boolean variable x;\n  output boolean variable y;\n"
+            "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> y);\n")
+    spec.write_text(text)
+    out = tmp_path / "k.json"
+    marks = lambda: {n["title"]: [(c["name"], c["status"], c.get("core")) for c in n.get("checks", [])]
+                     for n in json.loads(out.read_text())["nodes"]}
+    assert main(["view", str(spec), "--check", "--format", "json", "-o", str(out)]) == 0
+    kept = tmp_path / "k.results.json"
+    first = json.loads(kept.read_text())
+    assert set(first["contracts"]) == {"A", "B"} and first["contracts"]["A"]["feasible"]["result"] == "sat"
+    # again: from the file, with no check run
+    calls = []
+    import chase_cps.logic as logic
+    real = logic.is_satisfiable
+    monkeypatch.setattr(logic, "is_satisfiable", lambda *a, **k: calls.append(1) or real(*a, **k))
+    assert main(["view", str(spec), "--check", "--format", "json", "-o", str(out)]) == 0
+    assert calls == [] and marks()["A"] == [("A∧G", "valid", None)]
+    # a term changed: A is checked again, with its core, and its old result goes
+    spec.write_text(text.replace("G (x -> y);\nCONTRACT B", "G (x -> y);\n    G !y;\nCONTRACT B"))
+    assert main(["view", str(spec), "--check", "--format", "json", "-o", str(out)]) == 0
+    assert calls and marks()["A"] == [("A∧G", "invalid", {"A": [0], "G": [0, 1], "part": "contract"})]
+    again = json.loads(kept.read_text())
+    assert again["contracts"]["A"]["feasible"]["core"]["guarantees"] == ["G (x -> y)", "G !y"]
+    assert len(record.Record(str(kept)).entries) == 2
+    # no time left: nothing is checked, nothing is marked
+    kept.unlink()
+    assert main(["view", str(spec), "--check", "--budget", "0", "--format", "json", "-o", str(out)]) == 0
+    assert marks() == {"A": [], "B": []} and not kept.exists()

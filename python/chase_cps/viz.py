@@ -42,6 +42,7 @@ import json
 import os
 import re
 import tempfile
+import time
 import webbrowser
 from typing import Iterable, Optional
 
@@ -353,7 +354,7 @@ CHECKS = ("verify, is_realizable, is_well_separated, is_vacuous, or is_receptive
           "and is_consistent with their name, (item, 'consistent', result)")
 # The label of each check, by the name of the check (for a result that is unknown)
 KINDS = {"realizable": "R", "well_separated": "WS", "vacuous": "¬V", "receptive": "receptive",
-         "compatible": "A", "consistent": "G"}
+         "compatible": "A", "consistent": "G", "feasible": "A∧G"}
 
 
 def _checks(r, kind: Optional[str] = None) -> list:
@@ -369,6 +370,8 @@ def _checks(r, kind: Optional[str] = None) -> list:
 
     def core_of(x):
         c = getattr(x, "core", None)
+        if isinstance(c, tuple):        # kept in a results file: the texts of its terms
+            return c
         return c if isinstance(c, Core) and c else None
     if isinstance(r, Verification):
         out = [("A", r.compatible, core_of(r.compatible)), ("G", r.consistent, core_of(r.consistent))]
@@ -472,7 +475,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         node = add(item)
         if isinstance(item, System) and item.contract is not None:
             wrapped = scene.wrap(node, item.contract, item.status)
-            wrapped.update(title=item.name, note=f"contract {item.contract.name} · {node['note']}")
+            wrapped.update(title=item.name, note=f"Contract {item.contract.name} · {node['note']}")
             replace(node, wrapped)
     def after(box, new):                # new, next to the item that holds box
         i = next((i for i, n in enumerate(nodes) if n is box or _find([n], box["id"]) is not None), None)
@@ -714,7 +717,8 @@ def _in_file_order(spec: dict, path: str) -> dict:
 def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
-              open: Iterable = (), implementations: Iterable = ()) -> dict:
+              open: Iterable = (), implementations: Iterable = (), results: Optional[str] = None,
+              budget: Optional[float] = None) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
     JSON). ``contracts`` are the contracts to draw (default: all, but those
     drawn inside another box by ``refines``), each a
@@ -723,10 +727,14 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     lists (model file, contract): an SMV or JSON state machine, or a
     controller of slugs. ``implementations`` lists (model file, contract):
     the contract is drawn as a component with its model (SMV, JSON, or RTL
-    in .v or .sv, read with Yosys). ``check`` checks the refinements, the
-    environments, and the implementations; ``verify`` and ``realizable``
-    check each contract of the file that is drawn, alone or as a part of a
-    composition. ``open`` names the contracts drawn open. Each box of a
+    in .v or .sv, read with Yosys). ``check`` checks that the assumptions
+    and the guarantees of each contract drawn can hold together (A∧G, with
+    the core when they cannot), and the refinements, the environments, and
+    the implementations; ``verify`` (A, G) and ``realizable`` (R) check each
+    contract drawn too. ``results`` is the file where the results of
+    ``check`` are kept (see ``chase_cps.record``): a check whose contracts
+    and models have not changed is not run again. With ``budget`` (seconds),
+    no check starts after that time; those left are not marked. ``open`` names the contracts drawn open. Each box of a
     contract of the file says where it is written (its line), for an editor.
     A Verilog or SystemVerilog file with no assertion is drawn as its module
     with its state machine."""
@@ -754,8 +762,28 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     found, connect = _structure(spec) if isinstance(spec, dict) else ([], [])
     if not refines and not contracts:     # nothing said: as the ports of the contracts say
         refines = found
-    pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
-             for a, b in refines]
+    from . import record as _record
+    rec = _record.Record(results, path) if results and check else None
+    deadline = time.monotonic() + budget if budget is not None else None
+
+    def kept(kind, k, run, **about):    # a result kept in the file, or the check run and kept
+        e = rec.get(k) if rec is not None else None
+        if e is not None:
+            return _record.as_result(e)
+        if deadline is not None and time.monotonic() > deadline:
+            return None
+        r = run()
+        if rec is not None:
+            rec.put(k, kind, r, **about)
+        return r
+
+    def feasible(c):                  # A ∧ G, and the core when they cannot hold together
+        from .logic import is_satisfiable, unsat_core
+        r = is_satisfiable(ltl.Binary("&", c.assumption, c.guarantee), c.variables, timeout=timeout)
+        if r.status == "unsat":
+            r.core = unsat_core(c, timeout=timeout)
+        return r
+    pairs = [(get(a), get(b), None) for a, b in refines]
     if contracts:
         items = [get(e) for e in contracts]
     else:                             # all, but those drawn inside another box
@@ -765,6 +793,15 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     for c in items + [x for a, b, _ in pairs for x in (a, b)]:
         written(c, atoms)
     marks = []
+    for c in atoms if check and not verify else ():     # verify checks A ∧ G too
+        r = kept("feasible", _record.key("feasible", c), lambda c=c: feasible(c), of=c.name)
+        if r is not None:
+            marks.append((c, "feasible", r))
+    status = lambda r: r.status if r is not None else None
+    pairs = [(a, b, status(kept("refines", _record.key("refines", a, b),
+                                lambda a=a, b=b: _checks_.refines(a, b, timeout=timeout),
+                                refined=x, abstract=y)) if check else None)
+             for (a, b, _), (x, y) in zip(pairs, refines)]
     for c in atoms:                   # a composition is not GR(1): its parts are checked
         if verify:
             marks.append((c, _checks_.verify(c, core=True, timeout=timeout)))
@@ -774,20 +811,26 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     for model, name in environments:
         c = get(name)
         m = _model(model, c)
-        envs.append((m, c, _checks_.is_environment(m, c, timeout=timeout).status if check else None))
+        envs.append((m, c, status(kept("environment", _record.key("environment", _record.model_bytes(model), c),
+                                       lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
+                                       model=model, contract=name)) if check else None))
     shown = list(items)
     for model, name in implementations:   # a contract drawn with its model, as a component
         c = get(name)
         m = _model(model, c)
         k = Component(c.name, c, m)
         if check:
-            k.status = _checks_.is_implementation(m, c, timeout=timeout).status
+            k.status = status(kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
+                                   lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
+                                   model=model, contract=name))
         shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
     drawn = {id(x) for x in items}
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
                 open=[get(e) for e in open], title=title or os.path.basename(path),
                 connect=[get(n) for n in connect if id(get(n)) in drawn])
     _place_in_source(d, path)
+    if rec is not None:               # the whole file checked: the results of old versions go
+        rec.save(prune=not contracts and (deadline is None or time.monotonic() <= deadline))
     return d
 
 
@@ -1204,11 +1247,11 @@ function lines(n) {
   };
   if (n.note) out.push(["s", "", n.note]);
   if (n.contract && open.has("c:" + n.id)) {
-    if (n.composed) out.push(["s", "", "the contract " + n.contract.name]);
+    if (n.composed) out.push(["s", "", "Contract " + n.contract.name]);
     part(n.contract, "contract");
   }
   if (n.composed && open.has("k:" + n.id)) {
-    out.push(["s", "", "the composition " + n.composed.name]);
+    out.push(["s", "", "Composition " + n.composed.name]);
     part(n.composed, "composed");
   }
   return out;
@@ -1217,7 +1260,7 @@ const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f"
 function showTerms(n, c) {     // the whole contract, in the panel
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), ts = [];
   terms(c, ts, null, c === n.contract ? n.source : null);
-  document.getElementById("poptitle").textContent = n.title + " · contract " + c.name;
+  document.getElementById("poptitle").textContent = n.title + " · Contract " + c.name;
   document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t, , at]) =>
     "<tr" + (at ? " data-line='" + at[0] + "'" + (inEditor() ? " title='double click: line " + at[0] + "'" : "") : "")
     + "><td class='st'>" + (tag || "") + "</td><td>" + esc(t) + "</td></tr>").join("") + "</table>";
@@ -1226,8 +1269,8 @@ function showTerms(n, c) {     // the whole contract, in the panel
 
 function icons(n) {
   const out = [];
-  if (n.contract) out.push(["contract", "c:" + n.id, "contract " + n.contract.name]);
-  if (n.composed) out.push(["composed", "k:" + n.id, "the composition " + n.composed.name]);
+  if (n.contract) out.push(["contract", "c:" + n.id, "Contract " + n.contract.name]);
+  if (n.composed) out.push(["composed", "k:" + n.id, "Composition " + n.composed.name]);
   if (n.model) {             // a model with nothing to draw has its icon, grey
     const f = n.model.fsm;
     const from = { controller: " (synthesized by slugs)", rtl: " (RTL)", json: " (JSON)", smv: " (SMV)" }[n.model.source] || "";
