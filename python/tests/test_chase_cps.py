@@ -547,6 +547,8 @@ def test_assume_and_ensure():
         c.assume("G z")
 
 
+@needs_native
+@needs_mc
 def test_ensure_without_assumptions_keeps_the_terms():
     from chase_cps import refines
     from chase_cps.contract import _algebra, _single_term
