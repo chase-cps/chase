@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Fixed:
+
+- `a = b` and `a != b` between Booleans (`G (w != c)`, `G (w -> (c' = c))`)
+  made realizability and synthesis unknown, with the error of the parser
+  of slugs as the reason: structured slugs compares only numbers. They are
+  now written `a <-> b` and `!(a <-> b)`.
+
 ## 0.5.0 (2026-10-30)
 
 Added:
