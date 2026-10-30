@@ -820,6 +820,13 @@ _PAGE = r"""<!doctype html>
   .tools button svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
                stroke-linecap:round; stroke-linejoin:round; }
   .tools .sep { width:1px; height:18px; background:#e3e8e8; margin:0 6px; }
+  #export { display:none; position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd;
+            border-radius:8px; padding:4px; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:7; }
+  #export button { font:600 12px Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
+                   border-radius:6px; padding:4px 10px; cursor:pointer; color:var(--teal); }
+  #export button:hover { background:var(--fill); }
+  @media print { body > *:not(#print) { display:none !important; } #print { display:block !important; }
+                 #print svg { width:100%; height:auto; } @page { margin:12mm; } }
   #help { position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
           box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font:12px 'Arial Unicode MS', Helvetica, Arial, sans-serif;
           color:var(--soft); display:none; z-index:11; }
@@ -877,8 +884,9 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep"></span>
+    <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
-  </span><div id="help"></div></div>
+  </span><div id="help"></div><div id="export"><button onclick="exportAs('svg')">SVG</button><button onclick="exportAs('png')">PNG</button><button onclick="exportAs('pdf')">PDF</button></div></div>
 <div id="view"></div>
 <div id="stale"></div>
 <div id="busy">checking…</div>
@@ -1699,6 +1707,69 @@ window.addEventListener("message", e => {
   else if (m.type === "chase-stale") stale(m.reason);
   else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
 });
+// Export: the whole diagram as it is drawn (what is open stays open), on a
+// white ground, the colors written out, so that the file stands alone.
+function exportMenu() {
+  const m = document.getElementById("export");
+  m.style.display = m.style.display === "flex" ? "none" : "flex";
+}
+function exported() {
+  const src = document.querySelector("#view > svg");
+  if (!src || !camera) return null;
+  const box = camera.getBBox(), pad = 16, w = Math.ceil(box.width + 2 * pad), h = Math.ceil(box.height + 2 * pad);
+  const svg = src.cloneNode(true);
+  svg.setAttribute("xmlns", NS);
+  svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  [...svg.children].filter(c => c.tagName === "rect").forEach(c => c.remove());   // the dots
+  const g = [...svg.children].find(c => c.tagName === "g");
+  g.setAttribute("transform", `translate(${pad - box.x},${pad - box.y})`);
+  const ground = document.createElementNS(NS, "rect");
+  ground.setAttribute("width", w); ground.setAttribute("height", h); ground.setAttribute("fill", "#fff");
+  svg.insertBefore(ground, g);
+  const style = document.createElementNS(NS, "style");
+  style.textContent = [...document.querySelectorAll("style")].map(x => x.textContent).join("\n");
+  svg.insertBefore(style, svg.firstChild);
+  svg.querySelectorAll("[data-tip]").forEach(e => e.removeAttribute("data-tip"));
+  const root = getComputedStyle(document.documentElement);
+  const text = new XMLSerializer().serializeToString(svg)
+    .replace(/var\((--[\w-]+)\)/g, (_, v) => root.getPropertyValue(v).trim() || "#000");
+  return { text, w, h };
+}
+let vscodeApi = null;
+function deliver(name, mime, data) {
+  if (typeof acquireVsCodeApi === "function") {      // in an editor: it asks where to save
+    vscodeApi = vscodeApi || acquireVsCodeApi();
+    vscodeApi.postMessage({ type: "chase-export", name, mime, data });
+    return;
+  }
+  const a = document.createElement("a");
+  a.download = name;
+  a.href = data.startsWith("data:") ? data : URL.createObjectURL(new Blob([data], { type: mime }));
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function exportAs(kind) {
+  document.getElementById("export").style.display = "none";
+  const e = exported();
+  if (!e) return;
+  const name = (DATA.title || "diagram").replace(/\.[^.]*$/, "").replace(/[^\w.-]+/g, "_");
+  if (kind === "svg") return deliver(name + ".svg", "image/svg+xml", e.text);
+  const img = new Image();
+  img.onload = () => {
+    const k = 2, c = document.createElement("canvas");
+    c.width = e.w * k; c.height = e.h * k;
+    const x = c.getContext("2d"); x.scale(k, k); x.drawImage(img, 0, 0);
+    if (kind === "png") return deliver(name + ".png", "image/png", c.toDataURL("image/png"));
+    // PDF: the vector page, through the print dialog of the browser ("Save as PDF"); in an
+    // editor, which cannot print, the editor writes it
+    if (typeof acquireVsCodeApi === "function")
+      return deliver(name + ".pdf", "application/pdf", JSON.stringify({ svg: e.text, w: e.w, h: e.h }));
+    let p = document.getElementById("print");
+    if (!p) { p = document.createElement("div"); p.id = "print"; p.style.display = "none"; document.body.appendChild(p); }
+    p.innerHTML = e.text;
+    window.print();
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(e.text);
+}
 // The explanations: shown by the page itself, since the tooltips of the
 // browser do not show in the webview of an editor.
 (function () {
