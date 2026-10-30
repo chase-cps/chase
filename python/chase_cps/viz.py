@@ -1111,7 +1111,7 @@ _PAGE = r"""<!doctype html>
   #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
          background:#1d2526; color:#fff; border-radius:4px; padding:5px 8px;
          font:12px/1.4 Helvetica, Arial, sans-serif; white-space:pre-wrap; }
-  #run { display:none; } #run .turn { display:none; } #run.busy .idle { display:none; }
+  #run, #runsep { display:none; } #run .turn { display:none; } #run.busy .idle { display:none; }
   #run.busy .turn { display:inline; transform-origin:8px 8px; animation:turn 0.9s linear infinite; }
   @keyframes turn { to { transform:rotate(360deg); } }
   .pending circle { fill:var(--soft); animation:dot 1.2s ease-in-out infinite; }
@@ -1153,13 +1153,13 @@ _PAGE = r"""<!doctype html>
 <div id="top"><div id="context"></div>
   <span class="tools">
     <button id="all" title="Open all" onclick="openAll(!allOpen)"><svg viewBox="0 0 16 16"><path d="M4.5 6.5 8 3l3.5 3.5M4.5 9.5 8 13l3.5-3.5"/></svg></button>
-    <span class="sep"></span>
     <button title="Fit the diagram to the window (0); the wheel zooms where it points, a drag moves" onclick="fit()"><svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5"/></svg></button>
     <span class="sep"></span>
     <button class="on" title="Names of the ports" onclick="flip(this, 'names')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (ranges, reals, bit vectors)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
+    <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
@@ -2131,7 +2131,10 @@ function runChecks() {
   vscodeApi = vscodeApi || acquireVsCodeApi();
   vscodeApi.postMessage({ type: busy ? "chase-stop" : "chase-check" });
 }
-if (inEditor()) document.getElementById("run").style.display = "inline-flex";
+if (inEditor()) {                  // the Check button, in a group of its own
+  document.getElementById("run").style.display = "inline-flex";
+  document.getElementById("runsep").style.display = "inline-block";
+}
 function deliver(name, mime, data) {
   if (typeof acquireVsCodeApi === "function") {      // in an editor: it asks where to save
     vscodeApi = vscodeApi || acquireVsCodeApi();
