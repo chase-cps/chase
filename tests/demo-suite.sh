@@ -65,6 +65,7 @@ if command -v yosys >/dev/null || command -v yowasp-yosys >/dev/null; then
     check "BufferSwap"            "python3 BufferSwap/bufferswap.py --expect"
 fi
 check "DATE18 in Python"      "python3 DATE18/eps.py --expect"
+check "FDL2024 in Python"     "python3 FDL2024/factory.py --expect"
 check "command line"          "chase-cps --version"
 check "python modules"        "python3 -c 'import pychase, pychase_backends, pychase_DSL, pychase_logicsLang'"
 exit $fail
