@@ -50,7 +50,7 @@ def test_negative_constants_in_the_logics_language():
     b = Contract.from_strings(name="B", inputs={"z": "bool"}, outputs={"u": "bool"},
                               guarantees=["G u"])
     c = a.compose(b, name="C")     # through the C++ library
-    assert [ltl.to_str(g) for g in c.guarantees] == ["G (w >= 0 - 0.8 & n > 0 - 3 -> z)", "G u"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G ((w >= 0 - 0.8 & n > 0 - 3) -> z)", "G u"]
 
 
 # Regions ----------------------------------------------------------------------
@@ -76,7 +76,7 @@ def test_regions_of_reals_compared_with_each_other():
     assert r.constants["a"] == r.constants["b"] == [30, 40]
     f = r.finite(q)
     assert f.variables == {"a": (0, 7), "b": (0, 7), "c": (0, 0)}
-    assert ltl.to_str(f.phi) == "G (a = b & a > 5)" and ltl.to_str(f.psi) == "G b > 2"
+    assert ltl.to_str(f.phi) == "G (a = b & a > 5)" and ltl.to_str(f.psi) == "G (b > 2)"
     # two ordered slots in each interval
     assert [r.value("a", i) for i in (3, 4)] == [Fraction(100, 3), Fraction(110, 3)]
 

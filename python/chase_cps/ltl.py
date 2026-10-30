@@ -411,8 +411,8 @@ def to_chase(node: Node) -> str:
         if bits(node) or function(node):
             raise ValueError(f"{'bits' if bits(node) else function(node)} of a word "
                              f"({to_str(node)}) are not in the logics language of CHASE")
-        # In the CHASE grammar G, F and X bind more loosely than the binary
-        # Boolean operators (G a -> b is G (a -> b)): always parenthesize.
+        # Always parenthesized: the logics language before 0.5.1 read
+        # G a -> b as G (a -> b).
         return f"({node.op} ({to_chase(node.arg)}))"
     op = node.op
     if op in WORD_OPS:
@@ -465,12 +465,26 @@ def _pretty(node: Node, outer: int) -> str:
         if function(node):
             return f"{node.op}({_pretty(node.arg, 0)})"
         sep = "" if node.op == "!" else " "
+        if isinstance(node.arg, Binary):        # G (x <= 4), not G x <= 4
+            return f"{node.op}{sep}({_pretty(node.arg, 0)})"
         return f"{node.op}{sep}{_pretty(node.arg, _UNARY_PRECEDENCE)}"
     prec, right_assoc = _BINARY[node.op]
     left = _pretty(node.left, prec + (1 if right_assoc else 0))
     right = _pretty(node.right, prec + (0 if right_assoc else 1))
+    # two different logical operators get parentheses, whatever their
+    # precedence: a -> (b | c), (a & b) U c
+    if node.op in _LOGICAL:
+        left, right = (f"({t})" if _mixed(node, c) and not t.startswith("(") else t
+                       for c, t in ((node.left, left), (node.right, right)))
     text = f"{left} {node.op} {right}"
     return f"({text})" if prec < outer else text
+
+
+_LOGICAL = BOOLEAN_BINARY + TEMPORAL_BINARY + ("xor",)
+
+
+def _mixed(node: Binary, child: Node) -> bool:
+    return isinstance(child, Binary) and child.op in _LOGICAL and child.op != node.op
 
 
 # Conversion from the CHASE AST (pychase) --------------------------------------

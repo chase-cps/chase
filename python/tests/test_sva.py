@@ -50,12 +50,12 @@ def skipped(prop, types=TYPES):
 def test_implications_and_delays():
     assert read("a |-> b") == "G (a -> b)"
     assert read("a |=> b") == "G (a -> X b)"
-    assert read("a ##1 b |-> c") == "G (a & X b -> X c)"
-    assert read("a |-> ##[1:2] b") == "G (a -> X b | X X b)"
+    assert read("a ##1 b |-> c") == "G ((a & X b) -> X c)"
+    assert read("a |-> ##[1:2] b") == "G (a -> (X b | X X b))"
     assert read("a |-> s_eventually b") == "G (a -> F b)"
-    assert read("a |-> (b until c)") == "G (a -> b U c | G b)"
-    assert read("a |-> (b s_until_with c)") == "G (a -> b U (b & c))"
-    assert read("a [*2] |=> b") == "G (a & X a -> X X b)"
+    assert read("a |-> (b until c)") == "G (a -> (b U c) | G b)"
+    assert read("a |-> (b s_until_with c)") == "G (a -> (b U (b & c)))"
+    assert read("a [*2] |=> b") == "G ((a & X a) -> X X b)"
     assert read("a ##[1:$] b |-> c") == "G (a -> G X (b -> c))"     # X G = G X
     assert read("a |-> strong(##[1:$] b)") == "G (a -> F X b)"
     assert read("not (a ##1 b)") == "G !(a & X b)"
@@ -63,42 +63,42 @@ def test_implications_and_delays():
 
 def test_disable_iff_is_accept_on():
     # the attempt passes when rst holds before it fails
-    assert read("disable iff (rst) a |=> b") == "G (a -> rst | X (b | rst))"
+    assert read("disable iff (rst) a |=> b") == "G (a -> (rst | X (b | rst)))"
     assert read("disable iff (rst) a") == "G (a | rst)"
 
 
 def test_past_and_the_first_cycle():
     r = parse_sva("P: assert property (@(posedge clk) x == $past(x));", inputs=TYPES)
     p = r.properties[0]
-    assert ltl.to_str(p.formula) == "G x' = x" and p.from_cycle == 1
+    assert ltl.to_str(p.formula) == "G (x' = x)" and p.from_cycle == 1
     assert read("a |=> x == $past(x)") == "G (a -> x' = x)"       # the past exists: cycle 0
-    assert read("$rose(a) |-> b") == "G (X a & !a -> X b)"
-    assert read("$stable(x)") == "G x' = x"
-    assert read("$changed(x)") == "G x' != x"
+    assert read("$rose(a) |-> b") == "G ((X a & !a) -> X b)"
+    assert read("$stable(x)") == "G (x' = x)"
+    assert read("$changed(x)") == "G (x' != x)"
     # values two cycles apart: past(x, n)
     r = parse_sva("P: assert property (@(posedge clk) x == $past(y, 2));", inputs=TYPES)
     p = r.properties[0]
-    assert ltl.to_str(p.formula) == "G X X x = past(y, 2)" and p.from_cycle == 2
-    assert read("a |=> x == $past(y, 3)") == "G (X X a -> X X X x = past(y, 3))"
+    assert ltl.to_str(p.formula) == "G X X (x = past(y, 2))" and p.from_cycle == 2
+    assert read("a |=> x == $past(y, 3)") == "G (X X a -> X X X (x = past(y, 3)))"
 
 
 def test_widths_of_verilog():
     # the constant 1 has 32 bits: x + 1 does not wrap around in 4 bits
-    assert read("x + 1 > y") == "G extend(x, 1) + 1 > extend(y, 1)"
-    assert read("(x + y) == 4'd3") == "G x + y = 3"                 # 4 bits: wraps
-    assert read("x == 3") == "G x = 3"
-    assert read("x < 300") == "G extend(x, 5) < 300"
+    assert read("x + 1 > y") == "G (extend(x, 1) + 1 > extend(y, 1))"
+    assert read("(x + y) == 4'd3") == "G (x + y = 3)"                 # 4 bits: wraps
+    assert read("x == 3") == "G (x = 3)"
+    assert read("x < 300") == "G (extend(x, 5) < 300)"
     assert read("{a, b} == 2'b10") == "G (a & !b)"
-    assert read("x[3:2] == 2'b01") == "G x[3:2] = 1"
-    assert read("$onehot0({a, b})") == "G (a & !b | !a & b | !a & !b)"
-    assert read("x inside {1, [3:5]}") == "G (x = 1 | x >= 3 & x <= 5)"
-    assert read("(a ? x : y) == 4'd2") == "G (a & x = 2 | !a & y = 2)"
+    assert read("x[3:2] == 2'b01") == "G (x[3:2] = 1)"
+    assert read("$onehot0({a, b})") == "G ((a & !b) | (!a & b) | (!a & !b))"
+    assert read("x inside {1, [3:5]}") == "G (x = 1 | (x >= 3 & x <= 5))"
+    assert read("(a ? x : y) == 4'd2") == "G ((a & x = 2) | (!a & y = 2))"
     assert read("x == (1 << y[1:0])") == \
-        "G (y[1:0] = 0 & x = 1 | y[1:0] = 1 & x = 2 | y[1:0] = 2 & x = 4 | y[1:0] = 3 & x = 8)"
+        "G ((y[1:0] = 0 & x = 1) | (y[1:0] = 1 & x = 2) | (y[1:0] = 2 & x = 4) | (y[1:0] = 3 & x = 8))"
     signed = {"s": "signed word[4]", "t": "signed word[4]", "x": "word[4]"}
-    assert read("s < t", signed) == "G s < t"
+    assert read("s < t", signed) == "G (s < t)"
     # signed and unsigned: the comparison is unsigned
-    assert read("s < x", signed) == "G unsigned(s) < x"
+    assert read("s < x", signed) == "G (unsigned(s) < x)"
 
 
 def test_count_overflows_as_in_verilog():
@@ -108,7 +108,7 @@ def test_count_overflows_as_in_verilog():
     endmodule"""
     r = parse_sva(text)
     f = r.contract.guarantees[0]
-    assert ltl.to_str(f) == "G extend(count', 1) = extend(count, 1) + 1"
+    assert ltl.to_str(f) == "G (extend(count', 1) = extend(count, 1) + 1)"
     if HAS_MC:
         v = {"count": "word[8]"}
         assert implies(f, "G (count < 255)", v).status == "valid"
@@ -133,10 +133,10 @@ def test_a_module():
     assert c.name == "m" and r.clock == "posedge clk"
     assert c.inputs == {"data": "word[4]", "req": "bool", "rst": "bool"}
     assert c.outputs == {"gnt": "bool"}
-    assert [ltl.to_str(f) for f in c.assumptions] == ["G (req -> rst | X (req -> rst))"]
+    assert [ltl.to_str(f) for f in c.assumptions] == ["G (req -> (rst | X (req -> rst)))"]
     assert [ltl.to_str(f) for f in c.guarantees] == [
-        "G (req -> rst | X (gnt | rst) | X rst | X X (gnt | rst))",
-        "G (gnt & !req -> data != 0 | rst)"]
+        "G (req -> (rst | X (gnt | rst) | X rst | X X (gnt | rst)))",
+        "G ((gnt & !req) -> (data != 0 | rst))"]
     assert len(r.covers) == 1 and "immediate" in r.skipped[0].reason
 
 
@@ -436,7 +436,7 @@ def test_packed_arrays_and_hierarchical_names():
     r = parse_sva(text, inputs={"u1.state": "word[2]", "u1.busy": "bool"})
     assert not r.skipped
     assert [ltl.to_str(p.formula) for p in r.properties] == [
-        "G o = data[23:16]", "G (data[7:7] -> ok)", "G data[31:16] = 43981",
+        "G (o = data[23:16])", "G (data[7:7] -> ok)", "G (data[31:16] = 43981)",
         "G (cube[23:20] = 5 & cube[3:3])", "G (u1__state != 3 | X u1__busy)"]
     assert r.contract.inputs["data"] == "word[32]" and r.contract.inputs["cube"] == "word[24]"
     assert r.names == {"u1__busy": "u1.busy", "u1__state": "u1.state"}
@@ -455,7 +455,7 @@ def test_past_two_cycles_back():
     endmodule"""
     c = parse_sva(text).contract
     v = c.variables
-    assert ltl.to_str(c.guarantees[0]) == "G X X q = past(d, 2)"
+    assert ltl.to_str(c.guarantees[0]) == "G X X (q = past(d, 2))"
     # two flip-flops: q is d two cycles before
     assert implies("G (m' = d & q' = m)", c.guarantees[0], {**v, "m": "word[8]"}).status \
         == "valid"

@@ -11,12 +11,31 @@ Added:
   refinement that fails names the terms its counterexample violates, with
   how much for the terms that compare numbers (`violated`).
 
+Changed:
+
+- The logics language (specification files, `.ltl`) has the precedence of
+  LTL tools and of the Python syntax: from the tightest, `! G F X`, then
+  `U R`, `&`, `|`, `->`, `<->`; `U`, `R`, `->` group to the right. Before,
+  all the binary operators had the same precedence and `G`, `F`, `X` were
+  looser than them, so `G a -> b` was `G (a -> b)`; it is now
+  `(G a) -> b`. In arithmetic, `*` and `/` now come before `+` and `-`.
+  Every specification file of the demos and the tests reads the same as
+  before (they have parentheses).
+- Formulas are printed with the parentheses a reader needs, whatever the
+  precedence: two different logical operators (`a -> (b | c)`,
+  `(a & b) U c`), and a comparison or a binary formula under a unary
+  operator (`G (x <= 4)`, `X (x' = y)`). The diagrams, the results, and the
+  messages show them so.
+
 Fixed:
 
 - `a = b` and `a != b` between Booleans (`G (w != c)`, `G (w -> (c' = c))`)
   made realizability and synthesis unknown, with the error of the parser
   of slugs as the reason: structured slugs compares only numbers. They are
   now written `a <-> b` and `!(a <-> b)`.
+- A diagram of a contract whose A & G is unsatisfiable drew the tags A and
+  G twice after `verify`: the checks that `verify` runs to tell which part
+  fails were kept on the contract too. Only the check called is kept now.
 
 ## 0.5.0 (2026-10-30)
 

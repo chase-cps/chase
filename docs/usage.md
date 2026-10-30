@@ -58,8 +58,13 @@ CONTRACT Spec:
 - `P(...)` (a probability) is read by logics_tool, but no check takes it:
   the Python package refuses a contract that has one.
 
-All the binary operators have the same precedence, and `G`, `F`, `X` bind
-looser than them: `G a -> b` is `G (a -> b)`. Parentheses avoid surprises.
+The operators have the precedence of LTL tools (Spot, NuSMV, nuXmv), the
+same as in Python, from the tightest: `! G F X`, then `U R`, `&`, `|`,
+`->`, `<->`; `U`, `R` and `->` group to the right. So `G a -> b` is
+`(G a) -> b`; write `G (a -> b)`. Before 0.5.1 the logics language had
+its own precedence (all the binary operators at the same level, and `G`,
+`F`, `X` looser than them); the files of the demos have parentheses and
+read the same.
 
 A problem written in the domain-specific language of CHASE (the patterns of
 electric power systems, `DATE18/` and `FDL2024/` in the demos) is read by
@@ -75,7 +80,8 @@ until) and the aliases `[]` (`G`), `<>` (`F`), `&&`, `||`, `=>`, `<=>`,
 `==`. They
 have the usual precedence, from the loosest: `<->`, `->`, `|` `xor`, `&`,
 `U R W`, the unary operators, the relations, `<< >>`, `+ -`, `* / mod`,
-`::`, the bits `x[7:0]`. So `G a -> b` is `(G a) -> b`. Names cannot be
+`::`, the bits `x[7:0]`. `->` and `U R W` group to the right. So
+`G a -> b` is `(G a) -> b`, in Python and in specification files. Names cannot be
 keywords of either syntax (`G`, `F`, `X`, `U`, `R`, `W`, `P`, `NAME`,
 `CONTRACT`, `mod`, `xor`, ...). Numbers may have a fraction (`20.5`); they
 are read exactly. The operators of words are below (Words).

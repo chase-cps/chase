@@ -306,12 +306,12 @@ def test_real_variables_and_numbers_are_read_exactly():
     from chase_cps import parse_spec
     c = parse_spec(REAL_SPEC.format(decl="real variable n;", bound="20.5"))["One"]
     assert c.outputs == {"n": "real"}
-    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 20.5)"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F (n <= 20.5))"]
     c = parse_spec(REAL_SPEC.format(decl="integer variable n;", bound="20.0"))["One"]
-    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 20)"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F (n <= 20))"]
     c = parse_spec(REAL_SPEC.format(decl="real constant K 2.5;\nreal variable n;",
                                     bound="K"))["One"]
-    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F n <= 2.5)"]
+    assert [ltl.to_str(g) for g in c.guarantees] == ["G (req -> F (n <= 2.5))"]
     with pytest.raises(ValueError, match="range"):
         parse_spec(REAL_SPEC.format(decl="real (0:5) variable n;", bound="2"))
     with pytest.raises(RuntimeError, match="integer constant"):
@@ -749,9 +749,9 @@ def test_remove_redundant_for_synthesis():
     p = Contract.from_strings(inputs=["x"], outputs={"b": (0, 3)},
                               guarantees=["G (b = 3)", "G (b < 3 -> (b < b' & b' < 3))"],
                               name="Paper")
-    assert [ltl.to_str(t) for t in remove_redundant(p).removed_guarantees] == ["G b = 3"]
+    assert [ltl.to_str(t) for t in remove_redundant(p).removed_guarantees] == ["G (b = 3)"]
     assert [ltl.to_str(t.term) for t in remove_redundant(p, synth=True).removed] == \
-        ["G (b < 3 -> b < b' & b' < 3)"]
+        ["G (b < 3 -> (b < b' & b' < 3))"]
     n = Contract.from_strings(inputs=["req"], outputs=["grant"],
                               guarantees=["G (req -> F grant)"], name="N")
     v = remove_redundant(n, synth=True)
@@ -1177,8 +1177,8 @@ def _guarantees_of(*terms):
 def test_bounded_temporal_operators_unfold_into_next():
     assert _guarantees_of("G[0,2] (x -> y)") == ["x -> y", "X (x -> y)", "X X (x -> y)"]
     assert _guarantees_of("G(x -> F]1,2] y)") == ["G (x -> X X y)"]     # ]1: step 1 left out
-    assert _guarantees_of("(x U[0,2] y)") == ["y | x & X (y | x & X y)"]
-    assert _guarantees_of("(x U[1,2] y)") == ["x", "X (y | x & X y)"]
+    assert _guarantees_of("(x U[0,2] y)") == ["y | (x & X (y | (x & X y)))"]
+    assert _guarantees_of("(x U[1,2] y)") == ["x", "X (y | (x & X y))"]
     assert _guarantees_of("F[2,2[ y") == ["false"]                       # no step
     for bad, why in [("X[0,2] y", "X with an interval"), ("G[0,2.5] y", "whole numbers"),
                      ("G[0,5000] y", "more than 1000 steps")]:
@@ -1209,7 +1209,7 @@ def test_release_in_a_specification():
             "print(t._guarantees_of('(x R y)', 'G (x R[0,1] y)'))" % os.path.dirname(__file__))
     p = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
     assert p.returncode == 0, f"the parser crashed on R (exit {p.returncode})"
-    assert p.stdout.strip().splitlines()[-1] == "['x R y', 'G !(!y | !x & X !y)']"
+    assert p.stdout.strip().splitlines()[-1] == "['x R y', 'G !(!y | (!x & X !y))']"
 
 
 @needs_native
@@ -1223,3 +1223,17 @@ def test_a_problem_in_the_domain_specific_language():
     assert len(c.inputs) == 11 and len(c.outputs) == 7
     assert len(c.assumptions) == 24 and len(c.guarantees) == 26
     assert c.name == "template_0_realizable" and load_dsl(path, name="EPS").name == "EPS"
+
+
+@needs_native
+@pytest.mark.parametrize("formula", [
+    "G a -> b", "a | b & c", "X a | b", "a & b U c", "a -> b -> c", "!a U b",
+    "a U b U c", "F a <-> G b | c", "n + 2 * m > 3", "n - m - 1 = 0"])
+def test_specification_files_read_formulas_as_python(formula):
+    # the logics language has the precedence of LTL tools, as the Python syntax
+    from chase_cps import ltl, parse_spec
+    text = ("NAME: t;\ninput boolean variable a;\ninput boolean variable b;\n"
+            "output boolean variable c;\ninput integer variable n;\ninput integer variable m;\n"
+            f"CONTRACT C:\nAssumptions:\ntrue;\nGuarantees:\n{formula};\n")
+    got = parse_spec(text)["C"].guarantee
+    assert ltl.to_str(got) == ltl.to_str(ltl.conjunction(ltl.conjuncts(ltl.parse(formula))))
