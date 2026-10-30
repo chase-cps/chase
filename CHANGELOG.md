@@ -28,6 +28,13 @@ Added:
   (`--no-checks`); with `--serve`, the page takes each new drawing in place
   and keeps its view, and keeps the last diagram when the file cannot be
   drawn. The explanations of the page show in the webview of an editor too.
+- `chase-cps view --check` checks that the assumptions and the guarantees
+  of each contract can hold together (A∧G, with the core in red when they
+  cannot), and the refinements, implementations, and environments drawn.
+  The results are kept next to the file (`FILE.results.json`, readable
+  JSON), found by a hash of what each check reads: a check of contracts that
+  have not changed is not run again. `--budget` limits the time of the
+  checks.
 - `chase-cps view` puts the contracts of a file together by their ports,
   as Lingua Franca does: an output and an input of the same name are wired,
   contracts with the same ports are versions of one part (the first one is

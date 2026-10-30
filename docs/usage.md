@@ -842,10 +842,18 @@ makes the same diagram in Python. The options:
   modules).
 - `--environment MODEL C`: draws the model as an environment of C.
 - `--open C...`: draws these contracts open.
-- `--check`: checks the refinements, the implementations (M ⊨ C), and the
-  environments.
-- `--verify`, `--realizable`: check each contract drawn.
+- `--check`: checks that the assumptions and the guarantees of each
+  contract can hold together (A∧G; when they cannot, the core is marked
+  in red), and the refinements, the implementations (M ⊨ C), and the
+  environments drawn.
+- `--verify`, `--realizable`: check each contract drawn (A and G, R).
 - `--timeout S`: seconds for each check.
+- `--budget S`: no check starts after S seconds; the checks left are not
+  marked.
+- `--results FILE`: where the results of `--check` are kept; by default
+  next to the file (`charger.ltl` → `charger.results.json`). A check whose
+  contracts and models have not changed is not run again: its result is
+  read from the file. `--no-results` keeps none.
 - `--no-checks`: leaves the checks out (an editor draws the structure as
   one types, and the checks when the file is saved).
 - `-o PAGE`: the page written (default: FILE with `.html`).
@@ -891,7 +899,8 @@ The diagrams are also drawn by the MCP server of CHASE (the `visualize`
 tool of chase-mcp, for AI agents). An extension for VS Code, which shows
 the diagram of a specification, or of a Python script that calls
 `viz.show`, beside the editor, will follow: it draws the structure again as
-one types and the checks on save, marks the errors in the text, goes from a
+one types and the checks when the file opens and on save (within a few
+seconds, the rest with its Check button), marks the errors in the text, goes from a
 box, or a term of an open box (the terms of a core among them), to its line
 (a double click), and from the text to its box and term (the cursor). The
 terms of a file of the logics language or of SystemVerilog Assertions know

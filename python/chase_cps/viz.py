@@ -1089,6 +1089,12 @@ _PAGE = r"""<!doctype html>
   #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
          background:#1d2526; color:#fff; border-radius:4px; padding:5px 8px;
          font:12px/1.4 Helvetica, Arial, sans-serif; white-space:pre-wrap; }
+  #run { display:none; } #run .turn { display:none; } #run.busy .idle { display:none; }
+  #run.busy .turn { display:inline; transform-origin:8px 8px; animation:turn 0.9s linear infinite; }
+  @keyframes turn { to { transform:rotate(360deg); } }
+  .pending circle { fill:var(--soft); animation:dot 1.2s ease-in-out infinite; }
+  .pending circle:nth-of-type(2) { animation-delay:0.2s; } .pending circle:nth-of-type(3) { animation-delay:0.4s; }
+  @keyframes dot { 0%, 80%, 100% { opacity:0.2; } 40% { opacity:1; } }
   #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:5px 12px;
           border-radius:12px; background:var(--teal); color:#fff; font:600 12px Helvetica, Arial, sans-serif;
           box-shadow:0 1px 4px rgba(0,0,0,.2); }
@@ -1132,6 +1138,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Types of the ports (ranges, reals, bit vectors)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
     <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
+    <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
@@ -1144,6 +1151,7 @@ _PAGE = r"""<!doctype html>
 __ELK__
 <script>
 let DATA = __DATA__;
+let busy = false;               // checks running in the editor (setBusy)
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
@@ -1302,6 +1310,14 @@ function tag(g, x, y, s, status) {
   else { const t = text(g, x + 6, y + 11.8, "", s);
          t.setAttribute("style", "font:" + FONT_T + ";fill:" + ink); }
   return tagWidth(s);
+}
+// A check running: a tag as wide as its result will be, with three dots.
+function pending(g, x, y, s) {
+  const w = tagWidth(s), p = el("g", { class: "pending" }, g);
+  el("rect", { x, y, width: w, height: 16, rx: 4, fill: "#fff", stroke: "var(--line)", "stroke-width": 1 }, p);
+  [-5, 0, 5].forEach(d => el("circle", { cx: x + w / 2 + d, cy: y + 8, r: 1.6 }, p));
+  tip(p, (WHAT[s] || s) + " — being checked");
+  return w;
 }
 const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
 const WHAT = { "A": "compatible: the assumptions A are satisfiable",
@@ -1495,6 +1511,8 @@ function drawNode(g, e, ox, oy) {
     if (c.core) { t.setAttribute("class", "icon");
       t.onclick = () => { if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
+  if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A"))
+    ix += pending(el("g", {}, box), ix, y + 6, "A∧G") + 4;    // A ∧ G, being checked
   let rx = x + e.width - PAD;
   if (inside(n)) {             // fold: hide or show the boxes inside
     const f = el("g", { class: "icon" }, box), shut = folded.has(n.id), cx = rx - ICON / 2, cy = y + 14;
@@ -1509,7 +1527,8 @@ function drawNode(g, e, ox, oy) {
     rx -= ICON + 6;
   }
   if (n.badge && show.checks) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
-    tag(b, rx - w, y + 6, n.badge.text, n.badge.status);
+    if (busy && !n.badge.status) pending(b, rx - w, y + 6, n.badge.text);
+    else tag(b, rx - w, y + 6, n.badge.text, n.badge.status);
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
            + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
     if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
@@ -2044,7 +2063,7 @@ window.addEventListener("message", e => {
   else if (m.type === "chase-checks") setChecks(m.data).catch(err => stale("Cannot draw the checks: " + err));
   else if (m.type === "chase-stale") stale(m.reason);
   else if (m.type === "chase-select") select(m.line, true, m.at);
-  else if (m.type === "chase-busy") document.getElementById("busy").style.display = m.on ? "block" : "none";
+  else if (m.type === "chase-busy") setBusy(m.on);
 });
 // Export: the whole diagram as it is drawn (what is open stays open), on a
 // white ground, the colors written out, so that the file stands alone.
@@ -2076,6 +2095,21 @@ function exported() {
   return { text, w, h };
 }
 let vscodeApi = null;
+// The checks run by the editor: the button starts them (or stops them), and
+// the places where their results will be show three dots meanwhile.
+function setBusy(on) {
+  busy = !!on;
+  document.getElementById("run").classList.toggle("busy", busy);
+  document.getElementById("run").title = busy ? "Checking… Click to stop"
+    : "Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn";
+  if (DATA) render();
+}
+function runChecks() {
+  if (!inEditor()) return;
+  vscodeApi = vscodeApi || acquireVsCodeApi();
+  vscodeApi.postMessage({ type: busy ? "chase-stop" : "chase-check" });
+}
+if (inEditor()) document.getElementById("run").style.display = "inline-flex";
 function deliver(name, mime, data) {
   if (typeof acquireVsCodeApi === "function") {      // in an editor: it asks where to save
     vscodeApi = vscodeApi || acquireVsCodeApi();

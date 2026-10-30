@@ -223,3 +223,31 @@ def test_a_core_goes_to_its_lines(browser, tmp_path, monkeypatch):
         page.mouse.dblclick(x, y)
         assert posted(page) == [{"type": "chase-reveal", "line": line}]
     assert not errors, errors
+
+
+@pytest.mark.skipif(not SPECS, reason="the demos are not checked out")
+def test_the_check_button_and_the_checks_running(browser, tmp_path, monkeypatch):
+    path = next(f for f in SPECS if f.endswith("charger.ltl"))
+    monkeypatch.chdir(os.path.dirname(path))
+    page, errors = open_page(browser, tmp_path, viz.from_spec(path))
+    run = page.locator("#run")
+    assert run.is_visible()
+    run.click()
+    assert page.evaluate("window.posted.splice(0)") == [{"type": "chase-check"}]
+    page.evaluate("m => window.postMessage(m, '*')", {"type": "chase-busy", "on": True})
+    page.wait_for_timeout(300)
+    # three dots where each result will be: A ∧ G of each contract, the ⪯ of the system
+    boxes_with_contract = page.evaluate("DATA.nodes.length + DATA.nodes.reduce((k, n) => k + (n.children || []).length, 0)")
+    dots = page.evaluate("document.querySelectorAll('.pending').length")
+    assert dots == boxes_with_contract + 1
+    widths = page.evaluate("""() => [...document.querySelectorAll('.pending rect')].map(r => +r.getAttribute('width'))""")
+    assert set(widths) <= {page.evaluate("tagWidth('A∧G')"), page.evaluate("tagWidth('⪯')")}
+    run.click()                                                            # while busy: stop
+    assert page.evaluate("window.posted.splice(0)") == [{"type": "chase-stop"}]
+    page.evaluate("m => window.postMessage(m, '*')", {"type": "chase-busy", "on": False})
+    page.wait_for_timeout(300)
+    assert page.evaluate("document.querySelectorAll('.pending').length") == 0
+    assert not errors, errors
+    # not in an editor: no button
+    plain, errors = open_page(browser, tmp_path, viz.from_spec(path), editor=False)
+    assert not plain.locator("#run").is_visible() and not errors
