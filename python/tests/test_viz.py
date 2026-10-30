@@ -511,3 +511,21 @@ def test_the_terms_of_a_file_go_to_their_lines(tmp_path):
     assert box["source"] == {"line": 1, "A": [], "G": [[7, 7], [7, 7], [8, 8]]}
     page = viz.html(viz.from_spec(str(spec)))
     assert 'data-line' in page and '"chase-select"' in page
+
+
+@needs_native
+def test_a_contract_drawn_inside_another_is_not_drawn_again(tmp_path):
+    spec = tmp_path / "j.ltl"
+    spec.write_text("# view: --refines A+B C\nNAME: j;\n"
+                    "CONTRACT A:\n  input boolean variable x;\n  output boolean variable y;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> y);\n"
+                    "CONTRACT B:\n  input boolean variable y;\n  output boolean variable z;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (y -> z);\n"
+                    "CONTRACT C:\n  input boolean variable x;\n  output boolean variable z;\n"
+                    "  Assumptions:\n    true;\n  Guarantees:\n    G (x -> z);\n")
+    out = tmp_path / "j.json"
+    assert main(["view", str(spec), "--format", "json", "--no-checks", "-o", str(out)]) == 0
+    tops = [n["title"] for n in json.loads(out.read_text())["nodes"]]
+    assert tops == ["C"]
+    assert main(["view", str(spec), "--format", "json", "--no-checks", "--contracts", "A", "-o", str(out)]) == 0
+    assert "A" in [n["title"] for n in json.loads(out.read_text())["nodes"]]

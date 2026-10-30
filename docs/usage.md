@@ -833,8 +833,9 @@ Assertions (`.sv`), or a Verilog module (`.v`, or `.sv` without assertions),
 drawn with the state machine of its registers. `viz.from_spec(path, ...)`
 makes the same diagram in Python. The options:
 
-- `--contracts C...`: the contracts drawn (default: all; `NAME+NAME` for a
-  composition).
+- `--contracts C...`: the contracts drawn (`NAME+NAME` for a composition).
+  By default, all the contracts of the file, but those drawn inside another
+  box by `--refines`.
 - `--refines R A`: draws R inside A.
 - `--implementation MODEL C`: draws C as a component with its model: SMV,
   JSON, or RTL read with Yosys (`FILE:MODULE` when the file has several

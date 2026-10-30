@@ -654,7 +654,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
               open: Iterable = (), implementations: Iterable = ()) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
-    JSON). ``contracts`` are the contracts to draw (default: all), each a
+    JSON). ``contracts`` are the contracts to draw (default: all, but those
+    drawn inside another box by ``refines``), each a
     name or names joined by + for their composition; ``refines`` lists
     (refined, abstract) names, drawn one inside the other; ``environments``
     lists (model file, contract): an SMV or JSON state machine, or a
@@ -679,9 +680,6 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         if expression not in made:
             made[expression] = _contract(expression, spec)
         return made[expression]
-    items = [get(e) for e in (list(contracts) or list(spec))]
-    pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
-             for a, b in refines]
     def written(c, out):              # the contracts of the file in c, in order
         if c.origin:
             for o in c.origin[1]:
@@ -689,6 +687,13 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         elif all(x is not c for x in out):
             out.append(c)
         return out
+    pairs = [(get(a), get(b), _checks_.refines(get(a), get(b), timeout=timeout).status if check else None)
+             for a, b in refines]
+    if contracts:
+        items = [get(e) for e in contracts]
+    else:                             # all, but those drawn inside another box
+        inside = [x for r, _, _ in pairs for x in written(r, [])]
+        items = [get(e) for e in spec if all(get(e) is not x for x in inside)]
     atoms = []
     for c in items + [x for a, b, _ in pairs for x in (a, b)]:
         written(c, atoms)
@@ -1804,6 +1809,13 @@ function help() {
                 text(s, 29, 7, "w", "8"); }, "bus, with its width");
   sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#c07a14", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, s),
          "input that nobody drives");
+  if (DATA.nodes.some(n => n.source)) {   // drawn from a file: how to draw more of it
+    const d = document.createElement("div");
+    d.style.cssText = "margin-top:8px; line-height:1.5";
+    d.innerHTML = "to draw A and B composed, inside C, and check it, write at the top of the file:<br>"
+      + "<code># view: --refines A+B C --check</code>";
+    h.appendChild(d);
+  }
   h.style.display = "block";
 }
 function svgDefsHatch(s) {
