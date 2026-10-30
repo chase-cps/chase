@@ -8,6 +8,9 @@ Fixed:
   made realizability and synthesis unknown, with the error of the parser
   of slugs as the reason: structured slugs compares only numbers. They are
   now written `a <-> b` and `!(a <-> b)`.
+- A diagram of a contract whose A & G is unsatisfiable drew the tags A and
+  G twice after `verify`: the checks that `verify` runs to tell which part
+  fails were kept on the contract too. Only the check called is kept now.
 
 ## 0.5.0 (2026-10-30)
 

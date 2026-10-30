@@ -634,3 +634,16 @@ def test_a_part_not_written_yet_is_a_hole(tmp_path):
     assert top["title"] == "S" and [n["kind"] for n in top["children"]] == ["contract", "contract", "hole"]
     hole = top["children"][2]
     assert hole["outputs"] == ["u"]
+
+
+@pytest.mark.skipif(not HAS_MC, reason="nuXmv/NuSMV not installed")
+def test_a_failed_verify_draws_three_tags():
+    # verify checks A and G when A & G is unsat; only verify is kept on the
+    # contract, so the box has A, G, A∧G once each
+    from chase_cps import verify
+    c = Contract.from_strings(inputs=["req"], outputs=["deploy"], assumptions=["G F req"],
+                              guarantees=["G (req -> F deploy)", "G !deploy"])
+    assert not verify(c)
+    assert [kind for kind, _, _ in c.checked()] == ["verify"]
+    names = [t["name"] for t in viz.diagram(c)["nodes"][0]["checks"]]
+    assert sorted(names) == ["A", "A∧G", "G"]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import re
@@ -880,6 +881,9 @@ def _context_key(context) -> str | None:
     return json.dumps(sorted(ltl.to_str(ltl.parse(f) if isinstance(f, str) else f) for f in items))
 
 
+_checking = contextvars.ContextVar("chase_checking", default=0)
+
+
 def _remembered(check: str, other: str | None = None):
     """The check function, with its result kept on the contract it checks
     (its first argument), with what the contract said then: the check of a
@@ -893,7 +897,15 @@ def _remembered(check: str, other: str | None = None):
 
         @functools.wraps(f)
         def run(*args, **kwargs):
-            result = f(*args, **kwargs)
+            # only the check called is kept, not the checks it calls (verify
+            # calls is_compatible and is_consistent when A & G is unsat)
+            token = _checking.set(_checking.get() + 1)
+            try:
+                result = f(*args, **kwargs)
+            finally:
+                _checking.reset(token)
+            if _checking.get():
+                return result
             given = dict(zip(names, args), **kwargs)
             c = given.get(names[0])
             if isinstance(c, Contract):
