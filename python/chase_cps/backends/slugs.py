@@ -85,6 +85,12 @@ class SlugsAdapter(Adapter):
         problem = gr1_roles(query.contract)
         if problem:
             return Result(UNKNOWN, self.name, reason=f"cannot encode for slugs: {problem}")
+        from ..gr1spec import _operators
+        for t in list(c.assumptions) + list(c.guarantees):   # what the compiler of slugs cannot read
+            ops = _operators(t) & {"-", "*", "/", "mod", "neg"}
+            if ops:
+                return Result(UNKNOWN, self.name, reason=f"slugs has no {', '.join(sorted(ops))} (in "
+                              f"{ltl.to_str(t)}): write it with + (x' + 1 >= x for x' >= x - 1)")
         try:
             structured = self.emit(query)
         except RuntimeError as e:   # the contract is not in a GR(1) form
