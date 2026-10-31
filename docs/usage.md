@@ -684,7 +684,10 @@ For `R <= S`, CHASE checks at the samples the assumptions of `R` and the
 guarantees of `S` made stricter (`sampled`), against the guarantees of `R`
 and the assumptions of `S` made weaker (`known=True`). A term of `R` that
 speaks of the samples themselves (`x' = x + u`, the model of a plant in
-steps) stays as it is.
+steps) stays as it is. The margins are a sufficient condition: the
+check says valid (it holds between the samples too) or unknown (not shown),
+never invalid; the same check without `--lipschitz` says whether it fails
+at the samples already.
 
 `chase-cps view FILE --period SECONDS` (or `# view: --period SECONDS` in the
 file) draws the steps of a counterexample as times, `t = step x SECONDS`.
