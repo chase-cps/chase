@@ -1014,7 +1014,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     from . import checks as _checks_
     from . import gr1
     from .cli import _contract, _model, _read
-    spec = _read(path)
+    spec = _read(path, period)
     if path.endswith(".c") and not implementations:   # each function with its code
         implementations = [(f"{path}:{name}", name) for name in spec]
     if path.endswith(".smv") and not implementations:  # the module with its specifications
@@ -1816,9 +1816,10 @@ function terms(c, out, core, src) {
   const part = (tag, fs, hit, at) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
     out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
   if (c.K) part("θ", c.K, []);           // the parameters (named constants) and their values
-  part("A", c.A, core ? core.A : [], src && src.A);
-  if (c.E) part("E", c.E, []);
-  else part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
+  if (c.E) { part("A", c.A, core ? core.A : [], src && src.A); part("E", c.E, []); return; }
+  // no assumption is A = true, as no guarantee is G = true: both written
+  part("A", c.A.length ? c.A : ["true"], core ? core.A : [], c.A.length && src && src.A);
+  part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
 }
 function focused(n) {
   if (show.checks && n.id in focus) return n.checks[focus[n.id]].core;
@@ -1936,11 +1937,14 @@ const WHAT = { "A": "compatible: the assumptions A are satisfiable",
 const checks = n => show.checks && n.checks ? n.checks : [];
 
 const MODELS = {};       // the layout of each open model drawn in its box
+// the tag of A ∧ G while the checks run, on a box that has none yet
+const pendingTag = n => busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A");
 function size(n) {
   const ls = lines(n);
   const top = textWidth(n.title, FONT_H) + icons(n).length * (ICON + 4) + 14
             + checks(n).reduce((w, c) => w + tagWidth(c.name) + 4, checks(n).length ? 6 : 0)
-            + (n.badge && show.checks ? tagWidth(n.badge.text) + 18 : 0) + (inside(n) ? ICON + 6 : 0);
+            + (n.badge && show.checks ? tagWidth(n.badge.text) + 18 : 0) + (inside(n) ? ICON + 6 : 0)
+            + (pendingTag(n) ? tagWidth("A∧G") + 4 : 0);      // the A ∧ G being checked, for a while
   let w = Math.max(top, ...ls.map(lineWidth)) + 2 * PAD;
   let h = HEAD + ls.length * LINE + (ls.length ? 8 : 0);
   if (folded.has(n.id)) h = Math.max(h, HEAD + 10);
@@ -2120,7 +2124,7 @@ function drawNode(g, e, ox, oy) {
                                      return openRepair(n, c.name); }
         if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
-  if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A")) {
+  if (pendingTag(n)) {
     const known = (progressed[n.contract.name] || {})["A∧G"];   // A ∧ G: known already, or being checked
     ix += (known ? tag(el("g", {}, box), ix, y + 6, "A∧G", known) : pending(el("g", {}, box), ix, y + 6, "A∧G")) + 4;
   }

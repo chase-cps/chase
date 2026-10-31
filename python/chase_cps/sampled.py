@@ -29,6 +29,7 @@ property holds in continuous time for every behavior.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from fractions import Fraction
 from typing import Mapping, Optional, Union
@@ -59,13 +60,19 @@ _FLIP = {"<": ">=", "<=": ">", ">": "<=", ">=": "<", "=": "!=", "!=": "="}
 _DUAL = {"&": "|", "|": "&", "G": "F", "F": "G", "U": "R", "R": "U"}
 
 
-def sampled(formula: str, lipschitz: Union[Mapping, float], period) -> str:
+def sampled(formula: str, lipschitz: Union[Mapping, float], period, known: bool = False) -> str:
     """The formula to check at the samples so that the formula holds in
     continuous time (see the module), with its intervals as they are written:
     sampled("G[0,20] (T <= 75)", {"T": 0.5}, 1) is "G[0,21] (T + 0.5 < 75)".
     ``lipschitz`` is a number for every variable, or {variable: number};
     ``period`` the time between two samples. Raises SampledError when the
-    formula cannot be read in continuous time."""
+    formula cannot be read in continuous time.
+
+    With ``known``, the other way: what the samples hold when the formula is
+    known to hold in continuous time (the guarantees of a part, the
+    assumptions of the requirement it refines). The intervals stay; each
+    comparison is weaker by the margin (``x <= c`` becomes ``x - E <= c``),
+    and a Boolean is kept where every instant holds it (not under F or U)."""
     period = ltl.number(period)
     if period <= 0:
         raise SampledError("the period must be positive")
@@ -75,7 +82,7 @@ def sampled(formula: str, lipschitz: Union[Mapping, float], period) -> str:
             raise SampledError(f"the Lipschitz constant of {v} is negative ({rate}): it is a bound "
                                "on how fast the variable changes, 0 or more")
     node = _Keep(formula).parse()
-    return _text(_margins(_nnf(_widen(node, True), False), rates, lipschitz, period))
+    return _text(_margins(_nnf(_widen(node, True, known), False, known), rates, lipschitz, period, known))
 
 
 def _text(node) -> str:
@@ -97,7 +104,7 @@ def _text(node) -> str:
             return ltl.to_str(hold(n))
         interval = f"[{n.steps[0]},{n.steps[1]}]"
         args = [write(a) for a in n.args]
-        arg = lambda a: a if a.startswith("(") and a.endswith(")") else f"({a})"
+        arg = lambda a: a if " " not in a or (a.startswith("(") and a.endswith(")")) else f"({a})"
         text = (f"{n.op}{interval} {arg(args[0])}" if len(args) == 1
                 else f"{arg(args[0])} {n.op}{interval} {arg(args[1])}")
         return text if top else f"({text})"
@@ -110,9 +117,11 @@ def _text(node) -> str:
             out = out.replace(f"__timed{i}__", write(held[i]))
 
 
-def _widen(node, positive: bool):
+def _widen(node, positive: bool, known: bool = False):
     """The intervals made narrower (F, U) or wider (G, R), as the polarity
-    makes them act; the operators with an interval unfolded into steps."""
+    makes them act (known: as they are)."""
+    if isinstance(node, _Timed) and known:
+        return _Timed(node.op, node.steps, tuple(_widen(a, positive, known) for a in node.args))
     if isinstance(node, _Timed):
         first, last = node.steps
         if first == last:
@@ -126,22 +135,24 @@ def _widen(node, positive: bool):
         return _Timed(node.op, steps, tuple(_widen(a, positive) for a in node.args))
     if isinstance(node, ltl.Unary):
         if node.op == "!":
-            return ltl.Unary("!", _widen(node.arg, not positive))
+            return ltl.Unary("!", _widen(node.arg, not positive, known))
         if node.op == "X":
             raise SampledError("X is the next sample, not an instant of continuous time: write "
                                "an interval (F[a,b], G[a,b])")
         if ltl.function(node) == "past":
             raise SampledError("past(x, n) counts samples, not time")
-        arg = _widen(node.arg, positive)
+        arg = _widen(node.arg, positive, known)
         acts = node.op if positive else _DUAL.get(node.op, node.op)
-        if acts == "F":                 # F p = F[0,inf) p: from the next sample on
+        if acts == "F" and not known:                 # F p = F[0,inf) p: from the next sample on
             return ltl.Unary("X", ltl.Unary(node.op, arg))
         return ltl.Unary(node.op, arg)
     if isinstance(node, ltl.Binary):
         if node.op in ("<->", "xor"):
             raise SampledError(f"{node.op} has both polarities: write it with & and |")
-        left = _widen(node.left, positive != (node.op == "->"))
-        right = _widen(node.right, positive)
+        left = _widen(node.left, positive != (node.op == "->"), known)
+        right = _widen(node.right, positive, known)
+        if known:
+            return ltl.Binary(node.op, left, right)
         if node.op == "U" and positive:     # p U q = p U[0,inf) q: q from the next sample on
             return ltl.Binary("&", left, ltl.Unary("X", ltl.Binary("U", left, right)))
         if node.op == "R" and not positive:     # !(p R q) = !p U !q: the same, negated
@@ -152,27 +163,33 @@ def _widen(node, positive: bool):
     return node
 
 
-def _nnf(node, negated: bool):
-    """The negations pushed down to the comparisons."""
+def _nnf(node, negated: bool, known: bool = False, exists: bool = False):
+    """The negations pushed down to the comparisons. A Boolean is refused
+    (it can change between two samples), or, known, kept where every instant
+    holds it and true under F or U (exists)."""
     if isinstance(node, _Timed):          # !G[a,b] p = F[a,b] !p, !(p U[a,b] q) = !p R[a,b] !q
-        return _Timed(_DUAL[node.op] if negated else node.op, node.steps,
-                      tuple(_nnf(a, negated) for a in node.args))
+        op = _DUAL[node.op] if negated else node.op
+        ex = [exists or op == "R", exists or op == "U"] if len(node.args) == 2 else [exists or op == "F"]
+        return _Timed(op, node.steps, tuple(_nnf(a, negated, known, e) for a, e in zip(node.args, ex)))
     if isinstance(node, ltl.Unary):
         if node.op == "!":
-            return _nnf(node.arg, not negated)
+            return _nnf(node.arg, not negated, known, exists)
         if node.op in ("G", "F", "X"):
-            return ltl.Unary(_DUAL[node.op] if negated and node.op != "X" else node.op,
-                             _nnf(node.arg, negated))
+            op = _DUAL[node.op] if negated and node.op != "X" else node.op
+            return ltl.Unary(op, _nnf(node.arg, negated, known, exists or op == "F"))
     if isinstance(node, ltl.Binary):
         if node.op == "->":
-            return _nnf(ltl.Binary("|", ltl.Unary("!", node.left), node.right), negated)
+            return _nnf(ltl.Binary("|", ltl.Unary("!", node.left), node.right), negated, known, exists)
         if node.op in ("&", "|", "U", "R"):
-            return ltl.Binary(_DUAL[node.op] if negated else node.op,
-                              _nnf(node.left, negated), _nnf(node.right, negated))
+            op = _DUAL[node.op] if negated else node.op
+            return ltl.Binary(op, _nnf(node.left, negated, known, exists or op == "R"),
+                              _nnf(node.right, negated, known, exists or op == "U"))
         if node.op in _FLIP:
             return ltl.Binary(_FLIP[node.op], node.left, node.right) if negated else node
     if isinstance(node, ltl.Const):
         return ltl.Const(node.value != negated)
+    if isinstance(node, ltl.Var) and known:
+        return ltl.Const(True) if exists else ltl.Unary("!", node) if negated else node
     if isinstance(node, ltl.Var):
         raise SampledError(f"the Boolean {node.name} can change between two samples")
     raise SampledError(f"{ltl.to_str(node)} is not read in continuous time")
@@ -206,15 +223,25 @@ def _linear(node) -> Optional[dict]:
     return None
 
 
-def _margins(node, rates, rate, period):
-    """Each comparison with its margin, strict."""
+def _margins(node, rates, rate, period, known=False, exists=False):
+    """Each comparison with its margin: strict, or (known) weaker under F or
+    U (exists), where the instant that holds it may fall between two samples;
+    elsewhere a known comparison holds at the samples as it is."""
+    def on(n, inner=exists):
+        return _margins(n, rates, rate, period, known, inner)
     if isinstance(node, _Timed):
-        return _Timed(node.op, node.steps, tuple(_margins(a, rates, rate, period) for a in node.args))
+        if len(node.args) == 2:
+            return _Timed(node.op, node.steps, (on(node.args[0], exists or node.op == "R"),
+                                                on(node.args[1], exists or node.op == "U")))
+        return _Timed(node.op, node.steps, (on(node.args[0], exists or node.op == "F"),))
     if isinstance(node, ltl.Unary):
-        return ltl.Unary(node.op, _margins(node.arg, rates, rate, period))
+        return ltl.Unary(node.op, on(node.arg, exists or node.op == "F"))
     if isinstance(node, ltl.Binary) and node.op not in _FLIP:
-        return ltl.Binary(node.op, _margins(node.left, rates, rate, period),
-                          _margins(node.right, rates, rate, period))
+        # p U q: q at an instant, p before it (at every sample before it); p R q: the other way
+        return ltl.Binary(node.op, on(node.left, exists or node.op == "R"),
+                          on(node.right, exists or node.op == "U"))
+    if known and not exists and isinstance(node, ltl.Binary):
+        return node
     if not isinstance(node, ltl.Binary):
         return node
     terms = _linear(ltl.Binary("-", node.left, node.right))
@@ -231,6 +258,11 @@ def _margins(node, rates, rate, period):
         return node
     e = ltl.Num(ltl.number(change * period))
     l, r = node.left, node.right
+    if known:             # a sample is at most E away from the instant that holds it
+        low = ltl.Binary(node.op if node.op in ("<", "<=") else "<=", ltl.Binary("-", l, e), r)
+        high = ltl.Binary(node.op if node.op in (">", ">=") else ">=", ltl.Binary("+", l, e), r)
+        return {"<": low, "<=": low, ">": high, ">=": high,
+                "=": ltl.Binary("&", low, high), "!=": ltl.Const(True)}[node.op]
     below = ltl.Binary("<", ltl.Binary("+", l, e), r)      # l < r - E
     above = ltl.Binary(">", ltl.Binary("-", l, e), r)      # l > r + E
     if node.op in ("<", "<="):
@@ -265,3 +297,93 @@ def continuous(formula: str, trace: Trace, lipschitz, period,
     if r > 0:
         return Continuous(True, r)
     return Continuous(None, r, "the samples do not hold with the margin: nothing is concluded")
+
+
+# Times in the intervals: [0s,2s], [0ms,500ms] ---------------------------------
+
+_UNITS = {"s": Fraction(1), "ms": Fraction(1, 1000), "us": Fraction(1, 10 ** 6)}
+_TIME = re.compile(r"(\d+(?:\.\d+)?)\s*(ms|us|s)\b")
+_INTERVAL = re.compile(r"\[([^\[\]]*?\d\s*(?:ms|us|s)\b[^\[\]]*?)\]")
+
+
+def has_times(text: str) -> bool:
+    """Whether an interval of the text is written with times."""
+    return bool(_INTERVAL.search(text))
+
+
+def in_steps(text: str, period) -> str:
+    """The text with the times of its intervals in steps of ``period``
+    seconds: with a period of 0.1, G[0s,2s] is G[0,20] and F[0ms,500ms] is
+    F[0,5]. A time that is not a whole number of steps is refused."""
+    if not has_times(text):
+        return text
+    if period is None:
+        raise SampledError("an interval is written with times (" + _INTERVAL.search(text).group(0)
+                           + "): give the period, --period SECONDS")
+    step = Fraction(str(period))
+    if step <= 0:
+        raise SampledError("the period must be positive")
+
+    def bound(m):
+        t = Fraction(m.group(1)) * _UNITS[m.group(2)]
+        n = t / step
+        if n.denominator != 1:
+            raise SampledError(f"{m.group(0)} is not a whole number of steps of {period} s")
+        return str(n.numerator)
+    return _INTERVAL.sub(lambda m: "[" + _TIME.sub(bound, m.group(1)) + "]", text)
+
+
+# A specification read in continuous time ----------------------------------------
+
+def spec(text: str, lipschitz, period, assumptions: str, guarantees: str) -> tuple:
+    """The text of a specification of the logics language with each term of
+    its contracts read at the samples: "show" (``sampled``: holding at the
+    samples, it holds in continuous time) or "known" (``sampled(known=True)``:
+    what the samples hold when it holds in continuous time). A known term
+    that speaks of the samples themselves (X, x', past) stays as it is: it is
+    a fact on the samples, as the model of a plant in steps. For a refinement
+    R <= S: R with assumptions "show" and guarantees "known", S with
+    assumptions "known" and guarantees "show". Returns (text, {contract: why
+    it cannot be read so}): such a contract keeps its terms, and is not to be
+    used so."""
+    out, part, start, head, body = text.splitlines(keepends=True), None, None, "", []
+    name, refused = None, {}
+    lines = list(out)
+    role = {"A": assumptions, "G": guarantees}
+
+    def end(last):
+        statement = "".join(body).strip().rstrip(";").strip()
+        if not statement or statement.lower() == "true":
+            return
+        try:
+            new = sampled(statement, lipschitz, period, known=role[part] == "known")
+        except SampledError as e:
+            if role[part] != "known":         # a known term on the samples (x' = x + u) stays
+                refused.setdefault(name, f"line {start + 1}: {statement}: {e}")
+            return
+        lines[start] = f"{head}{new};\n"
+        for k in range(start + 1, last + 1):       # the lines stay where they were
+            lines[k] = "\n"
+    for number, raw in enumerate(out):
+        line = re.sub(r"(//|#).*", "", raw)
+        word = line.strip().lower()
+        if word.startswith("contract "):
+            part, name = None, line.strip()[len("contract "):].strip().rstrip(":").strip()
+            continue
+        keyword = ""
+        if word.startswith(("assumptions:", "guarantees:")):
+            part = "A" if word.startswith("assumptions") else "G"
+            keyword, line = line.split(":", 1)
+            keyword += ": "
+            if not line.strip():
+                continue
+        if part is None or not line.strip():
+            continue
+        if not body:          # what comes before the term on its first line stays
+            start = number
+            head = keyword or line[:len(line) - len(line.lstrip())]
+        body.append(line)
+        if ";" in line:
+            end(number)
+            body = []
+    return "".join(lines), refused

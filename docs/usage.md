@@ -659,6 +659,33 @@ comparison that is not linear (the error says which). The stricter formula
 is a formula like any other: a refinement or a verification with it shows
 the property in continuous time for every behavior.
 
+`sampled(formula, lipschitz, period, known=True)` gives the other side:
+what the samples hold when the formula is known to hold in continuous time.
+The intervals stay, and a comparison under `F`, or on the right of `U`, is
+weaker by the margin (`x >= c` becomes `x + E >= c`): the instant that
+holds it may fall between two samples.
+
+With a period, the intervals may be written with times: with a period of
+0.1 s, `G[0s,2s] p` is `G[0,20] p` and `F[0ms,500ms] p` is `F[0,5] p`. A
+time that is not a whole number of steps is refused.
+
+The command line checks a refinement in continuous time:
+
+`$> chase-cps check plant.ltl --period 1 --lipschitz x=1 --refines Plant Req`
+
+>**Parameters:**
+> - `--period SECONDS`: the time between two steps; the intervals may then be
+>   written with times.
+> - `--lipschitz VAR=RATE ...`: how fast each variable changes, per second, or
+>   one `RATE` for every variable. `--refines R S` then holds in continuous
+>   time, between the samples too.
+
+For `R <= S`, CHASE checks at the samples the assumptions of `R` and the
+guarantees of `S` made stricter (`sampled`), against the guarantees of `R`
+and the assumptions of `S` made weaker (`known=True`). A term of `R` that
+speaks of the samples themselves (`x' = x + u`, the model of a plant in
+steps) stays as it is.
+
 `chase-cps view FILE --period SECONDS` (or `# view: --period SECONDS` in the
 file) draws the steps of a counterexample as times, `t = step x SECONDS`.
 

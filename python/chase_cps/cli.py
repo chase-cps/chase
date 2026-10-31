@@ -16,6 +16,7 @@ import os
 import platform
 import re
 import sys
+import tempfile
 from typing import Optional
 import textwrap
 
@@ -123,10 +124,12 @@ def install(args) -> int:
 
 # check -----------------------------------------------------------------------
 
-def _read(path: str) -> dict[str, Contract]:
+def _read(path: str, period=None) -> dict[str, Contract]:
     """The contracts of a specification (logics language), of a JSON file
     (one contract, a list of contracts, or {"contracts": [...]}), or of a
-    SystemVerilog file (.sv, .sva: its assumptions and assertions)."""
+    SystemVerilog file (.sv, .sva: its assumptions and assertions). With
+    ``period``, the intervals of the logics language may be written with
+    times (G[0s,2s])."""
     if not os.path.isfile(path):
         raise ValueError(f"no such file: {path}")
     ext = os.path.splitext(path)[1].lower()
@@ -153,7 +156,7 @@ def _read(path: str) -> dict[str, Contract]:
                          "model (.smv, RTL, a C function FILE.c:FUNCTION) is "
                          "drawn as the implementation of a contract (--implementation MODEL "
                          "CONTRACT)")
-    return load_spec(path)
+    return load_spec(path, period=period)
 
 
 def _place(text: str, word: str) -> Optional[tuple[int, int]]:
@@ -250,9 +253,19 @@ def _checks(args, contracts):
             out.append(("consistent", name,
                         lambda c=c: checks.is_consistent(c, args.backend, core=args.core,
                                                          **options)))
+    timed = _continuous(args) if getattr(args, "lipschitz", None) else None
     for refined, abstract in args.refines or []:
-        r, a = _contract(refined, contracts), _contract(abstract, contracts)
-        out.append(("refines", f"{refined} <= {abstract}",
+        if timed:         # in continuous time: what R shows and S knows made stricter
+            for name, (_, refused) in ((refined, timed[0]), (abstract, timed[1])):
+                for part in name.split("+"):
+                    if part in refused:
+                        raise ValueError(f"{part} cannot be read in continuous time: {refused[part]}")
+            r, a = _contract(refined, timed[0][0]), _contract(abstract, timed[1][0])
+            label = f"{refined} <= {abstract} (continuous time)"
+        else:
+            r, a = _contract(refined, contracts), _contract(abstract, contracts)
+            label = f"{refined} <= {abstract}"
+        out.append(("refines", label,
                     lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
     for path, name in args.implementation or []:
         c = _contract(name, contracts)
@@ -285,6 +298,36 @@ def _checks(args, contracts):
         c = _contract(name, contracts)
         out.append(("synthesize", name, lambda c=c: gr1.synthesize(c, **game)))
     return out
+
+
+def _continuous(args) -> tuple:
+    """The contracts of the file read at the samples for a refinement R <= S
+    in continuous time (--period, --lipschitz): (for R, for S). R shows its
+    assumptions and knows its guarantees, S the other way (chase_cps.sampled)."""
+    from . import sampled
+    if args.period is None:
+        raise ValueError("--lipschitz needs --period: the time between two samples")
+    if os.path.splitext(args.file)[1].lower() != ".ltl":
+        raise ValueError("--lipschitz reads a file of the logics language (.ltl)")
+    rates = {}
+    for item in args.lipschitz:
+        name, _, value = item.rpartition("=")
+        try:
+            rates[name or None] = float(value)
+        except ValueError:
+            raise ValueError(f"--lipschitz {item}: VARIABLE=RATE, or RATE for every variable") from None
+    rates = rates[None] if list(rates) == [None] else {k: v for k, v in rates.items() if k}
+    with open(args.file, encoding="utf-8") as f:
+        text = sampled.in_steps(f.read(), args.period)
+    out = []
+    for a, g in (("show", "known"), ("known", "show")):
+        changed, refused = sampled.spec(text, rates, args.period, a, g)
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = os.path.join(tmp, os.path.basename(args.file))
+            with open(copy, "w", encoding="utf-8") as f:
+                f.write(changed)
+            out.append((load_spec(copy, args.file), refused))
+    return tuple(out)
 
 
 def _modules(path: str) -> list[str]:
@@ -440,7 +483,7 @@ def _report_core(core, guarantees_only: bool) -> None:
 
 def check(args) -> int:
     try:
-        contracts = _read(args.file)
+        contracts = _read(args.file, args.period)
         todo = _checks(args, contracts)
     except (ValueError, RuntimeError) as e:
         print(f"chase-cps check: {e}", file=sys.stderr)
@@ -732,6 +775,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="some behavior satisfies A -> G")
     g.add_argument("--refines", nargs=2, action="append", metavar=("C1", "C2"),
                    help="C1 refines C2 (may be repeated)")
+    g = p.add_argument_group("continuous time (a step is a sample)")
+    g.add_argument("--period", metavar="SECONDS", type=float,
+                   help="the time between two steps; the intervals may then be written with "
+                        "times, G[0s,2s], F[0ms,500ms]")
+    g.add_argument("--lipschitz", nargs="+", metavar="VAR=RATE",
+                   help="how fast each variable changes, per second (or one RATE for all): "
+                        "--refines then holds in continuous time, between the samples too")
     g.add_argument("--impl", "--implementation", nargs=2, action="append", dest="implementation",
                    metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL (an SMV file, or a JSON file: a state "

@@ -894,11 +894,25 @@ def load_dsl(path: str | os.PathLike, name: str | None = None) -> Contract:
     return c
 
 
-def load_spec(path: str | os.PathLike, _name: str | None = None) -> dict[str, Contract]:
+def load_spec(path: str | os.PathLike, _name: str | None = None, period=None) -> dict[str, Contract]:
     """The contracts of a specification file in the logics language of CHASE,
-    by name."""
+    by name. With ``period`` (seconds between two steps), the intervals may
+    be written with times: G[0s,2s], F[0ms,500ms] (chase_cps.sampled.in_steps)."""
     if not os.path.isfile(path):
         raise FileNotFoundError(f"no such file: {os.fspath(path)}")
+    from . import sampled
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    if sampled.has_times(text):           # the times in steps, in a copy (the lines stay)
+        try:
+            text = sampled.in_steps(text, period)
+        except sampled.SampledError as e:
+            raise ValueError(f"{os.path.basename(os.fspath(path))}: {e}") from None
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = os.path.join(tmp, os.path.basename(os.fspath(path)))
+            with open(copy, "w", encoding="utf-8") as f:
+                f.write(text)
+            return load_spec(copy, _name or os.fspath(path))
     from ._native import utilities
     system = _parse_file(os.fspath(path), _name or os.fspath(path))
     try:

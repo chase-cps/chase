@@ -153,3 +153,61 @@ def test_a_negative_lipschitz_constant_is_refused():
     with pytest.raises(SampledError, match="negative"):
         sampled("G[0,8] (x <= 11)", -1, 0.5)
     assert continuous("G[0,8] (x <= 11)", Trace([{"x": 10.8}], []), {"x": -100}, 1).holds is None
+
+
+def test_times_in_the_intervals():
+    from chase_cps.sampled import in_steps
+    assert in_steps("G[0s, 2s] p & F[0ms,500ms] q", 0.1) == "G[0, 20] p & F[0,5] q"
+    assert in_steps("G[0,4] p", None) == "G[0,4] p"             # steps: as they are
+    with pytest.raises(SampledError, match="whole number of steps"):
+        in_steps("G[0s,0.25s] p", 0.1)
+    with pytest.raises(SampledError, match="--period"):
+        in_steps("G[0s,1s] p", None)
+
+
+def test_what_the_samples_hold_when_it_holds_in_continuous_time():
+    # under G the samples are instants: as written; under F (and on the right of U)
+    # the instant may fall between two samples: weaker by the margin
+    assert sampled("G[0,20] (T <= 75)", {"T": 0.5}, 1, known=True) == "G[0,20] (T <= 75)"
+    assert sampled("F[0,6] (y >= 2)", 1, 1, known=True) == "F[0,6] (y + 1 >= 2)"
+    assert sampled("(x <= 4) U[0,9] (y >= 1)", 1, 1, known=True) == "(x <= 4) U[0,9] (y + 1 >= 1)"
+    # a Boolean: kept where every instant holds it, true under F
+    assert sampled("G (b -> F[0,5] (x > 3))", 1, 1, known=True) == "G (!b | (F[0,5] (x + 1 > 3)))"
+    assert sampled("F[0,5] b", 1, 1, known=True) == "F[0,5] true"
+
+
+SPEC = """NAME: plant;
+CONTRACT Plant:
+    input integer (-1:1) variable u;
+    output integer (-30:30) variable x;
+    Assumptions: true;
+    Guarantees:
+        x = 0;
+        G (x' = x + u);
+CONTRACT Req:
+    input integer (-1:1) variable u;
+    output integer (-30:30) variable x;
+    Assumptions: true;
+    Guarantees:
+        G[0s,8s] (x <= LIMIT);
+"""
+
+
+def test_a_specification_read_in_continuous_time():
+    from chase_cps.sampled import spec
+    text, refused = spec(SPEC.replace("0s,8s", "0,8").replace("LIMIT", "11"), {"x": 1}, 1, "known", "show")
+    assert "G[0,9] (x + 1 < 11);" in text and "G (x' = x + u);" in text
+    assert list(refused) == ["Plant"]       # x' is not an instant: Plant cannot show it
+
+
+@pytest.mark.parametrize("limit, continuous, status", [
+    (10, False, 0), (10, True, 1), (11, True, 0)])
+def test_check_in_continuous_time(tmp_path, limit, continuous, status):
+    from chase_cps.backends import ADAPTERS
+    from chase_cps.cli import main
+    if not (ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()):
+        pytest.skip("nuXmv or NuSMV not installed")
+    f = tmp_path / "plant.ltl"
+    f.write_text(SPEC.replace("LIMIT", str(limit)))
+    args = [str(f), "--period", "1", "--refines", "Plant", "Req"]
+    assert main(["check"] + args + (["--lipschitz", "x=1"] if continuous else [])) == status

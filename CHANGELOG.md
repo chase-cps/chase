@@ -4,6 +4,10 @@
 
 Added:
 
+- Continuous time on the command line: `chase-cps check FILE --period SECONDS
+  --lipschitz VAR=RATE --refines R S` checks the refinement between the
+  samples too; with a period, the intervals may be written with times
+  (`G[0s,2s]`).
 - Sampled signals (`chase_cps.sampled`): `sampled` gives the stricter
   formula of Fainekos and Pappas (Corollary 44) from the Lipschitz
   constants and the sampling period; holding at the samples, it shows the
