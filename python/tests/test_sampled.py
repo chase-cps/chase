@@ -201,7 +201,7 @@ def test_a_specification_read_in_continuous_time():
 
 
 @pytest.mark.parametrize("limit, continuous, status", [
-    (10, False, 0), (10, True, 1), (11, True, 0)])
+    (10, False, 0), (10, True, 1), (11, True, 0)])   # 1: not shown (unknown)
 def test_check_in_continuous_time(tmp_path, limit, continuous, status):
     from chase_cps.backends import ADAPTERS
     from chase_cps.cli import main

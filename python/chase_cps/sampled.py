@@ -387,3 +387,21 @@ def spec(text: str, lipschitz, period, assumptions: str, guarantees: str) -> tup
             end(number)
             body = []
     return "".join(lines), refused
+
+
+def not_shown(result):
+    """The result of a check made stricter for continuous time (spec, sampled):
+    a failure is not a counterexample of the signal, as the margins are a
+    sufficient condition, so it is unknown, with the reason; its trace stays,
+    the samples that do not hold the stricter formula."""
+    from dataclasses import replace
+    if result.status != "invalid":
+        return result
+    if hasattr(result, "guarantees"):         # a refinement: its two parts, the one that failed
+        return replace(result, status="unknown", assumptions=not_shown(result.assumptions),
+                       guarantees=not_shown(result.guarantees))
+    return replace(result, status="unknown",
+                   reason="not shown in continuous time: the samples of this trace do not hold "
+                          "the stricter terms (the margins of the Lipschitz constants are a sufficient "
+                          "condition); a smaller rate or period may show it, and the check at the "
+                          "samples alone says whether it fails there")

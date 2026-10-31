@@ -125,6 +125,19 @@ def test_a_decomposition_keeps_every_port_of_the_contract_it_refines():
     assert group["outputs"] == ["y"]
 
 
+def test_an_input_of_a_part_that_the_contract_does_not_give_is_open():
+    # Controller reads enable; Cruise has no input enable and no part drives it
+    sensor = Contract.from_strings(name="Sensor", inputs=["raw"], outputs=["speed"], guarantees=["G (raw -> speed)"])
+    ctrl = Contract.from_strings(name="Controller", inputs=["speed", "enable"], outputs=["throttle"],
+                                 guarantees=["G ((speed & enable) -> throttle)"])
+    cruise = Contract.from_strings(name="Cruise", inputs=["raw"], outputs=["throttle"], guarantees=["G (raw -> throttle)"])
+    d = viz.diagram(refines=[(sensor.compose(ctrl, name="Parts"), cruise, "invalid")])
+    box = d["nodes"][0]
+    assert box["title"] == "Cruise" and box["inputs"] == ["raw"]
+    assert {"open": [next(c["id"] for c in box["children"] if c["title"] == "Controller"), "in", "enable"],
+            "var": "enable"} in box["edges"]
+
+
 def test_viewpoints_inside_a_composition_and_refinement_on_four_levels():
     a, b, top = contracts()
     t = Contract.from_strings(name="At", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])

@@ -265,6 +265,11 @@ def _checks(args, contracts):
         else:
             r, a = _contract(refined, contracts), _contract(abstract, contracts)
             label = f"{refined} <= {abstract}"
+        if timed:
+            from .sampled import not_shown
+            out.append(("refines", label, lambda r=r, a=a: not_shown(checks.refines(r, a, args.backend,
+                                                                                **options))))
+            continue
         out.append(("refines", label,
                     lambda r=r, a=a: checks.refines(r, a, args.backend, **options)))
     for path, name in args.implementation or []:
