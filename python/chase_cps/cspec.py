@@ -1,5 +1,5 @@
 """Contracts written in C, next to the code: the clauses of the function
-contracts of ESBMC and of CBMC.
+contracts of ESBMC and of CBMC, and ACSL (Frama-C).
 
     int thermostat(int T)
     {
@@ -13,6 +13,16 @@ contracts of ESBMC and of CBMC.
         __CPROVER_requires(T >= 0 && T <= 200)
         __CPROVER_ensures(T >= 74 || __CPROVER_return_value == 3)
     { ... }
+
+    /*@ requires 0 <= T <= 200;
+        ensures T < 74 ==> \\result == 3;
+    */
+    int thermostat(int T) { ... }
+
+The last is ACSL, the language of Frama-C: a comment /*@ ... */ (or //@
+lines) just before the function, with requires, ensures, and assigns
+(\\result, ==>, <==>, chains such as 0 <= T <= 200; \\old, \\at, the
+quantifiers, and behaviors are not read).
 
 ``load_c(path)`` reads each function of the file as a component: its
 contract (the requires clauses are its assumptions, the ensures clauses its
@@ -44,7 +54,10 @@ from .contract import Contract
 from .cprograms import CFunction, CProgramError, _signature
 
 _CLAUSE = re.compile(r"\b__(ESBMC|CPROVER)_(requires|ensures|assigns)\s*\(")
-_POINTER = re.compile(r"__(ESBMC|CPROVER)_(is_fresh|r_ok|w_ok|rw_ok)\b")
+_POINTER = re.compile(r"__(ESBMC|CPROVER)_(is_fresh|r_ok|w_ok|rw_ok)\b|\\(valid|valid_read|separated)\b")
+_ACSL = re.compile(r"/\*@(.*?)\*/|((?://@[^\n]*\n?)+)", re.S)
+_ACSL_KEYS = ("requires", "ensures", "assigns", "terminates", "decreases", "allocates", "frees")
+_RELATION = re.compile(r"<=|>=|<(?!=)|>(?!=)")
 _RANGES = {"char": (-128, 127), "signed char": (-128, 127), "unsigned char": (0, 255),
            "short": (-32768, 32767), "unsigned short": (0, 65535),
            "int": (-2 ** 31, 2 ** 31 - 1), "unsigned": (0, 2 ** 32 - 1),
@@ -109,9 +122,44 @@ def _terms(expr: str) -> list:
     return out + [expr[last:]]
 
 
-def _formula(expr: str, result: str, pointers: set):
+def _chain(term: str) -> str:
+    """a <= b < c, as ACSL writes it: a <= b && b < c."""
+    cuts, depth = [], 0
+    for m in re.finditer(r"[()]|<=|>=|==>|<==>|->|<(?!=)|>(?!=)", term):
+        t = m.group(0)
+        if t in "()":
+            depth += 1 if t == "(" else -1
+        elif depth == 0 and _RELATION.fullmatch(t):
+            cuts.append(m)
+    if len(cuts) < 2:
+        return term
+    parts, last = [], 0
+    for m in cuts:
+        parts.append(term[last:m.start()])
+        parts.append(m.group(0))
+        last = m.end()
+    parts.append(term[last:])
+    operands, ops = parts[0::2], parts[1::2]
+    return " && ".join(f"{operands[i].strip()} {ops[i]} {operands[i + 1].strip()}" for i in range(len(ops)))
+
+
+def _acsl(expr: str, result) -> str:
+    """An ACSL expression in the words of C: \\result, ==>, <==>, \\true, chains."""
+    if re.search(r"\\(old|at|forall|exists|let)\b", expr):
+        raise CProgramError(f"cannot read the clause {expr.strip()!r}: \\old, \\at, and the "
+                            "quantifiers of ACSL are not read")
+    e = expr.replace("\\true", "true").replace("\\false", "false")
+    if result is not None:
+        e = re.sub(r"\\result\b", result, e)
+    e = e.replace("<==>", " <-> ").replace("==>", " -> ")
+    return " && ".join(_chain(t) for t in _terms(e))
+
+
+def _formula(expr: str, result: str, pointers: set, acsl: bool = False):
     """A clause in C as a formula of CHASE (None when it only says that the
     pointers are valid: the harness passes valid pointers)."""
+    if acsl:
+        expr = _acsl(expr, result)
     kept = [t for t in _terms(expr) if not _POINTER.search(t)]
     if not kept:
         return None
@@ -161,6 +209,31 @@ def _type(ctype: str, bounds) -> object:
     return (lo, hi)
 
 
+def _acsl_blocks(original: str) -> list:
+    """(end of the block, [(keyword, expression, first line, last line)])
+    of each ACSL contract of the file (/*@ ... */ or //@ lines)."""
+    out = []
+    for m in _ACSL.finditer(original):
+        start = m.start(1) if m.group(1) is not None else m.start(2)
+        body = m.group(1) if m.group(1) is not None else m.group(2)
+        # the @ and // at the start of a line, blanked: the offsets stay those of the file
+        body = re.sub(r"(?m)^(\s*)(//)?@", lambda x: x.group(1) + " " * (len(x.group(0)) - len(x.group(1))), body)
+        clauses, last = [], 0
+        for k in [i for i, ch in enumerate(body) if ch == ";"] + [len(body)]:
+            piece = body[last:k]
+            word = re.match(r"\s*([A-Za-z_]\w*)", piece)
+            if word:
+                if word.group(1) not in _ACSL_KEYS:
+                    raise CProgramError(f"the ACSL clause {word.group(1)!r} is not read (requires, "
+                                        "ensures, and assigns are)")
+                a = start + last + word.start(1)
+                clauses.append((word.group(1), piece[word.end():],
+                                original.count("\n", 0, a) + 1, original.count("\n", 0, start + k) + 1))
+            last = k + 1
+        out.append((m.end(), clauses))
+    return out
+
+
 def _read(path: str) -> tuple:
     """The functions of the file, each (name, its first line, its signature,
     the name of its return value, {"requires", "ensures": [(formula, first
@@ -170,9 +243,12 @@ def _read(path: str) -> tuple:
     text = _blank_comments(original)
     stripped = list(original)
     line = lambda i: text.count("\n", 0, i) + 1
+    acsl = _acsl_blocks(original)
     found = []
     for name, start, end in _functions(text):
         clauses = {"requires": [], "ensures": [], "assigns": []}
+        # an ACSL contract: the comment just before the function
+        mine = [c for stop, cs in acsl if stop <= start and not original[stop:start].strip() for c in cs]
         for m in _CLAUSE.finditer(text, start, end):
             close = _closing(text, m.end())
             clauses[m.group(2)].append((text[m.end():close], line(m.start()), line(close)))
@@ -189,6 +265,11 @@ def _read(path: str) -> tuple:
         read = {k: [(f, a, b) for f, a, b in ((_formula(e, result, pointers), a, b)
                                               for e, a, b in clauses[k]) if f]
                 for k in ("requires", "ensures")}
+        for k, e, a, b in mine:
+            if k in read:
+                f = _formula(e, result, pointers, acsl=True)
+                if f:
+                    read[k].append((f, a, b))
         found.append((name, line(start), sig, result, read))
     if not found:
         raise CProgramError(f"{os.path.basename(path)} defines no function")
@@ -230,7 +311,8 @@ def places(path: str) -> tuple:
 def has_clauses(path: str) -> bool:
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
-            return bool(_CLAUSE.search(_blank_comments(f.read())))
+            text = f.read()
+        return bool(_CLAUSE.search(_blank_comments(text)) or _ACSL.search(text))
     except OSError:
         return False
 

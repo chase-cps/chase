@@ -128,3 +128,61 @@ def test_the_places_of_the_functions_and_clauses(cfile):
     assert at["thermostat"] == {"line": 2, "A": [[4, 4], [4, 4]], "G": [[5, 6]]}
     assert at["clamp"] == {"line": 12, "A": [[13, 13], [13, 13]], "G": [[16, 16], [16, 16]]}
     assert at["scale"]["line"] == 21
+
+
+ACSL = """/*@ requires 0 <= T <= 200;
+    ensures T < 74 ==> \\result == 3;
+    ensures T >= 74 ==> \\result == 0;
+*/
+int thermostat(int T)
+{
+    return T < 74 ? 3 : 0;
+}
+
+/*@ requires \\valid(y);
+    requires -100 <= x <= 100;
+    assigns *y;
+    ensures 0 <= *y <= 50;
+    ensures (x >= 0 && x <= 50) <==> *y == x;
+*/
+void clamp(int x, int *y)
+{
+    *y = x < 0 ? 0 : (x > 50 ? 50 : x);
+}
+"""
+
+
+def test_acsl_contracts(tmp_path):
+    # the contracts of Frama-C: in a comment /*@ ... */ before the function
+    p = tmp_path / "acsl.c"
+    p.write_text(ACSL)
+    fs = load_c(str(p))
+    t, _ = fs["thermostat"]
+    assert t.inputs == {"T": (0, 200)}
+    assert terms(t.guarantees) == ["T < 74 -> thermostat_out = 3", "T >= 74 -> thermostat_out = 0"]
+    c, _ = fs["clamp"]                   # \valid and assigns are not terms; chains are split
+    assert terms(c.assumptions) == ["-100 <= x", "x <= 100"]
+    assert terms(c.guarantees) == ["0 <= y", "y <= 50", "(x >= 0 & x <= 50) <-> y = x"]
+    assert has_clauses(str(p))
+    from chase_cps.cspec import places
+    assert places(str(p))[1]["clamp"] == {"A": [(11, 11), (11, 11)], "G": [(13, 13), (13, 13), (14, 14)]}
+
+
+@pytest.mark.parametrize("tool", TOOLS)
+def test_acsl_checked(tmp_path, tool):
+    p = tmp_path / "acsl.c"
+    p.write_text(ACSL)
+    fs = load_c(str(p))
+    assert all(is_implementation(f, c, tool).status == "valid" for c, f in fs.values())
+    p.write_text(ACSL.replace("T < 74 ==>", "T < 76 ==>"))
+    c, f = load_c(str(p))["thermostat"]
+    assert is_implementation(f, c, tool).status == "invalid"
+
+
+@pytest.mark.parametrize("clause, why", [("ensures \\\\result == \\\\old(x);", "old"),
+                                         ("behavior small: assumes x < 0;", "behavior")])
+def test_acsl_not_read(tmp_path, clause, why):
+    p = tmp_path / "t.c"
+    p.write_text(f"/*@ {clause} */\nint f(int x) {{ return x; }}\n")
+    with pytest.raises(CProgramError, match=why):
+        load_c(str(p))

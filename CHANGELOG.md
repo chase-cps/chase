@@ -12,7 +12,8 @@ Added:
   counterexample as times.
 - Contracts written in C, in the clauses of ESBMC (`__ESBMC_requires`,
   `__ESBMC_ensures`) or of CBMC (`__CPROVER_requires`,
-  `__CPROVER_ensures`): `load_c(path)` reads each function as a contract
+  `__CPROVER_ensures`), or in ACSL (Frama-C, `/*@ requires ...; ensures
+  ...; */`): `load_c(path)` reads each function as a contract
   with the function as its implementation, and `chase-cps view FILE.c`
   (and VS Code) draws and checks them. A function with no clause is
   checked as code alone (the tag `safe`).
