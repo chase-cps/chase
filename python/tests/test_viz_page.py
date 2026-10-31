@@ -288,6 +288,7 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
         optimal: true } }, '*')""", asked[0]["id"])
     page.wait_for_selector("#repair .rp-opt.repaired", timeout=5000)
     assert "top 3 → 1" in page.inner_text("#repair .rp-opt")
+    page.locator("#repair .rp-opt.repaired").scroll_into_view_if_needed()
     card = page.locator("#repair .rp-opt.repaired").bounding_box()
     page.mouse.move(card["x"] + 20, card["y"] + 10)
     page.wait_for_timeout(100)
@@ -296,13 +297,16 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
     page.mouse.move(5, 400)
     page.wait_for_timeout(100)
     assert page.locator("#view text[data-was]").count() == 0
+    page.locator("#repair button", has_text="Apply").scroll_into_view_if_needed()
     apply = page.locator("#repair button", has_text="Apply").bounding_box()
     page.mouse.click(apply["x"] + apply["width"] / 2, apply["y"] + apply["height"] / 2)
     edits = page.evaluate("posted.filter(m => m.type === 'chase-apply').map(m => m.edits)")
     assert edits == [[{"line": 4, "name": "top", "value": "1"}]]
     # the requirement: picked by hand, its repair asks twice before it is written
+    page.locator("#repair input[type=checkbox]").nth(1).scroll_into_view_if_needed()
     box = page.locator("#repair input[type=checkbox]").nth(1).bounding_box()
     page.mouse.click(box["x"] + 5, box["y"] + 5)
+    page.locator("#repair button", has_text="Find").scroll_into_view_if_needed()
     find = page.locator("#repair button", has_text="Find").bounding_box()
     page.mouse.click(find["x"] + 5, find["y"] + 5)
     asked = page.evaluate("posted.filter(m => m.type === 'chase-repair')")
@@ -317,10 +321,12 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
                       [a["id"], name, value])
     page.wait_for_function("document.querySelectorAll('#repair .rp-opt').length === 3", timeout=5000)
     k = page.locator("#repair .rp-opt", has_text="k 1 → 3").locator("button", has_text="Apply")
+    k.scroll_into_view_if_needed()
     b = k.bounding_box()
     page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
     assert page.inner_text("#repair .rp-opt:has-text('k 1 → 3') button.warn") == "Change the requirement?"
     assert len(page.evaluate("posted.filter(m => m.type === 'chase-apply')")) == 1     # not yet
+    page.locator("#repair .rp-opt:has-text('k 1 → 3') button.warn").scroll_into_view_if_needed()
     b = page.locator("#repair .rp-opt:has-text('k 1 → 3') button.warn").bounding_box()
     page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
     assert page.evaluate("posted.filter(m => m.type === 'chase-apply').pop().edits") == [
@@ -328,4 +334,56 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
     assert "No value of top, k" in page.inner_text("#repair")
     page.keyboard.press("Escape")
     assert not page.is_visible("#repair")
+    assert errors == []
+
+
+@pytest.mark.skipif(not __import__("test_viz").HAS_MC, reason="nuXmv/NuSMV not installed")
+def test_a_red_tag_says_why_it_fails(browser, tmp_path):
+    # the panel of a refinement that fails: the counterexample, step by step,
+    # with the loop; with no named constant, it says that no value can fix it
+    spec = tmp_path / "w.ltl"
+    spec.write_text("""NAME: w;
+CONTRACT Counter:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        n = 0;
+        G ((n < 3 -> n' = n + 1) & (n >= 3 -> n' = n));
+CONTRACT Bound:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        G (n <= 1);
+""")
+    d = viz.from_spec(str(spec), refines=[("Counter", "Bound")], check=True)
+    page, errors = open_page(browser, tmp_path, d)
+    tag = page.locator('[data-check$="|⪯"]').bounding_box()
+    page.mouse.click(tag["x"] + tag["width"] / 2, tag["y"] + tag["height"] / 2)
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    text = page.inner_text("#repair")
+    assert "Why it fails" in text.title() or "WHY IT FAILS" in text
+    assert "breaks a guarantee of Bound" in text
+    steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
+    assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
+    assert "no value to change can fix it" in text
+    assert errors == []
+
+
+def test_the_code_of_a_c_function(browser, tmp_path):
+    # a component with a C function: its icon opens the code, with the lines of the file
+    from chase_cps import CFunction, Component, Contract
+    src = tmp_path / "f.c"
+    src.write_text("int helper(int x) {\n    return x + 1;\n}\n\nint f(int a) { return helper(a); }\n")
+    c = Contract.from_strings(inputs={"a": (0, 3)}, outputs={"b": (0, 9)}, guarantees=["b = a + 1"])
+    d = viz.diagram(Component("F", c, CFunction(str(src), "f", result="b")))
+    page, errors = open_page(browser, tmp_path, d)
+    icon = page.locator("[data-box] .icon[data-tip*='its code']").bounding_box()
+    page.mouse.click(icon["x"] + icon["width"] / 2, icon["y"] + icon["height"] / 2)
+    page.wait_for_selector("#pop pre.code", timeout=5000)
+    assert "f.c" in page.inner_text("#poptitle")
+    codes = page.locator("#pop pre.code").all_inner_texts()
+    assert codes[0].startswith("5") and "helper(a)" in codes[0]
+    assert codes[1].startswith("1") and "return x + 1" in codes[1]
     assert errors == []

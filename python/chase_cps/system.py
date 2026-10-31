@@ -27,7 +27,7 @@ class Component:
     name: str
     contract: Contract
     implementation: Optional[object] = None
-    status: Optional[str] = None
+    status: object = None          # a status, or the result of the check
 
 
 @dataclass
@@ -39,7 +39,7 @@ class System:
     name: str
     components: list = field(default_factory=list)
     contract: Optional[Contract] = None
-    status: Optional[str] = None
+    status: object = None          # a status, or the result of the check
 
     def composition(self, discharge: bool = False, **options) -> Contract:
         """The composition of the contracts of the components."""

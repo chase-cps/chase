@@ -86,6 +86,70 @@ def _status(s):
     return getattr(s, "status", s)
 
 
+def _c_source(f) -> Optional[dict]:
+    """The text of a C function and of the functions of its file it calls,
+    with the line of each in the file: {"file", "parts": [{"name", "line",
+    "text"}]}, or None when the file cannot be read."""
+    try:
+        text = f.text()
+    except OSError:
+        return None
+    lines = text.split("\n")
+
+    def body(name):                     # (first line, text) of the definition of name
+        head = re.compile(r"^[A-Za-z_][\w \t\*]*\b" + re.escape(name) + r"\s*\(")
+        for i, line in enumerate(lines):
+            if head.match(line) and not line.rstrip().endswith(";"):     # not a declaration
+                depth, seen = 0, False
+                for j in range(i, len(lines)):
+                    depth += lines[j].count("{") - lines[j].count("}")
+                    seen = seen or "{" in lines[j]
+                    if seen and depth <= 0:
+                        return i + 1, "\n".join(lines[i:j + 1])
+        return None
+    parts, todo, done = [], [f.name], set()
+    while todo:
+        name = todo.pop(0)
+        if name in done:
+            continue
+        done.add(name)
+        b = body(name)
+        if b is None:
+            continue
+        parts.append({"name": name, "line": b[0], "text": b[1]})
+        for called in re.findall(r"\b([A-Za-z_]\w*)\s*\(", b[1].split("{", 1)[-1]):
+            if called not in done and called not in ("if", "while", "for", "switch", "return", "sizeof"):
+                todo.append(called)
+    return {"file": os.path.basename(f.path), "parts": parts} if parts else None
+
+
+MAX_STEPS, MAX_VARIABLES = 12, 40
+
+
+def _why(result) -> Optional[dict]:
+    """Why a check fails, for its panel: which side fails (a refinement),
+    the counterexample (a few steps), and the reason."""
+    if result is None or isinstance(result, str) or _status(result) != "invalid":
+        return None
+    failed = getattr(result, "failed", None)
+    part = getattr(result, failed, None) if failed in ("assumptions", "guarantees") else result
+    out = {}
+    if failed:
+        out["failed"] = failed
+    trace = getattr(part, "trace", None)
+    if trace is not None:
+        d = trace.to_dict()
+        steps = d["prefix"] + d["loop"]
+        names = list(dict.fromkeys(k for st in steps for k in st if not k.startswith("chase_")))
+        out["trace"] = {"vars": names[:MAX_VARIABLES], "more": max(0, len(names) - MAX_VARIABLES),
+                        "steps": [[st.get(k) for k in names[:MAX_VARIABLES]] for st in steps[:MAX_STEPS]],
+                        "loop": len(d["prefix"]) if d["loop"] else None, "cut": len(steps) > MAX_STEPS}
+    reason = getattr(part, "reason", "") or getattr(result, "reason", "")
+    if reason:
+        out["reason"] = reason
+    return out or None
+
+
 class _Scene:
     def __init__(self):
         self.count = 0
@@ -191,14 +255,16 @@ class _Scene:
             fsm = None
         from .cprograms import CFunction
         name = getattr(k.implementation, "name", None) or type(k.implementation).__name__
+        model = {"name": name, "fsm": fsm}
         if isinstance(k.implementation, CFunction):
-            source = "c"
+            model.update(source="c", code=_c_source(k.implementation))
         else:
-            source = (getattr(k.implementation, "source", None) or {}).get("kind")
+            model["source"] = (getattr(k.implementation, "source", None) or {}).get("kind")
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
-                        model={"name": name, "fsm": fsm, "source": source},
-                        badge={"text": "M ⊨ C", "status": k.status},
+                        model=model,
+                        badge={"text": "M ⊨ C", "status": _status(k.status),
+                               **({"why": _why(k.status)} if _why(k.status) else {})},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
         self.drawn.setdefault(id(k.contract), k.contract)
@@ -546,7 +612,8 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
             context=None, open: Iterable = (), title: Optional[str] = None,
-            results: bool = True, connect: Iterable = (), repairs: Iterable = ()) -> dict:
+            results: bool = True, connect: Iterable = (), repairs: Iterable = (),
+            why: Iterable = ()) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -577,8 +644,12 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     it. The items in ``connect`` are wired side by side: an output of one to
     the inputs of the others with the same name. ``repairs`` lists (item,
     tag, about): what the page needs to repair the check of the tag on the
-    box of the item (see ``from_spec``)."""
+    box of the item (see ``from_spec``). ``why`` lists (item, tag, result):
+    the results of the checks drawn on the tags of the boxes, whose
+    counterexamples the panel of a tag shows (refinements and environments
+    given here with their results need none)."""
     scene = _Scene()
+    why = list(why)
     checks = list(checks)
     nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
 
@@ -628,9 +699,13 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     for r in ordered:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
+        if len(r) > 2 and _why(r[2]):
+            why.append((high, "⪯", r[2]))
         if status is None and results and isinstance(low, Contract) and isinstance(high, Contract):
             kept = [res for kind, other, res in low.checked(context) if kind == "refines" and other is high]
             status = _status(kept[-1]) if kept else None
+            if kept and _why(kept[-1]):
+                why.append((high, "⪯", kept[-1]))
         if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
             if id(high) not in scene.ids:
                 add(high)
@@ -714,6 +789,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     for e in environments:
         env, target = e[0], e[1]
         status = _status(e[2]) if len(e) > 2 else None
+        if len(e) > 2 and _why(e[2]):
+            why.append((env, "E ⊨ A", e[2]))
         node = box_of(target)
         env_node = scene.environment(env, node, status)
         outer = next(n for n in nodes if n is node or _find([n], node["id"]) is not None)
@@ -737,6 +814,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         holes = [n for n in _boxes(nodes) if n["kind"] == "hole" and scene.objs.get(n["id"]) == id(obj)]
         for n in holes or boxes:        # a quotient: its holes, not the box of the dividend
             n["open"] = True
+    for obj, name, result in why:        # the counterexample, on the tag of the check
+        n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
+        if n is not None and n.get("badge") and n["badge"]["text"].startswith(name):
+            n["badge"]["why"] = _why(result)
     for obj, name, about in repairs:     # on the box that shows the result of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
         if n is not None:
@@ -954,9 +1035,9 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         if r is not None:
             marks.append((c, "feasible", r))
     status = lambda r: r.status if r is not None else None
-    pairs = [(a, b, status(kept("refines", _record.key("refines", a, b),
-                                lambda a=a, b=b: _checks_.refines(a, b, timeout=timeout),
-                                refined=x, abstract=y)) if kept_or_checked else None)
+    pairs = [(a, b, kept("refines", _record.key("refines", a, b),
+                         lambda a=a, b=b: _checks_.refines(a, b, timeout=timeout),
+                         refined=x, abstract=y) if kept_or_checked else None)
              for (a, b, _), (x, y) in zip(pairs, refines)]
     for c in atoms:                   # a composition is not GR(1): its parts are checked
         if verify:
@@ -967,18 +1048,21 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     for model, name in environments:
         c = get(name)
         m = _model(model, c)
-        envs.append((m, c, status(kept("environment", _record.key("environment", _record.model_bytes(model), c),
-                                       lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
-                                       model=model, contract=name)) if kept_or_checked else None))
-    shown, impls = list(items), {}
+        envs.append((m, c, kept("environment", _record.key("environment", _record.model_bytes(model), c),
+                                lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
+                                model=model, contract=name) if kept_or_checked else None))
+    shown, impls, why = list(items), {}, []
     for model, name in implementations:   # a contract drawn with its model, as a component
         c = get(name)
         m = _model(model, c)
         k = impls[id(c)] = Component(c.name, c, m)
         if kept_or_checked:
-            k.status = status(kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
-                                   lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
-                                   model=model, contract=name))
+            r = kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
+                     lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
+                     model=model, contract=name)
+            k.status = status(r)
+            if _why(r):
+                why.append((k, "M ⊨ C", r))
     # a part with a model, in a decomposition: the decomposition is drawn as
     # its components, each with its model when it has one
     inner = set()
@@ -997,7 +1081,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                        written, get)
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
                 open=[get(e) for e in open], title=title or os.path.basename(path),
-                connect=[get(n) for n in connect if id(get(n)) in drawn], repairs=repairs)
+                connect=[get(n) for n in connect if id(get(n)) in drawn], repairs=repairs, why=why)
     _place_in_source(d, path)
     if rec is not None and check:     # the whole file checked: the results of old versions go
         rec.save(prune=not contracts and (deadline is None or time.monotonic() <= deadline))
@@ -1045,9 +1129,9 @@ def _repairs(path, refines, pairs, implementations, environments, envs, impls, a
                 e = found.setdefault(k, {"name": k, "value": _number_text(v), "type": kind,
                                          "owners": []})
                 e["owners"].append({"contract": c.name, "role": role, "line": line})
-        for e in found.values():       # a part when a part declares it
+        for e in found.values():       # the requirement's when it declares it too (r of DroneAltitude)
             roles_of = {o["role"] for o in e["owners"]}
-            e["role"] = "part" if "part" in roles_of else roles_of.pop()
+            e["role"] = "requirement" if "requirement" in roles_of else roles_of.pop()
         return list(found.values())
 
     out = []
@@ -1490,6 +1574,22 @@ _PAGE = r"""<!doctype html>
             padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text; }
   .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
              animation:turn 0.8s linear infinite; }
+  .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px; }
+  .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:2px 10px;
+               font:11px Menlo, Monaco, monospace; color:var(--soft); }
+  .rp-values .port { color:var(--ink); font-weight:600; }
+  table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
+  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:right; padding:2px 8px;
+                      border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
+  table.rp-trace td { padding:2px 8px; text-align:right; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
+  table.rp-trace td.v { text-align:left; color:var(--soft); }
+  table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
+  .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
+             font:11px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; padding:4px 0 0; }
+  pre.code { margin:0 0 12px; font:11.5px/1.55 Menlo, Monaco, monospace; color:var(--ink); }
+  pre.code span.n { display:inline-block; width:2.4em; color:var(--faint); text-align:right; margin-right:12px;
+                    user-select:none; -webkit-user-select:none; }
+  #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
   .q-item { padding:8px 12px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:2px; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
   .q-item .t { display:flex; gap:6px; align-items:center; font-weight:600; font-size:12px; }
@@ -1659,8 +1759,8 @@ function icons(n) {
     const from = { controller: " (synthesized by slugs)", rtl: " (RTL)", json: " (JSON)", smv: " (SMV)", c: " (C)" }[n.model.source] || "";
     const kind = n.model.source === "controller" ? "synth" : "model";
     if (states(n)) out.push([kind, "m:" + n.id, "model " + n.model.name + from + ", " + f.count + " states"]);
-    else if (n.model.source === "c") out.push([kind, null, "function " + n.model.name + from
-      + ": its outputs come from its inputs, one call at a time (ESBMC, CBMC)"]);
+    else if (n.model.source === "c") out.push([kind, n.model.code ? "m:" + n.id : null, "function " + n.model.name + from
+      + ": its outputs come from its inputs, one call at a time (ESBMC, CBMC)" + (n.model.code ? ". Click: its code" : "")]);
     else out.push([kind, null, "model " + n.model.name + from + (f && f.too_many
       ? ": more than " + f.count + " states, too many to show" : ": no registers, its outputs are functions of its inputs")]);
   }
@@ -2291,6 +2391,7 @@ function select(line, bring, at) {
 
 // A model with more states is shown in a panel, as a table of moves.
 function showModel(n) {
+  if (n.model.code) { showCode(n); return; }
   const f = n.model.fsm, label = {};
   f.states.forEach(st => { label[st.id] = st.label; });
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -2309,6 +2410,15 @@ function showModel(n) {
   document.getElementById("pop").style.display = "flex";
 }
 function closePop() { document.getElementById("pop").style.display = "none"; }
+// The code of a C function, and of the functions of its file it calls, with the lines of the file.
+function showCode(n) {
+  const c = n.model.code, esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  document.getElementById("poptitle").textContent = n.title + " · " + c.file + " · function " + n.model.name;
+  document.getElementById("popview").innerHTML = c.parts.map(q => "<h4>" + esc(q.name) + ", line " + q.line + "</h4>"
+    + "<pre class='code'>" + q.text.split("\n").map((l, i) => "<span class='n'>" + (q.line + i) + "</span>" + esc(l)).join("\n")
+    + "</pre>").join("");
+  document.getElementById("pop").style.display = "flex";
+}
 
 function help() {
   const h = document.getElementById("help");
@@ -2596,7 +2706,7 @@ function makeRoom() {
   const box = document.getElementById("repair"), r = anchorOf();
   if (!r || !cam) return;
   const need = r.right + 10 + box.offsetWidth - (innerWidth - 12);
-  if (need > 0 && need < r.left - 60) { cam.x -= need; place(); }
+  if (need > 0) { cam.x -= need; place(); }      // the left of the box may leave the window, not go under the panel
 }
 function closeRepair() {
   panel = null;
@@ -2613,7 +2723,9 @@ function rebindPanel() {
   renderPanel();
 }
 const ROLE = { part: "part", requirement: "requirement", contract: "contract" };
-function renderPanel() {
+// the panel drawn again keeps in the window: its height changes as repairs come
+function renderPanel() { fillPanel(); placePanel(); }
+function fillPanel() {
   const box = document.getElementById("repair");
   if (!panel) { box.style.display = "none"; return; }
   const n = byId[panel.id];
@@ -2628,16 +2740,14 @@ function renderPanel() {
              : st === "unknown" ? "Not decided." : "Not checked yet.";
   const head = h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says));
   box.appendChild(head);
-  if (!r) {
-    head.appendChild(h("div", { class: "rp-note" }, n.contract && n.contract.K
-      ? "Repairs are found on a specification file: open it with chase-cps view FILE --serve, or in VS Code."
-      : "This check reads no named constant. A repair changes named constants: write the number to change as one "
-        + "(integer constant k 2; or real constant lam 4.5;) and use its name in the terms."));
-    return;
-  }
+  const why = whySection(n, t, st);
+  if (why) box.appendChild(why);
+  if (st !== "invalid") return;          // nothing to fix
+  if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
   // the constants
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Constants that may change"));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix: the values of the constants"),
+    h("div", { class: "rp-note", style: "margin:0 0 4px" }, "Pick the constants that may change, and their ranges."));
   r.constants.forEach(c => {
     const [lo, hi] = s.ranges[c.name];
     const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
@@ -2677,6 +2787,85 @@ function renderPanel() {
   if (!how) box.appendChild(h("div", { class: "rp-sec" },
     h("div", { class: "rp-note", style: "margin-top:0" }, "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve. On the command line:"),
     h("div", { class: "rp-cmd" }, commandOf(r, s))));
+}
+// Why the check fails: which side, and the behavior that shows it.
+function whySection(n, t, st) {
+  if (st !== "invalid") return null;
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Why it fails"));
+  if (t !== "⪯" && t !== "M ⊨ C" && t !== "E ⊨ A") {
+    const c = (n.checks || []).find(x => x.name === t);
+    sec.appendChild(h("div", {}, (WHAT[t] || t) + ": it does not hold" + (c && c.core
+      ? ". The terms of the core are on a red ground in the box (click the tag to show or hide them)." : ".")));
+    return sec;
+  }
+  const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
+  const code = n.model && n.model.source === "c";
+  const lead = !w ? null
+    : w.failed === "assumptions" ? req + " accepts an environment that the parts do not:"
+    : t === "⪯" ? "The parts allow a behavior that breaks a guarantee of " + req + ":"
+    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " whose outputs break " + req + ":"
+                            : "A run of the model " + n.model.name + " that breaks " + req + ":")
+    : "A behavior of the environment that breaks the assumptions it must meet:";
+  if (w && w.trace) {
+    sec.appendChild(h("div", {}, lead));
+    const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
+    const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
+    sec.appendChild(traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req));
+  } else {
+    sec.appendChild(h("div", {}, "The counterexample was not kept with the result" + (inEditor()
+      ? ": press ▶ (Check) to run the check again." : ": run the check again (chase-cps view FILE --check --no-results).")));
+  }
+  if (w && w.reason) sec.appendChild(h("div", { class: "rp-note" }, w.reason));
+  if (code && n.model.code) sec.appendChild(h("button", { class: "rp-link", onclick: () => showCode(n) }, "Show the code"));
+  return sec;
+}
+// A counterexample: one column per step (one only for a check of one call), the ports of the box first.
+function traceTable(tr, first, req) {
+  const fmt = v => v === null || v === undefined ? "–" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
+  const one = tr.steps.length === 1;
+  if (one) {                            // one call: name = value, in columns
+    const grid = h("div", { class: "rp-values" }, order.map(i => h("span", { class: first.includes(tr.vars[i]) ? "port" : "" },
+      tr.vars[i] + " = " + fmt(tr.steps[0][i]))));
+    const notes = [first.length ? "In bold, the variables of " + req + "." : null,
+                   tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
+    return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
+  }
+  const t = h("table", { class: "rp-trace" });
+  if (!one) t.appendChild(h("tr", {}, h("th", {}, "step"),
+    tr.steps.map((_, i) => h("th", { title: tr.loop === i ? "the loop starts here, and repeats forever" : "" },
+                             (tr.loop === i ? "↺ " : "") + i))));
+  const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map(st => h("td", {}, fmt(st[i])))));
+  const LIMIT = one ? 24 : 12;
+  rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
+  const wrap = h("div", { class: "rp-tracewrap" }, t);
+  if (rows.length > LIMIT) {
+    const more = h("button", { class: "rp-link", onclick: () => { rows.slice(LIMIT).forEach(r => t.appendChild(r)); more.remove(); } },
+                   (rows.length - LIMIT) + " more variables");
+    wrap.appendChild(more);
+  }
+  const notes = [first.length ? "In bold, the variables of " + req + "." : null,
+                 tr.loop !== null && !one ? "From ↺, the steps repeat forever." : null,
+                 tr.cut ? "The first " + tr.steps.length + " steps." : null,
+                 tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
+  if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
+  return wrap;
+}
+// A check that fails with no constant to repair, or a page that cannot run repairs.
+function noRepairSection(n, t) {
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
+  if (n.contract && n.contract.K) {
+    sec.appendChild(h("div", {}, "The values of the constants (K) are repaired from the specification file: open it in "
+      + "VS Code, or draw it with chase-cps view FILE --serve, and click this tag there."));
+    return sec;
+  }
+  sec.appendChild(h("div", {}, "This check reads no named constant: no value to change can fix it. What fails is a rule "
+    + "of a part, or what the requirement asks, as the behavior above shows: change the terms of that part, or of the "
+    + "requirement."));
+  if (t === "⪯") sec.appendChild(h("div", { class: "rp-note" }, "The quotient of the requirement by the other parts "
+    + "(divide) is the weakest contract the part to change must meet."));
+  return sec;
 }
 function optionCard(n, t, r, s, o, sig) {
   const res = o.res, old = o.sig !== sig && !o.applied;
