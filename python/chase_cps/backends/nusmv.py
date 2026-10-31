@@ -402,6 +402,8 @@ def parse_trace(output: str, variables: dict) -> Trace | None:
     states: list[dict] = []
     loop_at = None
     current: dict = {}
+    inputs: set = set()                 # the input variables (IVAR): on the step they leave
+    reading_input = False
     for line in output[start:].splitlines()[1:]:
         line = line.strip()
         if line.startswith("-- Loop starts here"):
@@ -409,11 +411,15 @@ def parse_trace(output: str, variables: dict) -> Trace | None:
         elif line.startswith("-> State:"):
             current = dict(states[-1]) if states else {}
             states.append(current)
+            reading_input = False
         elif line.startswith("-> Input:"):
+            reading_input = True
             continue
         elif "=" in line and states and not line.startswith("--"):
             name, value = line.split("=", 1)
             name = name.strip()
+            if reading_input:
+                inputs.add(name)
             if name in variables or not variables:
                 current[name] = _value(value)
         elif line.startswith("-- ") or line.startswith("nuXmv >") or line == "":
@@ -424,7 +430,11 @@ def parse_trace(output: str, variables: dict) -> Trace | None:
     if loop_at is None:
         return Trace(prefix=states, loop=[])
     # The last state closes the loop: it equals the state where the loop starts.
+    # Its inputs are not compared: they are carried from the step before (the
+    # input that leaves the last state, back to the loop, is not printed).
     loop = states[loop_at:]
-    if len(loop) > 1 and loop[-1] == loop[0]:
+    same = lambda a, b: {k: v for k, v in a.items() if k not in inputs} == \
+        {k: v for k, v in b.items() if k not in inputs}
+    if len(loop) > 1 and same(loop[-1], loop[0]):
         loop = loop[:-1]
     return Trace(prefix=states[:loop_at], loop=loop)

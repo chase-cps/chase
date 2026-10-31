@@ -146,3 +146,30 @@ def test_variables_named_as_smv_keywords():
     r = implies("G (count = 1 | abs > 2)", "count = 1", v)
     assert r.status == "invalid" and set((r.trace.prefix + r.trace.loop)[0]) == {"count", "abs"}
     assert is_satisfiable("next & !E & X !next", v).status == "sat"
+
+
+def test_a_loop_closed_by_a_copy_of_its_first_state_with_inputs():
+    # nuXmv prints the state where the loop starts again at the end; its input
+    # is carried from the step before, and is not a step of its own
+    from chase_cps.backends.nusmv import parse_trace
+    out = """Trace Type: Counterexample
+  -> State: 1.1 <-
+    c = 0
+  -> Input: 1.2 <-
+    k = TRUE
+  -- Loop starts here
+  -> State: 1.2 <-
+    c = 1
+  -> Input: 1.3 <-
+    k = FALSE
+  -> State: 1.3 <-
+    c = 2
+  -> Input: 1.4 <-
+    k = TRUE
+  -> State: 1.4 <-
+    c = 1
+"""
+    t = parse_trace(out, {"c": (0, 3), "k": "bool"})
+    d = t.to_dict()
+    assert [s["c"] for s in d["prefix"]] == [0] and [s["c"] for s in d["loop"]] == [1, 2]
+    assert [s["k"] for s in d["loop"]] == [False, True]
