@@ -143,6 +143,27 @@ def test_an_input_of_a_part_that_the_contract_does_not_give_is_open():
             "var": "enable"} in box["edges"]
 
 
+def test_a_refinement_that_fails_says_which_terms_and_at_which_step():
+    # on the assumptions: the assumptions of the parts that the trace breaks; on the
+    # guarantees: the step where a term fails first, where the panel opens
+    from chase_cps import refines
+    sensor = Contract.from_strings(name="Sensor", inputs=["high"], outputs=["alarm"], guarantees=["G (high -> alarm)"])
+    pump = Contract.from_strings(name="Pump", inputs=["alarm"], outputs=["on"], assumptions=["G F !alarm"],
+                                 guarantees=["G (alarm -> X on)"])
+    drain = Contract.from_strings(name="Drain", inputs=["high"], outputs=["on"], guarantees=["G (high -> X on)"])
+    parts = sensor.compose(pump, name="Parts")
+    r = refines(parts, drain)
+    if r.status != "invalid":
+        pytest.skip("no model checker")
+    why = viz.diagram(refines=[(parts, drain, r)])["nodes"][0]["badge"]["why"]
+    assert why["failed"] == "assumptions" and why["broken"] == ["Pump: G F !alarm"]
+    late = Contract.from_strings(name="Late", inputs=["high"], outputs=["on"], guarantees=["X X G on"])
+    early = Contract.from_strings(name="Early", inputs=["high"], outputs=["on"], guarantees=["G on"])
+    r = refines(late, early)
+    why = viz.diagram(refines=[(late, early, r)])["nodes"][0]["badge"]["why"]
+    assert why["at"] == min(i for i, s in enumerate(why["trace"]["steps"]) if s[why["trace"]["vars"].index("on")] is False)
+
+
 def test_viewpoints_inside_a_composition_and_refinement_on_four_levels():
     a, b, top = contracts()
     t = Contract.from_strings(name="At", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])

@@ -163,16 +163,83 @@ def _why(result, contract=None) -> Optional[dict]:
         terms = contract.assumptions if out.get("side") == "assumptions" else contract.guarantees
         try:
             out["violated"] = [i for i, t in enumerate(terms) if not holds(t, trace, contract.variables)]
+            steps = [_first_failure(terms[i], trace, contract.variables, len(out["trace"]["steps"]))
+                     for i in out["violated"]]
+            steps = [k for k in steps if k is not None]
+            if steps:                    # the step the panel opens at: where a term fails first
+                out["at"] = out["trace"]["at"] = min(steps)
         except Exception:                # a term it cannot read on the trace: none marked
             pass
     return out or None
+
+
+def _broken_assumptions(node: dict, res, scene) -> dict:
+    """When a refinement fails on the assumptions (the requirement allows an
+    environment that a part does not accept): {box of a part: (its title, [(index, term)])}
+    of the assumptions of the parts inside node that its trace breaks."""
+    if getattr(res, "failed", None) != "assumptions":
+        return {}
+    trace = getattr(res.assumptions, "trace", None)
+    if trace is None:
+        return {}
+    from .robustness import holds
+    out = {}
+    for ch in node.get("children", []):
+        obj = scene.things.get(ch["id"])
+        c = obj.contract if isinstance(obj, Component) else obj
+        if not isinstance(c, Contract):
+            continue
+        try:
+            bad = [(i, ltl.to_str(t)) for i, t in enumerate(c.assumptions)
+                   if not holds(t, trace, c.variables)]
+        except Exception:                # a term it cannot read on the trace
+            continue
+        if bad:
+            out[ch["id"]] = (ch["title"], bad)
+    return out
+
+
+def _name_holes(nodes: list) -> None:
+    """A quotient whose hole holds a candidate says which one: "ModeLogic ⊗ ?"
+    becomes "ModeLogic ⊗ ? · candidate: Pilot", so that boxes of the same requirement with
+    other candidates are told apart."""
+    for n in nodes:
+        if n.get("op") == "quotient" and str(n.get("note", "")).endswith("?"):
+            inside = [g["title"] for ch in n.get("children", []) if ch.get("kind") == "hole"
+                      for g in ch.get("children", [])]
+            if inside:
+                n["note"] = n["note"] + " · candidate: " + ", ".join(inside)
+        _name_holes(n.get("children", []))
+
+
+def _first_failure(term, trace, variables, length: int) -> Optional[int]:
+    """The first step of the trace at which the term fails, when it says one:
+    X^n p at n, G p (and G[a,b] p, a conjunction of X^k p) at the first step
+    where p fails; None for a term that fails as a whole (F p never holds)."""
+    from .robustness import holds
+    n = 0
+    while isinstance(term, ltl.Unary) and term.op == "X":
+        n, term = n + 1, term.arg
+    if isinstance(term, ltl.Binary) and term.op == "&":
+        found = [k for k in (_first_failure(t, trace, variables, length) for t in (term.left, term.right))
+                 if k is not None]
+        return n + min(found) if found else None
+    if isinstance(term, ltl.Unary) and term.op == "G":
+        for k in range(n, max(length, n + 1)):
+            if not holds(term.arg, trace, variables, at=k):
+                return k
+        return None
+    if isinstance(term, ltl.Unary) and term.op == "F":
+        return None
+    return n if not holds(term, trace, variables, at=n) else None
 
 
 class _Scene:
     def __init__(self):
         self.count = 0
         self.ids = {}           # the first box of an object
-        self.objs = {}          # the object of each box
+        self.objs = {}          # the object of each box (its id)
+        self.things = {}        # the object of each box
         self.drawn = {}         # the objects drawn, by id
 
     def fresh(self, prefix="n") -> str:
@@ -185,6 +252,7 @@ class _Scene:
         node["types"] = types or {}
         self.ids.setdefault(id(obj), node["id"])
         self.objs[node["id"]] = id(obj)
+        self.things[node["id"]] = obj
         node.setdefault("children", [])
         node.setdefault("edges", [])
         node.setdefault("layout", "row")
@@ -736,6 +804,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     def shows(node, res, high):           # the counterexample of this refinement, on the box of its tag
         if res is not None and _why(res) and node.get("badge"):
             node["badge"]["why"] = _why(res, high)
+            parts = _broken_assumptions(node, res, scene)
+            if parts:                     # failed on the assumptions: those of the parts it breaks
+                node["badge"]["why"]["parts"] = {k: [i for i, _ in v] for k, (_, v) in parts.items()}
+                node["badge"]["why"]["broken"] = [f"{title}: {t}" for title, v in parts.values() for _, t in v]
         return node
     for r in ordered:
         low, high = r[0], r[1]
@@ -873,6 +945,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
         context = [ltl.to_str(_formula(f)) for f in context]
+    _name_holes(nodes)
     out = {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
     if period is not None:            # the time between two steps: the steps drawn as times
         if ltl.number(period) <= 0:
@@ -1710,6 +1783,9 @@ _PAGE = r"""<!doctype html>
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:right; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:left; color:var(--soft); }
+  table.rp-trace th.fail { color:var(--bad); }
+  .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
+  table.rp-trace td.fail { background:#fbeceb; }
   table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
   .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
              font:11px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; padding:4px 0 0; }
@@ -1838,6 +1914,14 @@ function terms(c, out, core, src) {
 }
 function focused(n) {
   if (show.checks && n.id in focus) return n.checks[focus[n.id]].core;
+  if (panel && panel.id !== n.id && n.contract) {     // a part whose assumptions the open counterexample breaks
+    const pn = byId[panel.id], pw = pn && pn.badge && tagOf(pn.badge.text) === panel.tag && pn.badge.why;
+    const b = pw && pw.parts && pw.parts[n.id];
+    if (b && b.length) {
+      const ga = n.contract._gA;
+      return { part: "contract", A: ga ? ga.map((g, j) => g.some(i => b.includes(i)) ? j : -1).filter(j => j >= 0) : b, G: [] };
+    }
+  }
   const w = panel && panel.id === n.id && n.badge && tagOf(n.badge.text) === panel.tag && n.badge.why;
   if (!w || !w.violated || !w.violated.length || !n.contract) return null;    // the terms the counterexample breaks
   const gg = n.contract._gG;
@@ -2315,7 +2399,8 @@ function place() {
 }
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
-  const k = Math.min(1, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
+  // a small diagram is made larger too, up to 1.5 times
+  const k = Math.min(1.5, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
   cam = { k, x: Math.max(20, (W - size0.w * k) / 2), y: TOP + Math.max(10, (H - size0.h * k) / 2) };
   place();
 }
@@ -2892,7 +2977,10 @@ function hideInspector() {
 }
 async function openRepair(n, t) {
   const keys = keysOf(DATA.nodes);
-  panel = { id: n.id, tag: t, nkey: keys[n.id], step: 0 };
+  // the counterexample opens at the step where a term fails first, when it has one
+  const w0 = n.badge && tagOf(n.badge.text) === t ? n.badge.why : ((n.checks || []).find(c => c.name === t) || {}).why;
+  panel = { id: n.id, tag: t, nkey: keys[n.id], step: (w0 && w0.at) || 0 };
+  if (w0 && w0.parts) Object.keys(w0.parts).forEach(id => open.add("c:" + id));   // the parts whose assumptions break
   inspector.tab = "details";
   showInspector();
   const r0 = (n.repair || {})[t];      // the boxes that declare the constants, and the box of the check, open
@@ -3023,6 +3111,9 @@ function whySection(n, t, st) {
       + "parts: " + req + " allows an input that the parts do not accept." : null;
   if (w && w.trace) {
     if (lead) sec.appendChild(h("div", {}, lead));
+    if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
+      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, "The assumptions it breaks (in red):"),
+        w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     sec.appendChild(traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req));
@@ -3068,11 +3159,13 @@ function traceTable(tr, first, req) {
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
   const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
-    tr.steps.map((_, i) => h("th", { title: (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
+    tr.steps.map((_, i) => h("th", { class: tr.at === i ? "fail" : "",
+                                     title: (tr.at === i ? "a term fails first at this step. " : "")
+                                            + (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
                                             + (DATA.period ? "step " + i : "") },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
-    h("td", { class: "v" }, tr.vars[i]), tr.steps.map(st => h("td", {}, cell(st[i])))));
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: tr.at === k ? "fail" : "" }, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
@@ -3097,7 +3190,7 @@ function noRepairSection(n, t) {
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
-    ? ["Repair θ in VS Code, or with chase-cps view FILE --serve."]
+    ? ["Repair the named constants in VS Code, or with chase-cps view FILE --serve."]
     : ["No named constant to repair: change a term of a part or of the requirement. A constant declared "
        + "in the file (integer constant k 2;) can be repaired."]
        .concat(t === "⪯" ? ["What a part must guarantee: divide the requirement by the other parts (divide)."] : []);
