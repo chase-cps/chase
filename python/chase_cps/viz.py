@@ -1402,8 +1402,7 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
             state.update(mtime=mtime, version=state["version"] + 1, error=error)
             if d is not None:
                 state["data"] = d
-                if state["page"] is None:
-                    state["page"] = html(d, elk=elk)
+                state["page"] = html(d, elk=elk)      # a reload shows the last drawing
 
     def body(route):
         if route == "/version":
@@ -1666,7 +1665,7 @@ _PAGE = r"""<!doctype html>
   table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
   .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
              font:11px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; padding:4px 0 0; }
-  pre.code { margin:0 0 12px; font:11.5px/1.55 Menlo, Monaco, monospace; color:var(--ink); }
+  pre.code { margin:0 0 12px; font:11.5px/1.55 Menlo, Monaco, monospace; color:var(--ink); overflow-x:auto; }
   pre.code span.n { display:inline-block; width:2.4em; color:var(--faint); text-align:right; margin-right:12px;
                     user-select:none; -webkit-user-select:none; }
   #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
@@ -1818,7 +1817,7 @@ function lines(n) {
   };
   if (n.note) out.push(["s", "", n.note]);
   if (n.contract && open.has("c:" + n.id)) {
-    if (n.composed) out.push(["s", "", "Contract " + n.contract.name]);
+    if (n.composed && open.has("k:" + n.id)) out.push(["s", "", "Contract " + n.contract.name]);
     part(n.contract, "contract");
   }
   if (n.composed && open.has("k:" + n.id)) {
@@ -2752,20 +2751,22 @@ function h(tag, attrs, ...kids) {
   return e;
 }
 function checkTitle(n, t) {
-  const r = (n.repair || {})[t];
-  if (r && r.check === "refines") return r.args[0].split("+").join(" ⊗ ") + " refines " + r.args[1];
-  if (r && r.check === "impl") return r.args[0].split("/").pop() + " implements " + r.args[1];
-  if (r && r.check === "env") return r.args[0].split("/").pop() + " is an environment of " + r.args[1];
-  if (r) return "A ∧ G of " + r.args[0] + " can hold";
+  const no = statusOf(n, t) === "invalid", r = (n.repair || {})[t];
+  const v = (yes, not) => no ? not : yes;
+  if (r && r.check === "refines") return r.args[0].split("+").join(" ⊗ ") + v(" refines ", " does not refine ") + r.args[1];
+  if (r && r.check === "impl") return r.args[0].split("/").pop() + v(" implements ", " does not implement ") + r.args[1];
+  if (r && r.check === "env") return r.args[0].split("/").pop() + v(" is an environment of ", " is not an environment of ") + r.args[1];
+  if (r) return "A ∧ G of " + r.args[0] + v(" can hold", " cannot hold");
   const req = (n.contract && n.contract.name) || n.title;           // from the box: what is inside, its model
   if (t === "⪯") {
     const inner = n.note || (n.children || []).map(c => c.title).join(" ⊗ ");
-    return inner ? inner + " refines " + req : n.title;
+    return inner ? inner + v(" refines ", " does not refine ") + req : n.title;
   }
-  if (t === "M ⊨ C" && n.model) return n.model.name + (n.model.name === req ? " meets its contract" : " implements " + req);
-  if (t === "safe" && n.model) return n.model.name + " is safe code";
-  if (t === "E ⊨ A") return n.title + " is an environment";
-  return (WHAT[t] || t).split(":")[0] + ": " + req;
+  if (t === "M ⊨ C" && n.model) return n.model.name + (n.model.name === req ? v(" meets its contract", " does not meet its contract")
+                                                                          : v(" implements ", " does not implement ") + req);
+  if (t === "safe" && n.model) return n.model.name + v(" is safe code", " is not safe code");
+  if (t === "E ⊨ A") return n.title + v(" is an environment", " is not an environment");
+  return (no ? "not " : "") + (WHAT[t] || t).split(":")[0] + ": " + req;
 }
 // the tag of a check as the diagram draws it, for a panel
 function tagSvg(t, status) {
@@ -2867,7 +2868,7 @@ function fillPanel() {
   if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
   // the constants
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", title: "Pick the parameters that may change, and their ranges" }, "Repair θ"));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", title: "Pick the parameters that may change, and their ranges" }, "Repair ", h("span", { style: "text-transform:none" }, "θ")));
   r.constants.forEach(c => {
     const [lo, hi] = s.ranges[c.name];
     const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
@@ -2885,7 +2886,7 @@ function fillPanel() {
   const run = h("div", { class: "rp-run" });
   if (s.running) {
     run.appendChild(h("span", { class: "rp-spin" }));
-    run.appendChild(h("span", { class: "rp-says" }, s.running.done + " / " + s.running.of));
+    run.appendChild(h("span", { class: "rp-says" }, "Searching… " + s.running.done + " / " + s.running.of));
     run.appendChild(h("button", { class: "rp-btn", onclick: () => stopRepairs(r) }, "Stop"));
   } else {
     run.appendChild(h("button", { class: "rp-btn main", disabled: !how || !picked.length,
@@ -2905,7 +2906,7 @@ function fillPanel() {
     box.appendChild(out);
   }
   if (!how) box.appendChild(h("div", { class: "rp-sec" },
-    h("div", { class: "rp-note", style: "margin-top:0", title: "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve" }, "Run in VS Code, or:"),
+    h("div", { class: "rp-note", style: "margin-top:0", title: "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve" }, "Repairs run in VS Code, or:"),
     h("div", { class: "rp-cmd" }, commandOf(r, s))));
 }
 // Why the check fails: in one line, then the counterexample (and its steps on the diagram).
@@ -2996,8 +2997,8 @@ function noRepairSection(n, t) {
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
     ? ["Repair θ in VS Code, or with chase-cps view FILE --serve."]
-    : ["No parameter (θ) to tune: change a rule."]
-       .concat(t === "⪯" ? ["What a part must meet: the requirement divided by the other parts."] : []);
+    : ["No parameter (θ) to tune: change a term of a part or of the requirement."]
+       .concat(t === "⪯" ? ["What a part must guarantee: divide the requirement by the other parts (divide)."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
@@ -3006,23 +3007,24 @@ function optionCard(n, t, r, s, o, sig) {
   const names = o.names.join(", ");
   if (res.status !== "repaired") {
     const text = res.status === "holds" ? "Holds already."
-      : res.status === "impossible" ? "No value in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + "."
+      : res.status === "impossible" ? "No value in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " works."
       : res.bound !== undefined && res.bound !== null ? "Stopped: the least change is ≥ " + res.bound + "."
       : "Not decided.";
     const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : ""), title: res.reason || "" },
-      h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + names));
+      h("div", { class: "rp-v", style: "font-family:inherit" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + names));
     if (res.status === "impossible" && !old) card.appendChild(h("div", { class: "rp-b" },
       h("button", { class: "rp-btn", onclick: () => { o.names.forEach(k => { const [a, b] = s.ranges[k], w = Math.max(b - a, 1);
-        s.ranges[k] = [a - w / 2, b + w / 2].map(x => r.constants.find(c => c.name === k).type === "int" ? Math.round(x) : x); });
+        s.ranges[k] = [a >= 0 ? Math.max(0, a - w / 2) : a - w / 2, b + w / 2]
+          .map(x => r.constants.find(c => c.name === k).type === "int" ? Math.round(x) : x); });
         findRepairs(n, t); } }, "Widen")));
     return card;
   }
   const v = h("div", { class: "rp-v" });
   const moved = o.names.filter(k => !same(o, k));
   (moved.length ? moved : o.names).forEach((k, i) => { if (i) v.appendChild(document.createTextNode("   "));
-    v.append(k + " ", h("s", {}, o.from[k]), " → ", h("em", {}, res.text[k] === null ? String(res.values[k]) : res.text[k])); });
+    v.append(k + " ", h("s", {}, o.from[k]), " → ", h("em", {}, res.text[k] === null ? "≈ " + short(res.values[k]) : res.text[k])); });
   const meta = [o.applied ? "Applied" : old ? "Out of date" : null, res.optimal ? "optimal" : "least found",
-                "change " + res.cost].filter(Boolean).join(" · ");
+                "change " + short(res.cost)].filter(Boolean).join(" · ");
   const how = res.method + (res.rounds ? ", " + res.rounds + (res.rounds === 1 ? " round" : " rounds") : "") + ", " + res.seconds + " s";
   const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
   const lines = o.names.every(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners.every(w => w.line));
@@ -3034,7 +3036,7 @@ function optionCard(n, t, r, s, o, sig) {
          : req ? "Changes a requirement" : "Write the value in the file",
     onclick: e => applyOption(n, t, r, o, e.target) }, o.applied ? "Applied" : "Apply");
   const card = h("div", { class: "rp-opt repaired" + (old ? " old" : "") + (shown ? " shown" : ""),
-                          onmouseenter: () => { if (!old) showPreview(previewOf(n, t, r, o)); },
+                          onmouseenter: () => { if (!old) hoverPreview(previewOf(n, t, r, o)); },
                           onmouseleave: () => clearPreview(false) },
     v, h("div", { class: "rp-m", title: how }, meta),
     h("div", { class: "rp-b" },
@@ -3044,6 +3046,8 @@ function optionCard(n, t, r, s, o, sig) {
       apply));
   return card;
 }
+// a number in a few digits: 0.8095238095238095 is 0.8095
+const short = x => typeof x === "number" && !Number.isInteger(x) ? String(+x.toPrecision(4)) : String(x);
 // the value of a repair is the one it had
 const same = (o, k) => o.res.text[k] !== null && Number(o.res.text[k]) === Number(o.from[k]);
 // what a repair changes, as a key: the same changes from two runs are one repair
@@ -3063,7 +3067,7 @@ function commandOf(r, s) {
   const q = a => /^[\w.+:\/-]+$/.test(a) ? a : JSON.stringify(a);
   const ps = r.constants.filter(c => s.picks[c.name]).map(c => "--param " + c.name + "=" + s.ranges[c.name][0] + ".."
                                                        + s.ranges[c.name][1] + (c.type === "int" ? ":int" : ""));
-  return ["chase-cps repair", q(DATA.title), flag, ...r.args.map(q), ...ps].join(" ");
+  return ["chase-cps repair", q(DATA.title.split("/").pop()), flag, ...r.args.map(q), ...ps].join(" ");
 }
 // The repairs of the constants picked: each alone, then all together.
 async function findRepairs(n, t) {
@@ -3177,12 +3181,19 @@ function showPreview(p) {
   }
 }
 function clearPreview(all) {
-  if (previewing && previewing.pinned && !all) {       // back to the one kept
-    const keep = previewing; previewing = null; showPreview(keep); return;
-  }
+  // back to the one kept, unless all go
+  const keep = !all && previewing && (previewing.pinned ? previewing : previewing.keep);
   document.querySelectorAll("#view text[data-was]").forEach(x => { x.textContent = x.getAttribute("data-was"); x.removeAttribute("data-was"); });
   document.querySelectorAll("#view .pv").forEach(x => x.remove());
-  if (all || !(previewing && previewing.pinned)) previewing = null;
+  previewing = null;
+  if (keep) showPreview(keep);
+}
+// pointing at a repair shows it for a while; the one kept comes back after
+function hoverPreview(p) {
+  const kept = previewing && (previewing.pinned ? previewing : previewing.keep);
+  if (kept && kept.option === p.option) return;
+  p.keep = kept || null;
+  showPreview(p);
 }
 function placePanel() {}
 // the list of the checks that fail (all of them: with or without constants)
@@ -3209,7 +3220,7 @@ function fillProblems(list) {
 function fillCode(n) {
   const box = document.getElementById("repair"), c = n.model.code;
   box.innerHTML = "";
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, c.file));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", style: "text-transform:none;letter-spacing:0" }, c.file));
   c.parts.forEach((q, i) => {
     if (c.parts.length > 1) sec.appendChild(h("div", { class: "rp-note", style: "margin:" + (i ? 8 : 4) + "px 0 2px" }, q.name));
     const pre = h("pre", { class: "code" });
@@ -3238,7 +3249,9 @@ function markPick() {
 function bringInto(n) {
   const b = document.querySelector('#view [data-box="' + n.id + '"] > rect'), v = document.getElementById("view");
   if (!b || !cam) return;
-  const r = b.getBoundingClientRect(), V = v.getBoundingClientRect();
+  const r = b.getBoundingClientRect(), all = v.getBoundingClientRect(), P = document.getElementById("insp");
+  const right = inspector.open && P && P.offsetParent ? Math.min(all.right, P.getBoundingClientRect().left - 8) : all.right;
+  const V = { left: all.left, top: all.top, bottom: all.bottom, right, width: right - all.left, height: all.height };
   if (r.left >= V.left && r.right <= V.right && r.top >= V.top + 40 && r.bottom <= V.bottom) return;
   const k = Math.min(cam.k, 0.9 * V.width / r.width * cam.k, 0.85 * (V.height - 40) / r.height * cam.k);
   if (k < cam.k) { const cx = r.left + r.width / 2, cy = r.top + r.height / 2; zoomAt(cx, cy, k / cam.k); }
@@ -3277,6 +3290,7 @@ function afterRender() {
   const n = panel && byId[panel.id], w = n && n.badge && tagOf(n.badge.text) === panel.tag && n.badge.why;
   if (w && w.trace) replay(n, w.trace, Math.min(panel.step || 0, w.trace.steps.length - 1));
   renderQueue();
+  if (inspector.open && inspector.tab !== "problems") renderInspector();   // new results: the details too
 }
 // The checks run by the editor: the button starts them (or stops them), and
 // the places where their results will be show three dots meanwhile.

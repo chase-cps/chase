@@ -386,7 +386,7 @@ CONTRACT Bound:
     # the list of the problems: this one, though it has no constant
     tab = page.locator("#insp-tabs .tab", has_text="Problems").bounding_box()
     page.mouse.click(tab["x"] + tab["width"] / 2, tab["y"] + tab["height"] / 2)
-    assert "Counter refines Bound" in page.inner_text("#repair .q-item")
+    assert "Counter does not refine Bound" in page.inner_text("#repair .q-item")
     page.keyboard.press("Escape")
     assert not page.is_visible("#insp")
     assert errors == []
