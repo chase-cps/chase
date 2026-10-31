@@ -1769,7 +1769,7 @@ let boxes = Object.values(byId);
 // the button of the transition labels: only on a page with a model drawn with its transitions
 function condsButton() {
   document.getElementById("conds").style.display =
-    Object.values(byId).some(n => n.model && n.model.fsm && n.model.fsm.edges.some(e => e.label)) ? "" : "none";
+    Object.values(byId).some(n => n.model && n.model.fsm && (n.model.fsm.edges || []).some(e => e.label)) ? "" : "none";
 }
 condsButton();
 const states = n => n.model && n.model.fsm && n.model.fsm.states;

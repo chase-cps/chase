@@ -444,3 +444,19 @@ def test_the_code_of_a_c_function(browser, tmp_path):
     assert codes[0].startswith("5") and "helper(a)" in codes[0]
     assert codes[1].startswith("1") and "return x + 1" in codes[1]
     assert errors == []
+
+
+def test_the_button_of_the_transition_labels(browser, tmp_path):
+    # shown only with a model drawn with its transitions; a model too large to
+    # draw (no transitions) leaves the page as it is
+    from chase_cps import Contract
+    c = Contract.from_strings(name="C", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)"])
+    for fsm, shown in [({"count": 5000, "too_many": True}, False),
+                       ({"states": [{"id": "s0", "label": "s0", "init": True}, {"id": "s1", "label": "s1"}],
+                         "edges": [{"from": "s0", "to": "s1", "label": "x"}], "count": 2}, True)]:
+        d = viz.diagram(c)
+        d["nodes"][0]["model"] = {"name": "m", "fsm": fsm}
+        page, errors = open_page(browser, tmp_path, d)
+        assert not errors
+        assert page.evaluate("getComputedStyle(document.getElementById('conds')).display !== 'none'") == shown
+        page.close()
