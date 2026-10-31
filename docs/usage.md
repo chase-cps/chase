@@ -626,8 +626,11 @@ without the specifications as its implementation. The inputs are the IVAR
 variables, the outputs the VAR and FROZENVAR ones. `chase-cps view
 FILE.smv --check` (and VS Code) draws it as a component: each
 specification is a term, and the one that a counterexample breaks is red.
-CTL (`SPEC`, `CTLSPEC`), past operators, and specifications over a `DEFINE`
-are not read. An SMV file with no specification is a model, not a
+An enumerated type (`{idle, busy}`) is read as the integers 0, 1, ... in
+the order written, in the contract and in the model (the traces show the
+numbers), and a `DEFINE` in a specification is replaced by its definition.
+CTL (`SPEC`, `CTLSPEC`), past operators, and a `DEFINE` written with
+`case ... esac` are not read. An SMV file with no specification is a model, not a
 contract: it is drawn as the implementation of a contract
 (`--implementation FILE.smv CONTRACT`).
 

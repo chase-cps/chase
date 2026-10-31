@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+Added:
+
+- SMV models with their specifications read enumerated types (as the
+  integers 0, 1, ... in the order written, in the contract and in the
+  model) and the DEFINEs that the specifications use (replaced by their
+  definitions).
+
+Changed:
+
+- A refinement in continuous time (`--lipschitz`) that the stricter check
+  does not show is unknown, not invalid. A decomposition drawn in its
+  contract keeps the inputs of the contract that no part drives; an input
+  of a part that the contract does not give is drawn open.
+
 ## 0.6.0 (2026-10-31)
 
 Added:
