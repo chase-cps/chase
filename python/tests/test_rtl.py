@@ -167,3 +167,29 @@ def test_an_included_file_is_found(tmp_path):
     f.write_text('`include "defs.sv"\nmodule inc(input logic clk, input logic [`W-1:0] a, output logic [`W-1:0] q);\n'
                  "  always_ff @(posedge clk) q <= a;\nendmodule\n")
     assert from_rtl(str(f), "inc").ivars == {"a"}
+
+
+WDOG = """module wdog(input clk, input rst, input kick, output alarm, output reg [2:0] cnt);
+  assign alarm = (cnt >= 3'd5);
+  always @(posedge clk) begin
+    if (rst || kick) cnt <= 3'd0;
+    else if (cnt != 3'd7) cnt <= cnt + 3'd1;
+  end
+endmodule
+"""
+
+
+def test_the_reset_in_a_contract(tmp_path):
+    # with reset, the reset is driven by the model: a contract that names it (an SVA
+    # checker with disable iff) is accepted, and a counterexample meets its assumptions
+    from chase_cps.robustness import holds
+    m = Model.from_rtl(write(tmp_path, "wdog", WDOG), "wdog", reset="rst")
+    c = Contract.from_strings(name="Watch", inputs=["kick", "rst"], outputs={"cnt": "word[3]", "alarm": "bool"},
+                              assumptions=["G (kick -> (rst | X (kick -> rst)))"],
+                              guarantees=["G (cnt < 5 | alarm | rst)"])
+    assert m.reset == "rst" and is_receptive(m, c).status == "receptive"
+    late = Contract.from_strings(name="Late", inputs=["kick", "rst"], outputs={"cnt": "word[3]", "alarm": "bool"},
+                                 assumptions=["G (kick -> (rst | X (kick -> rst)))"],
+                                 guarantees=["G (cnt < 6 | rst)"])
+    r = is_implementation(m, late)
+    assert r.status == "invalid" and holds(late.assumption, r.trace, late.variables, at=m.start)

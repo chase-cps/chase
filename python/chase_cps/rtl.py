@@ -221,7 +221,8 @@ def _model(top, smv, module, reset, clocks, names) -> Model:
             else:
                 define.append(f"    {name} := _{port};")
     text = "\n".join(out + (["IVAR"] + ivar if ivar else []) + ["DEFINE"] + define + extra) + "\n"
-    return Model(top, text, variables, ivars, start=1 if reset else 0)
+    return Model(top, text, variables, ivars, start=1 if reset else 0,
+                 reset=names.get(reset_name, reset_name) if reset else None)
 
 
 __all__ = ["RTLError", "from_rtl", "yosys"]

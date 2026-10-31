@@ -118,6 +118,7 @@ class Model:
     variables: dict[str, VarType] = field(default_factory=dict)
     ivars: set[str] = field(default_factory=set)
     start: int = 0      # the steps of a reset: the contracts are checked after them
+    reset: Optional[str] = None     # the input held as the reset (driven by the model, not an input)
     # Where the model comes from (RTL files, a controller), for the diagrams
     # (chase_cps.explicit); not used by the checks.
     source: Optional[dict] = field(default=None, compare=False, repr=False)
@@ -429,7 +430,8 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
         raise TypeError("is_receptive takes a model (Model, SMV text, a controller, or a "
                         "state machine in JSON)")
     m.check_variables(contract.inputs, f"the inputs of {contract.name}", contract.variables)
-    inputs = list(contract.inputs)
+    # the reset of an RTL model is driven by the model (in the first step only): not an input it accepts
+    inputs = [x for x in contract.inputs if x != m.reset]
     domains = {x: _values(contract.inputs[x]) for x in inputs}
     infinite = [x for x, d in domains.items() if d is None]
     if infinite:
@@ -443,13 +445,14 @@ def is_receptive(model, contract: Contract, backend: str = "auto",
         return Result(UNKNOWN, backend, reason="neither nuXmv nor NuSMV is installed")
     path, flavor = found
 
-    probe = lambda x: f"chase_probe_{x}"   # noqa: E731
+    # the next value of an input, as a variable to probe; the reset holds no more after the first step
+    probe = lambda x: "FALSE" if x == m.reset else f"chase_probe_{x}"   # noqa: E731
     initial, step = _allowed(contract, probe)
     text = _inputs_as_state(m, set(inputs))
     lines = [text.rstrip(), "FROZENVAR"]
     lines += [f"    {probe(x)} : {_smvtype(contract.inputs[x])};" for x in inputs]
     same = " & ".join(f"{x} = {probe(x)}" for x in inputs) or "TRUE"
-    probes = {**contract.variables, **{probe(x): t for x, t in contract.inputs.items()}}
+    probes = {**contract.variables, **{probe(x): t for x, t in contract.inputs.items() if x != m.reset}}
     allowed = words.to_smv(ltl.conjunction(step), probes) if step else "TRUE"
     lines.append(f"SPEC AG (({allowed}) -> EX ({same}));")
     starts = []
