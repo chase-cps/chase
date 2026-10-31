@@ -53,6 +53,7 @@ from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, 
 from .models import Model, is_receptive
 from .logic import Core, implies, is_satisfiable, unsat_core
 from .optimize import Optimum, maximize, minimize
+from .repair import Repair, RepairError, repair
 # 3. GR(1) synthesis.
 from .gr1 import (OutputVacuity, VacuousOutput, is_realizable, is_vacuous, is_well_separated,
                   synthesize, unrealizable_core)
@@ -77,6 +78,8 @@ __all__ = [
     "implies", "is_satisfiable", "unsat_core", "Core",
     #    best values (formulas over a bounded number of steps)
     "minimize", "maximize", "Optimum",
+    #    repair: the values of constants that make a check pass
+    "repair", "Repair", "RepairError",
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",
     "is_vacuous", "OutputVacuity", "VacuousOutput",

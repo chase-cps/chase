@@ -48,6 +48,69 @@ def _normalize_type(t) -> VarType:
                      "or 'word[n]' ('signed word[n]')")
 
 
+def _normalize_constants(cs) -> dict:
+    if not cs:
+        return {}
+    out = {}
+    for k, v in dict(cs).items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)) and \
+                type(v).__name__ != "Fraction":
+            raise ValueError(f"constant {k!r} = {v!r}: a constant is a number")
+        out[str(k)] = ltl.number(v) if isinstance(v, float) else v
+    return out
+
+
+def substitute(node, values: Mapping):
+    """The formula with the names in ``values`` replaced by their numbers."""
+    if not values:
+        return node
+    if isinstance(node, ltl.Var) and node.name in values and not node.primed:
+        return ltl.Num(values[node.name])
+    if isinstance(node, ltl.Unary):
+        return ltl.Unary(node.op, substitute(node.arg, values))
+    if isinstance(node, ltl.Binary):
+        return ltl.Binary(node.op, substitute(node.left, values), substitute(node.right, values))
+    return node
+
+
+def _json_number(v):
+    from fractions import Fraction
+    if isinstance(v, Fraction):
+        return int(v) if v.denominator == 1 else float(v)
+    return v
+
+
+def _constant_declaration(name: str, value) -> str:
+    """The declaration of a constant in the logics language."""
+    from fractions import Fraction
+    if isinstance(value, int) or (isinstance(value, Fraction) and value.denominator == 1):
+        return f"integer constant {name} {int(value)};"
+    text = ltl.to_chase(ltl.Num(value))
+    if not re.fullmatch(r"-?\d+(\.\d+)?", text):
+        raise ValueError(f"constant {name} = {value} cannot be written as a decimal number")
+    return f"real constant {name} {text};"
+
+
+def _compose_constants(out: "Contract", c1: "Contract", c2: "Contract") -> None:
+    """The constants of a composition, and its terms with their names: the
+    closed form of the core library, ((A1 & A2) | !(G1 & G2), G1 & G2) with
+    the saturated guarantees."""
+    for k in set(c1.constants) & set(c2.constants):
+        if c1.constants[k] != c2.constants[k]:
+            raise ValueError(f"constant {k} is {c1.constants[k]} in {c1.name} and "
+                             f"{c2.constants[k]} in {c2.name}")
+
+    def saturated(c):
+        a, g = c.terms
+        a, g = ltl.conjunction(a), ltl.conjunction(g)
+        return a, (g if a == ltl.Const(True) else ltl.Binary("->", a, g))
+    (a1, g1), (a2, g2) = saturated(c1), saturated(c2)
+    both = ltl.Binary("&", g1, g2)
+    assumption = ltl.Binary("|", ltl.Binary("&", a1, a2), ltl.Unary("!", both))
+    out.constants = {**c1.constants, **c2.constants}
+    out.parametric = ([assumption], [both])
+
+
 def _normalize_vars(vs) -> dict[str, VarType]:
     if vs is None:
         return {}
@@ -74,7 +137,10 @@ class Contract:
 
     ``assumptions`` and ``guarantees`` are lists of LTL formulas, read as
     conjunctions. Variables are Boolean ("bool"), bounded integers
-    (low, high), or reals ("real").
+    (low, high), or reals ("real"). ``constants`` are named numbers that the
+    formulas may use (``integer constant k 5;`` in a specification file):
+    the terms are written with their values, and ``instantiate`` gives them
+    others.
     """
 
     name: str
@@ -88,6 +154,11 @@ class Contract:
     # The results of the checks run on the contract, with what it said then
     # (see _remembered); chase_cps.viz draws those that still hold.
     results: dict = field(default_factory=dict, compare=False, repr=False)
+    # Named constants (name -> number): the terms above have their values;
+    # ``parametric`` keeps the terms with the names, (assumptions,
+    # guarantees), for ``instantiate`` and chase_cps.repair.
+    constants: dict = field(default_factory=dict)
+    parametric: tuple | None = field(default=None, compare=False, repr=False)
 
     def says(self) -> str:
         """What the contract says, without its name: its variables and its
@@ -113,19 +184,47 @@ class Contract:
 
     @classmethod
     def from_strings(cls, inputs=None, outputs=None, assumptions=None,
-                     guarantees=None, name: str = "C") -> "Contract":
+                     guarantees=None, name: str = "C", constants=None) -> "Contract":
         """Build a contract from formulas in the standard LTL syntax.
 
         >>> c = Contract.from_strings(inputs=["req"], outputs=["grant"],
         ...                           assumptions=["G F !req"],
         ...                           guarantees=["G (req -> F grant)"])
+
+        ``constants`` names numbers that the formulas use, such as
+        ``{"limit": 4}`` for ``x <= limit``.
         """
-        c = cls(name=name, inputs=_normalize_vars(inputs),
-                outputs=_normalize_vars(outputs),
-                assumptions=_normalize_formulas(assumptions),
-                guarantees=_normalize_formulas(guarantees))
+        a, g = _normalize_formulas(assumptions), _normalize_formulas(guarantees)
+        c = cls(name=name, inputs=_normalize_vars(inputs), outputs=_normalize_vars(outputs))
+        c._set_terms(a, g, _normalize_constants(constants))
         c.validate()
         return c
+
+    def _set_terms(self, assumptions, guarantees, constants) -> None:
+        """The terms with the names of the constants, and their values."""
+        used = ltl.variables(ltl.conjunction(list(assumptions) + list(guarantees)))
+        self.constants = {k: v for k, v in constants.items() if k in used}
+        self.parametric = (list(assumptions), list(guarantees)) if self.constants else None
+        self.assumptions = [substitute(f, self.constants) for f in assumptions]
+        self.guarantees = [substitute(f, self.constants) for f in guarantees]
+
+    def instantiate(self, values: Mapping, name: str | None = None) -> "Contract":
+        """The contract with other values of its constants."""
+        unknown = sorted(set(values) - set(self.constants))
+        if unknown:
+            raise ValueError(f"{', '.join(unknown)}: not constants of {self.name} "
+                             f"(its constants: {', '.join(sorted(self.constants)) or 'none'})")
+        a, g = self.parametric or (self.assumptions, self.guarantees)
+        c = Contract(name or self.name, dict(self.inputs), dict(self.outputs))
+        c._set_terms(a, g, {**self.constants, **_normalize_constants(values)})
+        return c
+
+    @property
+    def terms(self) -> tuple:
+        """(assumptions, guarantees) with the names of the constants."""
+        if self.parametric is None:
+            return list(self.assumptions), list(self.guarantees)
+        return list(self.parametric[0]), list(self.parametric[1])
 
     @classmethod
     def from_pychase(cls, pc, shared=()) -> "Contract":
@@ -162,13 +261,7 @@ class Contract:
                 outputs[name] = vtype
 
         def value(node):    # constants are replaced by their values
-            if isinstance(node, ltl.Var) and node.name in constants:
-                return ltl.Num(constants[node.name])
-            if isinstance(node, ltl.Unary):
-                return ltl.Unary(node.op, value(node.arg))
-            if isinstance(node, ltl.Binary):
-                return ltl.Binary(node.op, value(node.left), value(node.right))
-            return node
+            return substitute(node, constants)
 
         def terms(domain_map) -> list[ltl.Node]:
             out = []
@@ -176,17 +269,21 @@ class Contract:
                 # the formulas only: the DSL also puts its architecture there, as a graph
                 if type(spec).__name__ == "Graph":
                     continue
-                out.extend(value(t) for t in ltl.conjuncts(ltl.from_pychase(spec)))
+                out.extend(ltl.conjuncts(ltl.from_pychase(spec)))
             return out
 
         assumptions, guarantees = terms(pc.assumptions), terms(pc.guarantees)
-        used = ltl.variables(ltl.conjunction(assumptions + guarantees))
+        used = ltl.variables(ltl.conjunction([value(t) for t in assumptions + guarantees]))
         outputs.update({k: v for k, v in generic.items() if k in used})
-        return cls(name=pc.getName().getString(), inputs=inputs, outputs=outputs,
-                   assumptions=assumptions, guarantees=guarantees)
+        c = cls(name=pc.getName().getString(), inputs=inputs, outputs=outputs)
+        c._set_terms(assumptions, guarantees, constants)
+        return c
 
     def validate(self) -> None:
-        for n in [self.name] + list(self.variables):
+        clash = sorted(set(self.constants) & set(self.variables))
+        if clash:
+            raise ValueError(f"names both constants and variables: {clash} (contract {self.name})")
+        for n in [self.name] + list(self.variables) + list(self.constants):
             if n in RESERVED or not n.replace("_", "a").isalnum() or not n[0].isalpha():
                 raise ValueError(f"{n!r} cannot be used as a name: names start with a "
                                  "letter, contain letters, digits and _, and are not "
@@ -244,8 +341,10 @@ class Contract:
         return {"name": self.name,
                 "inputs": {k: t(v) for k, v in self.inputs.items()},
                 "outputs": {k: t(v) for k, v in self.outputs.items()},
-                "assumptions": [ltl.to_str(f) for f in self.assumptions],
-                "guarantees": [ltl.to_str(f) for f in self.guarantees]}
+                "assumptions": [ltl.to_str(f) for f in self.terms[0]],
+                "guarantees": [ltl.to_str(f) for f in self.terms[1]],
+                **({"constants": {k: _json_number(v) for k, v in self.constants.items()}}
+                   if self.constants else {})}
 
     @classmethod
     def from_dict(cls, d: Mapping) -> "Contract":
@@ -255,7 +354,8 @@ class Contract:
             inputs={k: t(v) for k, v in (d.get("inputs") or {}).items()},
             outputs={k: t(v) for k, v in (d.get("outputs") or {}).items()},
             assumptions=d.get("assumptions") or [],
-            guarantees=d.get("guarantees") or [], name=d.get("name", "C"))
+            guarantees=d.get("guarantees") or [], name=d.get("name", "C"),
+            constants=d.get("constants"))
 
     def __str__(self) -> str:
         lines = [f"CONTRACT {self.name}"]
@@ -281,10 +381,13 @@ class Contract:
             kind = "input" if k in self.inputs else "output"
             typ = {"bool": "boolean", "real": "real"}.get(v) or f"integer ({v[0]}:{v[1]})"
             lines.append(f"    {kind} {typ} variable {k};")
+        for k, v in self.constants.items():
+            lines.append(f"    {_constant_declaration(k, v)}")
+        a, g = self.terms
         lines.append("    Assumptions:")
-        lines += [f"        {ltl.to_chase(f)};" for f in self.assumptions] or ["        true;"]
+        lines += [f"        {ltl.to_chase(f)};" for f in a] or ["        true;"]
         lines.append("    Guarantees:")
-        lines += [f"        {ltl.to_chase(f)};" for f in self.guarantees] or ["        true;"]
+        lines += [f"        {ltl.to_chase(f)};" for f in g] or ["        true;"]
         return "\n".join(lines) + "\n"
 
     def to_pychase(self):
@@ -306,8 +409,9 @@ class Contract:
             return node
         c = Contract(name or self.name,
                      {mapping.get(k, k): v for k, v in self.inputs.items()},
-                     {mapping.get(k, k): v for k, v in self.outputs.items()},
-                     [ren(f) for f in self.assumptions], [ren(f) for f in self.guarantees])
+                     {mapping.get(k, k): v for k, v in self.outputs.items()})
+        a, g = self.terms
+        c._set_terms([ren(f) for f in a], [ren(f) for f in g], self.constants)
         c.validate()
         return c
 
@@ -378,7 +482,10 @@ class Contract:
         name = name or f"{self.name}_{other.name}"
         if discharge:
             return _compose_terms(self, other, name, backend, **options)
-        return _algebra("composition", self, other, name)
+        out = _algebra("composition", self, other, name)
+        if self.constants or other.constants:
+            _compose_constants(out, self, other)
+        return out
 
     def conjoin(self, other: "Contract", name: str | None = None, discharge: bool = False,
                 backend: str = "auto", **options) -> "Contract":

@@ -113,6 +113,17 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
             goal = e.robustness(term)
     except ValueError as err:
         return Optimum(UNKNOWN, backend="z3", reason=str(err))
+    return certified(goal, [f, *e.bounds()], e.trace, maximize, timeout, start)
+
+
+def certified(goal, hard: list, trace_of, maximize: bool, timeout: float,
+              start: float | None = None) -> Optimum:
+    """The best value of the z3 term ``goal`` under the z3 constraints
+    ``hard``, checked with the solver of z3; ``trace_of(model)`` gives the
+    trace of a model."""
+    from .backends import z3 as backend_z3
+    z3 = backend_z3._z3
+    start = time.time() if start is None else start
     if z3.get_version()[:2] < (4, 12):
         return Optimum(UNKNOWN, backend="z3", reason=f"z3 {z3.get_version_string()} gives "
                        "wrong optima; minimize and maximize need z3 4.12 or later")
@@ -125,7 +136,7 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
     for _ in range(ROUNDS):
         opt = z3.Optimize()
         opt.set("timeout", int(timeout * 1000))
-        opt.add(f, *e.bounds(), *cuts)
+        opt.add(*hard, *cuts)
         handle = opt.maximize(goal) if maximize else opt.minimize(goal)
         answer = opt.check()
         if answer == z3.unsat and not cuts:
@@ -134,7 +145,7 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
             reason = opt.reason_unknown() if answer == z3.unknown else "no better value"
             return Optimum(UNKNOWN, backend="z3", reason=f"z3: {reason}",
                            seconds=time.time() - start)
-        trace = e.trace(opt.model())
+        trace = trace_of(opt.model())
         inf, value, _ = (handle.upper_values() if maximize else handle.lower_values())
         if backend_z3._value(z3.simplify(inf)) != 0:
             return Optimum(UNBOUNDED, backend="z3", trace=trace, seconds=time.time() - start)
@@ -143,7 +154,7 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
         better = goal > b if maximize else goal < b
         check = z3.Solver()
         check.set("timeout", int(timeout * 1000))
-        check.add(f, *e.bounds())
+        check.add(*hard)
         found = check.check(better)
         if found == z3.sat:
             cuts.append(better)
@@ -152,7 +163,7 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
             return Optimum(UNKNOWN, backend="z3", reason=f"z3: {check.reason_unknown()}",
                            seconds=time.time() - start)
         if check.check(goal == b) == z3.sat:
-            return Optimum(OPTIMAL, bound, e.trace(check.model()), "z3",
+            return Optimum(OPTIMAL, bound, trace_of(check.model()), "z3",
                            seconds=time.time() - start)
         return Optimum(NOT_ATTAINED, bound, trace, "z3", seconds=time.time() - start)
     return Optimum(UNKNOWN, backend="z3", seconds=time.time() - start,

@@ -80,12 +80,15 @@ class Encoding:
     """The variables of a query at each step as z3 terms, and formulas as z3
     formulas."""
 
-    def __init__(self, variables: dict):
+    def __init__(self, variables: dict, rigid=()):
         self.types = variables
+        self.rigid = frozenset(rigid)  # the same value at every step (parameters)
         self.vars: dict = {}           # (name, step) -> z3 variable
         self.pasts: dict = {}          # name -> the largest n of past(name, n)
 
     def var(self, name: str, step: int = 0):
+        if name in self.rigid:
+            step = 0
         if (name, step) not in self.vars:
             t = self.types.get(name, "bool")
             label = name if step == 0 else f"{name}@{step}"
