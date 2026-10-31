@@ -571,6 +571,39 @@ draws each function as a component with its code, checked: the tag
 `M ⊨ C` for a function with clauses, and `safe` for one with none. A
 failure shows the call that breaks it, and the term it breaks in red.
 
+### Sampled signals: from steps to continuous time
+
+The formulas count steps. When a step is a sample of a continuous signal,
+taken every `period` seconds, and each variable changes at most its
+Lipschitz constant per second, `chase_cps.sampled` says when a formula that
+holds at the samples holds at every instant (Fainekos and Pappas, TCS
+2009, Corollary 44). `strengthen(formula, lipschitz, period)` gives the
+stricter formula: under `F` and `U` each interval is one step narrower at
+each end, under `G` and `R` one step wider, and each comparison holds with
+the margin `(|a1| L1 + ... + |an| Ln) period` (`x <= c` becomes
+`x + E < c`). If the stricter formula holds at the samples, the formula
+holds in continuous time; if not, nothing is concluded.
+
+````
+from chase_cps import ltl
+from chase_cps.queries import Trace
+from chase_cps.sampled import continuous, strengthen
+
+s = strengthen("G[0,8] (x <= 11)", {"x": 1}, 0.5)
+print(ltl.to_str(s))    # x + 0.5 < 11 & X (x + 0.5 < 11) & ...: G[0,9] (x + 0.5 < 11)
+t = Trace([{"x": i} for i in range(10)], [])
+print(continuous("G[0,8] (x <= 11)", t, {"x": 1}, 1).holds)   # True
+````
+
+The intervals must span more than 3 steps, and the formula must not use
+`X`, a primed variable, `past(x, n)`, `<->`, a Boolean variable, or a
+comparison that is not linear (the error says which). The stricter formula
+is a formula like any other: a refinement or a verification with it shows
+the property in continuous time for every behavior.
+
+`chase-cps view FILE --period SECONDS` (or `# view: --period SECONDS` in the
+file) draws the steps of a counterexample as times, `t = step x SECONDS`.
+
 ### Queries on formulas
 
 | Query | logics_tool | Python | chase-cps check | MCP tool |

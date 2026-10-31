@@ -391,6 +391,42 @@ CONTRACT Bound:
     assert errors == []
 
 
+def test_the_steps_as_times(browser, tmp_path):
+    # with a period, the counterexample is read in time: t = step x period
+    spec = tmp_path / "w.ltl"
+    spec.write_text("""NAME: w;
+CONTRACT Counter:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        n = 0;
+        G ((n < 3 -> n' = n + 1) & (n >= 3 -> n' = n));
+CONTRACT Bound:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        G (n <= 1);
+""")
+    d = viz.from_spec(str(spec), refines=[("Counter", "Bound")], check=True, period="0.25")
+    page, errors = open_page(browser, tmp_path, d)
+    tag = page.locator('[data-check$="|⪯"]').bounding_box()
+    page.mouse.click(tag["x"] + tag["width"] / 2, tag["y"] + tag["height"] / 2)
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    head = page.locator("#repair table.rp-trace tr").first.inner_text().split()
+    assert head[:4] == ["t", "0", "0.25", "0.5"]
+    assert "A step is a sample, every 0.25 s." in page.inner_text("#repair")
+    s = page.locator("#repair .rp-step input").bounding_box()
+    page.mouse.move(s["x"] + 3, s["y"] + s["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(s["x"] + s["width"] - 3, s["y"] + s["height"] / 2, steps=6)
+    page.mouse.up()
+    last = page.locator("#repair table.rp-trace tr").first.locator("th").count() - 2
+    assert f"t = {last * 0.25:g} (step {last})" in page.inner_text("#repair .rp-step")
+    assert errors == []
+
+
 def test_the_code_of_a_c_function(browser, tmp_path):
     # a component with a C function: its icon opens the code, with the lines of the file
     from chase_cps import CFunction, Component, Contract

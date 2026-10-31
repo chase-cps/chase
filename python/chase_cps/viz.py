@@ -634,7 +634,7 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
             context=None, open: Iterable = (), title: Optional[str] = None,
             results: bool = True, connect: Iterable = (), repairs: Iterable = (),
-            why: Iterable = ()) -> dict:
+            why: Iterable = (), period=None) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -848,7 +848,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
         context = [ltl.to_str(_formula(f)) for f in context]
-    return {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
+    out = {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
+    if period is not None:            # the time between two steps: the steps drawn as times
+        out["period"] = ltl.number_text(ltl.number(period))
+    return out
 
 
 ELK = '<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>'
@@ -966,7 +969,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
               environments: Iterable = (), check: bool = False, verify: bool = False,
               realizable: bool = False, timeout: float = 60, title: Optional[str] = None,
               open: Iterable = (), implementations: Iterable = (), results: Optional[str] = None,
-              budget: Optional[float] = None, progress=None) -> dict:
+              budget: Optional[float] = None, progress=None, period=None) -> dict:
     """The diagram of a specification file (the logics language of CHASE, or
     JSON). ``contracts`` are the contracts to draw (default: all, but those
     drawn inside another box by ``refines``), each a
@@ -981,7 +984,9 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     the implementations; ``verify`` (A, G) and ``realizable`` (R) check each
     contract drawn too. ``results`` is the file where the results of
     ``check`` are kept (see ``chase_cps.record``): a check whose contracts
-    and models have not changed is not run again. With ``budget`` (seconds),
+    and models have not changed is not run again. ``period`` is the time
+    between two steps (the sampling period): the steps of a counterexample
+    are drawn as times. With ``budget`` (seconds),
     no check starts after that time; those left are not marked. ``progress``
     is called with each result as soon as it is known ({"check", "result",
     and what it is about}), for an editor that shows them one by one. ``open`` names the contracts drawn open. Each box of a
@@ -1105,7 +1110,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                        written, get)
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
                 open=[get(e) for e in open], title=title or os.path.basename(path),
-                connect=[get(n) for n in connect if id(get(n)) in drawn], repairs=repairs, why=why)
+                connect=[get(n) for n in connect if id(get(n)) in drawn], repairs=repairs, why=why,
+                period=period)
     _place_in_source(d, path)
     if rec is not None and check:     # the whole file checked: the results of old versions go
         rec.save(prune=not contracts and (deadline is None or time.monotonic() <= deadline))
@@ -2927,11 +2933,12 @@ function whySection(n, t, st) {
     const last = w.trace.steps.length - 1;
     if (last > 0) {                        // a step of the counterexample, on the diagram
       const label = h("span", {}, "");
-      const say = k => { label.textContent = "step " + k + (w.trace.loop === k ? " ↺" : ""); };
+      const say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) + " (step " + k + ")" : "step " + k)
+                                             + (w.trace.loop === k ? " ↺" : ""); };
       const slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
         oninput: e => { panel.step = +e.target.value; say(panel.step); replay(n, w.trace, panel.step); } });
       say(panel.step || 0);
-      sec.appendChild(h("div", { class: "rp-step" }, "Values on the diagram, step:", slider, label));
+      sec.appendChild(h("div", { class: "rp-step" }, "Values on the diagram, " + (DATA.period ? "time:" : "step:"), slider, label));
     } else sec.appendChild(h("div", { class: "rp-note" }, "These values are on the diagram, in blue."));
   } else {
     sec.appendChild(h("div", {}, "The counterexample was not kept with the result" + (inEditor()
@@ -2942,6 +2949,8 @@ function whySection(n, t, st) {
     onclick: () => { inspector.tab = "code"; renderInspector(); } }, "Show the code"));
   return sec;
 }
+// A step as the page shows it: its number, or its time i·Δτ when the diagram has a period.
+const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
 function traceTable(tr, first, req) {
   const fmt = v => v === null || v === undefined ? "–" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
@@ -2955,9 +2964,10 @@ function traceTable(tr, first, req) {
     return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
   }
   const t = h("table", { class: "rp-trace" });
-  if (!one) t.appendChild(h("tr", {}, h("th", {}, "step"),
-    tr.steps.map((_, i) => h("th", { title: tr.loop === i ? "the loop starts here, and repeats forever" : "" },
-                             (tr.loop === i ? "↺ " : "") + i))));
+  if (!one) t.appendChild(h("tr", {}, h("th", {}, DATA.period ? "t" : "step"),
+    tr.steps.map((_, i) => h("th", { title: (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
+                                            + (DATA.period ? "step " + i : "") },
+                             (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
     h("td", { class: "v" }, tr.vars[i]), tr.steps.map(st => h("td", {}, fmt(st[i])))));
   const LIMIT = one ? 24 : 12;
@@ -2970,6 +2980,7 @@ function traceTable(tr, first, req) {
   }
   const notes = [first.length ? "In bold, the variables of " + req + "." : null,
                  tr.loop !== null && !one ? "From ↺, the steps repeat forever." : null,
+                 DATA.period && !one ? "A step is a sample, every " + DATA.period + " s." : null,
                  tr.cut ? "The first " + tr.steps.length + " steps." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));

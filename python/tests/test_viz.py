@@ -822,3 +822,10 @@ def test_a_served_repair_stops_on_demand(tmp_path):
     finally:
         p.terminate()
         p.wait()
+
+
+def test_a_period_draws_the_steps_as_times():
+    c = Contract.from_strings(name="C", outputs={"x": (0, 9)}, guarantees=["G (x <= 3)"])
+    assert "period" not in viz.diagram(c)
+    assert viz.diagram(c, period=0.5)["period"] == "0.5"
+    assert viz.diagram(c, period="1/4")["period"] == "0.25"

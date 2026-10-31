@@ -4,6 +4,12 @@
 
 Added:
 
+- Sampled signals (`chase_cps.sampled`): `strengthen` gives the stricter
+  formula of Fainekos and Pappas (Corollary 44) from the Lipschitz
+  constants and the sampling period; holding at the samples, it shows the
+  formula in continuous time (`continuous` on a trace, or any check over
+  every behavior). `chase-cps view --period` draws the steps of a
+  counterexample as times.
 - Contracts written in C, in the clauses of ESBMC (`__ESBMC_requires`,
   `__ESBMC_ensures`) or of CBMC (`__CPROVER_requires`,
   `__CPROVER_ensures`): `load_c(path)` reads each function as a contract

@@ -657,13 +657,13 @@ def view(args) -> int:
                                                 timeout=args.timeout, open=args.open or (),
                                                 implementations=args.implementation or (),
                                                 results=results, budget=args.budget,
-                                                progress=shown))
+                                                progress=shown, period=args.period))
         return viz.from_spec(args.file, args.contracts or (), args.refines or (),
                              args.environment or (), check=args.check and checks,
                              verify=args.verify and checks, realizable=args.realizable and checks,
                              timeout=args.timeout, open=args.open or (),
                              implementations=args.implementation or (), results=results,
-                             budget=args.budget, progress=shown)
+                             budget=args.budget, progress=shown, period=args.period)
 
     if args.serve:
         return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
@@ -877,6 +877,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="where the results of --check are kept (default: FILE.results.json next "
                         "to the file); a check of contracts that have not changed is not run again")
     p.add_argument("--no-results", action="store_true", help="keep no results")
+    p.add_argument("--period", metavar="SECONDS",
+                   help="the time between two steps (the sampling period): the steps of a "
+                        "counterexample are drawn as times, t = step x SECONDS")
     p.add_argument("--progress", action="store_true",
                    help="write each result of --check on the standard error as soon as it is "
                         "known (lines 'progress: {json}'), for an editor")
