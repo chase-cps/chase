@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import json
 import os
@@ -782,6 +783,25 @@ class _Holder:
             utilities.destroy(obj)
 
 
+@contextlib.contextmanager
+def _no_info():
+    """The INFO lines that the parser of CHASE writes on the standard output
+    ("Parsing the system: ...") thrown away; kept with CHASE_VERBOSE=1."""
+    if os.environ.get("CHASE_VERBOSE"):
+        yield
+        return
+    sys.stdout.flush()
+    saved = os.dup(1)
+    null = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(null, 1)
+    try:
+        yield
+    finally:
+        os.dup2(saved, 1)
+        os.close(saved)
+        os.close(null)
+
+
 def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
     from ._native import pychase_logicsLang
     text = to_spec(contracts)
@@ -790,7 +810,8 @@ def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
         with os.fdopen(fd, "w") as f:
             f.write(text)
         builder = pychase_logicsLang.LogicsSpecsBuilder()
-        system = builder.parseSpecificationFile(path)
+        with _no_info():
+            system = builder.parseSpecificationFile(path)
     finally:
         os.unlink(path)
     found = {c.getName().getString(): c for c in system.getContractsSet()}
@@ -808,7 +829,8 @@ def _parse_file(path: str, name: str):
         os.dup2(err.fileno(), 2)
         failure = None
         try:
-            system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(path)
+            with _no_info():
+                system = pychase_logicsLang.LogicsSpecsBuilder().parseSpecificationFile(path)
         except RuntimeError as e:
             failure = e
         finally:

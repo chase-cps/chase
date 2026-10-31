@@ -1622,7 +1622,6 @@ _PAGE = r"""<!doctype html>
                           font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; border-bottom:2px solid transparent; }
   #insp-tabs button.tab.on { color:var(--teal); border-bottom-color:var(--teal); }
   #insp-tabs .count { margin-left:5px; padding:0 5px; border-radius:7px; background:var(--bad); color:#fff; font-size:10.5px; }
-  #insp-tabs .sp { flex:1; }
   #repair { flex:1; overflow:auto; }
   @media (max-width: 820px) {
     #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
@@ -1722,7 +1721,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
-    <button id="repairs" title="The checks that fail (the panel of the checks)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
+    <button id="repairs" title="The panel of the checks: open or close (Esc)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
@@ -1912,7 +1911,7 @@ function pending(g, x, y, s) {
   const w = tagWidth(s), p = el("g", { class: "pending" }, g);
   el("rect", { x, y, width: w, height: 16, rx: 4, fill: "#fff", stroke: "var(--line)", "stroke-width": 1 }, p);
   [-5, 0, 5].forEach(d => el("circle", { cx: x + w / 2 + d, cy: y + 8, r: 1.6 }, p));
-  tip(p, (WHAT[s] || s) + " — being checked");
+  tip(p, (WHAT[s] || s) + ": being checked");
   return w;
 }
 const SAYS = { valid: "holds", invalid: "does not hold", unknown: "not decided" };
@@ -2102,7 +2101,7 @@ function drawNode(g, e, ox, oy) {
     const t = el("g", { "data-check": n.id + "|" + c.name, "data-text": c.name }, box), on = focus[n.id] === i;
     const fix = c.status === "invalid";
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
-    tip(t, (WHAT[c.name] || c.name) + " — " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
+    tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
            + (fix ? ". Click: why it fails" : c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
@@ -2134,7 +2133,7 @@ function drawNode(g, e, ox, oy) {
     const known = busy && !n.badge.status && n.contract && (progressed[n.contract.name] || {})[n.badge.text];
     if (busy && !n.badge.status && !known) pending(b, rx - w, y + 6, n.badge.text);
     else tag(b, rx - w, y + 6, n.badge.text, n.badge.status || known);
-    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
+    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")
            + ". Click: the check" + ((n.repair || {})[tagOf(n.badge.text)] ? ", and its repairs" : ""));
     b.onclick = () => openRepair(n, tagOf(n.badge.text)); }
   sz.ls.forEach(([k, label, s, core, at], i) => {
@@ -2147,7 +2146,7 @@ function drawNode(g, e, ox, oy) {
         row.setAttribute("class", "trow"); row.setAttribute("data-line", at[0]); row.setAttribute("data-last", at[1]);
         el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, fill: "transparent" }, row);   // the whole line
         frame(row);
-        tip(row, (at[0] === at[1] ? "line " + at[0] : "lines " + at[0] + "–" + at[1])
+        tip(row, (at[0] === at[1] ? "line " + at[0] : "lines " + at[0] + " to " + at[1])
                  + (inEditor() ? " · double click: there in the editor" : "")); }
       if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3, fill: "var(--teal)" }, row);
                    const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
@@ -2322,7 +2321,10 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
     zoomAt(e.clientX, e.clientY, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)));          // a pinch comes with ctrl
   }, { passive: false });
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { hideInspector(); return; }
+    if (e.key === "Escape") {                     // the help first, then the panel
+      const help = document.getElementById("help");
+      if (help.style.display === "block") help.style.display = "none"; else hideInspector();
+      return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
       if (!cam) return;
     if (e.key === "+" || e.key === "=") zoomBy(1.25);
@@ -2831,12 +2833,14 @@ function showInspector(tab) {
   document.body.classList.add("insp");
   document.getElementById("repairs").classList.add("on");     // pressed while the panel is open
   renderInspector();
+  renderQueue();
 }
 function hideInspector() {
   if (inspector.open) shiftView(1);
   inspector.open = false;
   document.body.classList.remove("insp");
   document.getElementById("repairs").classList.remove("on");
+  renderQueue();
   closeRepair();
 }
 async function openRepair(n, t) {
@@ -2883,8 +2887,7 @@ function renderInspector() {
   tabs.innerHTML = "";
   const tab = (key, label, count) => h("button", { class: "tab" + (inspector.tab === key ? " on" : ""),
     onclick: () => { inspector.tab = key; renderInspector(); } }, label, count ? h("span", { class: "count" }, String(count)) : null);
-  tabs.append(tab("problems", "Problems", list.length), n ? tab("details", "Details") : "", code ? tab("code", "Code") : "",
-              h("span", { class: "sp" }), h("button", { class: "rp-x", title: "Close the panel (Esc)", onclick: hideInspector }, "»"));
+  tabs.append(tab("problems", "Problems", list.length), n ? tab("details", "Details") : "", code ? tab("code", "Code") : "");
   if (inspector.tab === "problems") fillProblems(list);
   else if (inspector.tab === "code") fillCode(n);
   else fillPanel();
@@ -3003,7 +3006,7 @@ function reasonOf(r) {
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
 function traceTable(tr, first, req) {
-  const fmt = v => v === null || v === undefined ? "–" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const fmt = v => v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
   const one = tr.steps.length === 1;
   if (one) {                            // one call: name = value, in columns
@@ -3281,12 +3284,13 @@ function fillCode(n) {
 // The checks that fail, on the tools: the button opens the list.
 function renderQueue() {
   const list = failing(), b = document.getElementById("repairs");
-  b.style.display = list.length ? "inline-flex" : "none";
-  document.getElementById("repcount").textContent = list.length;
+  b.style.display = list.length || inspector.open ? "inline-flex" : "none";   // also to close the panel
+  document.getElementById("repcount").textContent = list.length || "";
   if (inspector.open && inspector.tab === "problems") fillProblems(list);
 }
+// the wrench opens and closes the panel
 function toggleQueue() {
-  if (inspector.open && inspector.tab === "problems") hideInspector();
+  if (inspector.open) hideInspector();
   else showInspector("problems");
 }
 // the box of the check picked, marked; brought into the view when it is out of it (once, when picked)
@@ -3331,6 +3335,17 @@ function replay(n, tr, k) {
   shown.forEach(([x, r], i) => {
     if (shown.slice(0, i).some(([y, q]) => !y.hasAttribute("data-hid") && y.textContent === x.textContent
         && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
+      x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
+  });
+  // a variable on a box and on the box around it, with the same value: the box around says it
+  const rectOf = id => { const b = document.querySelector('#view [data-box="' + id + '"]'); return b && b.getBoundingClientRect(); };
+  const around = (q, r) => q.left <= r.left && q.right >= r.right && q.top <= r.top && q.bottom >= r.bottom
+    && (q.width > r.width || q.height > r.height);
+  shown.forEach(([x]) => {
+    const r = rectOf(x.getAttribute("data-pbox"));
+    if (!r || x.hasAttribute("data-hid")) return;
+    if (shown.some(([y]) => y !== x && !y.hasAttribute("data-hid") && y.textContent === x.textContent
+        && (q => q && around(q, r))(rectOf(y.getAttribute("data-pbox"))))) {
       x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
   });
 }
