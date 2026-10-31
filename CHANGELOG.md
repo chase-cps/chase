@@ -81,6 +81,26 @@ Added:
 
 Changed:
 
+- Folded compositions grow linearly with the number of contracts; they
+  doubled at each step. A composition is saturated already (A -> G is G
+  when A is X | !G), and its assumption X | !G is composed as X (the rest
+  is implied). Both are equivalences, tested against the closed form.
+- Repair by counterexamples generalizes each counterexample by a
+  model-based projection (polynomial on linear arithmetic), not by
+  quantifier elimination, which could run for minutes and did not stop at
+  its timeout. The projection method is chosen by default only for
+  questions with at most 12 variables to eliminate.
+- Diagrams: the panel of a check says first why it fails: which side, and
+  the counterexample (one column per step, the loop marked; the variables
+  of the requirement first), the reason given by ESBMC for C code; then how
+  to fix it: the values of the constants, or, when the check reads none,
+  that no value can fix it. The icon of a C function opens its code (and
+  the functions of its file it calls), with the lines of the file.
+- Diagrams: intervals of steps are folded also inside a formula
+  (F[0,10] G[0,5] p); the parts of a decomposition that have a model (a C
+  function, RTL) are drawn as components inside the contract they refine.
+- A value with no finite decimal expansion (a repair can find 17/21) is
+  printed as a quotient, (17 / 21), and read back as one.
 - `chase-cps doctor` lists the back ends by domain (contracts and LTL,
   GR(1), static contracts and signal temporal logic, RTL, C programs), with
   the optional ones marked and how to install them. `chase-cps[reals]` is
