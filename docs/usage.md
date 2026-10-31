@@ -545,6 +545,15 @@ satisfies every such `phi`: the checker checks one call, and a call that
 breaks one, repeated at every step, is the counterexample.
 
 ````
+from chase_cps import CFunction, is_implementation, parse_spec
+
+open("heater.c", "w").write("""
+int thermostat(int T) {
+    if (T < 74)
+        return 3;
+    return 0;
+}
+""")
 c = parse_spec("""NAME: t;
 CONTRACT Thermostat:
     input integer (0:200) variable T;
@@ -569,7 +578,7 @@ body, `__ESBMC_return_value`) or of CBMC (`__CPROVER_requires(...)`,
 `__CPROVER_return_value`), or in ACSL, the language of Frama-C (a comment
 `/*@ requires ...; ensures ...; */` just before the function, with
 `\result`, `==>`, `<==>`, and chains such as `0 <= T <= 200`; `\old`,
-`\at`, the quantifiers, and behaviors are not read). `load_c` reads each function of the file as a
+`\at`, the quantifiers, and behaviors are not read). `load_c` (it gives `{name: (contract, function)}`) reads each function of the file as a
 contract and the function as its implementation: the requires clauses are
 the assumptions, the ensures clauses the guarantees, the parameters the
 inputs, the return value the output `FUNCTION_out`, and `*p` the output
@@ -609,7 +618,8 @@ failure shows the call that breaks it, and the term it breaks in red.
 ### SMV models with their specifications
 
 An SMV file of nuXmv or NuSMV with `LTLSPEC` or `INVARSPEC` is read as a
-component: `load_smv(path)` (in `chase_cps.smvspec`) gives its contract,
+component: `load_smv(path)` (in `chase_cps.smvspec`) gives
+`{name: (contract, model)}`: the contract,
 with no assumption and a guarantee for each specification (`LTLSPEC p` is
 `p`, `INVARSPEC p` is `G p`, `next(x)` is `x'`, `V` is `R`), and the model
 without the specifications as its implementation. The inputs are the IVAR
@@ -1091,7 +1101,7 @@ itself, with its usual back end. The method is chosen by the formulas:
 |---|---|---|
 | `projection` | formulas over a bounded number of steps, real parameters | the values for which the check fails are computed at once by eliminating the other variables (z3); one optimization |
 | `counterexamples` | the other checks of every behavior: LTL (nuXmv), C (ESBMC), integers | optimize the cost under the conditions that the counterexamples found so far are no longer counterexamples, check, add the new counterexample, until the check passes |
-| `witnesses` | checks of some behavior (`verify`, `compat`, `consist`) on bounded formulas | the parameters and a behavior for each question, in one optimization |
+| `witnesses` | checks of some behavior (`verify`, `compat`, `consist`) on bounded formulas (chosen by `auto`; not a value of `method=`) | the parameters and a behavior for each question, in one optimization |
 | `enumeration` | checks of some behavior on other formulas, integer parameters | the values in the order of their cost, until one passes |
 
 The conditions of `counterexamples` only remove values that cannot repair,
@@ -1110,7 +1120,7 @@ On the command line, with the checks of `chase-cps check` and
 $> chase-cps repair heater.ltl --refines Room+Thermostat Comfort --param theta=60..90:int
 repair      repaired  (counterexamples, 4 rounds, 0.11 s)
   theta = 74
-  cost 2 (optimal)
+  change 2 (optimal)
 ````
 
 The demos Braking, Heater, and Deadline repair a braking system (the bounds
@@ -1135,7 +1145,7 @@ code, and a deadline in LTL.
   of the design, checked against the assumptions only. Something that has a
   contract of its own is a component.
 - The results of the checks are tags next to the name of a box: A
-  (compatible), G (consistent), A∧G (feasible, shown when it fails), R
+  (compatible), G (consistent), A∧G (feasible), R
   (realizable), WS (well-separated), ¬V (no vacuous output), M ⊨ C, E ⊨ A,
   and ⪯ (refines), green when the check holds,
   red when it does not. A click on a red tag with a core puts the terms of
