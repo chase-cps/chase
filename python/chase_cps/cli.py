@@ -28,17 +28,31 @@ from .queries import REALIZABLE, SAT, VALID
 NEEDED_FOR = {
     "nuxmv": "refines, verify, is_consistent, is_compatible, implies, is_satisfiable, "
              "is_implementation, is_environment, is_receptive, remove_redundant",
-    "nusmv": "the same checks, where nuXmv cannot be used (optional)",
+    "nusmv": "the same checks, where nuXmv cannot be used",
     "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis), "
              "is_well_separated, is_vacuous",
-    "z3": "the checks of formulas over a bounded number of steps (static contracts), and "
-          "the real variables of the other checks (optional)",
-    "esbmc": "is_implementation of a C function (CFunction; optional)",
-    "cbmc": "the same, where ESBMC is not installed (optional)",
+    "z3": "the checks of formulas over a bounded number of steps (static contracts, signal "
+          "temporal logic), minimize and maximize, and the real variables of the other checks",
+    "yosys": "Model.from_rtl and the RTL files of view and check (Verilog, SystemVerilog)",
+    "esbmc": "is_implementation of a C function (CFunction)",
+    "cbmc": "the same, where ESBMC is not installed",
 }
+
+# The back ends by domain: (title, back ends, optional).
+DOMAINS = [
+    ("Contracts and LTL (one of the two)", ["nuxmv", "nusmv"], False),
+    ("GR(1) synthesis", ["slugs"], False),
+    ("Static contracts, signal temporal logic, optimization", ["z3"], True),
+    ("Hardware: RTL", ["yosys"], True),
+    ("C programs", ["esbmc", "cbmc"], True),
+]
 
 
 def _location(name: str) -> str | None:
+    if name == "yosys":
+        from .rtl import yosys
+        found = yosys()
+        return " ".join(found) if found else None
     adapter = ADAPTERS[name]
     if not adapter.available():
         return None
@@ -53,6 +67,8 @@ def _location(name: str) -> str | None:
 def _how_to_install(name: str) -> str:
     if name == "z3":
         return "pip install chase-cps[z3]"
+    if name == "yosys":
+        return "pip install chase-cps[rtl]"
     if tools.installable(name):
         flag = " --accept-license" if name == "nuxmv" else ""
         note = " (academic and non-commercial use only)" if name == "nuxmv" else ""
@@ -73,19 +89,18 @@ def doctor(args=None) -> int:
         ok = False
         print(f"CHASE library: not found ({e})")
 
-    print("\nBack ends:")
     missing = []
-    for name in ADAPTERS:
-        where = _location(name)
-        print(f"  {name:6} {'found ' + where if where else 'not found'}")
-        print(f"         needed for {NEEDED_FOR.get(name, 'its queries')}")
-        if not where:
-            missing.append(name)
+    for title, names, optional in DOMAINS:
+        print(f"\n{title}{' (optional)' if optional else ''}:")
+        found = {n: _location(n) for n in names}
+        for name, where in found.items():
+            print(f"  {name:6} {'found ' + where if where else 'not found'}")
+            print(f"         needed for {NEEDED_FOR[name]}")
+        if not any(found.values()):
+            (print(f"  to install: {_how_to_install(names[0])}") if optional
+             else missing.append(names[0]))
 
     model_checker = any(_location(n) for n in ("nuxmv", "nusmv"))
-    missing = [n for n in missing if n not in ("nusmv", "z3", "esbmc", "cbmc")]      # optional
-    if model_checker:   # one model checker is enough
-        missing = [n for n in missing if n != "nuxmv"]
     if missing:
         print("\nTo install the missing back ends:")
         for name in missing:

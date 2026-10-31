@@ -643,7 +643,7 @@ which way answered:
    Boolean variable (`x <= 10` and `x > 10` are the same one, negated). The
    abstraction allows values that are impossible (`x > 10` and `x < 5` at
    once), so only a valid implication or an unsatisfiable formula is
-   returned as such. With z3 (`pip install chase-cps[reals]`), the
+   returned as such. With z3 (`pip install chase-cps[z3]`), the
    combinations of one or two comparisons that no values satisfy are
    excluded first, and an invalid or sat answer is checked: z3 looks for
    real values for every state of the trace. If it finds them, the answer
@@ -1095,6 +1095,18 @@ $> chase-cps install nuxmv --accept-license
 $> chase-cps install slugs
 $> chase-cps doctor
 ````
+
+`pip install chase-cps` installs the contracts, LTL, and GR(1). The other
+domains are installed when they are used:
+
+| Domain | Install |
+|---|---|
+| Static contracts, signal temporal logic, `minimize`, `maximize` | `pip install chase-cps[z3]` |
+| Hardware: RTL (SVA needs nothing more) | `pip install chase-cps[rtl]` |
+| C programs | `chase-cps install esbmc` (Linux), `brew install esbmc` (macOS) |
+
+`chase-cps doctor` lists the back ends by domain: where each one is, what
+it is needed for, and how to install the ones missing.
 
 ### Engines
 

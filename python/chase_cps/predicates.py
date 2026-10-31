@@ -9,7 +9,7 @@ the same predicate ``p`` and ``!p``, and ``x' <= 10`` is ``p'``.
 The abstraction allows more behaviors than the real variables do (``x > 10``
 and ``x < 5`` both true), so a valid implication and an unsatisfiable
 formula hold for the real variables, and the other answers may come from
-the abstraction. With z3 (``pip install chase-cps[reals]``), two steps
+the abstraction. With z3 (``pip install chase-cps[z3]``), two steps
 remove most of these:
 
 1. Before the check, the combinations of truth values of one or two
@@ -35,7 +35,7 @@ from .queries import UNKNOWN, UNSAT, VALID, Implies, Result, Satisfiable, Trace
 
 try:
     import z3
-except ImportError:      # optional: pip install chase-cps[reals]
+except ImportError:      # optional: pip install chase-cps[z3]
     z3 = None
 
 PREDICATES = "predicates"
@@ -422,7 +422,7 @@ def check(query, backend: str = "auto", **options) -> Optional[Result]:
     variables = {v: t for v, t in query.variables.items() if t != "real"}
     variables.update(a.predicate_variables())
     excluded = relations(a)
-    hint = "" if z3 is not None else "; install z3 (pip install chase-cps[reals]) to check it"
+    hint = "" if z3 is not None else "; install z3 (pip install chase-cps[z3]) to check it"
     r = None
     for _ in range(ROUNDS):
         premise = ltl.conjunction(excluded + [phi])

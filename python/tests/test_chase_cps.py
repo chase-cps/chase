@@ -875,7 +875,8 @@ def test_doctor_lists_the_back_ends(capsys):
     from chase_cps.cli import main
     code = main(["doctor"])
     out = capsys.readouterr().out
-    assert "Back ends:" in out and "nuxmv" in out and "slugs" in out
+    assert "Contracts and LTL" in out and "nuxmv" in out and "slugs" in out
+    assert "C programs (optional):" in out and "esbmc" in out
     assert code in (0, 1)
 
 

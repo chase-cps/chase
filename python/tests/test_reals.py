@@ -20,7 +20,7 @@ from chase_cps.queries import Implies, Satisfiable, Trace
 HAS_NUXMV = ADAPTERS["nuxmv"].available()
 HAS_Z3 = predicates.z3 is not None
 needs_nuxmv = pytest.mark.skipif(not HAS_NUXMV, reason="nuXmv not installed")
-needs_z3 = pytest.mark.skipif(not HAS_Z3, reason="z3 not installed (chase-cps[reals])")
+needs_z3 = pytest.mark.skipif(not HAS_Z3, reason="z3 not installed (chase-cps[z3])")
 RUNS = int(os.environ.get("CHASE_REALS_RUNS", "25"))
 
 

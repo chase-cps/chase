@@ -51,6 +51,10 @@ Added:
 
 Changed:
 
+- `chase-cps doctor` lists the back ends by domain (contracts and LTL,
+  GR(1), static contracts and signal temporal logic, RTL, C programs), with
+  the optional ones marked and how to install them. `chase-cps[reals]` is
+  now `chase-cps[z3]` (the former name still works).
 - `to_gr1(c, tool="gr1c")`: the argument `format` is now `tool`, as in
   the other functions that write files for tools.
 - The logics language (specification files, `.ltl`) has the precedence of

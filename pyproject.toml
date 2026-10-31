@@ -28,7 +28,7 @@ test = ["pytest"]
 # minimize, maximize) and refines the predicate abstraction of real
 # comparisons (chase_cps.predicates)
 z3 = ["z3-solver>=4.12"]
-reals = ["z3-solver>=4.12"]
+reals = ["z3-solver>=4.12"]     # the former name of z3
 # Yosys (compiled to WebAssembly) reads RTL as state machines (chase_cps.rtl)
 rtl = ["yowasp-yosys"]
 
