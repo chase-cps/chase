@@ -1817,9 +1817,9 @@ function terms(c, out, core, src) {
     out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
   if (c.K) part("θ", c.K, []);           // the parameters (named constants) and their values
   if (c.E) { part("A", c.A, core ? core.A : [], src && src.A); part("E", c.E, []); return; }
-  // no assumption is A = true, as no guarantee is G = true: both written
-  part("A", c.A.length ? c.A : ["true"], core ? core.A : [], c.A.length && src && src.A);
-  part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
+  // no assumption is A = ⊤ (true), as no guarantee is G = ⊤: both written
+  part("A", c.A.length ? c.A : ["⊤"], core ? core.A : [], c.A.length && src && src.A);
+  part("G", c.G.length ? c.G : ["⊤"], core ? core.G : [], c.G.length && src && src.G);
 }
 function focused(n) {
   if (show.checks && n.id in focus) return n.checks[focus[n.id]].core;
@@ -2193,8 +2193,20 @@ function drawNode(g, e, ox, oy) {
     if (!c) return;
     const p = (c.ports || []).find(p => p.id === w.open[0] + ":in:" + w.var); if (!p) return;
     const px = x + dx + c.x + p.x, py = y + dy + c.y + p.y + PORT / 2;
-    el("line", { x1: px - 26, y1: py, x2: px, y2: py, stroke: "var(--warn)", "stroke-width": 1.4,
-                 "stroke-dasharray": "4 3" }, g);
+    // an input that nothing drives: its name in the color of the warning, a short
+    // dashed stub before it (the words "not driven" in its tip, and in the help)
+    const name = [...g.querySelectorAll("text[data-var]")].find(t => t.getAttribute("data-pbox") === c.id
+      && t.getAttribute("data-var") === w.var && t.getAttribute("data-side") === "left");
+    const says = w.var + ": not driven, no part or input drives it";
+    if (name) {
+      name.setAttribute("style", "fill:var(--warn)"); tip(name, says);
+      const end = +name.getAttribute("x") - 3, sy = +name.getAttribute("y") - 4;
+      tip(el("line", { x1: end - 16, y1: sy, x2: end, y2: sy, stroke: "var(--warn)", "stroke-width": 1.4,
+                       "stroke-dasharray": "4 3" }, g), says);
+      return;
+    }
+    tip(el("line", { x1: px - 26, y1: py, x2: px, y2: py, stroke: "var(--warn)", "stroke-width": 1.4,
+                     "stroke-dasharray": "4 3" }, g), says);
     const t = text(g, px - 28, py - 4, "w", "not driven"); t.setAttribute("text-anchor", "end");
     t.setAttribute("style", "fill:var(--warn)"); });
 }
@@ -2594,8 +2606,9 @@ function help() {
   sample(s => { el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#7d8c8d", "stroke-width": 2.6 }, s);
                 el("line", { x1: 20, y1: 15, x2: 28, y2: 5, stroke: "#7d8c8d", "stroke-width": 1.3 }, s);
                 text(s, 29, 7, "w", "8"); }, "bus, with its width");
-  sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#c07a14", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, s),
-         "input that nobody drives");
+  sample(s => { el("line", { x1: 4, y1: 10, x2: 20, y2: 10, stroke: "#c07a14", "stroke-width": 1.4, "stroke-dasharray": "4 3" }, s);
+                const t = text(s, 23, 14, "w", "x"); t.setAttribute("style", "fill:#c07a14"); },
+         "input that nobody drives (its name in orange)");
   h.style.display = "block";
 }
 function svgDefsHatch(s) {

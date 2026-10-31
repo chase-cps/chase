@@ -460,3 +460,17 @@ def test_the_button_of_the_transition_labels(browser, tmp_path):
         assert not errors
         assert page.evaluate("getComputedStyle(document.getElementById('conds')).display !== 'none'") == shown
         page.close()
+
+
+def test_an_input_that_nothing_drives(browser, tmp_path):
+    # its name in the color of the warning, a dashed stub before it, and no words over the names
+    from chase_cps import Component, Contract, System
+    a = Contract.from_strings(name="A", inputs=["x", "q"], outputs=["y"], guarantees=["G ((x & q) -> y)"])
+    top = Contract.from_strings(name="Top", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)"])
+    page, errors = open_page(browser, tmp_path, viz.diagram(System("S", [Component("A", a)], contract=top)))
+    assert not errors
+    q = page.locator('#view text[data-var="q"][data-side="left"]')
+    assert q.count() == 1 and "warn" in (q.get_attribute("style") or "")
+    assert "not driven" in q.get_attribute("data-tip")
+    assert not page.evaluate("[...document.querySelectorAll('#view text')].some(t => t.textContent === 'not driven')")
+    page.close()
