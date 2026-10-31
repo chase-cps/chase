@@ -2097,14 +2097,16 @@ function drawNode(g, e, ox, oy) {
   if (n.kind === "component" || n.kind === "environment") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
   const name = text(box, x + PAD, y + 18, "h", n.title);
+  // drawn at the width it was measured at: small on the screen, the glyphs of a
+  // browser round up and the name would run into the icons after it
+  name.setAttribute("textLength", textWidth(n.title, FONT_H)); name.setAttribute("lengthAdjust", "spacingAndGlyphs");
   if (n.contract) {
     const flip = toggle("c:" + n.id);
     name.onclick = e => { flip(); if (e.detail === 2) reveal(n.source && n.source.line); };   // a double click opens and closes: as it was
     tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
                                                      ? " · double click: its text in the editor" : ""));
   }
-  // the icons after the name as it is drawn: the font of the page may be wider than the one measured
-  let ix = x + PAD + Math.max(textWidth(n.title, FONT_H), name.getComputedTextLength ? name.getComputedTextLength() : 0) + 10;
+  let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
     if (key) c.onclick = (kind === "model" || kind === "synth") && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
