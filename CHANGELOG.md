@@ -4,6 +4,12 @@
 
 Added:
 
+- Contracts written in C, in the clauses of ESBMC (`__ESBMC_requires`,
+  `__ESBMC_ensures`) or of CBMC (`__CPROVER_requires`,
+  `__CPROVER_ensures`): `load_c(path)` reads each function as a contract
+  with the function as its implementation, and `chase-cps view FILE.c`
+  (and VS Code) draws and checks them. A function with no clause is
+  checked as code alone (the tag `safe`).
 - A C function called once per step implements a contract over steps
   (`is_implementation(CFunction(...), c)` with `G`, `X`, `G[a,b]`): checked
   on one call against the formula of one step; unknown for a function that
@@ -88,6 +94,8 @@ Added:
 
 Changed:
 
+- `ltl.to_str` prints a negative number as `-3` (it was `(0 - 3)`, the
+  spelling of the logics language, which `ltl.to_chase` keeps).
 - Folded compositions grow linearly with the number of contracts; they
   doubled at each step. A composition is saturated already (A -> G is G
   when A is X | !G), and its assumption X | !G is composed as X (the rest

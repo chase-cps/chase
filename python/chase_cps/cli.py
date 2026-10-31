@@ -139,11 +139,15 @@ def _read(path: str) -> dict[str, Contract]:
         return {c.name: c for c in contracts}
     if ext in (".sv", ".sva", ".svh"):
         return _read_sva(path)
-    if ext in (".smv", ".v", ".vhd", ".py", ".c", ".h"):
+    if ext == ".c":                   # the functions, with their clauses of ESBMC or CBMC
+        from .cspec import load_c
+        return {name: c for name, (c, _) in load_c(path).items()}
+    if ext in (".smv", ".v", ".vhd", ".py", ".h"):
         raise ValueError(f"{os.path.basename(path)} is not a specification: CHASE reads contracts "
-                         "from .ltl (the logics language), .json, and .sv files; a model (.smv, "
-                         "RTL, a C function FILE.c:FUNCTION) is drawn as the implementation of a "
-                         "contract (--implementation MODEL CONTRACT)")
+                         "from .ltl (the logics language), .json, .sv, and .c files (the clauses "
+                         "of ESBMC or CBMC); a model (.smv, RTL, a C function FILE.c:FUNCTION) is "
+                         "drawn as the implementation of a contract (--implementation MODEL "
+                         "CONTRACT)")
     return load_spec(path)
 
 
@@ -319,6 +323,9 @@ def _c_function(path: str):
         raise ValueError(f"{path}: a C function is FILE.c:FUNCTION")
     if not os.path.exists(file):
         raise ValueError(f"no file {file}")
+    from . import cspec
+    if cspec.has_clauses(file):       # checked without its clauses
+        return cspec.function(file, name)
     return CFunction(file, name)
 
 

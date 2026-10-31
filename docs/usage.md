@@ -530,6 +530,47 @@ between calls (a static variable, or a global variable of its file that it
 uses), and for a contract that does not have this form (`T' = T + u - 1`
 relates two steps).
 
+The contract can be written in the C file, next to the code, in the
+clauses of ESBMC (`__ESBMC_requires(...)`, `__ESBMC_ensures(...)` in the
+body, `__ESBMC_return_value`) or of CBMC (`__CPROVER_requires(...)`,
+`__CPROVER_ensures(...)` between the signature and the body,
+`__CPROVER_return_value`). `load_c` reads each function of the file as a
+contract and the function as its implementation: the requires clauses are
+the assumptions, the ensures clauses the guarantees, the parameters the
+inputs, the return value the output `FUNCTION_out`, and `*p` the output
+`p` of a pointer parameter. The ranges of the inputs are those of their C
+types, narrowed by the bounds the requires clauses give:
+
+````
+from chase_cps import is_implementation, load_c
+
+open("thermostat.c", "w").write("""
+int thermostat(int T)
+{
+    __ESBMC_requires(T >= 0 && T <= 200);
+    __ESBMC_ensures(T >= 74 || __ESBMC_return_value == 3);
+    __ESBMC_ensures(T < 74 || __ESBMC_return_value == 0);
+    return T < 74 ? 3 : 0;
+}
+""")
+c, f = load_c("thermostat.c")["thermostat"]
+print(c.inputs, is_implementation(f, c).status)   # {'T': (0, 200)} valid
+````
+
+The clauses are expressions of C over numbers and Booleans (`&& || ! ==
+!= < <= > >= + - * /`); a conditional (`a ? b : c`) is not read. The
+clauses on pointers (`is_fresh`, `r_ok`, `w_ok`, `rw_ok`, `assigns`) are
+not part of the contract. The function is checked with the clauses taken
+out of the code, so either checker checks a file with the clauses of the
+other. A function with no clause has a contract with no term: its check
+is that of the code alone (overflow, division by zero, access out of
+bounds, failed assert).
+
+`chase-cps view FILE.c` (and the CHASE button of VS Code on a `.c` file)
+draws each function as a component with its code, checked: the tag
+`M ⊨ C` for a function with clauses, and `safe` for one with none. A
+failure shows the call that breaks it, and the term it breaks in red.
+
 ### Queries on formulas
 
 | Query | logics_tool | Python | chase-cps check | MCP tool |

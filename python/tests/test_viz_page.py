@@ -26,6 +26,8 @@ DEMOS = os.path.join(ROOT, "demos")
 pytestmark = pytest.mark.skipif(not HAS_NATIVE, reason="CHASE modules not installed")
 SPECS = sorted(glob.glob(os.path.join(DEMOS, "**", "*.ltl"), recursive=True))
 SVA = [f for f in sorted(glob.glob(os.path.join(DEMOS, "**", "sva", "*.sv"), recursive=True))]
+# C with the clauses of ESBMC and CBMC (no check is run: no checker is needed)
+CSPECS = sorted(glob.glob(os.path.join(os.path.dirname(__file__), "data", "*_clauses.c")))
 
 EDITOR = """
 window.posted = [];
@@ -111,7 +113,7 @@ def bring(page, b):
     return next(x for x in boxes(page) if x["id"] == b["id"])
 
 
-@pytest.mark.parametrize("path", SPECS + SVA, ids=lambda f: os.path.relpath(f, DEMOS))
+@pytest.mark.parametrize("path", SPECS + SVA + CSPECS, ids=lambda f: os.path.relpath(f, DEMOS))
 def test_each_box_and_term_goes_to_its_line(browser, tmp_path, path, monkeypatch):
     monkeypatch.chdir(os.path.dirname(path))
     page, errors = open_page(browser, tmp_path, viz.from_spec(path))

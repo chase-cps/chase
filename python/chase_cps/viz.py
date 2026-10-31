@@ -57,6 +57,11 @@ SIGNS = {"composition": "⊗", "quotient": "/", "merging": "•",
 STACKED = {"merging", "conjunction", "disjunction", "separation"}
 
 
+# the ranges of the C types, drawn with their names
+_C_RANGES = {(-2 ** 31, 2 ** 31 - 1): "int", (0, 2 ** 32 - 1): "unsigned",
+             (-2 ** 63, 2 ** 63 - 1): "long", (-32768, 32767): "short"}
+
+
 def _type(t) -> Optional[dict]:
     """How a port of a type is drawn: None for a Boolean; a label, and the
     width of a bus for a bit vector."""
@@ -66,7 +71,7 @@ def _type(t) -> Optional[dict]:
         width, signed = w
         return {"label": ("s" if signed else "") + f"[{width - 1}:0]", "bus": width}
     if isinstance(t, tuple):
-        return {"label": f"{t[0]}..{t[1]}"}
+        return {"label": _C_RANGES.get(tuple(t)) or f"{t[0]}..{t[1]}"}
     if t == "real":
         return {"label": "real"}
     return None
@@ -90,10 +95,14 @@ def _c_source(f) -> Optional[dict]:
     """The text of a C function and of the functions of its file it calls,
     with the line of each in the file: {"file", "parts": [{"name", "line",
     "text"}]}, or None when the file cannot be read."""
-    try:
-        text = f.text()
+    try:                                # as written, with its clauses (the code checked has none)
+        with open(f.path, encoding="utf-8", errors="replace") as file:
+            text = file.read()
     except OSError:
-        return None
+        try:
+            text = f.text()
+        except OSError:
+            return None
     lines = text.split("\n")
 
     def body(name):                     # (first line, text) of the definition of name
@@ -269,10 +278,13 @@ class _Scene:
             model.update(source="c", code=_c_source(k.implementation))
         else:
             model["source"] = (getattr(k.implementation, "source", None) or {}).get("kind")
+        # a C function with no contract: the check of the code alone
+        safe = isinstance(k.implementation, CFunction) and not k.contract.assumptions \
+            and not k.contract.guarantees
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
                         model=model,
-                        badge={"text": "M ⊨ C", "status": _status(k.status),
+                        badge={"text": "safe" if safe else "M ⊨ C", "status": _status(k.status),
                                **({"why": _why(k.status, k.contract)} if _why(k.status) else {})},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
@@ -825,7 +837,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             n["open"] = True
     for obj, name, result, *against in why:     # the counterexample, on the tag of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
-        if n is not None and n.get("badge") and n["badge"]["text"].startswith(name):
+        tag = (n or {}).get("badge", {}).get("text", "")
+        if n is not None and (tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe")):
             n["badge"]["why"] = _why(result, against[0] if against else None)
     for obj, name, about in repairs:     # on the box that shows the result of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
@@ -981,6 +994,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     from . import gr1
     from .cli import _contract, _model, _read
     spec = _read(path)
+    if path.endswith(".c") and not implementations:   # each function with its code
+        implementations = [(f"{path}:{name}", name) for name in spec]
     made = {}
 
     def get(expression):              # one box per expression
@@ -1265,6 +1280,12 @@ def _place_in_source(d: dict, path: str) -> None:
             lines[m.group(1)] = number
     terms = (_sva_term_lines(text) if path.endswith((".v", ".sv", ".sva"))
              else {} if path.endswith(".json") else _term_lines(text))
+    if path.endswith(".c"):           # the functions, and their clauses
+        from .cspec import places
+        try:
+            lines, terms = places(path)
+        except ValueError:
+            return
 
     def walk(nodes):
         for n in nodes:
@@ -1863,6 +1884,7 @@ const WHAT = { "A": "compatible: the assumptions A are satisfiable",
                "WS": "well-separated: the component cannot win by making the environment break A",
                "¬V": "not vacuous: each liveness guarantee asks something of the component",
                "M ⊨ C": "the model implements the contract",
+               "safe": "safe code: no overflow, division by zero, access out of bounds, or failed assert",
                "E ⊨ A": "the environment satisfies the assumptions",
                "⪯": "what is inside refines this contract" };
 const checks = n => show.checks && n.checks ? n.checks : [];
@@ -2506,7 +2528,7 @@ function help() {
     tag(svg, 44 - w - 2, 2, t, "valid"); tag(svg, 46, 2, t, "invalid");
     d2.appendChild(document.createTextNode(d)); h.appendChild(d2); };
   [["A", "compatible"], ["G", "consistent"], ["A∧G", "feasible"], ["R", "realizable"],
-   ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"],
+   ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"], ["safe", "safe code"],
    ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) => pair(t, d));
   sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");
   sample(s => { tag(s, 4, 2, "⪯", "invalid"); }, "click a result: the check, and its repairs");
@@ -2731,7 +2753,8 @@ function checkTitle(n, t) {
     const inner = n.note || (n.children || []).map(c => c.title).join(" ⊗ ");
     return inner ? inner + " refines " + req : n.title;
   }
-  if (t === "M ⊨ C" && n.model) return n.model.name + " implements " + req;
+  if (t === "M ⊨ C" && n.model) return n.model.name + (n.model.name === req ? " meets its contract" : " implements " + req);
+  if (t === "safe" && n.model) return n.model.name + " is safe code";
   if (t === "E ⊨ A") return n.title + " is an environment";
   return (WHAT[t] || t).split(":")[0] + ": " + req;
 }
@@ -2883,7 +2906,7 @@ function fillPanel() {
 function whySection(n, t, st) {
   if (st !== "invalid") return null;
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Why it fails"));
-  if (t !== "⪯" && t !== "M ⊨ C" && t !== "E ⊨ A") {
+  if (t !== "⪯" && t !== "M ⊨ C" && t !== "safe" && t !== "E ⊨ A") {
     const c = (n.checks || []).find(x => x.name === t);
     sec.appendChild(h("div", {}, (WHAT[t] || t) + ": no." + (c && c.core ? " The terms in conflict are red in the box." : "")));
     return sec;
@@ -2893,7 +2916,8 @@ function whySection(n, t, st) {
   const lead = !w ? null
     : w.failed === "assumptions" ? "An environment that " + req + " accepts and the parts do not:"
     : t === "⪯" ? "A behavior of the parts that breaks " + req + (w.violated && w.violated.length ? " (its terms in red):" : ":")
-    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " that breaks " + req + ":" : "A run of the model that breaks " + req + ":")
+    : t === "safe" ? "A call of " + n.model.name + " that fails:"
+    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " that breaks " + (n.model.name === req ? "its contract" : req) + ":" : "A run of the model that breaks " + req + ":")
     : "A behavior of the environment that breaks the assumptions:";
   if (w && w.trace) {
     sec.appendChild(h("div", {}, lead));
@@ -2954,7 +2978,14 @@ function traceTable(tr, first, req) {
 // A check that fails with no constant to repair, or a page that cannot run repairs: in a few points.
 function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
-  const points = n.contract && n.contract.K
+  const clauses = n.model && n.model.source === "c" && n.model.name === ((n.contract || {}).name);
+  const points = t === "safe"
+    ? ["Fix the code at the line the reason gives.",
+       "Or add a requires clause that keeps such inputs out (it becomes the assumption)."]
+    : t === "M ⊨ C" && clauses && !(n.contract || {}).K
+    ? ["Fix the code: the call above breaks an ensures clause.",
+       "Or change the clauses: requires to keep such calls out, ensures to allow the result."]
+    : n.contract && n.contract.K
     ? ["The parameters (θ) are repaired from the specification file.",
        "Open it in VS Code, or with chase-cps view FILE --serve."]
     : ["No value can fix it: the check reads no parameter (θ).",

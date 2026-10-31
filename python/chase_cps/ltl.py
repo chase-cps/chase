@@ -216,7 +216,7 @@ class _Parser:
             steps = self.interval(op) if op in ("U", "R", "W") else None
             right = self.expression(prec if right_assoc else prec + 1)
             if steps is not None:
-                left = _bounded(op, steps, left, right)
+                left = self.bounded(op, steps, left, right)
             elif op == "W":   # a W b == (a U b) | G a
                 left = Binary("|", Binary("U", left, right), Unary("G", left))
             else:
@@ -254,11 +254,15 @@ class _Parser:
         if kind == "op" and val in ("!", "G", "F", "X"):
             steps = self.interval(val) if val != "!" else None
             arg = self.expression(_UNARY_PRECEDENCE)
-            return Unary(val, arg) if steps is None else _bounded(val, steps, arg)
+            return Unary(val, arg) if steps is None else self.bounded(val, steps, arg)
         if kind == "op" and val == "-":
             arg = self.expression(_BINARY["*"][0] + 1)
             return Num(-arg.value) if isinstance(arg, Num) else Unary("neg", arg)
         raise LTLSyntaxError(f"unexpected {val or 'end of formula'!r} in {self.text!r}")
+
+    def bounded(self, op: str, steps, *args) -> Node:
+        """An operator with an interval, as its steps (a subclass may keep it)."""
+        return _bounded(op, steps, *args)
 
     def interval(self, op: str):
         """The steps (first, last) of an interval after G, F, U, R: [a,b],
@@ -508,6 +512,8 @@ def _pretty(node: Node, outer: int) -> str:
     if isinstance(node, Num) and not _decimal(node.value):   # 1/3, read back as a quotient
         v = Fraction(node.value)
         return f"{'-' if v < 0 else ''}({abs(v.numerator)} / {v.denominator})"
+    if isinstance(node, Num) and node.value < 0:              # -3, as the unary minus
+        return f"-{number_text(-node.value)}"
     if isinstance(node, (Const, Var, Num)):
         return to_chase(node)
     if isinstance(node, Unary):
