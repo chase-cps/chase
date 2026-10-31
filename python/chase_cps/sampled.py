@@ -5,8 +5,8 @@ signal, taken every ``period`` seconds, and each variable changes at most
 ``lipschitz`` units per second, a formula that holds at the samples with
 enough margin holds at every instant (Fainekos and Pappas, Robustness of
 temporal logic specifications for continuous-time signals, Theoretical
-Computer Science 410, 2009, Corollary 44). The formula is first made
-stricter, ``strengthen``:
+Computer Science 410, 2009, Corollary 44). ``sampled`` gives the stricter
+formula to check at the samples:
 
 - each interval of time is made one step narrower at each end under ``F``
   and ``U`` (the event must happen well inside it), and one step wider
@@ -59,12 +59,13 @@ _FLIP = {"<": ">=", "<=": ">", ">": "<=", ">=": "<", "=": "!=", "!=": "="}
 _DUAL = {"&": "|", "|": "&", "G": "F", "F": "G", "U": "R", "R": "U"}
 
 
-def strengthen(formula: str, lipschitz: Union[Mapping, float], period) -> ltl.Node:
-    """The formula that, holding at the samples, makes the formula hold in
-    continuous time (see the module). ``lipschitz`` is a number for every
-    variable, or {variable: number}; ``period`` the time between two
-    samples. Raises SampledError when the formula cannot be read in
-    continuous time."""
+def sampled(formula: str, lipschitz: Union[Mapping, float], period) -> str:
+    """The formula to check at the samples so that the formula holds in
+    continuous time (see the module), with its intervals as they are written:
+    sampled("G[0,20] (T <= 75)", {"T": 0.5}, 1) is "G[0,21] (T + 0.5 < 75)".
+    ``lipschitz`` is a number for every variable, or {variable: number};
+    ``period`` the time between two samples. Raises SampledError when the
+    formula cannot be read in continuous time."""
     period = ltl.number(period)
     if period <= 0:
         raise SampledError("the period must be positive")
@@ -74,7 +75,39 @@ def strengthen(formula: str, lipschitz: Union[Mapping, float], period) -> ltl.No
             raise SampledError(f"the Lipschitz constant of {v} is negative ({rate}): it is a bound "
                                "on how fast the variable changes, 0 or more")
     node = _Keep(formula).parse()
-    return _margins(_nnf(_widen(node, True), False), rates, lipschitz, period)
+    return _text(_margins(_nnf(_widen(node, True), False), rates, lipschitz, period))
+
+
+def _text(node) -> str:
+    """The formula, with the operators that have an interval written with it."""
+    held = []
+
+    def hold(n):          # each operator with an interval: a name, written after
+        if isinstance(n, _Timed):
+            held.append(n)
+            return ltl.Var(f"__timed{len(held) - 1}__")
+        if isinstance(n, ltl.Unary):
+            return ltl.Unary(n.op, hold(n.arg))
+        if isinstance(n, ltl.Binary):
+            return ltl.Binary(n.op, hold(n.left), hold(n.right))
+        return n
+
+    def write(n, top=False):
+        if not isinstance(n, _Timed):
+            return ltl.to_str(hold(n))
+        interval = f"[{n.steps[0]},{n.steps[1]}]"
+        args = [write(a) for a in n.args]
+        arg = lambda a: a if a.startswith("(") and a.endswith(")") else f"({a})"
+        text = (f"{n.op}{interval} {arg(args[0])}" if len(args) == 1
+                else f"{arg(args[0])} {n.op}{interval} {arg(args[1])}")
+        return text if top else f"({text})"
+    out = write(node, True)
+    while True:           # the names, replaced by their operators
+        names = [i for i in range(len(held)) if f"__timed{i}__" in out]
+        if not names:
+            return out
+        for i in names:
+            out = out.replace(f"__timed{i}__", write(held[i]))
 
 
 def _widen(node, positive: bool):
@@ -90,8 +123,7 @@ def _widen(node, positive: bool):
                                "period must be less than a third of each interval (more than 3 steps)")
         acts = node.op if positive else _DUAL[node.op]
         steps = (first + 1, last - 1) if acts in ("F", "U") else (max(first - 1, 0), last + 1)
-        args = tuple(_widen(a, positive) for a in node.args)
-        return ltl._bounded(node.op, steps, *args)
+        return _Timed(node.op, steps, tuple(_widen(a, positive) for a in node.args))
     if isinstance(node, ltl.Unary):
         if node.op == "!":
             return ltl.Unary("!", _widen(node.arg, not positive))
@@ -122,6 +154,9 @@ def _widen(node, positive: bool):
 
 def _nnf(node, negated: bool):
     """The negations pushed down to the comparisons."""
+    if isinstance(node, _Timed):          # !G[a,b] p = F[a,b] !p, !(p U[a,b] q) = !p R[a,b] !q
+        return _Timed(_DUAL[node.op] if negated else node.op, node.steps,
+                      tuple(_nnf(a, negated) for a in node.args))
     if isinstance(node, ltl.Unary):
         if node.op == "!":
             return _nnf(node.arg, not negated)
@@ -173,6 +208,8 @@ def _linear(node) -> Optional[dict]:
 
 def _margins(node, rates, rate, period):
     """Each comparison with its margin, strict."""
+    if isinstance(node, _Timed):
+        return _Timed(node.op, node.steps, tuple(_margins(a, rates, rate, period) for a in node.args))
     if isinstance(node, ltl.Unary):
         return ltl.Unary(node.op, _margins(node.arg, rates, rate, period))
     if isinstance(node, ltl.Binary) and node.op not in _FLIP:
@@ -218,10 +255,10 @@ class Continuous:
 def continuous(formula: str, trace: Trace, lipschitz, period,
                variables: Optional[dict] = None) -> Continuous:
     """Whether the formula holds at every instant of the continuous signal
-    that the trace samples every ``period`` (see ``strengthen``)."""
+    that the trace samples every ``period`` (see ``sampled``)."""
     from .robustness import robustness
     try:
-        strict = strengthen(formula, lipschitz, period)
+        strict = sampled(formula, lipschitz, period)
     except SampledError as e:
         return Continuous(None, reason=str(e))
     r = robustness(strict, trace, variables)

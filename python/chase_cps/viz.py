@@ -1719,7 +1719,7 @@ _PAGE = r"""<!doctype html>
     <span class="sep"></span>
     <button class="on" title="Names of the ports" onclick="flip(this, 'names')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (ranges, reals, bit vectors)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
-    <button class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
+    <button id="conds" class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
@@ -1766,6 +1766,12 @@ const fold = id => () => { folded.has(id) ? folded.delete(id) : folded.add(id); 
 const byId = {};
 (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
 let boxes = Object.values(byId);
+// the button of the transition labels: only on a page with a model drawn with its transitions
+function condsButton() {
+  document.getElementById("conds").style.display =
+    Object.values(byId).some(n => n.model && n.model.fsm && n.model.fsm.edges.some(e => e.label)) ? "" : "none";
+}
+condsButton();
 const states = n => n.model && n.model.fsm && n.model.fsm.states;
 const inlineModel = n => states(n) && n.model.fsm.count <= INLINE_STATES;
 let allOpen = false;
@@ -2093,7 +2099,8 @@ function drawNode(g, e, ox, oy) {
     tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
                                                      ? " · double click: its text in the editor" : ""));
   }
-  let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
+  // the icons after the name as it is drawn: the font of the page may be wider than the one measured
+  let ix = x + PAD + Math.max(textWidth(n.title, FONT_H), name.getComputedTextLength ? name.getComputedTextLength() : 0) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
     if (key) c.onclick = (kind === "model" || kind === "synth") && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
@@ -2657,6 +2664,7 @@ function load(data, token) {
   DATA = data;
   for (const k in byId) delete byId[k];
   (function index(ns) { ns.forEach(n => { byId[n.id] = n; index(n.children || []); }); })(DATA.nodes);
+  condsButton();
   boxes = Object.values(byId);
   ROOT.children = DATA.nodes;
   for (const k in MODELS) delete MODELS[k];

@@ -10,11 +10,11 @@ import pytest
 from chase_cps import ltl
 from chase_cps.queries import Trace
 from chase_cps.robustness import holds
-from chase_cps.sampled import SampledError, continuous, strengthen
+from chase_cps.sampled import SampledError, continuous, sampled
 
 
 def text(formula, lipschitz=1, period=1):
-    return ltl.to_str(strengthen(formula, lipschitz, period))
+    return sampled(formula, lipschitz, period)
 
 
 def same(formula, lipschitz, period, expected):
@@ -33,6 +33,11 @@ def test_the_intervals():
     same("G (x <= 3)", 1, 1, "G (x + 1 < 3)")
     same("F (x >= 3)", 1, 1, "X F (x - 1 > 3)")
     same("(x <= 4) U (y >= 1)", 1, 1, "x + 1 < 4 & X ((x + 1 < 4) U (y - 1 > 1))")
+
+
+def test_the_intervals_are_written_as_intervals():
+    assert text("G[0,20] (T <= 75)", {"T": 0.5}, 1) == "G[0,21] (T + 0.5 < 75)"
+    assert text("(x <= 4) U[0,9] (y >= 1)") == "(x + 1 < 4) U[1,8] (y - 1 > 1)"
 
 
 def test_the_margins():
@@ -58,14 +63,14 @@ def test_the_margins():
 ])
 def test_what_is_not_read_in_continuous_time(formula, why):
     with pytest.raises(SampledError, match=why):
-        strengthen(formula, 1, 1)
+        sampled(formula, 1, 1)
     r = continuous(formula, Trace([{"x": 0, "y": 0, "b": True}], []), 1, 1)
     assert r.holds is None and why in r.reason
 
 
 def test_no_constant_for_a_variable():
     with pytest.raises(SampledError, match="no Lipschitz constant for y"):
-        strengthen("G[0,6] (x + y <= 3)", {"x": 1}, 1)
+        sampled("G[0,6] (x + y <= 3)", {"x": 1}, 1)
 
 
 def test_a_trace():
@@ -135,7 +140,7 @@ def test_every_behavior_in_continuous_time():
     plant = Contract.from_strings(name="Plant", guarantees=["x = 0", "G (x' = x + u)"], **ports)
 
     def check(req, strict):
-        g = strengthen(req, {"x": 1}, 1) if strict else req
+        g = sampled(req, {"x": 1}, 1) if strict else req
         return refines(plant, Contract.from_strings(name="Req", guarantees=[g], **ports)).status
     assert check("G[0,8] (x <= 10)", False) == "valid"      # at the samples: x <= 9
     assert check("G[0,8] (x <= 10)", True) == "invalid"     # between them, not shown
@@ -144,7 +149,7 @@ def test_every_behavior_in_continuous_time():
 
 def test_a_negative_lipschitz_constant_is_refused():
     with pytest.raises(SampledError, match="negative"):
-        strengthen("G[0,8] (x <= 11)", {"x": -1}, 0.5)
+        sampled("G[0,8] (x <= 11)", {"x": -1}, 0.5)
     with pytest.raises(SampledError, match="negative"):
-        strengthen("G[0,8] (x <= 11)", -1, 0.5)
+        sampled("G[0,8] (x <= 11)", -1, 0.5)
     assert continuous("G[0,8] (x <= 11)", Trace([{"x": 10.8}], []), {"x": -100}, 1).holds is None

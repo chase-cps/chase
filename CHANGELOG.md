@@ -4,7 +4,7 @@
 
 Added:
 
-- Sampled signals (`chase_cps.sampled`): `strengthen` gives the stricter
+- Sampled signals (`chase_cps.sampled`): `sampled` gives the stricter
   formula of Fainekos and Pappas (Corollary 44) from the Lipschitz
   constants and the sampling period; holding at the samples, it shows the
   formula in continuous time (`continuous` on a trace, or any check over

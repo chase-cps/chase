@@ -637,20 +637,18 @@ The formulas count steps. When a step is a sample of a continuous signal,
 taken every `period` seconds, and each variable changes at most its
 Lipschitz constant per second, `chase_cps.sampled` says when a formula that
 holds at the samples holds at every instant (Fainekos and Pappas, TCS
-2009, Corollary 44). `strengthen(formula, lipschitz, period)` gives the
-stricter formula: under `F` and `U` each interval is one step narrower at
+2009, Corollary 44). `sampled(formula, lipschitz, period)` gives the
+stricter formula to check at the samples: under `F` and `U` each interval is one step narrower at
 each end, under `G` and `R` one step wider, and each comparison holds with
 the margin `(|a1| L1 + ... + |an| Ln) period` (`x <= c` becomes
 `x + E < c`). If the stricter formula holds at the samples, the formula
 holds in continuous time; if not, nothing is concluded.
 
 ````
-from chase_cps import ltl
 from chase_cps.queries import Trace
-from chase_cps.sampled import continuous, strengthen
+from chase_cps.sampled import continuous, sampled
 
-s = strengthen("G[0,8] (x <= 11)", {"x": 1}, 0.5)
-print(ltl.to_str(s))    # x + 0.5 < 11 & X (x + 0.5 < 11) & ...: G[0,9] (x + 0.5 < 11)
+print(sampled("G[0,8] (x <= 11)", {"x": 1}, 0.5))     # G[0,9] (x + 0.5 < 11)
 t = Trace([{"x": i} for i in range(10)], [])
 print(continuous("G[0,8] (x <= 11)", t, {"x": 1}, 1).holds)   # True
 ````
