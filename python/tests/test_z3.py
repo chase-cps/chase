@@ -192,11 +192,16 @@ def test_robustness_as_z3_computes_it_is_the_robustness_of_the_trace():
         if op in ("!", "X") or op[0] in "GF":
             return f"{op} ({formula(depth - 1)})"
         return f"({formula(depth - 1)}) {op} ({formula(depth - 1)})"
+    given_up = 0      # z3 may not reach the best value (it depends on its version): unknown, said so
     for _ in range(60):
         f, c = formula(3), formula(2)
         for opt in (minimize, maximize):
             o = opt(f, [c, "G[0,8] (y >= -10 & y <= 10)"], v)
+            if o.status == "unknown" and "not the best" in o.reason:
+                given_up += 1
+                continue
             assert o.status in ("optimal", "not_attained", "infeasible"), (f, c, o.reason)
             if o.status == "optimal":
                 assert robustness(f, o.trace, v) == o.value, (f, c)
                 assert holds(c, o.trace, v)
+    assert given_up <= 6, given_up          # at most 5% of the 120 cases

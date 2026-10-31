@@ -57,6 +57,8 @@ def test_constants_in_specification_files():
     assert back.to_dict()["guarantees"][0] == "y <= x + lam"
 
 
+@pytest.mark.skipif(not (HAS_Z3 or ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()),
+                    reason="no back end for the refinements (z3, nuXmv, or NuSMV)")
 def test_constants_pass_through_composition():
     pytest.importorskip("chase_cps._native")
     k = Contract.from_strings(name="K", inputs={"y": (0, 20)}, outputs={"z": (0, 30)},

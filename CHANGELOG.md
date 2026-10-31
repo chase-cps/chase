@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.6.1 (2026-10-31)
+
+0.6.0 was tagged but not published: the tests of its wheels, run without a
+back end, had a test that needs one.
 
 Added:
 
@@ -9,7 +12,13 @@ Added:
   model) and the DEFINEs that the specifications use (replaced by their
   definitions).
 
-## 0.6.0 (2026-10-31)
+Changed:
+
+- Tests: a refinement of the constants of a composition needs a back end
+  (skipped without one); the robustness computed by z3 may be unknown when
+  z3 does not reach the best value (at most 5% of the random cases).
+
+## 0.6.0 (2026-10-31, not published)
 
 - A refinement in continuous time (`--lipschitz`) that the stricter check
   does not show is unknown, not invalid. A decomposition drawn in its
