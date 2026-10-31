@@ -609,7 +609,7 @@ def _parameter(text: str):
 
 def _repair(args):
     from .repair import repair
-    contracts = _read(args.file)
+    contracts = _read(args.file, args.period)
     asked = [(k, getattr(args, k)) for k in ("verify", "compatible", "consistent", "refines",
                                               "implementation", "environment")
              if getattr(args, k) is not None]
@@ -860,6 +860,9 @@ def main(argv: list[str] | None = None) -> int:
         "check holds or is repaired, 1 when no values in the ranges pass or the repair does "
         "not finish, and 2 on an error in the input.")
     p.add_argument("file")
+    p.add_argument("--period", metavar="SECONDS", type=float,
+                   help="the time between two steps: the intervals may be written with times, "
+                        "G[0s,2s]")
     g = p.add_argument_group("the check (one)")
     g.add_argument("--verify", metavar="CONTRACT")
     g.add_argument("--compat", "--compatible", dest="compatible", metavar="CONTRACT")

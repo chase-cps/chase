@@ -211,3 +211,16 @@ def test_check_in_continuous_time(tmp_path, limit, continuous, status):
     f.write_text(SPEC.replace("LIMIT", str(limit)))
     args = [str(f), "--period", "1", "--refines", "Plant", "Req"]
     assert main(["check"] + args + (["--lipschitz", "x=1"] if continuous else [])) == status
+
+
+def test_repair_of_a_specification_with_times(tmp_path):
+    from chase_cps.backends import ADAPTERS
+    from chase_cps.viz import repair_request
+    if not ADAPTERS["z3"].available():
+        pytest.skip("z3 not installed")
+    f = tmp_path / "plant.ltl"
+    f.write_text(SPEC.replace("CONTRACT Req:", "CONTRACT Req:\n    integer constant limit 3;")
+                 .replace("LIMIT", "limit"))
+    r = repair_request(str(f), {"check": "refines", "args": ["Plant", "Req"], "period": "1",
+                                "params": [{"name": "limit", "low": 0, "high": 20, "type": "int"}]})
+    assert r["status"] == "repaired" and r["values"]["limit"] == 8     # x reaches 8 by step 8

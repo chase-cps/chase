@@ -1350,7 +1350,7 @@ def repair_request(path: str, request: dict, timeout: float = 300) -> dict:
     ``Repair.to_dict``."""
     from .cli import _contract, _model, _read
     from .repair import repair
-    spec = _read(path)
+    spec = _read(path, request.get("period"))
     check, args = request["check"], list(request["args"])
     if check in ("impl", "env"):
         c = _contract(args[1], spec)
@@ -3196,7 +3196,7 @@ function askRepair(req, s) {
     return new Promise((ok, no) => {
       asked[id] = { ok, no };
       s.cancel = () => { vscodeApi.postMessage({ type: "chase-repair-stop", id }); delete asked[id]; };
-      vscodeApi.postMessage({ type: "chase-repair", id, request: req });
+      vscodeApi.postMessage({ type: "chase-repair", id, request: Object.assign({ period: DATA.period }, req) });
     });
   }
   if (how === "serve") {
@@ -3205,7 +3205,7 @@ function askRepair(req, s) {
     s.cancel = () => { ctl.abort(); fetch("/repair-stop", { method: "POST", body: JSON.stringify({ id }),
       headers: { "Content-Type": "application/json", "X-CHASE": "1" } }).catch(() => {}); };
     return fetch("/repair", { method: "POST", headers: { "Content-Type": "application/json", "X-CHASE": "1" },
-                              body: JSON.stringify(Object.assign({ id, time_limit: TIME_LIMIT }, req)), signal: ctl.signal })
+                              body: JSON.stringify(Object.assign({ id, time_limit: TIME_LIMIT, period: DATA.period }, req)), signal: ctl.signal })
       .then(x => x.json()).then(x => { if (x.error) throw new Error(x.error); return x.result; });
   }
   return Promise.reject(new Error("This page cannot run repairs."));
