@@ -333,7 +333,8 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
     page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
     assert page.evaluate("posted.filter(m => m.type === 'chase-apply').pop().edits") == [
         {"line": 12, "name": "k", "value": "3"}]
-    assert "No value of top, k" in page.inner_text("#repair")
+    none = page.inner_text("#repair .rp-opt.impossible")
+    assert none.startswith("No value in") and "\ntop, k\n" in none
     page.keyboard.press("Escape")
     assert not page.is_visible("#repair")
     assert errors == []
@@ -365,11 +366,11 @@ CONTRACT Bound:
     page.mouse.click(tag["x"] + tag["width"] / 2, tag["y"] + tag["height"] / 2)
     page.wait_for_selector("#repair .rp-head", timeout=5000)
     text = page.inner_text("#repair")
-    assert "Why it fails" in text.title() or "WHY IT FAILS" in text
-    assert "breaks Bound" in text
+    assert "COUNTEREXAMPLE" in text.upper()
+    assert "Does not hold" not in text         # the red tag says it
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "No value can fix it" in text
+    assert "No parameter (θ) to tune" in text
     # the panel is docked: the view moves under it, the panel stays
     before = page.locator("#insp").bounding_box()
     page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
@@ -416,14 +417,14 @@ CONTRACT Bound:
     page.wait_for_selector("#repair .rp-head", timeout=5000)
     head = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert head[:4] == ["t", "0", "0.25", "0.5"]
-    assert "A step is a sample, every 0.25 s." in page.inner_text("#repair")
+    assert page.get_attribute("#repair table.rp-trace th", "title") == "time: a step every 0.25 s"
     s = page.locator("#repair .rp-step input").bounding_box()
     page.mouse.move(s["x"] + 3, s["y"] + s["height"] / 2)
     page.mouse.down()
     page.mouse.move(s["x"] + s["width"] - 3, s["y"] + s["height"] / 2, steps=6)
     page.mouse.up()
     last = page.locator("#repair table.rp-trace tr").first.locator("th").count() - 2
-    assert f"t = {last * 0.25:g} (step {last})" in page.inner_text("#repair .rp-step")
+    assert page.inner_text("#repair .rp-step").startswith(f"t = {last * 0.25:g}")
     assert errors == []
 
 

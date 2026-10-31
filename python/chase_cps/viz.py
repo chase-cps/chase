@@ -1654,8 +1654,9 @@ _PAGE = r"""<!doctype html>
   .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
              animation:turn 0.8s linear infinite; }
   .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px; }
-  .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:2px 10px;
+  .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, max-content)); gap:2px 18px;
                font:11px Menlo, Monaco, monospace; color:var(--soft); }
+  .rp-values span { white-space:nowrap; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
   table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:right; padding:2px 8px;
@@ -2132,7 +2133,8 @@ function drawNode(g, e, ox, oy) {
   (e.ports || []).forEach(p => {
     el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
     (p.labels || []).forEach(l => { const t = text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text);
-      t.setAttribute("data-var", String(p.id).split(":").pop()); t.setAttribute("data-pbox", n.id); }); });
+      t.setAttribute("data-var", String(p.id).split(":").pop()); t.setAttribute("data-pbox", n.id);
+      if (l.x < 0) t.setAttribute("data-side", "left"); }); });
   (e.children || []).forEach(c => drawNode(g, c, x, y));
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
   if (folded.has(n.id)) return;
@@ -2856,18 +2858,15 @@ function fillPanel() {
   box.appendChild(h("div", { class: "rp-head" },
     tagSvg(t, st), h("b", {}, checkTitle(n, t)),
     h("button", { class: "rp-x", title: "Back to the list", onclick: closeRepair }, "×")));
-  const says = st === "valid" ? "Holds with the present values." : st === "invalid" ? "Does not hold with the present values."
-             : st === "unknown" ? "Not decided." : "Not checked yet.";
-  const head = h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says));
-  box.appendChild(head);
+  const says = st === "valid" ? "Holds." : st === "invalid" ? null : st === "unknown" ? "Not decided." : "Not checked yet.";
+  if (says) box.appendChild(h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says)));
   const why = whySection(n, t, st);
   if (why) box.appendChild(why);
   if (st !== "invalid") return;          // nothing to fix
   if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
   // the constants
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix: the values of the parameters (θ)"),
-    h("div", { class: "rp-note", style: "margin:0 0 4px" }, "Pick the parameters that may change, and their ranges."));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", title: "Pick the parameters that may change, and their ranges" }, "Repair θ"));
   r.constants.forEach(c => {
     const [lo, hi] = s.ranges[c.name];
     const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
@@ -2878,76 +2877,80 @@ function fillPanel() {
       h("span", { class: "rp-name" }, c.name + " = " + c.value),
       h("span", { class: "rp-range" }, num(lo, 0), "..", num(hi, 1)),
       h("span", {}),
-      h("span", { class: "rp-who" }, (c.type === "int" ? "integer" : "real") + " · " + c.owners.map(o => o.contract).join(", "),
-        h("span", { class: "rp-role " + c.role }, ROLE[c.role] || c.role),
-        c.role === "requirement" ? "changed only with your consent" : null)));
+      h("span", { class: "rp-who" }, (c.type === "int" ? "int" : "real") + " · " + c.owners.map(o => o.contract).join(", "),
+        c.role === "requirement" ? h("span", { class: "rp-role " + c.role, title: "Changed only with your consent" }, ROLE[c.role]) : null)));
   });
   const picked = r.constants.filter(c => s.picks[c.name]);
   const run = h("div", { class: "rp-run" });
   if (s.running) {
     run.appendChild(h("span", { class: "rp-spin" }));
-    run.appendChild(h("span", { class: "rp-says" }, "Finding repairs… " + s.running.done + " of " + s.running.of));
+    run.appendChild(h("span", { class: "rp-says" }, s.running.done + " / " + s.running.of));
     run.appendChild(h("button", { class: "rp-btn", onclick: () => stopRepairs(r) }, "Stop"));
   } else {
     run.appendChild(h("button", { class: "rp-btn main", disabled: !how || !picked.length,
                                   onclick: () => findRepairs(n, t) }, s.options.length ? "Find again" : "Find repairs"));
-    run.appendChild(h("span", { class: "rp-says" }, !picked.length ? "Pick a parameter to change."
-      : picked.length > 1 ? "Each alone, and all together." : ""));
+    if (!picked.length) run.appendChild(h("span", { class: "rp-says" }, "Pick a parameter."));
   }
   sec.appendChild(h("div", { style: "margin-top:8px" }, run));
   box.appendChild(sec);
   // the repairs
   if (s.options.length || s.error) {
-    const out = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Repairs"));
-    s.options.forEach(o => out.appendChild(optionCard(n, t, r, s, o, sig)));
+    const out = h("div", { class: "rp-sec" }, h("div", { class: "rp-h",
+      title: "Each value has passed the check itself. Point at one to see it on the diagram." }, "Repairs"));
+    const seen = new Set();               // all together may give what one alone gave: shown once
+    s.options.forEach(o => { const k = changedKey(o); if (k && seen.has(k)) return; if (k) seen.add(k);
+                             out.appendChild(optionCard(n, t, r, s, o, sig)); });
     if (s.error) out.appendChild(h("div", { class: "rp-err" }, s.error));
-    out.appendChild(h("div", { class: "rp-note" }, "Each value has passed the check itself. Point at a repair to see it on the diagram."));
     box.appendChild(out);
   }
   if (!how) box.appendChild(h("div", { class: "rp-sec" },
-    h("div", { class: "rp-note", style: "margin-top:0" }, "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve. On the command line:"),
+    h("div", { class: "rp-note", style: "margin-top:0", title: "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve" }, "Run in VS Code, or:"),
     h("div", { class: "rp-cmd" }, commandOf(r, s))));
 }
 // Why the check fails: in one line, then the counterexample (and its steps on the diagram).
 function whySection(n, t, st) {
   if (st !== "invalid") return null;
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Why it fails"));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Counterexample"));
   if (t !== "⪯" && t !== "M ⊨ C" && t !== "safe" && t !== "E ⊨ A") {
     const c = (n.checks || []).find(x => x.name === t);
-    sec.appendChild(h("div", {}, (WHAT[t] || t) + ": no." + (c && c.core ? " The terms in conflict are red in the box." : "")));
+    if (!(c && c.core)) return null;
+    sec.firstChild.textContent = "Why it fails";
+    sec.appendChild(h("div", {}, "The terms in conflict are red."));
     return sec;
   }
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
   const code = n.model && n.model.source === "c";
-  const lead = !w ? null
-    : w.failed === "assumptions" ? "An environment that " + req + " accepts and the parts do not:"
-    : t === "⪯" ? "A behavior of the parts that breaks " + req + (w.violated && w.violated.length ? " (its terms in red):" : ":")
-    : t === "safe" ? "A call of " + n.model.name + " that fails:"
-    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " that breaks " + (n.model.name === req ? "its contract" : req) + ":" : "A run of the model that breaks " + req + ":")
-    : "A behavior of the environment that breaks the assumptions:";
+  // said only when the table does not: which side fails
+  const lead = w && w.failed === "assumptions" ? "Accepted by " + req + ", not by the parts." : null;
   if (w && w.trace) {
-    sec.appendChild(h("div", {}, lead));
+    if (lead) sec.appendChild(h("div", {}, lead));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     sec.appendChild(traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req));
     const last = w.trace.steps.length - 1;
     if (last > 0) {                        // a step of the counterexample, on the diagram
       const label = h("span", {}, "");
-      const say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) + " (step " + k + ")" : "step " + k)
-                                             + (w.trace.loop === k ? " ↺" : ""); };
+      const say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) : "step " + k) + (w.trace.loop === k ? " ↺" : ""); };
       const slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
         oninput: e => { panel.step = +e.target.value; say(panel.step); replay(n, w.trace, panel.step); } });
       say(panel.step || 0);
-      sec.appendChild(h("div", { class: "rp-step" }, "Values on the diagram, " + (DATA.period ? "time:" : "step:"), slider, label));
-    } else sec.appendChild(h("div", { class: "rp-note" }, "These values are on the diagram, in blue."));
+      sec.appendChild(h("div", { class: "rp-step", title: "The values of this step are on the diagram" }, slider, label));
+    }
   } else {
-    sec.appendChild(h("div", {}, "The counterexample was not kept with the result" + (inEditor()
-      ? ": press ▶ (Check)." : ": run the check again (chase-cps view FILE --check --no-results).")));
+    sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
+                      "Not kept: " + (inEditor() ? "press ▶ to check again." : "run the check again.")));
   }
-  if (w && w.reason) sec.appendChild(h("div", { class: "rp-note" }, w.reason));
-  if (code && n.model.code) sec.appendChild(h("button", { class: "rp-link",
-    onclick: () => { inspector.tab = "code"; renderInspector(); } }, "Show the code"));
+  const toCode = () => { inspector.tab = "code"; renderInspector(); };
+  const why = w && w.reason ? reasonOf(w.reason) : null;
+  if (why) sec.appendChild(h("div", { class: "rp-note", title: w.reason }, why.text,
+    why.line && code && n.model.code ? [", ", h("button", { class: "rp-link", onclick: toCode }, "line " + why.line)]
+    : why.line ? ", line " + why.line : ""));
   return sec;
+}
+// The reason of a checker, short: "division by zero" and its line, without the file and the function.
+function reasonOf(r) {
+  const m = /^(?:[\w$]+: )?(.*?)\s*\((?:file \S+ )?line (\d+)[^)]*\)\s*$/.exec(r);
+  return m ? { text: m[1].charAt(0).toUpperCase() + m[1].slice(1), line: +m[2] } : { text: r, line: null };
 }
 // A step as the page shows it: its number, or its time i·Δτ when the diagram has a period.
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
@@ -2959,12 +2962,11 @@ function traceTable(tr, first, req) {
   if (one) {                            // one call: name = value, in columns
     const grid = h("div", { class: "rp-values" }, order.map(i => h("span", { class: first.includes(tr.vars[i]) ? "port" : "" },
       tr.vars[i] + " = " + fmt(tr.steps[0][i]))));
-    const notes = [first.length ? "In bold, the variables of " + req + "." : null,
-                   tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
+    const notes = [tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
     return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
   }
   const t = h("table", { class: "rp-trace" });
-  if (!one) t.appendChild(h("tr", {}, h("th", {}, DATA.period ? "t" : "step"),
+  if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
     tr.steps.map((_, i) => h("th", { title: (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
                                             + (DATA.period ? "step " + i : "") },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
@@ -2978,10 +2980,7 @@ function traceTable(tr, first, req) {
                    (rows.length - LIMIT) + " more variables");
     wrap.appendChild(more);
   }
-  const notes = [first.length ? "In bold, the variables of " + req + "." : null,
-                 tr.loop !== null && !one ? "From ↺, the steps repeat forever." : null,
-                 DATA.period && !one ? "A step is a sample, every " + DATA.period + " s." : null,
-                 tr.cut ? "The first " + tr.steps.length + " steps." : null,
+  const notes = [tr.cut ? "The first " + tr.steps.length + " steps." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
   return wrap;
@@ -2991,18 +2990,13 @@ function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
   const clauses = n.model && n.model.source === "c" && n.model.name === ((n.contract || {}).name);
   const points = t === "safe"
-    ? ["Fix the code at the line the reason gives.",
-       "Or add a requires clause that keeps such inputs out (it becomes the assumption)."]
+    ? ["Fix the code, or exclude such inputs with a requires clause."]
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
-    ? ["Fix the code: the call above breaks an ensures clause.",
-       "Or change the clauses: requires to keep such calls out, ensures to allow the result."]
+    ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
-    ? ["The parameters (θ) are repaired from the specification file.",
-       "Open it in VS Code, or with chase-cps view FILE --serve."]
-    : ["No value can fix it: the check reads no parameter (θ).",
-       "What fails is a rule: the counterexample shows where.",
-       "Change the terms of a part, or of the requirement."]
-       .concat(t === "⪯" ? ["What a part must meet: divide the requirement by the other parts."] : []);
+    ? ["Repair θ in VS Code, or with chase-cps view FILE --serve."]
+    : ["No parameter (θ) to tune: change a rule."]
+       .concat(t === "⪯" ? ["What a part must meet: the requirement divided by the other parts."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
@@ -3010,13 +3004,12 @@ function optionCard(n, t, r, s, o, sig) {
   const res = o.res, old = o.sig !== sig && !o.applied;
   const names = o.names.join(", ");
   if (res.status !== "repaired") {
-    const text = res.status === "holds" ? "Holds with the present values: nothing to change."
-      : res.status === "impossible" ? "No value of " + names + " in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " works: widen the range, pick another constant, or change a rule."
-      : res.bound !== undefined && res.bound !== null
-        ? "Stopped at the time limit. The least change is at least " + res.bound + " (proved); no value found yet."
-        : "Not decided" + (res.reason ? ": " + res.reason : ".");
-    const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : "") },
-      h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + "changing " + names));
+    const text = res.status === "holds" ? "Holds already."
+      : res.status === "impossible" ? "No value in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + "."
+      : res.bound !== undefined && res.bound !== null ? "Stopped: the least change is ≥ " + res.bound + "."
+      : "Not decided.";
+    const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : ""), title: res.reason || "" },
+      h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + names));
     if (res.status === "impossible" && !old) card.appendChild(h("div", { class: "rp-b" },
       h("button", { class: "rp-btn", onclick: () => { o.names.forEach(k => { const [a, b] = s.ranges[k], w = Math.max(b - a, 1);
         s.ranges[k] = [a - w / 2, b + w / 2].map(x => r.constants.find(c => c.name === k).type === "int" ? Math.round(x) : x); });
@@ -3024,11 +3017,12 @@ function optionCard(n, t, r, s, o, sig) {
     return card;
   }
   const v = h("div", { class: "rp-v" });
-  o.names.forEach((k, i) => { if (i) v.appendChild(document.createTextNode("   "));
+  const moved = o.names.filter(k => !same(o, k));
+  (moved.length ? moved : o.names).forEach((k, i) => { if (i) v.appendChild(document.createTextNode("   "));
     v.append(k + " ", h("s", {}, o.from[k]), " → ", h("em", {}, res.text[k] === null ? String(res.values[k]) : res.text[k])); });
-  const meta = [o.applied ? "Applied: in the file" : old ? "Out of date" : null, "cost " + res.cost, res.optimal ? "optimal" : "least found",
-                res.method + (res.rounds ? ", " + res.rounds + (res.rounds === 1 ? " round" : " rounds") : ""),
-                res.seconds + " s"].filter(Boolean).join(" · ");
+  const meta = [o.applied ? "Applied" : old ? "Out of date" : null, res.optimal ? "optimal" : "least found",
+                "change " + res.cost].filter(Boolean).join(" · ");
+  const how = res.method + (res.rounds ? ", " + res.rounds + (res.rounds === 1 ? " round" : " rounds") : "") + ", " + res.seconds + " s";
   const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
   const lines = o.names.every(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners.every(w => w.line));
   const exact = o.names.every(k => res.text[k] !== null);
@@ -3041,13 +3035,20 @@ function optionCard(n, t, r, s, o, sig) {
   const card = h("div", { class: "rp-opt repaired" + (old ? " old" : "") + (shown ? " shown" : ""),
                           onmouseenter: () => { if (!old) showPreview(previewOf(n, t, r, o)); },
                           onmouseleave: () => clearPreview(false) },
-    v, h("div", { class: "rp-m" }, meta),
+    v, h("div", { class: "rp-m", title: how }, meta),
     h("div", { class: "rp-b" },
       h("button", { class: "rp-btn" + (shown ? " on" : ""), disabled: old, title: "Keep it drawn on the diagram",
                     onclick: () => { if (shown) clearPreview(true); else { const p = previewOf(n, t, r, o); p.pinned = true; showPreview(p); }
                                      renderPanel(); } }, "Preview"),
       apply));
   return card;
+}
+// the value of a repair is the one it had
+const same = (o, k) => o.res.text[k] !== null && Number(o.res.text[k]) === Number(o.from[k]);
+// what a repair changes, as a key: the same changes from two runs are one repair
+function changedKey(o) {
+  if (o.res.status !== "repaired") return null;
+  return o.names.filter(k => !same(o, k)).map(k => k + "=" + o.res.text[k]).join(",");
 }
 function previewOf(n, t, r, o) {
   const owners = [];
@@ -3194,23 +3195,22 @@ function fillProblems(list) {
     const best = s && s.options.find(o => o.res.status === "repaired" && o.sig === sig);
     const what = s && s.running ? "finding repairs…"
       : best ? best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
-      : r ? "may change: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")
-      : t === "A∧G" ? "the terms in conflict: in the box"
-      : n.contract && n.contract.K ? "parameters (θ): repaired from the specification file"
-      : "no parameter: a rule to change";
-    const steps = w && w.trace ? (w.trace.steps.length === 1 ? "one call or step" : w.trace.steps.length + " steps") : null;
+      : r ? "θ: " + r.constants.map(c => c.name).join(", ")
+      : t === "A∧G" ? "terms in conflict"
+      : w && w.reason ? reasonOf(w.reason).text
+      : "no θ to tune";
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
                                onclick: () => openRepair(n, t) },
       h("div", { class: "t" }, tagSvg(t, "invalid"), checkTitle(n, t)),
-      h("div", { class: best ? "v" : "s" }, (steps ? "counterexample, " + steps + " · " : "") + what)));
+      h("div", { class: best ? "v" : "s" }, what)));
   });
 }
 function fillCode(n) {
   const box = document.getElementById("repair"), c = n.model.code;
   box.innerHTML = "";
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, c.file + " · function " + n.model.name));
-  c.parts.forEach(q => {
-    sec.appendChild(h("div", { class: "rp-note", style: "margin:8px 0 2px" }, q.name + ", line " + q.line));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, c.file));
+  c.parts.forEach((q, i) => {
+    if (c.parts.length > 1) sec.appendChild(h("div", { class: "rp-note", style: "margin:" + (i ? 8 : 4) + "px 0 2px" }, q.name));
     const pre = h("pre", { class: "code" });
     q.text.split("\n").forEach((l, i) => { pre.appendChild(h("span", { class: "n" }, String(q.line + i)));
                                          pre.appendChild(document.createTextNode(l + "\n")); });
@@ -3256,14 +3256,19 @@ function replay(n, tr, k) {
   document.querySelectorAll("#view text[data-var]").forEach(x => {
     const v = x.getAttribute("data-var");
     if (!(v in at) || !inside.has(x.getAttribute("data-pbox"))) return;
+    // a label left of its port keeps its right end at the port (the value may be longer than the type)
+    const w0 = x.getComputedTextLength();
     x.setAttribute("data-orig", x.textContent);
     x.textContent = v + " = " + fmt(at[v]);
     x.classList.add("pv-val");
+    if (x.getAttribute("data-side") === "left") { x.setAttribute("data-ox", x.getAttribute("x"));
+      x.setAttribute("x", +x.getAttribute("x") + w0 - x.getComputedTextLength()); }
   });
 }
 function clearReplay() {
   document.querySelectorAll("#view text[data-orig]").forEach(x => { x.textContent = x.getAttribute("data-orig");
-    x.removeAttribute("data-orig"); x.classList.remove("pv-val"); });
+    x.removeAttribute("data-orig"); x.classList.remove("pv-val");
+    if (x.hasAttribute("data-ox")) { x.setAttribute("x", x.getAttribute("data-ox")); x.removeAttribute("data-ox"); } });
 }
 function afterRender() {
   if (previewing) { const p = previewing; previewing = null; showPreview(p); }
