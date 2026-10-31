@@ -84,11 +84,20 @@ def dispatch(query, backend: str = "auto", **options) -> Result:
     if not candidates:
         return Result(UNKNOWN, reason=f"no back end answers {type(query).__name__} yet")
     for name in candidates:
-        if ADAPTERS[name].available():
+        if ADAPTERS[name].available() and not _refuses(ADAPTERS[name], query):
             return _configured(ADAPTERS[name], options).run(query)
     return Result(UNKNOWN, reason="no installed back end answers "
                   f"{type(query).__name__}; tried {candidates}. Run `chase-cps doctor` "
                   "to see how to install them")
+
+
+def _refuses(adapter: Adapter, query) -> str:
+    """Why an adapter that answers the type of the query cannot answer this
+    one (z3: a formula with G, F, U, R), or ""."""
+    if adapter.name == "z3":
+        from .z3 import why_not
+        return why_not(query)
+    return ""
 
 
 def split(backend: str) -> tuple[str, str | None]:

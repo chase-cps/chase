@@ -24,7 +24,10 @@ Added:
   the best value of a term under such constraints (a formula, or a
   contract), with the values that reach it; with a formula as the
   objective, its robustness: the worst case of a property of signal
-  temporal logic under some dynamics. `chase-cps doctor` lists z3.
+  temporal logic under some dynamics. The bound that z3 gives is checked
+  (whether a better value exists, and whether it is reached); they need z3
+  4.12 or later. `chase-cps doctor` lists z3. The Docker image installs z3
+  with pip (the package of Ubuntu is z3 4.8).
 - `to_smv` and `to_smt` write the checks of a contract (verify, or
   refines) as the input of nuXmv or NuSMV, and of SMT solvers (z3, cvc5),
   for the tools one runs oneself: one named question per check, with how

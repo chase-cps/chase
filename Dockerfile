@@ -59,7 +59,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git ca-certificates curl pkg-config \
-        python3 python3-dev python3-pip python3-pytest python3-z3 pybind11-dev uuid-dev \
+        python3 python3-dev python3-pip python3-pytest pybind11-dev uuid-dev \
         bison flex libboost-dev graphviz less libxml2 libedit2 xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
@@ -87,11 +87,12 @@ RUN git clone https://github.com/VerifiableRobotics/slugs /opt/slugs \
     && cd src && make -j"$(nproc)" \
     && ln -s /opt/slugs/src/slugs /usr/local/bin/slugs
 
-# NuSMV (above), and Yosys for RTL input (yowasp-yosys, ISC license; the first
-# run compiles it, so it is run once here)
+# NuSMV (above), Yosys for RTL input (yowasp-yosys, ISC license; the first
+# run compiles it, so it is run once here), and z3 (MIT license; the package of
+# Ubuntu, 4.8, is older than chase-cps needs)
 COPY --from=nusmv /opt/nusmv/bin/NuSMV /usr/local/bin/NuSMV
 COPY --from=nusmv /opt/nusmv/doc /usr/local/share/doc/nusmv
-RUN pip3 install --no-cache-dir --break-system-packages yowasp-yosys \
+RUN pip3 install --no-cache-dir --break-system-packages yowasp-yosys "z3-solver>=4.12" \
     && yowasp-yosys -V
 
 ###############################################################################

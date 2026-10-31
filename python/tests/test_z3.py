@@ -15,6 +15,10 @@ HAS_Z3 = ADAPTERS["z3"].available()
 HAS_NUXMV = ADAPTERS["nuxmv"].available()
 needs_z3 = pytest.mark.skipif(not HAS_Z3, reason="z3 not installed")
 needs_both = pytest.mark.skipif(not (HAS_Z3 and HAS_NUXMV), reason="z3 and nuXmv are needed")
+if HAS_Z3:
+    import z3
+needs_optimize = pytest.mark.skipif(not HAS_Z3 or z3.get_version()[:2] < (4, 12),
+                                    reason="minimize and maximize need z3 4.12 or later")
 
 
 def test_static_formulas():
@@ -35,8 +39,12 @@ def test_static_contracts_go_to_z3():
     r = implies("p >= 2.5 * n & n >= 4", "p >= 10.5", {"p": "real", "n": (0, 20)})
     assert r.status == "invalid" and r.backend == "z3"
     assert r.trace.loop[0] == {"n": 4, "p": 10}
-    # with a temporal operator, nuXmv
-    assert is_satisfiable("G (p >= 0)", {"p": "real"}).backend.startswith("nuxmv")
+    # with a temporal operator, nuXmv; without it, no back end (not z3)
+    r = is_satisfiable("G (p >= 0)", {"p": "real"})
+    if HAS_NUXMV:
+        assert r.backend.startswith("nuxmv")
+    else:
+        assert r.status == "unknown" and "chase-cps doctor" in r.reason
 
 
 @needs_z3
@@ -84,7 +92,7 @@ def test_z3_and_nuxmv_agree():
                     assert state_holds and not holds(g, a.trace)
 
 
-@needs_z3
+@needs_optimize
 def test_minimize_and_maximize():
     from chase_cps import maximize, minimize
     gen = Contract.from_strings(name="Gen", inputs={"n": (0, 20)}, outputs={"p": "real"},
@@ -149,7 +157,7 @@ def test_z3_and_nuxmv_agree_over_steps():
                     assert not holds(g, a.trace, v)
 
 
-@needs_z3
+@needs_optimize
 def test_the_worst_case_of_a_property_is_its_smallest_robustness():
     from chase_cps import maximize, minimize
     v = {"T": "real", "u": "real"}
@@ -170,7 +178,7 @@ def test_the_worst_case_of_a_property_is_its_smallest_robustness():
     assert r.status == "unknown" and "inf or -inf" in r.reason
 
 
-@needs_z3
+@needs_optimize
 def test_robustness_as_z3_computes_it_is_the_robustness_of_the_trace():
     from chase_cps import maximize, minimize
     rng = random.Random(4)

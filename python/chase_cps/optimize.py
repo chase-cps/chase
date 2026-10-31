@@ -28,6 +28,7 @@ from .queries import Trace
 
 OPTIMAL, NOT_ATTAINED, UNBOUNDED, INFEASIBLE, UNKNOWN = (
     "optimal", "not_attained", "unbounded", "infeasible", "unknown")
+ROUNDS = 20     # searches of z3 below a value that is not the best
 
 
 @dataclass
@@ -112,21 +113,45 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
             goal = e.robustness(term)
     except ValueError as err:
         return Optimum(UNKNOWN, backend="z3", reason=str(err))
-    opt = z3.Optimize()
-    opt.set("timeout", int(timeout * 1000))
-    opt.add(f, *e.bounds())
-    handle = opt.maximize(goal) if maximize else opt.minimize(goal)
-    answer = opt.check()
-    seconds = time.time() - start
-    if answer == z3.unsat:
-        return Optimum(INFEASIBLE, backend="z3", seconds=seconds)
-    if answer == z3.unknown:
-        return Optimum(UNKNOWN, backend="z3", reason=f"z3: {opt.reason_unknown()}", seconds=seconds)
-    trace = e.trace(opt.model())
-    inf, value, eps = (handle.upper_values() if maximize else handle.lower_values())
-    inf, eps = backend_z3._value(z3.simplify(inf)), backend_z3._value(z3.simplify(eps))
-    if inf != 0:
-        return Optimum(UNBOUNDED, backend="z3", trace=trace, seconds=seconds)
-    value = backend_z3._value(z3.simplify(value))
-    status = OPTIMAL if eps == 0 else NOT_ATTAINED
-    return Optimum(status, value, trace, "z3", seconds=seconds)
+    if z3.get_version()[:2] < (4, 12):
+        return Optimum(UNKNOWN, backend="z3", reason=f"z3 {z3.get_version_string()} gives "
+                       "wrong optima; minimize and maximize need z3 4.12 or later")
+    # The bound that z3 gives is checked: whether a better value exists (z3
+    # sometimes stops at a value that is not the best: then the search goes
+    # on below it), and whether the bound is reached.
+    cuts = []
+    for _ in range(ROUNDS):
+        opt = z3.Optimize()
+        opt.set("timeout", int(timeout * 1000))
+        opt.add(f, *e.bounds(), *cuts)
+        handle = opt.maximize(goal) if maximize else opt.minimize(goal)
+        answer = opt.check()
+        if answer == z3.unsat and not cuts:
+            return Optimum(INFEASIBLE, backend="z3", seconds=time.time() - start)
+        if answer != z3.sat:
+            reason = opt.reason_unknown() if answer == z3.unknown else "no better value"
+            return Optimum(UNKNOWN, backend="z3", reason=f"z3: {reason}",
+                           seconds=time.time() - start)
+        trace = e.trace(opt.model())
+        inf, value, _ = (handle.upper_values() if maximize else handle.lower_values())
+        if backend_z3._value(z3.simplify(inf)) != 0:
+            return Optimum(UNBOUNDED, backend="z3", trace=trace, seconds=time.time() - start)
+        bound = backend_z3._value(z3.simplify(value))
+        b = z3.IntVal(bound) if isinstance(bound, int) else z3.RealVal(str(bound))
+        better = goal > b if maximize else goal < b
+        check = z3.Solver()
+        check.set("timeout", int(timeout * 1000))
+        check.add(f, *e.bounds())
+        found = check.check(better)
+        if found == z3.sat:
+            cuts.append(better)
+            continue
+        if found == z3.unknown:
+            return Optimum(UNKNOWN, backend="z3", reason=f"z3: {check.reason_unknown()}",
+                           seconds=time.time() - start)
+        if check.check(goal == b) == z3.sat:
+            return Optimum(OPTIMAL, bound, e.trace(check.model()), "z3",
+                           seconds=time.time() - start)
+        return Optimum(NOT_ATTAINED, bound, trace, "z3", seconds=time.time() - start)
+    return Optimum(UNKNOWN, backend="z3", seconds=time.time() - start,
+                   reason=f"z3 gave {ROUNDS} values that are not the best")
