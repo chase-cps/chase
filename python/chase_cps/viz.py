@@ -2794,7 +2794,10 @@ function checkTitle(n, t) {
                                                                           : v(" implements ", " does not implement ") + req);
   if (t === "safe" && n.model) return n.model.name + v(" is safe code", " is not safe code");
   if (t === "E ⊨ A") return n.title + v(" is an environment", " is not an environment");
-  return (no ? "not " : "") + (WHAT[t] || t).split(":")[0] + ": " + req;
+  // a check of one contract, as a sentence: "EPS is not realizable"
+  if (t === "A∧G") return "A ∧ G of " + req + v(" can hold", " cannot hold");
+  if (t === "¬V") return req + v(" is not vacuous", " is vacuous");
+  return req + v(" is ", " is not ") + (WHAT[t] || t).split(":")[0].replace(/\s*\(.*\)$/, "");
 }
 // the tag of a check as the diagram draws it, for a panel
 function tagSvg(t, status) {

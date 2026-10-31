@@ -238,10 +238,11 @@ class Contract:
         return list(self.parametric[0]), list(self.parametric[1])
 
     @classmethod
-    def from_pychase(cls, pc, shared=()) -> "Contract":
+    def from_pychase(cls, pc, shared=(), stable: bool = False) -> "Contract":
         """Convert a contract of the CHASE core library. ``shared`` are the
         declarations of the system (outside the contracts) that the contract
-        may use."""
+        may use. ``stable`` sorts the terms by their text: the domain-specific
+        language gives them in an order that changes from run to run."""
         from ._native import representation as R
         inputs, outputs, generic, constants = {}, {}, {}, {}
         for d in list(shared) + list(pc.declarations):
@@ -281,7 +282,7 @@ class Contract:
                 if type(spec).__name__ == "Graph":
                     continue
                 out.extend(ltl.conjuncts(ltl.from_pychase(spec)))
-            return out
+            return sorted(out, key=ltl.to_str) if stable else out
 
         assumptions, guarantees = terms(pc.assumptions), terms(pc.guarantees)
         used = ltl.variables(ltl.conjunction([value(t) for t in assumptions + guarantees]))
@@ -866,7 +867,7 @@ def load_dsl(path: str | os.PathLike, name: str | None = None) -> Contract:
     from ._native import _load
     builder = _load("pychase_DSL").DSLSpecsBuilder()
     builder.parseSpecificationFile(os.fspath(path))
-    c = Contract.from_pychase(builder.getContract())
+    c = Contract.from_pychase(builder.getContract(), stable=True)
     c.name = name or os.path.splitext(os.path.basename(os.fspath(path)))[0]
     return c
 
