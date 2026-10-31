@@ -74,7 +74,7 @@ __all__ = [
     "Model", "is_receptive",
     #    and on formulas
     "implies", "is_satisfiable", "unsat_core", "Core",
-    #    best values (formulas without temporal operators)
+    #    best values (formulas over a bounded number of steps)
     "minimize", "maximize", "Optimum",
     # 3. GR(1) synthesis
     "is_realizable", "synthesize", "unrealizable_core", "is_well_separated",

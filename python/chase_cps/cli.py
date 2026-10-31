@@ -31,7 +31,7 @@ NEEDED_FOR = {
     "nusmv": "the same checks, where nuXmv cannot be used (optional)",
     "slugs": "is_realizable and synthesize (GR(1) realizability and synthesis), "
              "is_well_separated, is_vacuous",
-    "z3": "the checks of formulas without temporal operators (static contracts), and "
+    "z3": "the checks of formulas over a bounded number of steps (static contracts), and "
           "the real variables of the other checks (optional)",
 }
 

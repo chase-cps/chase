@@ -7,9 +7,9 @@ import pytest
 
 from chase_cps import Contract, implies, is_satisfiable, ltl, refines, verify
 from chase_cps.backends import ADAPTERS
-from chase_cps.backends.z3 import static, why_not
+from chase_cps.backends.z3 import bounded, static, why_not
 from chase_cps.queries import Implies, Satisfiable
-from chase_cps.robustness import holds
+from chase_cps.robustness import holds, robustness
 
 HAS_Z3 = ADAPTERS["z3"].available()
 HAS_NUXMV = ADAPTERS["nuxmv"].available()
@@ -43,7 +43,7 @@ def test_static_contracts_go_to_z3():
 def test_what_z3_does_not_take():
     v = {"w": "word[8]"}
     assert "words" in why_not(Satisfiable(ltl.parse("w = 3"), v))
-    assert "temporal" in why_not(Satisfiable(ltl.parse("F (x = 3)"), {"x": (0, 5)}))
+    assert "bounded number of steps" in why_not(Satisfiable(ltl.parse("F (x = 3)"), {"x": (0, 5)}))
     assert is_satisfiable("w = 3", v, backend="z3").status == "unknown"
 
 
@@ -51,7 +51,7 @@ def test_what_z3_does_not_take():
 def test_smtlib():
     text = ADAPTERS["z3"].emit(Implies(ltl.parse("x >= 2"), ltl.parse("x > 1"), {"x": (0, 9)}))
     assert "(check-sat)" in text and "unsat means that phi -> psi is valid" in text
-    with pytest.raises(ValueError, match="temporal"):
+    with pytest.raises(ValueError, match="bounded number of steps"):
         ADAPTERS["z3"].emit(Satisfiable(ltl.parse("G (x >= 2)"), {"x": (0, 9)}))
 
 
@@ -100,5 +100,95 @@ def test_minimize_and_maximize():
     assert minimize("x", "x > 1", v).status == "not_attained" and minimize("x", "x > 1", v).value == 1
     assert maximize("x", "x > 1", v).status == "unbounded"
     assert minimize("x", ["x > 1", "x < 0"], v).status == "infeasible"
-    assert "temporal" in maximize("x", "G (x <= 3)", {"x": (0, 9)}).reason
+    assert "bounded number of steps" in maximize("x", "G (x <= 3)", {"x": (0, 9)}).reason
     assert best.to_dict()["values"] == {"a": 4, "b": 0}
+
+
+def test_bounded_formulas():
+    assert bounded(ltl.parse("x' = x + 1 & X X (x - past(x, 2) <= 1) & G[0,4] (x <= 3)"))
+    for f in ["G (x <= 3)", "F b", "a U b", "a R b", "X G b"]:
+        assert not bounded(ltl.parse(f))
+
+
+@needs_z3
+def test_bounded_formulas_go_to_z3():
+    v = {"x": (0, 9)}
+    f = "x = 0 & G[0,3] (x' = x + 1) & F[0,4] (x >= 4)"
+    r = is_satisfiable(f, v)
+    assert r.status == "sat" and r.backend == "z3" and holds(f, r.trace)
+    assert [s["x"] for s in r.trace.prefix + r.trace.loop] == [0, 1, 2, 3, 4]
+    # past(x, n) before step 0: the history variables, as nuXmv writes them
+    r = is_satisfiable("x = 3 & x - past(x, 1) = 2", v)
+    assert r.trace.loop[0] == {"x": 3, "chase_past1_x": 1} and holds("x - past(x, 1) = 2", r.trace)
+
+
+def _bounded_formula(rng, depth):
+    atoms = ["x <= 3", "y > x", "x' = x + 1", "x' >= y", "x - past(x, 1) <= 1",
+             "past(y, 2) = x", "b", "b' != b"]
+    if depth == 0 or rng.random() < 0.25:
+        return rng.choice(atoms)
+    op = rng.choice(["!", "X", "G[0,2]", "F[1,2]", "&", "|", "->", "U[0,2]", "R[0,1]"])
+    if op in ("!", "X") or op.startswith(("G", "F")):
+        return f"{op} ({_bounded_formula(rng, depth - 1)})"
+    return f"({_bounded_formula(rng, depth - 1)}) {op} ({_bounded_formula(rng, depth - 1)})"
+
+
+@needs_both
+def test_z3_and_nuxmv_agree_over_steps():
+    rng = random.Random(9)
+    v = {"x": (-2, 5), "y": (0, 4), "b": "bool"}
+    for _ in range(120):
+        f, g = _bounded_formula(rng, 3), _bounded_formula(rng, 2)
+        for check, args in [(is_satisfiable, (f, v)), (implies, (f, g, v))]:
+            a = check(*args)
+            b = check(*args, backend="nuxmv")
+            assert a.backend == "z3" and a.status == b.status, (check.__name__, args)
+            if a.trace is not None:
+                assert holds(f, a.trace, v)
+                if check is implies:
+                    assert not holds(g, a.trace, v)
+
+
+@needs_z3
+def test_the_worst_case_of_a_property_is_its_smallest_robustness():
+    from chase_cps import maximize, minimize
+    v = {"T": "real", "u": "real"}
+    # a heater: on (u up to 3) while T <= 70, the room loses 1 per step
+    heater = ["T = 60", "G[0,9] (u >= 0 & u <= 3)", "G[0,9] (T' = T + u - 1)",
+              "G[0,9] (T > 70 -> u = 0)"]
+    worst = minimize("G[0,10] (T <= 75)", heater, v)
+    assert worst.status == "optimal" and worst.value == 3       # T reaches 72 at most
+    assert robustness("G[0,10] (T <= 75)", worst.trace, v) == 3
+    assert holds(ltl.conjunction([ltl.parse(h) for h in heater]), worst.trace, v)
+    best = maximize("F[0,10] (T >= 72)", heater, v)
+    assert best.status == "optimal" and best.value == 0
+    assert robustness("F[0,10] (T >= 72)", best.trace, v) == 0
+    # with T >= 70 -> u = 0, T stays below 72: the bound is not reached
+    loose = heater[:3] + ["G[0,9] (T >= 70 -> u = 0)"]
+    assert minimize("G[0,10] (T <= 75)", loose, v).status == "not_attained"
+    r = minimize("G[0,10] (T <= 75) & b", heater, {**v, "b": "bool"})
+    assert r.status == "unknown" and "inf or -inf" in r.reason
+
+
+@needs_z3
+def test_robustness_as_z3_computes_it_is_the_robustness_of_the_trace():
+    from chase_cps import maximize, minimize
+    rng = random.Random(4)
+    v = {"x": (-3, 6), "y": "real"}
+    atoms = ["x <= 2", "y > x", "x' - x >= 1", "y = 1.5", "x != 0", "y - past(x, 1) <= 2"]
+
+    def formula(depth):
+        if depth == 0 or rng.random() < 0.3:
+            return rng.choice(atoms)
+        op = rng.choice(["!", "X", "G[0,2]", "F[0,2]", "&", "|", "->", "<->"])
+        if op in ("!", "X") or op[0] in "GF":
+            return f"{op} ({formula(depth - 1)})"
+        return f"({formula(depth - 1)}) {op} ({formula(depth - 1)})"
+    for _ in range(60):
+        f, c = formula(3), formula(2)
+        for opt in (minimize, maximize):
+            o = opt(f, [c, "G[0,8] (y >= -10 & y <= 10)"], v)
+            assert o.status in ("optimal", "not_attained", "infeasible"), (f, c, o.reason)
+            if o.status == "optimal":
+                assert robustness(f, o.trace, v) == o.value, (f, c)
+                assert holds(c, o.trace, v)

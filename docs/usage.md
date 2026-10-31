@@ -523,23 +523,26 @@ do not take a context: whether a
 formula constrains the environment or the component is a question of
 roles, which a context does not say.
 
-### Formulas without temporal operators
+### Formulas over a bounded number of steps
 
-A formula with no `G`, `F`, `X`, `U`, `R`, no `x'` and no `past(x, n)` says
-something about one step: it is a constraint, and a contract made of such
-formulas is a static contract (a budget, a sizing, a choice of parts). When
-z3 is installed (`pip install chase-cps[z3]`), the checks of such formulas
-go to z3 instead of nuXmv: `verify`, `refines`, `implies`,
-`is_satisfiable`, and the others built on them. The result names `z3` as
-its back end, and its trace has one state, repeated. z3 is exact for linear
-arithmetic over the integers and the reals, with any Boolean structure
-(`a <= 1 | b <= 1` is not a polyhedron, and is checked as written); words
-stay with nuXmv. `backend="nuxmv"` still sends them to nuXmv, and
-`CHASE_BACKEND` too.
+A formula with no `G`, `F`, `U`, `R` reads a bounded number of steps: `X`,
+`x'`, and `past(x, n)` move by one step or by n, and the intervals of
+steps (`G[0,10] p`, `F[1,3] p`, `p U[0,2] q`) are written with `X`. A
+formula without any of them says something about one step: it is a
+constraint, and a contract made of such formulas is a static contract (a
+budget, a sizing, a choice of parts). When z3 is installed
+(`pip install chase-cps[z3]`), the checks of such formulas go to z3
+instead of nuXmv: `verify`, `refines`, `implies`, `is_satisfiable`, and the
+others built on them. The result names `z3` as its back end; its trace has
+the steps that the formulas read, the last one repeated. z3 is exact for
+linear arithmetic over the integers and the reals, with any Boolean
+structure (`a <= 1 | b <= 1` is not a polyhedron, and is checked as
+written); words stay with nuXmv. `backend="nuxmv"` still sends them to
+nuXmv, and `CHASE_BACKEND` too.
 
-`minimize(term, constraints)` and `maximize(term, constraints)` give the
-best value of a term where the constraints hold, and the values of the
-variables that reach it. The constraints are a formula, a list of
+`minimize(objective, constraints)` and `maximize(objective, constraints)`
+give the best value of a term where the constraints hold, and the values
+of the variables that reach it. The constraints are a formula, a list of
 formulas, or a contract (A & G):
 
 ```python
@@ -555,6 +558,22 @@ print(best.status, best.value, best.to_dict().get("values"))
 The status is `optimal`, `not_attained` (the bound of a strict inequality:
 `minimize("x", "x > 1")` is 1), `unbounded`, `infeasible`, or `unknown`
 with the reason.
+
+When the objective is a formula, its robustness (see Robustness below) is
+the objective. The smallest robustness of a property under the
+constraints is its worst case: above 0, every behavior that the
+constraints allow satisfies the property with that margin; below 0, the
+trace of the result violates it. The atoms of the formula compare numbers.
+
+```python
+from chase_cps import minimize
+
+# a heater: on (u up to 3) while T <= 70; the room loses 1 per step
+heater = ["T = 60", "G[0,9] (u >= 0 & u <= 3)", "G[0,9] (T' = T + u - 1)",
+          "G[0,9] (T > 70 -> u = 0)"]
+worst = minimize("G[0,10] (T <= 75)", heater, {"T": "real", "u": "real"})
+print(worst.status, worst.value)     # optimal 3: T reaches 72 at most
+```
 
 ### Real variables
 
@@ -698,6 +717,9 @@ violated with `-4` is missed by 4 at some step of the trace.
 A trace whose loop is empty repeats its last state. `past(x, n)` is the
 history variable of nuXmv in the trace (`chase_past2_x`) when it is there,
 else the value n steps before; it has none in the first n steps.
+`minimize` and `maximize` find the smallest and the largest robustness of
+a formula over the behaviors that some constraints allow (see Formulas over
+a bounded number of steps).
 
 ## 3. GR(1) synthesis
 
@@ -1091,7 +1113,8 @@ name and a comment that says how to read the answer:
 A question of satisfiability is written in SMV as its negation: the
 specification is false when the formula can hold, and the counterexample
 is a behavior that satisfies it. `to_smtlib` takes the contracts whose
-formulas have no temporal operator and needs z3 to write the file.
+formulas read a bounded number of steps (x at step k is `x@k`) and needs
+z3 to write the file.
 
 ````
 from chase_cps import Contract, to_smv

@@ -103,10 +103,11 @@ def to_smv(contract: Contract, refines: Optional[Contract] = None, tool: str = "
 
 
 def to_smtlib(contract: Contract, refines: Optional[Contract] = None) -> str:
-    """The check in SMT-LIB 2, for a contract whose formulas have no temporal
-    operator, no x' and no past(x, n): one block per question, each ended
-    by (check-sat) after an (echo) of its name. The file is standard: z3 and
-    cvc5 read it. Needs z3 (``pip install chase-cps[z3]``) to be written."""
+    """The check in SMT-LIB 2, for a contract whose formulas read a bounded
+    number of steps (no G, F, U, R; x at step k is x@k): one block per
+    question, each ended by (check-sat) after an (echo) of its name. The
+    file is standard: z3 and cvc5 read it. Needs z3 (``pip install
+    chase-cps[z3]``) to be written."""
     from .backends import z3 as backend_z3
     asked = questions(contract, refines)
     for _, q in asked:

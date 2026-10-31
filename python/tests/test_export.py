@@ -119,10 +119,14 @@ def test_z3_answers_as_nuxmv():
 
 @needs_z3
 def test_smtlib_takes_static_contracts_only():
-    with pytest.raises(ValueError, match="temporal"):
+    with pytest.raises(ValueError, match="bounded number of steps"):
         to_smtlib(ARB)
     text = to_smtlib(GEN, refines=SPEC)
     assert text.count("(check-sat)") == 2 and text.count("(reset)") == 1
+    steps = Contract.from_strings(name="Steps", inputs={"x": (0, 9)}, outputs={"y": (0, 9)},
+                                  assumptions=["x = 0", "G[0,2] (x' = x + 1)"],
+                                  guarantees=["X X (y = x + past(x, 1))"])
+    assert "x@2" in to_smtlib(steps) and _z3(to_smtlib(steps)) == ["sat", "sat", "sat"]
     assert '(echo "guarantees")' in text and text.count("(set-logic ALL)") == 2
 
 

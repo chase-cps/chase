@@ -1,9 +1,16 @@
-"""The best value of a term under constraints without temporal operators:
-``minimize("cost", contract)``, ``maximize("p", "p <= 2.5 * n & n <= 4",
-variables)``. The constraints are a formula, a list of formulas, or a
+"""The best value of a term under constraints over a bounded number of
+steps: ``minimize("cost", contract)``, ``maximize("p", "p <= 2.5 * n & n <=
+4", variables)``. The constraints are a formula, a list of formulas, or a
 contract (its assumptions and its guarantees: the behaviors where both
-hold). The answer gives the value and the values of the variables that
-reach it, for design-space exploration.
+hold), with no G, F, U, R (the intervals of steps, G[0,10] p, are fine).
+The answer gives the value and the values of the variables that reach it,
+for design-space exploration.
+
+The objective is a term, or a formula: then its robustness at step 0 (see
+``chase_cps.robustness``). ``minimize("G[0,10] (T <= 80)", dynamics)`` is
+the worst case of the property over the behaviors that the constraints
+allow: above 0, every behavior satisfies it with that margin; below 0, the
+trace violates it. The atoms of such a formula compare numbers.
 
 z3 answers (``pip install chase-cps[z3]``): exact for linear arithmetic
 over the integers and the reals, with Booleans and any Boolean structure.
@@ -49,7 +56,11 @@ class Optimum:
         if self.value is not None:
             d["value"] = _json_value(self.value)
         if self.trace is not None:
-            d["values"] = self.trace.to_dict()["loop"][0]
+            t = self.trace.to_dict()
+            if t["prefix"]:
+                d["trace"] = t
+            else:
+                d["values"] = t["loop"][0]
         if self.reason:
             d["reason"] = self.reason
         return d
@@ -57,13 +68,15 @@ class Optimum:
 
 def minimize(objective, subject_to, variables: Optional[dict] = None, timeout: float = 300,
              backend: str = "auto") -> Optimum:
-    """The smallest value of a term (text or tree) where the constraints hold."""
+    """The smallest value of a term (text or tree), or of the robustness of a
+    formula, where the constraints hold."""
     return _optimize(objective, subject_to, variables, timeout, backend, maximize=False)
 
 
 def maximize(objective, subject_to, variables: Optional[dict] = None, timeout: float = 300,
              backend: str = "auto") -> Optimum:
-    """The largest value of a term (text or tree) where the constraints hold."""
+    """The largest value of a term (text or tree), or of the robustness of a
+    formula, where the constraints hold."""
     return _optimize(objective, subject_to, variables, timeout, backend, maximize=True)
 
 
@@ -93,9 +106,12 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
     start = time.time()
     e = backend_z3.Encoding(variables)
     try:
-        goal, f = e.formula(term), e.formula(phi)
+        f = e.formula(phi)
+        goal = e.formula(term)
+        if z3.is_bool(goal):
+            goal = e.robustness(term)
     except ValueError as err:
-        return Optimum(UNKNOWN, "z3", reason=str(err))
+        return Optimum(UNKNOWN, backend="z3", reason=str(err))
     opt = z3.Optimize()
     opt.set("timeout", int(timeout * 1000))
     opt.add(f, *e.bounds())
@@ -106,7 +122,7 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
         return Optimum(INFEASIBLE, backend="z3", seconds=seconds)
     if answer == z3.unknown:
         return Optimum(UNKNOWN, backend="z3", reason=f"z3: {opt.reason_unknown()}", seconds=seconds)
-    trace = Trace(prefix=[], loop=[e.state(opt.model())])
+    trace = e.trace(opt.model())
     inf, value, eps = (handle.upper_values() if maximize else handle.lower_values())
     inf, eps = backend_z3._value(z3.simplify(inf)), backend_z3._value(z3.simplify(eps))
     if inf != 0:
