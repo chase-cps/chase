@@ -96,6 +96,35 @@ def test_refinement_is_drawn_as_nesting():
     assert chain[0]["children"][0]["children"][0]["title"] == "A3"
 
 
+def test_a_decomposition_keeps_every_port_of_the_contract_it_refines():
+    # B1 drives yy, not the output y of B: the box of B keeps y, which the box around wires
+    a = Contract.from_strings(name="A", inputs={"x": "bool"}, outputs={"m": "bool"},
+                              guarantees=["G (x -> X m)"])
+    b = Contract.from_strings(name="B", inputs={"m": "bool"}, outputs={"y": "bool"},
+                              guarantees=["G (m -> X X y)"])
+    b1 = Contract.from_strings(name="B1", inputs={"m": "bool"}, outputs={"yy": "bool"},
+                               guarantees=["G (m -> X X yy)"])
+    top = Contract.from_strings(name="Top", inputs={"x": "bool"}, outputs={"y": "bool"},
+                                guarantees=["G (x -> X X X y)"])
+    d = viz.diagram(System("Top", [Component("A", a), Component("B", b)], contract=top),
+                    refines=[(System("B", [Component("B1", b1)], contract=b), b, "unknown")])
+
+    def check(box):
+        ports = {None: (set(box.get("inputs", [])), set(box.get("outputs", [])))}
+        for ch in box.get("children", []):
+            ports[ch["id"]] = (set(ch.get("inputs", [])), set(ch.get("outputs", [])))
+        for w in box.get("edges", []):
+            for end in (w["from"], w["to"]):
+                ins, outs = ports[end[0]]
+                assert end[2] in (ins if end[1] == "in" else outs), (box["title"], w)
+        for ch in box.get("children", []):
+            check(ch)
+    for n in d["nodes"]:
+        check(n)
+    group = next(c for c in d["nodes"][0]["children"] if c["title"] == "B")
+    assert group["outputs"] == ["y"]
+
+
 def test_viewpoints_inside_a_composition_and_refinement_on_four_levels():
     a, b, top = contracts()
     t = Contract.from_strings(name="At", inputs=["x"], outputs=["y"], guarantees=["G (x -> X y)"])

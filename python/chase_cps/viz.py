@@ -300,7 +300,7 @@ class _Scene:
         else:
             driven = {v for k in s.components for v in k.contract.outputs}
             inputs = {v for k in s.components for v in k.contract.inputs if v not in driven}
-        outputs = _outside(children, s.contract.outputs if s.contract else None)
+        outputs = sorted(s.contract.outputs) if s.contract else _outside(children)
         return self.box(s, types=_types(*(k.contract for k in s.components),
                                          *([s.contract] if s.contract else [])),
                         kind="group", op="system", title=s.name,
@@ -347,7 +347,9 @@ class _Scene:
         if inner["kind"] == "group":          # a decomposition: the group is the box
             if inner.get("contract"):         # the computed composition stays, under its own icon
                 inner["composed"] = inner["contract"]
-            outputs = _outside(inner["children"], high.outputs)   # the ports of the contract it refines
+            # all the ports of the contract it refines, as for the inputs: the wires of the box
+            # around name them, and an output that no part drives stays open
+            outputs = sorted(high.outputs)
             inner.update(kind="group", title=high.name, contract=self.terms(high),
                          badge={"text": "⪯", "status": status}, outputs=outputs,
                          edges=[w for w in inner["edges"] if w.get("to", [0])[0] is not None]
