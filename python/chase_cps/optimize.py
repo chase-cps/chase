@@ -116,9 +116,11 @@ def _optimize(objective, subject_to, variables, timeout, backend, maximize) -> O
     if z3.get_version()[:2] < (4, 12):
         return Optimum(UNKNOWN, backend="z3", reason=f"z3 {z3.get_version_string()} gives "
                        "wrong optima; minimize and maximize need z3 4.12 or later")
-    # The bound that z3 gives is checked: whether a better value exists (z3
-    # sometimes stops at a value that is not the best: then the search goes
-    # on below it), and whether the bound is reached.
+    # The bound that z3 gives is checked with the solver of z3 (not its
+    # optimizer): whether a better value exists, and whether the bound is
+    # reached. With integers and reals in one problem, the optimizer of z3
+    # (4.15 to 5.3.3) sometimes gives a value that is not the best, and one
+    # that its own model contradicts; the search then goes on below it.
     cuts = []
     for _ in range(ROUNDS):
         opt = z3.Optimize()
