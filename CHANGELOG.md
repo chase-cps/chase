@@ -4,6 +4,19 @@
 
 Added:
 
+- Repair (`chase_cps.repair`, `chase-cps repair`): the values of named
+  constants of the contracts that make a check pass, at the least cost (by
+  default the least change), each checked by the check itself. Bounded
+  formulas over the reals are repaired by projection (quantifier
+  elimination of z3, one optimization); the other checks of every behavior
+  by counterexamples (nuXmv, ESBMC, z3), each counterexample becoming a
+  condition on the parameters, generalized over the reals on bounded
+  formulas; checks of some behavior by witnesses or by enumeration. The
+  result is repaired (optimal when no values of lower cost pass),
+  impossible, or unknown.
+- Named constants of contracts: `constants=` in Python and JSON, `constant`
+  in specification files (kept by name, no longer only by value),
+  `instantiate`, `terms`; a composition keeps them.
 - Robustness (`chase_cps.robustness`): how much a trace satisfies or
   violates a formula, by the quantitative semantics of signal temporal
   logic in discrete time, on lasso traces. `Contract.robustness(trace)`

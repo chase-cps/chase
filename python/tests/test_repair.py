@@ -288,3 +288,27 @@ def test_the_constant_that_the_code_implements():
     r = repair("impl", f, ctrl, parameters={"theta": (0, 120, "int")})
     assert r.status == "repaired" and r.values == {"theta": 70} and r.optimal
     assert r.check.backend == "esbmc" and r.rounds >= 2
+
+
+@needs_z3
+def test_the_command_line(tmp_path, capfd):
+    pytest.importorskip("chase_cps._native")
+    from chase_cps.cli import main
+    path = tmp_path / "spec.ltl"
+    path.write_text(to_spec([IMPL, SPEC], name="s"))
+    assert main(["repair", str(path), "--refines", "Impl", "Spec", "--param", "lam=0..10"]) == 0
+    out = capfd.readouterr().out
+    assert "repaired" in out and "lam = 5" in out and "(optimal)" in out
+    assert main(["repair", str(path), "--refines", "Impl", "Spec", "--param", "lam=0..3:int",
+                 "--json"]) == 1
+    assert json.loads(capfd.readouterr().out)["status"] == "impossible"
+    assert main(["repair", str(path), "--refines", "Impl", "Spec", "--param", "lam=0-3"]) == 2
+    assert "NAME=LOW..HIGH" in capfd.readouterr().err
+    assert main(["repair", str(path), "--param", "lam=0..3"]) == 2
+
+
+def test_without_z3(monkeypatch):
+    import chase_cps.backends.z3 as backend_z3
+    monkeypatch.setattr(backend_z3, "_z3", None)
+    r = repair("refines", IMPL, SPEC, parameters={"lam": (0, 10)})
+    assert r.status == "unknown" and "pip install chase-cps[z3]" in r.reason

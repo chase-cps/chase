@@ -516,6 +516,60 @@ def _export(args) -> str:
     return ex.to_smt(check, *arguments)
 
 
+def repair_command(args) -> int:
+    """Repair the constants of the contracts so that a check passes."""
+    try:
+        r = _quiet(lambda: _repair(args))
+    except (ValueError, RuntimeError) as e:
+        print(f"chase-cps repair: {e}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(r.to_dict(), indent=2))
+    else:
+        rounds = f"{r.rounds} round{'' if r.rounds == 1 else 's'}"
+        print(f"repair      {r.status}  ({r.method}, {rounds}, {r.seconds:.2f} s)")
+        for k, v in r.values.items():
+            print(f"  {k} = {ltl.to_str(ltl.Num(v))}")
+        if r.values:
+            print(f"  cost {ltl.to_str(ltl.Num(r.cost))}{' (optimal)' if r.optimal else ''}")
+        if r.reason:
+            print(f"  {r.reason}")
+    return 0 if r.status == "repaired" else 1
+
+
+def _parameter(text: str):
+    """NAME=LOW..HIGH, or NAME=LOW..HIGH:int."""
+    m = re.fullmatch(r"\s*([A-Za-z_]\w*)\s*=\s*(-?[\d.]+)\s*\.\.\s*(-?[\d.]+)\s*(:int)?\s*", text)
+    if not m:
+        raise ValueError(f"--param {text}: NAME=LOW..HIGH, or NAME=LOW..HIGH:int")
+    low, high = ltl.number(m.group(2)), ltl.number(m.group(3))
+    return m.group(1), (low, high, "int") if m.group(4) else (low, high)
+
+
+def _repair(args):
+    from .repair import repair
+    contracts = _read(args.file)
+    asked = [(k, getattr(args, k)) for k in ("verify", "compatible", "consistent", "refines",
+                                              "implementation", "environment")
+             if getattr(args, k) is not None]
+    if len(asked) != 1:
+        raise ValueError("one check: --verify, --compat, --consist, --refines, --impl, or --env")
+    kind, value = asked[0]
+    check = {"compatible": "compat", "consistent": "consist", "implementation": "impl",
+             "environment": "env"}.get(kind, kind)
+    if check in ("impl", "env"):
+        c = _contract(value[1], contracts)
+        arguments = (_model(value[0], c), c)
+    elif check == "refines":
+        arguments = tuple(_contract(n, contracts) for n in value)
+    else:
+        arguments = (_contract(value, contracts),)
+    parameters = dict(_parameter(p) for p in args.param)
+    return repair(check, *arguments, parameters=parameters, minimize=args.minimize,
+                  maximize=args.maximize, method=args.method, rounds=args.rounds,
+                  timeout=args.timeout)
+
+
 def _quiet(run):
     """run(), with what the CHASE libraries print on the standard output sent
     to the standard error."""
@@ -727,6 +781,35 @@ def main(argv: list[str] | None = None) -> int:
                         "composition)")
     p.add_argument("-o", "--output", help="the file to write (default: the standard output)")
     p.set_defaults(run=export)
+
+    p = sub.add_parser(
+        "repair", help="find the values of constants that make a check pass",
+        description="Find the values of constants of the contracts (constant in a "
+        "specification file, constants in JSON) that make a check pass, at the least "
+        "cost: by default the least change, the sum of |p - p0|. The checks are named as "
+        "in chase-cps check. The values are checked by the check itself. The exit status is "
+        "0 when the check is repaired, 1 when no values in the ranges pass or the repair "
+        "does not finish, and 2 on an error in the input.")
+    p.add_argument("file")
+    g = p.add_argument_group("the check (one)")
+    g.add_argument("--verify", metavar="CONTRACT")
+    g.add_argument("--compat", "--compatible", dest="compatible", metavar="CONTRACT")
+    g.add_argument("--consist", "--consistent", dest="consistent", metavar="CONTRACT")
+    g.add_argument("--refines", nargs=2, metavar=("C1", "C2"))
+    g.add_argument("--impl", "--implementation", nargs=2, dest="implementation",
+                   metavar=("MODEL", "CONTRACT"), help="MODEL: SMV, JSON, or FILE.c:FUNCTION")
+    g.add_argument("--env", "--environment", nargs=2, dest="environment",
+                   metavar=("MODEL", "CONTRACT"))
+    p.add_argument("--param", action="append", required=True, metavar="NAME=LOW..HIGH[:int]",
+                   help="a constant to repair and its range (may be repeated)")
+    p.add_argument("--minimize", metavar="TERM", help="the cost: a term over the parameters")
+    p.add_argument("--maximize", metavar="TERM")
+    p.add_argument("--method", default="auto",
+                   choices=["auto", "projection", "counterexamples", "enumeration"])
+    p.add_argument("--rounds", type=int, default=50, help="rounds of counterexamples at most")
+    p.add_argument("--timeout", type=float, default=300, help="seconds per check")
+    p.add_argument("--json", action="store_true", help="print the result as JSON")
+    p.set_defaults(run=repair_command)
 
     p = sub.add_parser(
         "view", help="draw the contracts of a specification",

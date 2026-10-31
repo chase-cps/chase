@@ -118,6 +118,10 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
 
     if method not in METHODS:
         raise RepairError(f"method {method!r}: one of {', '.join(METHODS)}")
+    from ..backends.z3 import _z3
+    if _z3 is None:
+        return done(Repair(UNKNOWN, reason="repair optimizes with z3, which is not installed: "
+                                           "pip install chase-cps[z3]"))
     from .project import applicable, regions
     if method in ("auto", "projection"):
         why = applicable(asked) or ("an integer parameter" if any(
@@ -285,7 +289,12 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
     from .instantiate import on_trace
     from ..queries import Holds, Implies
     from .project import generalized
+    from ..cprograms import CFunction
     by_name = dict(asked)
+    # A counterexample is generalized (its reals free) only when the premise of
+    # the question describes every behavior: not for a C function, whose
+    # behaviors are those of its code, not of the formulas.
+    general = not (check == "impl" and isinstance(args[0], CFunction))
     conditions, extra, found = [], [], []
     for k in range(1, rounds + 1):
         o, values = _best(params, cost, aux, conditions, extra, timeout)
@@ -311,7 +320,8 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
             # the values of the parameters under which this behavior, its reals
             # free, still breaks the question (bounded formulas), else under
             # which the trace itself still does
-            piece = generalized(q, trace, params, timeout) if isinstance(q, Implies) else None
+            piece = generalized(q, trace, params, timeout) \
+                if general and isinstance(q, Implies) else None
             if piece is not None and _z3_holds_at(piece, values, params):
                 extra.append(_z3_not(piece))
                 continue
