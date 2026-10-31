@@ -350,8 +350,8 @@ class _Scene:
             # all the ports of the contract it refines, as for the inputs: the wires of the box
             # around name them, and an output that no part drives stays open
             outputs = sorted(high.outputs)
-            # and only its inputs: an input of a part that the contract does not give,
-            # and no part drives, is open (not a port of the box)
+            # and its inputs that no part drives: an input of a part that the contract
+            # does not give, and no part drives, is open (not a port of the box)
             edges = []
             for w in inner["edges"]:
                 if w.get("to", [0])[0] is None:
@@ -361,7 +361,9 @@ class _Scene:
                     continue
                 edges.append(w)
             inner.update(kind="group", title=high.name, contract=self.terms(high),
-                         badge={"text": "⪯", "status": status}, inputs=sorted(high.inputs),
+                         badge={"text": "⪯", "status": status},
+                         inputs=sorted(set(high.inputs) - {v for ch in inner["children"]
+                                                           for v in ch.get("outputs", [])}),
                          outputs=outputs, edges=edges + _out(inner["children"], outputs))
             self.ids.setdefault(id(high), inner["id"])
             return inner

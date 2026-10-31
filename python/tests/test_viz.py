@@ -134,6 +134,11 @@ def test_an_input_of_a_part_that_the_contract_does_not_give_is_open():
     d = viz.diagram(refines=[(sensor.compose(ctrl, name="Parts"), cruise, "invalid")])
     box = d["nodes"][0]
     assert box["title"] == "Cruise" and box["inputs"] == ["raw"]
+    # an input of the contract that a part drives is not a port of the box
+    watch = Contract.from_strings(name="Watch", inputs=["raw", "speed"], outputs=["throttle"],
+                                  guarantees=["G (raw -> throttle)"])
+    box = viz.diagram(refines=[(sensor.compose(ctrl, name="Parts"), watch, "invalid")])["nodes"][0]
+    assert box["inputs"] == ["raw"]
     assert {"open": [next(c["id"] for c in box["children"] if c["title"] == "Controller"), "in", "enable"],
             "var": "enable"} in box["edges"]
 
