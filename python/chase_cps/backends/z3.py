@@ -12,7 +12,7 @@ is the variable x@k (x at step 0). Words are left to nuXmv.
 
 The trace of a result has the steps that the formulas read, the last one
 repeated; past(x, n) before step 0 is in the history variables of nuXmv
-(chase_past1_x, ...). ``to_smtlib`` writes the same question in SMT-LIB 2.
+(chase_past1_x, ...). ``to_smt`` writes the same question in SMT-LIB 2.
 """
 
 from __future__ import annotations

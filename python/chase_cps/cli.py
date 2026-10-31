@@ -404,7 +404,7 @@ def check(args) -> int:
     return 0 if passed else 1
 
 
-EXPORTS = ("smv", "smtlib", "gr1", "sva", "spec", "json")
+EXPORTS = ("smv", "smt", "gr1", "sva", "spec", "json")
 
 
 def export(args) -> int:
@@ -444,16 +444,16 @@ def _export(args) -> str:
     c = _contract(args.contract[0], contracts) if args.contract \
         else next(iter(contracts.values()))
     abstract = _contract(args.refines, contracts) if args.refines else None
-    if abstract is not None and args.to not in ("smv", "smtlib"):
-        raise ValueError("--refines: --to smv or --to smtlib")
+    if abstract is not None and args.to not in ("smv", "smt"):
+        raise ValueError("--refines: --to smv or --to smt")
     if args.tool and args.to not in ("smv", "gr1"):
         raise ValueError(f"--to {args.to} takes no --tool")
     if args.to == "smv":
         return ex.to_smv(c, abstract, tool=args.tool or "nuxmv")
     if args.to == "gr1":
         return to_gr1(c, tool=args.tool or "slugs")
-    if args.to == "smtlib":
-        return ex.to_smtlib(c, abstract)
+    if args.to == "smt":
+        return ex.to_smt(c, abstract)
     return to_sva(c)
 
 
@@ -635,7 +635,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser(
         "export", help="write a check of a contract as the input of a tool",
         description="Write a check of a contract in the language of a tool, for the tools "
-        "one runs oneself: smv (nuXmv, NuSMV) and smtlib (z3, cvc5) write the questions of "
+        "one runs oneself: smv (nuXmv, NuSMV) and smt (z3, cvc5) write the questions of "
         "verify, or of --refines, each with its name and how to read the answer; gr1 the "
         "realizability question (slugs, gr1c); sva the contract as a SystemVerilog checker. "
         "spec and json write the contracts (all of them without --contract).")
@@ -647,7 +647,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="the contract: NAME, or NAME+NAME+... for the composition (needed "
                         "when the file has several)")
     p.add_argument("--refines", metavar="ABSTRACT",
-                   help="the check that CONTRACT refines ABSTRACT (smv, smtlib)")
+                   help="the check that CONTRACT refines ABSTRACT (smv, smt)")
     p.add_argument("-o", "--output", help="the file to write (default: the standard output)")
     p.set_defaults(run=export)
 

@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import itertools
 from fractions import Fraction
-from typing import Optional
 
 from . import ltl
 from .contract import Contract
@@ -38,11 +37,9 @@ class GR1FormatError(ValueError):
     """The contract cannot be written in the format asked for."""
 
 
-def to_gr1(contract: Contract, tool: str = "slugs", format: Optional[str] = None) -> str:
+def to_gr1(contract: Contract, tool: str = "slugs") -> str:
     """The GR(1) specification of the contract, in the input format of slugs
-    (structured slugs) or of gr1c. ``format`` is the former name of
-    ``tool``."""
-    tool = format or tool
+    (structured slugs) or of gr1c."""
     if tool not in TOOLS:
         raise ValueError(f"tool {tool!r}: one of {', '.join(TOOLS)}")
     from .gr1 import gr1_roles

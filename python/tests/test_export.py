@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 
-from chase_cps import Contract, ltl, refines, to_smtlib, to_smv, verify
+from chase_cps import Contract, ltl, refines, to_smt, to_smv, verify
 from chase_cps.backends import ADAPTERS
 from chase_cps.export import questions
 
@@ -109,24 +109,24 @@ def test_z3_answers_as_nuxmv():
                                       guarantees=[_formula(rng, 2), _formula(rng, 1)])
                 for k in "ab")
         want = _expected(a, backend="nuxmv")
-        assert _z3(to_smtlib(a)) == ["sat" if w else "unsat" for w in want]
+        assert _z3(to_smt(a)) == ["sat" if w else "unsat" for w in want]
         seen.update(want)
         want = _expected(a, b, backend="nuxmv")
-        assert _z3(to_smtlib(a, refines=b)) == ["unsat" if w else "sat" for w in want]
+        assert _z3(to_smt(a, refines=b)) == ["unsat" if w else "sat" for w in want]
         seen.update(want)
     assert seen == {True, False}
 
 
 @needs_z3
-def test_smtlib_takes_static_contracts_only():
+def test_smt_takes_formulas_over_bounded_steps_only():
     with pytest.raises(ValueError, match="bounded number of steps"):
-        to_smtlib(ARB)
-    text = to_smtlib(GEN, refines=SPEC)
+        to_smt(ARB)
+    text = to_smt(GEN, refines=SPEC)
     assert text.count("(check-sat)") == 2 and text.count("(reset)") == 1
     steps = Contract.from_strings(name="Steps", inputs={"x": (0, 9)}, outputs={"y": (0, 9)},
                                   assumptions=["x = 0", "G[0,2] (x' = x + 1)"],
                                   guarantees=["X X (y = x + past(x, 1))"])
-    assert "x@2" in to_smtlib(steps) and _z3(to_smtlib(steps)) == ["sat", "sat", "sat"]
+    assert "x@2" in to_smt(steps) and _z3(to_smt(steps)) == ["sat", "sat", "sat"]
     assert '(echo "guarantees")' in text and text.count("(set-logic ALL)") == 2
 
 

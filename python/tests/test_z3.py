@@ -48,7 +48,7 @@ def test_what_z3_does_not_take():
 
 
 @needs_z3
-def test_smtlib():
+def test_smt():
     text = ADAPTERS["z3"].emit(Implies(ltl.parse("x >= 2"), ltl.parse("x > 1"), {"x": (0, 9)}))
     assert "(check-sat)" in text and "unsat means that phi -> psi is valid" in text
     with pytest.raises(ValueError, match="bounded number of steps"):

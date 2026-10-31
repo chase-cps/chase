@@ -49,7 +49,7 @@ contracts of a specification written in the logics language of CHASE, and
 `to_spec` writes one. `parse_sva` reads the `assume property` and `assert
 property` statements of SystemVerilog as a contract, and `to_sva` writes a
 contract as a checker module. `to_gr1(c, tool="slugs" | "gr1c")` writes a
-GR(1) contract for a solver you run yourself, `to_smv` and `to_smtlib` the
+GR(1) contract for a solver you run yourself, `to_smv` and `to_smt` the
 checks of a contract for nuXmv, NuSMV, z3, or cvc5, and `load_dsl` reads a problem
 written in the domain-specific language of CHASE. The variables are
 Booleans, integer ranges,

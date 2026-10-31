@@ -1098,12 +1098,12 @@ files of two tools differ.
 | Function | Language | Tools |
 |---|---|---|
 | `to_smv(c, refines=None, tool="nuxmv")` | SMV | nuXmv, NuSMV (`tool="nusmv"`) |
-| `to_smtlib(c, refines=None)` | SMT-LIB 2 | z3, cvc5 |
+| `to_smt(c, refines=None)` | SMT (SMT-LIB 2, .smt2) | z3, cvc5 |
 | `to_gr1(c, tool="slugs")` | structured slugs, gr1c | slugs, gr1c (`tool="gr1c"`) |
 | `to_sva(c)` | SystemVerilog | Jasper, Verilator, other SVA tools |
 | `to_spec(contracts)` | logics language | CHASE, logics_tool |
 
-`to_smv` and `to_smtlib` write the questions of a check, each with its
+`to_smv` and `to_smt` write the questions of a check, each with its
 name and a comment that says how to read the answer:
 
 - a contract alone: `compatible`, `consistent`, and `feasible`, as
@@ -1112,7 +1112,7 @@ name and a comment that says how to read the answer:
 
 A question of satisfiability is written in SMV as its negation: the
 specification is false when the formula can hold, and the counterexample
-is a behavior that satisfies it. `to_smtlib` takes the contracts whose
+is a behavior that satisfies it. `to_smt` takes the contracts whose
 formulas read a bounded number of steps (x at step k is `x@k`) and needs
 z3 to write the file.
 

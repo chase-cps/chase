@@ -1,10 +1,10 @@
 """The checks of a contract as the input files of the tools, for the tools
 that one runs oneself (a tool under license, or another solver):
 
-    from chase_cps import to_smv, to_smtlib
+    from chase_cps import to_smv, to_smt
     open("gen.smv", "w").write(to_smv(gen))                  # nuXmv, NuSMV
     open("gen.smv", "w").write(to_smv(gen, refines=spec))
-    open("gen.smt2", "w").write(to_smtlib(gen))              # z3, cvc5
+    open("gen.smt2", "w").write(to_smt(gen))              # z3, cvc5
 
 The functions are named after the language of the file; ``tool`` names the
 tool when the files of two tools differ (``to_smv``, ``to_gr1``). Each file
@@ -102,7 +102,7 @@ def to_smv(contract: Contract, refines: Optional[Contract] = None, tool: str = "
     return "\n".join(lines) + "\n"
 
 
-def to_smtlib(contract: Contract, refines: Optional[Contract] = None) -> str:
+def to_smt(contract: Contract, refines: Optional[Contract] = None) -> str:
     """The check in SMT-LIB 2, for a contract whose formulas read a bounded
     number of steps (no G, F, U, R; x at step k is x@k): one block per
     question, each ended by (check-sat) after an (echo) of its name. The
@@ -114,7 +114,7 @@ def to_smtlib(contract: Contract, refines: Optional[Contract] = None) -> str:
         reason = backend_z3.why_not(q)
         if reason:
             raise ValueError(reason)
-    out = [f"; {_title(contract, refines)}, written by CHASE (chase_cps.to_smtlib)"]
+    out = [f"; {_title(contract, refines)}, written by CHASE (chase_cps.to_smt)"]
     for i, (name, q) in enumerate(asked):
         e, f = backend_z3.Z3Adapter().problem(q)
         s = backend_z3._z3.Solver()

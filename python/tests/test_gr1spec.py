@@ -89,7 +89,6 @@ def test_the_slugs_format_is_the_file_given_to_slugs():
         to_gr1(ARITH)
     with pytest.raises(ValueError, match="one of slugs, gr1c"):
         to_gr1(FAIR, tool="smv")
-    assert to_gr1(FAIR, format="slugs") == text       # the former name of tool
 
 
 @pytest.mark.skipif(shutil.which("gr1c") is None, reason="gr1c not installed")

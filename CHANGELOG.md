@@ -25,7 +25,7 @@ Added:
   contract), with the values that reach it; with a formula as the
   objective, its robustness: the worst case of a property of signal
   temporal logic under some dynamics. `chase-cps doctor` lists z3.
-- `to_smv` and `to_smtlib` write the checks of a contract (verify, or
+- `to_smv` and `to_smt` write the checks of a contract (verify, or
   refines) as the input of nuXmv or NuSMV, and of SMT solvers (z3, cvc5),
   for the tools one runs oneself: one named question per check, with how
   to read the answer. `chase-cps export FILE --to LANG [--tool TOOL]`
@@ -34,7 +34,7 @@ Added:
 Changed:
 
 - `to_gr1(c, tool="gr1c")`: the argument `format` is now `tool`, as in
-  the other functions that write files for tools; `format` still works.
+  the other functions that write files for tools.
 - The logics language (specification files, `.ltl`) has the precedence of
   LTL tools and of the Python syntax: from the tightest, `! G F X`, then
   `U R`, `&`, `|`, `->`, `<->`; `U`, `R`, `->` group to the right. Before,
