@@ -717,16 +717,19 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         ordered.append(first)
         todo.remove(first)
     refined = set()                     # the items already drawn inside what they refine
+
+    def shows(node, res, high):           # the counterexample of this refinement, on the box of its tag
+        if res is not None and _why(res) and node.get("badge"):
+            node["badge"]["why"] = _why(res, high)
+        return node
     for r in ordered:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
-        if len(r) > 2 and _why(r[2]):
-            why.append((high, "⪯", r[2], high))
+        res = r[2] if len(r) > 2 else None
         if status is None and results and isinstance(low, Contract) and isinstance(high, Contract):
             kept = [res for kind, other, res in low.checked(context) if kind == "refines" and other is high]
             status = _status(kept[-1]) if kept else None
-            if kept and _why(kept[-1]):
-                why.append((high, "⪯", kept[-1], high))
+            res = kept[-1] if kept else None
         if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
             if id(high) not in scene.ids:
                 add(high)
@@ -739,6 +742,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             hole["children"].append(inner)
             hole["edges"] += _through(inner, hole["inputs"], hole["outputs"])
             hole["badge"] = {"text": "⪯", "status": status}
+            shows(hole, res, high)
             continue
         drawn = _find(nodes, scene.ids[id(high)]) if id(high) in scene.ids else None
         # a part of a composition is refined in place by its decomposition only;
@@ -764,17 +768,18 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             for k, v in list(scene.ids.items()):
                 if v == wrapped["id"]:
                     scene.ids[k] = keep
+            shows(drawn, res, high)
             continue
         if id(low) in refined:              # it refines another contract too: drawn again, apart
-            after(top[id(low)], scene.wrap(scene.node(low), high, status))
+            after(top[id(low)], shows(scene.wrap(scene.node(low), high, status), res, high))
             continue
         inner = top.pop(id(low), None) or next(   # in a chain, the box drawn already
             (n for n in nodes if n["id"] == scene.ids.get(id(low))), None) or scene.node(low)
         if _holds(inner, id(high), scene.objs):  # a loop (each refines the other): drawn apart
             top.setdefault(id(low), inner)
-            after(inner, scene.wrap(scene.node(low), high, status))
+            after(inner, shows(scene.wrap(scene.node(low), high, status), res, high))
             continue
-        wrapped = scene.wrap(inner, high, status)
+        wrapped = shows(scene.wrap(inner, high, status), res, high)
         replace(inner, wrapped)
         top[id(low)] = wrapped
         refined.add(id(low))
@@ -836,10 +841,15 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         for n in holes or boxes:        # a quotient: its holes, not the box of the dividend
             n["open"] = True
     for obj, name, result, *against in why:     # the counterexample, on the tag of the check
-        n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
-        tag = (n or {}).get("badge", {}).get("text", "")
-        if n is not None and (tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe")):
-            n["badge"]["why"] = _why(result, against[0] if against else None)
+        # the boxes of obj (it may be drawn more than once): the one whose tag shows this check
+        first = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
+        boxes = ([first] if first is not None else []) + [n for n in _boxes(nodes) if n is not first
+                                                          and scene.objs.get(n["id"]) == id(obj)]
+        for n in boxes:
+            tag = n.get("badge", {}).get("text", "")
+            if tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe"):
+                n["badge"]["why"] = _why(result, against[0] if against else None)
+                break
     for obj, name, about in repairs:     # on the box that shows the result of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
         if n is not None:
@@ -1852,7 +1862,7 @@ function icons(n) {
     else if (n.model.source === "c") out.push([kind, n.model.code ? "m:" + n.id : null, "function " + n.model.name + from
       + ": its outputs come from its inputs, one call at a time (ESBMC, CBMC)" + (n.model.code ? ". Click: its code" : "")]);
     else out.push([kind, null, "model " + n.model.name + from + (f && f.too_many
-      ? ": more than " + f.count + " states, too many to show" : ": no registers, its outputs are functions of its inputs")]);
+      ? ": " + (f.more ? "more than " : "") + f.count + " states, too many to show" : ": no registers, its outputs are functions of its inputs")]);
   }
   return out;
 }
@@ -2074,12 +2084,13 @@ function drawNode(g, e, ox, oy) {
     const fix = c.status === "invalid";
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + " — " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
-           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : "") + (fix ? ", and why it fails" : ""));
+           + (fix ? ". Click: why it fails" : c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
     if (c.core || fix) { t.setAttribute("class", "icon");
-      t.onclick = () => { if (fix && !on) openRepair(n, c.name);
-        if (!c.core) return;
+      // one that fails: its details, with its core shown; one that holds: its core on and off
+      t.onclick = () => { if (fix) { if (c.core) { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); }
+                                     return openRepair(n, c.name); }
         if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
   if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A")) {
@@ -2095,7 +2106,7 @@ function drawNode(g, e, ox, oy) {
                          : `M${cx - 3.5} ${cy + 1.5} L${cx} ${cy - 2} L${cx + 3.5} ${cy + 1.5}`,
                  fill: "none", stroke: shut ? "#fff" : "var(--teal)", "stroke-width": 1.4,
                  "stroke-linecap": "round", "stroke-linejoin": "round" }, f);
-    tip(f, (shut ? "Show the " : "Hide the ") + n.children.length + " boxes inside");
+    tip(f, (shut ? "Show the " : "Hide the ") + (n.children.length === 1 ? "box" : n.children.length + " boxes") + " inside");
     f.onclick = fold(n.id);
     rx -= ICON + 6;
   }
@@ -2762,7 +2773,8 @@ function checkTitle(n, t) {
   if (r) return "A ∧ G of " + r.args[0] + v(" can hold", " cannot hold");
   const req = (n.contract && n.contract.name) || n.title;           // from the box: what is inside, its model
   if (t === "⪯") {
-    const inner = n.note || (n.children || []).map(c => c.title).join(" ⊗ ");
+    // what is inside the box (the candidate in a hole, the parts of a decomposition), else its note
+    const inner = (n.children || []).filter(c => c.kind !== "hole").map(c => c.title).join(" ⊗ ") || n.note;
     return inner ? inner + v(" refines ", " does not refine ") + req : n.title;
   }
   if (t === "M ⊨ C" && n.model) return n.model.name + (n.model.name === req ? v(" meets its contract", " does not meet its contract")

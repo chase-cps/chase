@@ -23,7 +23,8 @@ CLOCKS = {"clk", "clk_i", "clock"}
 
 def state_graph(model, inputs=(), max_states: int = 24, max_inputs: int = 10) -> Optional[dict]:
     """{"states": [{"id", "label", "init"}], "edges": [{"from", "to",
-    "label"}], "count"}, or {"count", "too_many": True} when more than
+    "label"}], "count"}, or {"count", "too_many": True} (and "more": True
+    when the count is only where the enumeration stopped) when more than
     max_states states are reachable, or None when the model cannot be
     enumerated. ``inputs`` are the inputs of the contract of the model: in
     SMV, the variables that are not states but the labels of the
@@ -125,8 +126,8 @@ def _enumerate(aig: dict, max_states: int, max_inputs: int) -> Optional[dict]:
                 seen[nxt] = len(order)
                 order.append(nxt)
             moves[state].setdefault(nxt, []).append(bits_in)
-    if len(seen) > max_states:
-        return {"count": len(seen), "too_many": True}
+    if len(seen) > max_states:          # stopped there: there are more
+        return {"count": len(seen), "too_many": True, "more": True}
 
     def label(state):
         on = [n for n, b in zip(aig["latch_names"], state) if b]
