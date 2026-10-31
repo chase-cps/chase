@@ -126,9 +126,11 @@ def _c_source(f) -> Optional[dict]:
 MAX_STEPS, MAX_VARIABLES = 12, 40
 
 
-def _why(result) -> Optional[dict]:
+def _why(result, contract=None) -> Optional[dict]:
     """Why a check fails, for its panel: which side fails (a refinement),
-    the counterexample (a few steps), and the reason."""
+    the counterexample (a few steps), the reason, and the terms of the
+    contract checked against (its guarantees, or the assumptions for an
+    environment) that the counterexample breaks, by index."""
     if result is None or isinstance(result, str) or _status(result) != "invalid":
         return None
     failed = getattr(result, "failed", None)
@@ -147,6 +149,13 @@ def _why(result) -> Optional[dict]:
     reason = getattr(part, "reason", "") or getattr(result, "reason", "")
     if reason:
         out["reason"] = reason
+    if trace is not None and isinstance(contract, Contract) and failed != "assumptions":
+        from .robustness import holds
+        terms = contract.assumptions if out.get("side") == "assumptions" else contract.guarantees
+        try:
+            out["violated"] = [i for i, t in enumerate(terms) if not holds(t, trace, contract.variables)]
+        except Exception:                # a term it cannot read on the trace: none marked
+            pass
     return out or None
 
 
@@ -264,7 +273,7 @@ class _Scene:
                         contract=self.terms(k.contract),
                         model=model,
                         badge={"text": "M ⊨ C", "status": _status(k.status),
-                               **({"why": _why(k.status)} if _why(k.status) else {})},
+                               **({"why": _why(k.status, k.contract)} if _why(k.status) else {})},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
         self.drawn.setdefault(id(k.contract), k.contract)
@@ -700,12 +709,12 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         low, high = r[0], r[1]
         status = _status(r[2]) if len(r) > 2 else None
         if len(r) > 2 and _why(r[2]):
-            why.append((high, "⪯", r[2]))
+            why.append((high, "⪯", r[2], high))
         if status is None and results and isinstance(low, Contract) and isinstance(high, Contract):
             kept = [res for kind, other, res in low.checked(context) if kind == "refines" and other is high]
             status = _status(kept[-1]) if kept else None
             if kept and _why(kept[-1]):
-                why.append((high, "⪯", kept[-1]))
+                why.append((high, "⪯", kept[-1], high))
         if isinstance(high, Contract) and high.origin and high.origin[0] == "quotient":
             if id(high) not in scene.ids:
                 add(high)
@@ -790,7 +799,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         env, target = e[0], e[1]
         status = _status(e[2]) if len(e) > 2 else None
         if len(e) > 2 and _why(e[2]):
-            why.append((env, "E ⊨ A", e[2]))
+            why.append((env, "E ⊨ A", e[2], None))
         node = box_of(target)
         env_node = scene.environment(env, node, status)
         outer = next(n for n in nodes if n is node or _find([n], node["id"]) is not None)
@@ -814,10 +823,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         holes = [n for n in _boxes(nodes) if n["kind"] == "hole" and scene.objs.get(n["id"]) == id(obj)]
         for n in holes or boxes:        # a quotient: its holes, not the box of the dividend
             n["open"] = True
-    for obj, name, result in why:        # the counterexample, on the tag of the check
+    for obj, name, result, *against in why:     # the counterexample, on the tag of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
         if n is not None and n.get("badge") and n["badge"]["text"].startswith(name):
-            n["badge"]["why"] = _why(result)
+            n["badge"]["why"] = _why(result, against[0] if against else None)
     for obj, name, about in repairs:     # on the box that shows the result of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
         if n is not None:
@@ -1062,7 +1071,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                      model=model, contract=name)
             k.status = status(r)
             if _why(r):
-                why.append((k, "M ⊨ C", r))
+                why.append((k, "M ⊨ C", r, c))
     # a part with a model, in a decomposition: the decomposition is drawn as
     # its components, each with its model when it has one
     inner = set()
@@ -1524,11 +1533,29 @@ _PAGE = r"""<!doctype html>
   table.fsm td { padding:3px 16px 3px 0; border-bottom:1px solid #f1f4f4; vertical-align:top; }
   table.fsm td.st { color:var(--teal); font-weight:600; border-bottom:1px solid #e3e8e8; }
   table.fsm td.when { color:var(--soft); }
-  #repair, #queue { position:fixed; display:none; background:#fff; border:1px solid #d5dddd; border-radius:10px;
-                    box-shadow:0 10px 36px rgba(0,0,0,.16); font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-                    color:var(--ink); overflow:auto; max-height:calc(100vh - 70px); }
-  #repair { width:400px; max-width:calc(100vw - 24px); z-index:9; }
-  #queue { right:12px; top:46px; width:300px; max-width:calc(100vw - 24px); z-index:8; }
+  /* the inspector: docked on the right of the diagram (below it in a narrow window); it does not move with the view */
+  #insp { position:fixed; top:46px; right:12px; bottom:12px; width:400px; max-width:calc(100vw - 24px); display:none;
+          flex-direction:column; background:#fff; border:1px solid #d5dddd; border-radius:10px;
+          box-shadow:0 4px 18px rgba(0,0,0,.08); z-index:9; color:var(--ink);
+          font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  body.insp #insp { display:flex; }
+  body.insp #view { right:424px; }
+  #insp-tabs { display:flex; align-items:flex-end; gap:2px; padding:4px 6px 0 8px; border-bottom:1px solid #e3e8e8; flex:none; }
+  #insp-tabs button.tab { border:0; background:none; padding:7px 10px 6px; cursor:pointer; color:var(--soft);
+                          font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; border-bottom:2px solid transparent; }
+  #insp-tabs button.tab.on { color:var(--teal); border-bottom-color:var(--teal); }
+  #insp-tabs .count { margin-left:5px; padding:0 5px; border-radius:7px; background:var(--bad); color:#fff; font-size:10.5px; }
+  #insp-tabs .sp { flex:1; }
+  #repair { flex:1; overflow:auto; }
+  @media (max-width: 820px) {
+    #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
+    body.insp #view { right:0; bottom:calc(45vh + 12px); }
+  }
+  [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
+  .pv-val { fill:#2f6fb5 !important; font-weight:600; }
+  .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
+  .rp-step input { flex:1; accent-color:var(--teal); }
+  ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
   .rp-head { display:flex; gap:8px; align-items:center; padding:9px 10px 8px 14px; border-bottom:1px solid #e3e8e8;
              position:sticky; top:0; background:#fff; }
   .rp-head b { flex:1; font-size:12.5px; font-weight:600; min-width:0; overflow-wrap:anywhere; }
@@ -1591,6 +1618,7 @@ _PAGE = r"""<!doctype html>
                     user-select:none; -webkit-user-select:none; }
   #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
   .q-item { padding:8px 12px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:2px; }
+  .q-item.on { background:#eef3f9; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
   .q-item .t { display:flex; gap:6px; align-items:center; font-weight:600; font-size:12px; }
   .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
@@ -1609,7 +1637,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
-    <button id="repairs" title="The checks that fail, and their repairs" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
+    <button id="repairs" title="The checks that fail (the panel of the checks)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
@@ -1619,8 +1647,7 @@ _PAGE = r"""<!doctype html>
 <div id="busy">checking…</div>
 <div id="tip"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
-<div id="repair" role="dialog" aria-label="The check and its repairs"></div>
-<div id="queue" role="dialog" aria-label="The checks that fail"></div>
+<div id="insp" role="complementary" aria-label="The checks"><div id="insp-tabs"></div><div id="repair"></div></div>
 __ELK__
 <script>
 let DATA = __DATA__;
@@ -1701,7 +1728,14 @@ function terms(c, out, core, src) {
   if (c.E) part("E", c.E, []);
   else part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
 }
-const focused = n => show.checks && n.id in focus ? n.checks[focus[n.id]].core : null;
+function focused(n) {
+  if (show.checks && n.id in focus) return n.checks[focus[n.id]].core;
+  const w = panel && panel.id === n.id && n.badge && tagOf(n.badge.text) === panel.tag && n.badge.why;
+  if (!w || !w.violated || !w.violated.length || !n.contract) return null;    // the terms the counterexample breaks
+  const gg = n.contract._gG;
+  const shown = gg ? gg.map((g, j) => g.some(i => w.violated.includes(i)) ? j : -1).filter(j => j >= 0) : w.violated;
+  return { part: "contract", A: [], G: shown };
+}
 
 // The lines under the name. A long contract (a computed one, often) shows
 // its first lines; the rest opens in a panel.
@@ -1980,10 +2014,10 @@ function drawNode(g, e, ox, oy) {
   if (checks(n).length) ix += 6;
   checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core; on one that fails, its repairs
     const t = el("g", { "data-check": n.id + "|" + c.name, "data-text": c.name }, box), on = focus[n.id] === i;
-    const fix = c.status === "invalid" && n.repair && n.repair[c.name];
+    const fix = c.status === "invalid";
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + " — " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
-           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : "") + (fix ? ", and the repairs" : ""));
+           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : "") + (fix ? ", and why it fails" : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
     if (c.core || fix) { t.setAttribute("class", "icon");
@@ -2044,7 +2078,8 @@ function drawNode(g, e, ox, oy) {
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
     el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
-    (p.labels || []).forEach(l => text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text)); });
+    (p.labels || []).forEach(l => { const t = text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text);
+      t.setAttribute("data-var", String(p.id).split(":").pop()); t.setAttribute("data-pbox", n.id); }); });
   (e.children || []).forEach(c => drawNode(g, c, x, y));
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
   if (folded.has(n.id)) return;
@@ -2145,7 +2180,6 @@ function place() {
     dots.setAttribute("width", step); dots.setAttribute("height", step);
     dots.setAttribute("patternTransform", `translate(${cam.x % step},${cam.y % step})`);
   }
-  placePanel();
 }
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
@@ -2200,7 +2234,7 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
     zoomAt(e.clientX, e.clientY, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)));          // a pinch comes with ctrl
   }, { passive: false });
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { closeRepair(); return; }
+    if (e.key === "Escape") { hideInspector(); return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
       if (!cam) return;
     if (e.key === "+" || e.key === "=") zoomBy(1.25);
@@ -2622,9 +2656,13 @@ function statusOf(n, t) {
   if (n.badge && tagOf(n.badge.text) === t) return n.badge.status;
   return ((n.checks || []).find(c => c.name === t) || {}).status;
 }
-function failing() {
+function failing() {                 // every check that fails: its box, its tag
   const out = [];
-  boxes.forEach(n => Object.keys(n.repair || {}).forEach(t => { if (statusOf(n, t) === "invalid") out.push([n, t]); }));
+  boxes.forEach(n => {
+    const b = n.badge && tagOf(n.badge.text);
+    if (b && n.badge.status === "invalid") out.push([n, b]);
+    (n.checks || []).forEach(c => { if (c.status === "invalid" && c.name !== b) out.push([n, c.name]); });
+  });
   return out;
 }
 function defaultRange(c) {
@@ -2663,7 +2701,14 @@ function checkTitle(n, t) {
   if (r && r.check === "impl") return r.args[0].split("/").pop() + " implements " + r.args[1];
   if (r && r.check === "env") return r.args[0].split("/").pop() + " is an environment of " + r.args[1];
   if (r) return "A ∧ G of " + r.args[0] + " can hold";
-  return n.title;
+  const req = (n.contract && n.contract.name) || n.title;           // from the box: what is inside, its model
+  if (t === "⪯") {
+    const inner = n.note || (n.children || []).map(c => c.title).join(" ⊗ ");
+    return inner ? inner + " refines " + req : n.title;
+  }
+  if (t === "M ⊨ C" && n.model) return n.model.name + " implements " + req;
+  if (t === "E ⊨ A") return n.title + " is an environment";
+  return (WHAT[t] || t).split(":")[0] + ": " + req;
 }
 // the tag of a check as the diagram draws it, for a panel
 function tagSvg(t, status) {
@@ -2671,71 +2716,83 @@ function tagSvg(t, status) {
   tag(svg, 1, 1, t, status || null);
   return svg;
 }
+// The panel of the checks: docked on the right of the diagram, with its
+// tabs: the checks that fail, the check picked (why it fails, how to fix it),
+// and the code of a C function. A click on the tag of a check picks it.
+let inspector = { open: false, tab: "problems" };
+function showInspector(tab) {
+  inspector.open = true;
+  if (tab) inspector.tab = tab;
+  document.body.classList.add("insp");
+  renderInspector();
+}
+function hideInspector() {
+  inspector.open = false;
+  document.body.classList.remove("insp");
+  closeRepair();
+}
 async function openRepair(n, t) {
   const keys = keysOf(DATA.nodes);
-  panel = { id: n.id, tag: t, nkey: keys[n.id] };
-  document.getElementById("queue").style.display = "none";
-  const r0 = (n.repair || {})[t];
-  if (r0) {                             // the boxes that declare the constants, open: their values show
-    const owners = new Set(r0.constants.flatMap(c => c.owners.map(o => o.contract)));
-    let more = false;
-    (function walk(b) { if (b.contract && owners.has(b.contract.name) && !open.has("c:" + b.id)) { open.add("c:" + b.id); more = true; }
-                        (b.children || []).forEach(walk); })(n);
-    if (more) await render();
-  }
-  renderPanel();
-  makeRoom();
-  placePanel();
-  const r = (n.repair || {})[t];
-  if (r && backend() && statusOf(n, t) === "invalid") {   // found at once: the constants that may change already
-    const s = stateOf(r);
-    if (!s.running && !s.options.some(o => o.sig === repairSig(r)) && r.constants.some(c => s.picks[c.name]))
+  panel = { id: n.id, tag: t, nkey: keys[n.id], step: 0 };
+  inspector.tab = "details";
+  showInspector();
+  const r0 = (n.repair || {})[t];      // the boxes that declare the constants, and the box of the check, open
+  const owners = new Set(r0 ? r0.constants.flatMap(c => c.owners.map(o => o.contract)) : []);
+  if (n.contract) open.add("c:" + n.id);
+  (function walk(b) { if (b.contract && owners.has(b.contract.name)) open.add("c:" + b.id);
+                      (b.children || []).forEach(walk); })(n);
+  await render();
+  renderInspector();
+  bringInto(n);
+  if (r0 && backend() && statusOf(n, t) === "invalid") {   // found at once: the constants that may change already
+    const s = stateOf(r0);
+    if (!s.running && !s.options.some(o => o.sig === repairSig(r0)) && r0.constants.some(c => s.picks[c.name]))
       findRepairs(n, t);
   }
-}
-// the diagram moves left when the panel would cover it on the right of the tag
-// where the panel goes: right of the box of the tag, at the height of the tag
-function anchorOf() {
-  const a = panel && document.querySelector('#view [data-check="' + panel.id + "|" + panel.tag + '"]');
-  if (!a) return null;
-  const t = a.getBoundingClientRect(), b = a.closest("[data-box]");
-  const outer = b ? b.querySelector("rect").getBoundingClientRect() : t;
-  return { left: outer.left, right: Math.max(t.right, outer.right), top: t.top, bottom: t.bottom };
-}
-function makeRoom() {
-  const box = document.getElementById("repair"), r = anchorOf();
-  if (!r || !cam) return;
-  const need = r.right + 10 + box.offsetWidth - (innerWidth - 12);
-  if (need > 0) { cam.x -= need; place(); }      // the left of the box may leave the window, not go under the panel
 }
 function closeRepair() {
   panel = null;
   clearPreview(true);
-  document.getElementById("repair").style.display = "none";
+  clearReplay();
+  markPick();
+  if (inspector.open) { inspector.tab = "problems"; renderInspector(); }
+  render();
 }
 // after a new drawing: the panel stays on the box that says the same
 function rebindPanel() {
   previewing = null;
   if (!panel) return;
   const keys = keysOf(DATA.nodes), id = Object.keys(keys).find(i => keys[i] === panel.nkey);
-  if (!id || !byId[id]) { closeRepair(); return; }
+  if (!id || !byId[id]) { panel = null; if (inspector.open) inspector.tab = "problems"; return; }
   panel.id = id;
-  renderPanel();
+}
+function renderInspector() {
+  if (!inspector.open) return;
+  const list = failing(), n = panel && byId[panel.id], code = n && n.model && n.model.code;
+  if (inspector.tab === "details" && !n) inspector.tab = "problems";
+  if (inspector.tab === "code" && !code) inspector.tab = n ? "details" : "problems";
+  const tabs = document.getElementById("insp-tabs");
+  tabs.innerHTML = "";
+  const tab = (key, label, count) => h("button", { class: "tab" + (inspector.tab === key ? " on" : ""),
+    onclick: () => { inspector.tab = key; renderInspector(); } }, label, count ? h("span", { class: "count" }, String(count)) : null);
+  tabs.append(tab("problems", "Problems", list.length), n ? tab("details", "Details") : "", code ? tab("code", "Code") : "",
+              h("span", { class: "sp" }), h("button", { class: "rp-x", title: "Close the panel (Esc)", onclick: hideInspector }, "»"));
+  if (inspector.tab === "problems") fillProblems(list);
+  else if (inspector.tab === "code") fillCode(n);
+  else fillPanel();
 }
 const ROLE = { part: "part", requirement: "requirement", contract: "contract" };
 // the panel drawn again keeps in the window: its height changes as repairs come
-function renderPanel() { fillPanel(); placePanel(); }
+function renderPanel() { if (inspector.open && inspector.tab === "details") renderInspector(); }
 function fillPanel() {
   const box = document.getElementById("repair");
-  if (!panel) { box.style.display = "none"; return; }
-  const n = byId[panel.id];
-  if (!n) { closeRepair(); return; }
-  const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
+  const n = panel && byId[panel.id];
   box.innerHTML = "";
-  box.style.display = "block";
+  if (!n) return;
+  const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
   box.appendChild(h("div", { class: "rp-head" },
     tagSvg(t, st), h("b", {}, checkTitle(n, t)),
-    h("button", { class: "rp-x", title: "Close (Esc)", onclick: closeRepair }, "×")));
+    h("button", { class: "rp-x", title: "Back to the list", onclick: closeRepair }, "×")));
   const says = st === "valid" ? "Holds with the present values." : st === "invalid" ? "Does not hold with the present values."
              : st === "unknown" ? "Not decided." : "Not checked yet.";
   const head = h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says));
@@ -2788,35 +2845,43 @@ function fillPanel() {
     h("div", { class: "rp-note", style: "margin-top:0" }, "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve. On the command line:"),
     h("div", { class: "rp-cmd" }, commandOf(r, s))));
 }
-// Why the check fails: which side, and the behavior that shows it.
+// Why the check fails: in one line, then the counterexample (and its steps on the diagram).
 function whySection(n, t, st) {
   if (st !== "invalid") return null;
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Why it fails"));
   if (t !== "⪯" && t !== "M ⊨ C" && t !== "E ⊨ A") {
     const c = (n.checks || []).find(x => x.name === t);
-    sec.appendChild(h("div", {}, (WHAT[t] || t) + ": it does not hold" + (c && c.core
-      ? ". The terms of the core are on a red ground in the box (click the tag to show or hide them)." : ".")));
+    sec.appendChild(h("div", {}, (WHAT[t] || t) + ": no." + (c && c.core ? " The terms in conflict are red in the box." : "")));
     return sec;
   }
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
   const code = n.model && n.model.source === "c";
   const lead = !w ? null
-    : w.failed === "assumptions" ? req + " accepts an environment that the parts do not:"
-    : t === "⪯" ? "The parts allow a behavior that breaks a guarantee of " + req + ":"
-    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " whose outputs break " + req + ":"
-                            : "A run of the model " + n.model.name + " that breaks " + req + ":")
-    : "A behavior of the environment that breaks the assumptions it must meet:";
+    : w.failed === "assumptions" ? "An environment that " + req + " accepts and the parts do not:"
+    : t === "⪯" ? "A behavior of the parts that breaks " + req + (w.violated && w.violated.length ? " (its terms in red):" : ":")
+    : t === "M ⊨ C" ? (code ? "A call of " + n.model.name + " that breaks " + req + ":" : "A run of the model that breaks " + req + ":")
+    : "A behavior of the environment that breaks the assumptions:";
   if (w && w.trace) {
     sec.appendChild(h("div", {}, lead));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     sec.appendChild(traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req));
+    const last = w.trace.steps.length - 1;
+    if (last > 0) {                        // a step of the counterexample, on the diagram
+      const label = h("span", {}, "");
+      const say = k => { label.textContent = "step " + k + (w.trace.loop === k ? " ↺" : ""); };
+      const slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
+        oninput: e => { panel.step = +e.target.value; say(panel.step); replay(n, w.trace, panel.step); } });
+      say(panel.step || 0);
+      sec.appendChild(h("div", { class: "rp-step" }, "On the diagram:", slider, label));
+    } else sec.appendChild(h("div", { class: "rp-note" }, "These values are on the diagram, in blue."));
   } else {
     sec.appendChild(h("div", {}, "The counterexample was not kept with the result" + (inEditor()
-      ? ": press ▶ (Check) to run the check again." : ": run the check again (chase-cps view FILE --check --no-results).")));
+      ? ": press ▶ (Check)." : ": run the check again (chase-cps view FILE --check --no-results).")));
   }
   if (w && w.reason) sec.appendChild(h("div", { class: "rp-note" }, w.reason));
-  if (code && n.model.code) sec.appendChild(h("button", { class: "rp-link", onclick: () => showCode(n) }, "Show the code"));
+  if (code && n.model.code) sec.appendChild(h("button", { class: "rp-link",
+    onclick: () => { inspector.tab = "code"; renderInspector(); } }, "Show the code"));
   return sec;
 }
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
@@ -2852,19 +2917,17 @@ function traceTable(tr, first, req) {
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
   return wrap;
 }
-// A check that fails with no constant to repair, or a page that cannot run repairs.
+// A check that fails with no constant to repair, or a page that cannot run repairs: in a few points.
 function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
-  if (n.contract && n.contract.K) {
-    sec.appendChild(h("div", {}, "The values of the constants (K) are repaired from the specification file: open it in "
-      + "VS Code, or draw it with chase-cps view FILE --serve, and click this tag there."));
-    return sec;
-  }
-  sec.appendChild(h("div", {}, "This check reads no named constant: no value to change can fix it. What fails is a rule "
-    + "of a part, or what the requirement asks, as the behavior above shows: change the terms of that part, or of the "
-    + "requirement."));
-  if (t === "⪯") sec.appendChild(h("div", { class: "rp-note" }, "The quotient of the requirement by the other parts "
-    + "(divide) is the weakest contract the part to change must meet."));
+  const points = n.contract && n.contract.K
+    ? ["The constants (K) are repaired from the specification file.",
+       "Open it in VS Code, or with chase-cps view FILE --serve."]
+    : ["No value can fix it: the check reads no named constant.",
+       "What fails is a rule: the counterexample shows where.",
+       "Change the terms of a part, or of the requirement."]
+       .concat(t === "⪯" ? ["What a part must meet: divide the requirement by the other parts."] : []);
+  sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
 function optionCard(n, t, r, s, o, sig) {
@@ -2872,7 +2935,7 @@ function optionCard(n, t, r, s, o, sig) {
   const names = o.names.join(", ");
   if (res.status !== "repaired") {
     const text = res.status === "holds" ? "Holds with the present values: nothing to change."
-      : res.status === "impossible" ? "No value of " + names + " in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " makes it hold."
+      : res.status === "impossible" ? "No value of " + names + " in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " works: widen the range, pick another constant, or change a rule."
       : "Not decided" + (res.reason ? ": " + res.reason : ".");
     const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : "") },
       h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + "changing " + names));
@@ -3038,61 +3101,93 @@ function clearPreview(all) {
   document.querySelectorAll("#view .pv").forEach(x => x.remove());
   if (all || !(previewing && previewing.pinned)) previewing = null;
 }
-function placePanel() {
+function placePanel() {}
+// the list of the checks that fail (all of them: with or without constants)
+function fillProblems(list) {
   const box = document.getElementById("repair");
-  if (!panel || box.style.display === "none") return;
-  const r = anchorOf();
-  const W = innerWidth, H = innerHeight, w = box.offsetWidth, hh = box.offsetHeight;
-  if (!r) { box.style.left = Math.max(12, W - w - 12) + "px"; box.style.top = "46px"; return; }
-  let x = r.right + 10;
-  if (x + w > W - 12) x = r.left - w - 10;               // on the left of the tag
-  if (x < 12) x = Math.max(12, Math.min(W - w - 12, r.left));
-  let y = x === r.right + 10 || x === r.left - w - 10 ? r.top - 8 : r.bottom + 8;
-  y = Math.max(46, Math.min(y, H - hh - 12));
-  box.style.left = x + "px"; box.style.top = y + "px";
-}
-// The checks that fail, with their repairs: on the tools when there are two or more.
-function renderQueue() {
-  const list = failing(), b = document.getElementById("repairs"), q = document.getElementById("queue");
-  b.style.display = list.length >= 2 ? "inline-flex" : "none";
-  document.getElementById("repcount").textContent = list.length;
-  if (list.length < 2) { q.style.display = "none"; return; }
-  if (q.style.display !== "block") return;
-  q.innerHTML = "";
-  q.appendChild(h("div", { class: "rp-head" }, h("b", {}, "Checks that fail · " + list.length),
-    h("button", { class: "rp-x", title: "Close", onclick: () => { q.style.display = "none"; } }, "×")));
-  const names = list.map(([n, t]) => n.repair[t].constants.flatMap(c => c.owners.map(o => o.contract + "." + c.name)));
-  list.forEach(([n, t], i) => {
-    const r = n.repair[t], s = stateOf(r), sig = repairSig(r);
-    const best = s.options.find(o => o.res.status === "repaired" && o.sig === sig);
-    const old = !best && s.options.some(o => o.sig !== sig);
-    const shared = list.map((x, j) => j !== i && names[j].filter(k => names[i].includes(k)).length ? x[0].title : null).filter(Boolean);
-    q.appendChild(h("div", { class: "q-item", onclick: () => { bringTo(n, t); openRepair(n, t); } },
+  box.innerHTML = "";
+  if (!list.length) { box.appendChild(h("div", { class: "rp-sec rp-says" }, "No check fails.")); return; }
+  list.forEach(([n, t]) => {
+    const r = (n.repair || {})[t], w = n.badge && tagOf(n.badge.text) === t ? n.badge.why : null;
+    const s = r && stateOf(r), sig = r && repairSig(r);
+    const best = s && s.options.find(o => o.res.status === "repaired" && o.sig === sig);
+    const what = s && s.running ? "finding repairs…"
+      : best ? best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
+      : r ? "may change: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")
+      : t === "A∧G" ? "the terms in conflict: in the box"
+      : "no constant: a rule to change";
+    const steps = w && w.trace ? (w.trace.steps.length === 1 ? "one call or step" : w.trace.steps.length + " steps") : null;
+    box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
+                               onclick: () => openRepair(n, t) },
       h("div", { class: "t" }, tagSvg(t, "invalid"), checkTitle(n, t)),
-      h("div", { class: "s" }, "constants: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")),
-      s.running ? h("div", { class: "s" }, "finding repairs…")
-      : best ? h("div", { class: "v" }, best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", "))
-      : old ? h("div", { class: "s old" }, "repairs out of date: the file has changed")
-      : h("div", { class: "s" }, "no repair found yet"),
-      shared.length ? h("div", { class: "s" }, "shares a constant with " + shared.join(", ")) : null));
+      h("div", { class: best ? "v" : "s" }, (steps ? "counterexample, " + steps + " · " : "") + what)));
   });
 }
-function toggleQueue() {
-  const q = document.getElementById("queue");
-  q.style.display = q.style.display === "block" ? "none" : "block";
-  renderQueue();
+function fillCode(n) {
+  const box = document.getElementById("repair"), c = n.model.code;
+  box.innerHTML = "";
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, c.file + " · function " + n.model.name));
+  c.parts.forEach(q => {
+    sec.appendChild(h("div", { class: "rp-note", style: "margin:8px 0 2px" }, q.name + ", line " + q.line));
+    const pre = h("pre", { class: "code" });
+    q.text.split("\n").forEach((l, i) => { pre.appendChild(h("span", { class: "n" }, String(q.line + i)));
+                                         pre.appendChild(document.createTextNode(l + "\n")); });
+    sec.appendChild(pre);
+  });
+  box.appendChild(sec);
 }
-// the view moves so that the tag of the check is in the middle
-function bringTo(n, t) {
-  const a = document.querySelector('#view [data-check="' + n.id + "|" + t + '"]'), v = document.getElementById("view");
-  if (!a || !cam) return;
-  const r = a.getBoundingClientRect();
-  cam.x += v.clientWidth * 0.4 - r.left; cam.y += v.clientHeight * 0.4 - r.top;
+// The checks that fail, on the tools: the button opens the list.
+function renderQueue() {
+  const list = failing(), b = document.getElementById("repairs");
+  b.style.display = list.length ? "inline-flex" : "none";
+  document.getElementById("repcount").textContent = list.length;
+  if (inspector.open && inspector.tab === "problems") fillProblems(list);
+}
+function toggleQueue() {
+  if (inspector.open && inspector.tab === "problems") hideInspector();
+  else showInspector("problems");
+}
+// the box of the check picked, marked; brought into the view when it is out of it (once, when picked)
+function markPick() {
+  document.querySelectorAll("#view .pick").forEach(e => e.classList.remove("pick"));
+  if (panel) { const b = document.querySelector('#view [data-box="' + panel.id + '"]'); if (b) b.classList.add("pick"); }
+}
+function bringInto(n) {
+  const b = document.querySelector('#view [data-box="' + n.id + '"] > rect'), v = document.getElementById("view");
+  if (!b || !cam) return;
+  const r = b.getBoundingClientRect(), V = v.getBoundingClientRect();
+  if (r.left >= V.left && r.right <= V.right && r.top >= V.top + 40 && r.bottom <= V.bottom) return;
+  const k = Math.min(cam.k, 0.9 * V.width / r.width * cam.k, 0.85 * (V.height - 40) / r.height * cam.k);
+  if (k < cam.k) { const cx = r.left + r.width / 2, cy = r.top + r.height / 2; zoomAt(cx, cy, k / cam.k); }
+  const r2 = b.getBoundingClientRect();
+  cam.x += V.left + V.width / 2 - (r2.left + r2.width / 2);
+  cam.y += V.top + 40 + (V.height - 40) / 2 - (r2.top + r2.height / 2);
   place();
+}
+// A counterexample on the diagram: the values of a step on the ports of the box of the check and inside it.
+function replay(n, tr, k) {
+  clearReplay();
+  const inside = new Set();             // the box of the check and the boxes inside it
+  (function walk(b) { inside.add(String(b.id)); (b.children || []).forEach(walk); })(n);
+  const at = {}; tr.vars.forEach((v, i) => { at[v] = tr.steps[k][i]; });
+  const fmt = v => typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  document.querySelectorAll("#view text[data-var]").forEach(x => {
+    const v = x.getAttribute("data-var");
+    if (!(v in at) || !inside.has(x.getAttribute("data-pbox"))) return;
+    x.setAttribute("data-orig", x.textContent);
+    x.textContent = v + " = " + fmt(at[v]);
+    x.classList.add("pv-val");
+  });
+}
+function clearReplay() {
+  document.querySelectorAll("#view text[data-orig]").forEach(x => { x.textContent = x.getAttribute("data-orig");
+    x.removeAttribute("data-orig"); x.classList.remove("pv-val"); });
 }
 function afterRender() {
   if (previewing) { const p = previewing; previewing = null; showPreview(p); }
-  placePanel();
+  markPick();
+  const n = panel && byId[panel.id], w = n && n.badge && tagOf(n.badge.text) === panel.tag && n.badge.why;
+  if (w && w.trace) replay(n, w.trace, Math.min(panel.step || 0, w.trace.steps.length - 1));
   renderQueue();
 }
 // The checks run by the editor: the button starts them (or stops them), and

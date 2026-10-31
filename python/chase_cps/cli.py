@@ -139,10 +139,11 @@ def _read(path: str) -> dict[str, Contract]:
         return {c.name: c for c in contracts}
     if ext in (".sv", ".sva", ".svh"):
         return _read_sva(path)
-    if ext in (".smv", ".v", ".vhd", ".py"):
+    if ext in (".smv", ".v", ".vhd", ".py", ".c", ".h"):
         raise ValueError(f"{os.path.basename(path)} is not a specification: CHASE reads contracts "
                          "from .ltl (the logics language), .json, and .sv files; a model (.smv, "
-                         "RTL) is drawn as the implementation of a contract")
+                         "RTL, a C function FILE.c:FUNCTION) is drawn as the implementation of a "
+                         "contract (--implementation MODEL CONTRACT)")
     return load_spec(path)
 
 

@@ -364,10 +364,28 @@ CONTRACT Bound:
     page.wait_for_selector("#repair .rp-head", timeout=5000)
     text = page.inner_text("#repair")
     assert "Why it fails" in text.title() or "WHY IT FAILS" in text
-    assert "breaks a guarantee of Bound" in text
+    assert "breaks Bound" in text
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "no value to change can fix it" in text
+    assert "No value can fix it" in text
+    # the panel is docked: the view moves under it, the panel stays
+    before = page.locator("#insp").bounding_box()
+    page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
+    assert page.locator("#insp").bounding_box() == before
+    # the box of the check is marked, the term the counterexample breaks is red, its values on the ports
+    assert page.locator("#view [data-box].pick").count() == 1
+    assert page.locator("#view [data-box].pick rect[fill='#f6dcd9']").count() >= 1
+    slider = page.locator("#repair .rp-step input")
+    slider.scroll_into_view_if_needed()
+    b = slider.bounding_box()
+    page.mouse.click(b["x"] + b["width"] - 3, b["y"] + b["height"] / 2)
+    assert any(v.startswith("n = ") for v in page.locator("#view .pv-val").all_text_contents())
+    # the list of the problems: this one, though it has no constant
+    tab = page.locator("#insp-tabs .tab", has_text="Problems").bounding_box()
+    page.mouse.click(tab["x"] + tab["width"] / 2, tab["y"] + tab["height"] / 2)
+    assert "Counter refines Bound" in page.inner_text("#repair .q-item")
+    page.keyboard.press("Escape")
+    assert not page.is_visible("#insp")
     assert errors == []
 
 
