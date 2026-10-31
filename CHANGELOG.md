@@ -9,14 +9,12 @@ Added:
   model) and the DEFINEs that the specifications use (replaced by their
   definitions).
 
-Changed:
+## 0.6.0 (2026-10-31)
 
 - A refinement in continuous time (`--lipschitz`) that the stricter check
   does not show is unknown, not invalid. A decomposition drawn in its
   contract keeps the inputs of the contract that no part drives; an input
   of a part that the contract does not give is drawn open.
-
-## 0.6.0 (2026-10-31)
 
 Added:
 
