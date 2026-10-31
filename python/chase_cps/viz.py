@@ -2087,17 +2087,33 @@ const KIND = {};
 function columns(n) {
   const col = {}, ids = n.children.map(c => c.id);
   if (n.layout === "stack") { ids.forEach(id => { col[id] = 0; }); return col; }
-  const next = {};
-  ids.forEach(id => { next[id] = []; });
-  (n.edges || []).forEach(w => { if (w.from && w.from[0] && w.to[0] && next[w.from[0]] && w.from[0] !== w.to[0])
-    next[w.from[0]].push(w.to[0]); });
-  const state = {}, order = [];
-  const visit = id => { state[id] = 1;            // depth first, in the order of the list
-    next[id] = next[id].filter(t => state[t] !== 1);  // a wire back to a box on the path: a loop
-    next[id].forEach(t => { if (!state[t]) visit(t); });
-    state[id] = 2; order.unshift(id); };
-  ids.forEach(id => { if (!state[id]) visit(id); });
-  order.forEach(id => { col[id] = col[id] || 0; next[id].forEach(t => { col[t] = Math.max(col[t] || 0, col[id] + 1); }); });
+  // the wires between the boxes, counted: a loop goes back where it sends the fewest
+  // wires back (Eades, Lin and Smyth: the sinks last, the sources first, else the box
+  // that sends the most more than it receives), in the order of the list on a tie
+  const weight = {};
+  ids.forEach(id => { weight[id] = {}; });
+  (n.edges || []).forEach(w => { if (w.from && w.from[0] && w.to[0] && weight[w.from[0]] && weight[w.to[0]]
+                                     && w.from[0] !== w.to[0])
+    weight[w.from[0]][w.to[0]] = (weight[w.from[0]][w.to[0]] || 0) + 1; });
+  const left = new Set(ids), first = [], last = [];
+  const sum = (id, out) => ids.reduce((s, o) => s + (left.has(o) ? (out ? weight[id][o] : weight[o][id]) || 0 : 0), 0);
+  while (left.size) {
+    let moved = true;
+    while (moved) {
+      moved = false;
+      for (const id of ids) if (left.has(id) && !sum(id, true)) { last.unshift(id); left.delete(id); moved = true; }
+      for (const id of ids) if (left.has(id) && !sum(id, false)) { first.push(id); left.delete(id); moved = true; }
+    }
+    if (!left.size) break;
+    let best = null;
+    for (const id of ids) if (left.has(id) && (best === null || sum(id, true) - sum(id, false) > sum(best, true) - sum(best, false)))
+      best = id;
+    first.push(best); left.delete(best);
+  }
+  const order = first.concat(last), place = {};
+  order.forEach((id, i) => { place[id] = i; });
+  order.forEach(id => { col[id] = col[id] || 0;
+    Object.keys(weight[id]).forEach(t => { if (place[t] > place[id]) col[t] = Math.max(col[t] || 0, col[id] + 1); }); });
   return col;
 }
 // The groups of boxes inside n that are wired to each other (the ports of
