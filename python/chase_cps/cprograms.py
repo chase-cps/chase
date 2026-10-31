@@ -11,9 +11,10 @@ output named by ``result``); a pointer parameter named as an output is
 written by the function. The formulas of the contract say something about
 one call: no temporal operator, no x', no past(x, n).
 
-The check writes a C program (``to_c("impl", f, c)``) that calls the function with any
-values of the inputs, within their types and the assumptions, and checks
-the guarantees on the outputs; then ESBMC or CBMC checks it. They also
+The check writes a C program (``to_c("impl", f, c)``) that calls the
+function with any values of the inputs, within their types and the
+assumptions, and checks the guarantees on the outputs; then ESBMC or CBMC
+checks it. They also
 check the function itself (an arithmetic overflow, a division by zero, an
 access out of bounds): a failure there makes the result invalid, with the
 property in the reason. Loops are unwound up to ``unwind`` times (20); a
@@ -190,9 +191,11 @@ def program(function: CFunction, contract: Contract) -> str:
     domain = [w.domain(v) for v in contract.inputs]
     domain = [d for d in domain if d]
     if domain:
-        lines.append(f"    __VERIFIER_assume({' && '.join(domain)});   /* the types of the inputs */")
+        lines.append(f"    __VERIFIER_assume({' && '.join(domain)});"
+                     "   /* the types of the inputs */")
     if inputs_only:
-        lines.append(f"    __VERIFIER_assume({w.formula(contract.assumption)});   /* the assumptions */")
+        lines.append(f"    __VERIFIER_assume({w.formula(contract.assumption)});"
+                     "   /* the assumptions */")
     args = ", ".join(("&" if p.pointer else "") + p.name for p in sig.parameters)
     call = f"{function.name}({args});"
     lines.append(f"    {sig.returns} {result} = {call}" if result is not None else f"    {call}")
