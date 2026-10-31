@@ -504,6 +504,32 @@ Integers are compared as integers (in `long long`); a real variable is a
 `double`, with rounding. Words are not written in C yet. On the command
 line: `chase-cps check spec.ltl --impl saturate.c:saturate Sat`.
 
+A function called once per step (a controller) implements a contract over
+steps too. The contract has no assumption, and each guarantee is a formula
+of one step `phi` at some steps: `phi`, `X phi`, `G phi`, or
+`G[a,b] phi`. Each step of the system is a call on inputs that nothing
+constrains, so the function implements the contract exactly when each call
+satisfies every such `phi`: the checker checks one call, and a call that
+breaks one, repeated at every step, is the counterexample.
+
+````
+c = parse_spec("""NAME: t;
+CONTRACT Thermostat:
+    input integer (0:200) variable T;
+    output integer (0:3) variable u;
+    Assumptions:
+        true;
+    Guarantees:
+        G[0,9] ((T < 74 -> u = 3) & (T >= 74 -> u = 0));
+""")
+is_implementation(CFunction("heater.c", "thermostat"), c["Thermostat"]).status   # valid
+````
+
+The result is unknown, with the reason, for a function that keeps a state
+between calls (a static variable, or a global variable of its file that it
+uses), and for a contract that does not have this form (`T' = T + u - 1`
+relates two steps).
+
 ### Queries on formulas
 
 | Query | logics_tool | Python | chase-cps check | MCP tool |

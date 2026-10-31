@@ -366,8 +366,11 @@ def is_implementation(implementation, contract: Contract, backend: str = "auto",
     from .cprograms import CFunction
     if isinstance(implementation, CFunction):
         from . import backends
+        from .backends.z3 import static
         from .queries import ImplementsC
-        return backends.check(ImplementsC(implementation, contract), backend, **options)
+        if all(static(t) for t in list(contract.assumptions) + list(contract.guarantees)):
+            return backends.check(ImplementsC(implementation, contract), backend, **options)
+        return _periodic(implementation, contract, backend, **options)
     from .models import as_model
     m = as_model(implementation, contract)
     if m is None:
@@ -375,6 +378,25 @@ def is_implementation(implementation, contract: Contract, backend: str = "auto",
                        contract.guarantee, contract.variables, backend, context, **options)
     return _holds(m, contract.saturated_guarantee, contract, f"the contract {contract.name}",
                   backend, context, **options)
+
+
+def _periodic(function, contract: Contract, backend: str, **options) -> Result:
+    """A C function called once per step, against a contract over steps:
+    the contract of one call (``cprograms.step_contract``) checked once; a
+    counterexample (a call) repeated at every step is a behavior of the
+    system that breaks the contract."""
+    from . import backends
+    from .cprograms import step_contract, stateless
+    from .queries import ImplementsC, Trace
+    step, why = step_contract(contract)
+    why = why or stateless(function)
+    if step is None or why:
+        return Result(status=UNKNOWN, backend="", reason=why)
+    r = backends.check(ImplementsC(function, step), backend, **options)
+    r.details = dict(r.details or {}, periodic=f"{function.name} called once per step")
+    if r.trace is not None and (r.trace.prefix or r.trace.loop):
+        r.trace = Trace(prefix=[], loop=[(r.trace.prefix + r.trace.loop)[0]])   # the call, at every step
+    return r
 
 
 def accepts(contract: Contract, environment, backend: str = "auto", context=None,

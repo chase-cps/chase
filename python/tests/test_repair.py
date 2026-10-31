@@ -387,3 +387,47 @@ def test_a_time_limit_stops_with_a_bound(tmp_path):
     assert stopped.to_dict()["bound"] == float(stopped.bound) or stopped.to_dict()["bound"] == stopped.bound
     full = repair("refines", c, req, parameters=params, minimize="lam", time_limit=120)
     assert full.status == "repaired" and full.cost >= stopped.bound
+
+
+@pytest.mark.skipif(not (ADAPTERS["esbmc"].available() or ADAPTERS["cbmc"].available()),
+                    reason="ESBMC/CBMC not installed")
+def test_a_c_function_called_once_per_step(tmp_path):
+    # a C function, called once per step, implements a contract over steps
+    # when each call satisfies the formula of one step; a call that does not,
+    # at every step, breaks the contract; a function with a state, or a
+    # contract that is not a formula of one step at some steps, is not decided
+    from chase_cps.cprograms import step_contract, stateless
+    src = tmp_path / "t.c"
+    src.write_text("int thermostat(int T) {\n    if (T < 74)\n        return 3;\n    return 0;\n}\n"
+                   "int count = 0;\nint counted(int T) { count++; return T < 74 ? 3 : 0; }\n")
+    spec = """NAME: t;
+CONTRACT Thermostat:
+    input integer (0:200) variable T;
+    output integer (0:3) variable u;
+    integer constant theta 76;
+    Assumptions:
+        true;
+    Guarantees:
+        G[0,9] ((T < theta -> u = 3) & (T >= theta -> u = 0));
+CONTRACT Room:
+    input integer (0:3) variable u;
+    output integer (0:200) variable T;
+    Assumptions:
+        true;
+    Guarantees:
+        T = 60;
+        G[0,9] (T' = T + u - 1);
+"""
+    c = parse_spec(spec)
+    f = CFunction(str(src), "thermostat", result="u")
+    step, why = step_contract(c["Thermostat"])
+    assert why == "" and len(step.guarantees) == 2 and not step.assumptions
+    assert is_implementation(f, c["Thermostat"].instantiate({"theta": 74})).status == "valid"
+    r = is_implementation(f, c["Thermostat"])
+    assert r.status == "invalid" and r.trace.prefix == [] and r.trace.loop[0]["T"] in (74, 75)
+    assert repair("impl", f, c["Thermostat"], parameters={"theta": (0, 200, "int")}).values == {"theta": 74}
+    room = is_implementation(f, c["Room"])
+    assert room.status == "unknown" and "one step" in room.reason
+    g = CFunction(str(src), "counted", result="u")
+    assert "count" in stateless(g)
+    assert is_implementation(g, c["Thermostat"]).status == "unknown"

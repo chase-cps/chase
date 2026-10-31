@@ -4,6 +4,13 @@
 
 Added:
 
+- A C function called once per step implements a contract over steps
+  (`is_implementation(CFunction(...), c)` with `G`, `X`, `G[a,b]`): checked
+  on one call against the formula of one step; unknown for a function that
+  keeps a state, or a contract of another form. A diagram draws it inside
+  the decomposition it is a part of, with its code.
+- Repair: a time limit for the whole repair (`time_limit`, `--time-limit`),
+  stopped there with the least cost proved so far (`bound`).
 - Repair (`chase_cps.repair`, `chase-cps repair`): the values of named
   constants of the contracts that make a check pass, at the least cost (by
   default the least change), each checked by the check itself. Bounded

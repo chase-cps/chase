@@ -2745,13 +2745,20 @@ function tagSvg(t, status) {
 // tabs: the checks that fail, the check picked (why it fails, how to fix it),
 // and the code of a C function. A click on the tag of a check picks it.
 let inspector = { open: false, tab: "problems" };
+// the view keeps its middle when the panel takes the right of the window, or gives it back
+function shiftView(sign) {
+  const panelWidth = innerWidth > 820 ? 424 : 0;
+  if (cam && panelWidth) { cam.x += sign * panelWidth / 2; place(); }
+}
 function showInspector(tab) {
+  if (!inspector.open) shiftView(-1);
   inspector.open = true;
   if (tab) inspector.tab = tab;
   document.body.classList.add("insp");
   renderInspector();
 }
 function hideInspector() {
+  if (inspector.open) shiftView(1);
   inspector.open = false;
   document.body.classList.remove("insp");
   closeRepair();
@@ -3145,6 +3152,7 @@ function fillProblems(list) {
       : best ? best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
       : r ? "may change: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")
       : t === "A∧G" ? "the terms in conflict: in the box"
+      : n.contract && n.contract.K ? "constants (K): repaired from the specification file"
       : "no constant: a rule to change";
     const steps = w && w.trace ? (w.trace.steps.length === 1 ? "one call or step" : w.trace.steps.length + " steps") : null;
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),

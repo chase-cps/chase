@@ -121,6 +121,58 @@ def _static(contract: Contract) -> None:
         raise CProgramError(f"words are not written in C yet: {', '.join(words)}")
 
 
+# A function called once per step ------------------------------------------------
+
+def step_contract(contract: Contract):
+    """The contract of one call, for a function called once per step that is
+    to implement a contract over steps: (the contract of one call, "") or
+    (None, the reason). Each guarantee must be a formula of one step phi at
+    some steps (phi, X^k phi, G phi; G[a,b] phi is unfolded into these), and
+    the assumptions true: then the function implements the contract exactly
+    when each call satisfies every such phi (each step of the system is a
+    call, on inputs that nothing constrains)."""
+    from .backends.z3 import static
+    if any(t != ltl.Const(True) for t in contract.assumptions):
+        return None, (f"{contract.name} has assumptions: a function called once per step is "
+                      "checked against a contract with no assumption")
+    bodies = []
+    for t in contract.guarantees:
+        phi = t
+        while isinstance(phi, ltl.Unary) and phi.op in ("X", "G"):
+            phi = phi.arg
+        if not static(phi):
+            return None, (f"{ltl.to_str(t)}: not a formula of one step at some steps (phi, "
+                          "X phi, G phi, G[a,b] phi)")
+        for c in ltl.conjuncts(phi):
+            if c not in bodies and c != ltl.Const(True):
+                bodies.append(c)
+    return Contract(contract.name, dict(contract.inputs), dict(contract.outputs), [], bodies), ""
+
+
+def stateless(function: "CFunction") -> str:
+    """Why the function may keep a state between calls (a static variable,
+    or a global variable of its file that it reads or writes), or ""."""
+    text = function.text()
+    names, depth = set(), 0
+    for line in re.sub(r"//[^\n]*|/\*.*?\*/", "", text, flags=re.S).split("\n"):
+        if depth == 0:
+            m = re.match(r"\s*(?:extern\s+|volatile\s+)*(?:unsigned\s+|signed\s+)?"
+                         r"(?:int|long|short|char|float|double|bool|_Bool|unsigned)\b([^;(]*);", line)
+            if m and "const" not in line.split("=")[0]:
+                names |= {re.sub(r"[\s\*\[].*$", "", v.split("=")[0].strip()) for v in m.group(1).split(",")}
+        depth += line.count("{") - line.count("}")
+    from .viz import _c_source
+    code = _c_source(function) or {"parts": []}
+    for part in code["parts"]:
+        body = part["text"].split("{", 1)[-1]
+        if re.search(r"\bstatic\b", body):
+            return f"{part['name']} has a static variable: it keeps a state between calls"
+        used = sorted(n for n in names if n and re.search(r"\b" + re.escape(n) + r"\b", body))
+        if used:
+            return f"{part['name']} uses the global variable {used[0]}: it may keep a state between calls"
+    return ""
+
+
 def roles(contract: Contract, function: CFunction) -> tuple:
     """(signature, the output that is the return value or None): each
     parameter must be an input of the contract, or a pointer to an output."""
