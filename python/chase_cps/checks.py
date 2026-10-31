@@ -383,10 +383,28 @@ def is_implementation(implementation, contract: Contract, backend: str = "auto",
     from .models import as_model
     m = as_model(implementation, contract)
     if m is None:
-        return implies(ltl.Binary("&", _formula(implementation), contract.assumption),
-                       contract.guarantee, contract.variables, backend, context, **options)
-    return _holds(m, contract.saturated_guarantee, contract, f"the contract {contract.name}",
-                  backend, context, **options)
+        r = implies(ltl.Binary("&", _formula(implementation), contract.assumption),
+                    contract.guarantee, contract.variables, backend, context, **options)
+    else:
+        r = _holds(m, contract.saturated_guarantee, contract, f"the contract {contract.name}",
+                   backend, context, **options)
+    return _with_violated(r, contract, getattr(m, "start", 0))
+
+
+def _with_violated(r: Result, contract: Contract, at: int) -> Result:
+    """A failed check with the guarantees its counterexample violates (in
+    details, as in a refinement), each with its robustness when it compares
+    numbers: which assertions fail, and not only that one does."""
+    if r.status != INVALID or r.trace is None:
+        return r
+    from .robustness import json_number, violated
+    try:
+        found = violated(contract.guarantees, r.trace, contract.variables, at=at)
+    except (ValueError, KeyError, ZeroDivisionError, RecursionError):
+        return r          # a trace that the semantics here cannot read: no detail
+    r.details = dict(r.details or {}, violated=[{"term": v["term"], "robustness": json_number(v["robustness"])}
+                                               for v in found])
+    return r
 
 
 def _periodic(function, contract: Contract, backend: str, **options) -> Result:

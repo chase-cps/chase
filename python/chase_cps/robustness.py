@@ -82,15 +82,15 @@ def _has_number(node) -> bool:
     return False
 
 
-def violated(terms, trace: Trace, variables: Optional[dict] = None) -> list[dict]:
-    """The terms that a trace violates, each with its robustness when the
-    term compares numbers (how much it is violated: a negative number or 0),
-    else None."""
+def violated(terms, trace: Trace, variables: Optional[dict] = None, at: int = 0) -> list[dict]:
+    """The terms that a trace violates (from the step at), each with its
+    robustness when the term compares numbers (how much it is violated: a
+    negative number or 0), else None."""
     nodes = [_node(t) for t in terms]
     lasso, out = _Lasso(trace, variables, max(map(_history, nodes), default=0)), []
     for node in nodes:
-        if not lasso.holds(node, 0):
-            r = lasso.value(node, 0) if numeric(node, variables) else None
+        if not lasso.holds(node, at):
+            r = lasso.value(node, at) if numeric(node, variables) else None
             out.append({"term": ltl.to_str(node), "robustness": r})
     return out
 

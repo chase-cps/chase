@@ -193,3 +193,5 @@ def test_the_reset_in_a_contract(tmp_path):
                                  guarantees=["G (cnt < 6 | rst)"])
     r = is_implementation(m, late)
     assert r.status == "invalid" and holds(late.assumption, r.trace, late.variables, at=m.start)
+    # which guarantees its counterexample breaks
+    assert [v["term"] for v in r.details["violated"]] == ["G (cnt < 6 | rst)"]
