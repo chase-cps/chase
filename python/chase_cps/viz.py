@@ -285,6 +285,8 @@ class _Scene:
                         contract=self.terms(k.contract),
                         model=model,
                         badge={"text": "safe" if safe else "M ⊨ C", "status": _status(k.status),
+                               **({"reason": why_not} if (why_not := getattr(k, "reason", "") or
+                                  (getattr(k.status, "reason", "") if _status(k.status) == "unknown" else "")) else {}),
                                **({"why": _why(k.status, k.contract)} if _why(k.status) else {})},
                         inputs=sorted(k.contract.inputs), outputs=sorted(k.contract.outputs))
         self.ids.setdefault(id(k.contract), self.ids[id(k)])
@@ -860,6 +862,8 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         context = [ltl.to_str(_formula(f)) for f in context]
     out = {"title": title or "CHASE", "nodes": nodes, "edges": wires, "context": context or []}
     if period is not None:            # the time between two steps: the steps drawn as times
+        if ltl.number(period) <= 0:
+            raise ValueError(f"the period must be positive, not {period}")
         out["period"] = ltl.number_text(ltl.number(period))
     return out
 
@@ -1102,6 +1106,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                      lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
                      model=_near(model, path), contract=name)
             k.status = status(r)
+            k.reason = getattr(r, "reason", "") if status(r) == "unknown" else ""
             if _why(r):
                 why.append((k, "M ⊨ C", r, c))
     # a part with a model, in a decomposition: the decomposition is drawn as
@@ -1682,6 +1687,7 @@ _PAGE = r"""<!doctype html>
   .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, max-content)); gap:2px 18px;
                font:11px Menlo, Monaco, monospace; color:var(--soft); }
   .rp-values span { white-space:nowrap; }
+  #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
   table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:right; padding:2px 8px;
@@ -2136,7 +2142,7 @@ function drawNode(g, e, ox, oy) {
                                      fill: "none", stroke: "var(--teal)", "stroke-width": 1.5 }, r);
     const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
     if (k === "f") {
-      if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9" }, row);
+      if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9", class: "core-row" }, row);
       if (at) {             // its lines in the file: the editor goes there, and marks it from there
         row.setAttribute("class", "trow"); row.setAttribute("data-line", at[0]); row.setAttribute("data-last", at[1]);
         el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, fill: "transparent" }, row);   // the whole line
@@ -2778,6 +2784,10 @@ function h(tag, attrs, ...kids) {
   return e;
 }
 function checkTitle(n, t) {
+  return (statusOf(n, t) === "unknown" ? "Not decided: " : "") + claimOf(n, t);
+}
+// the claim of a check, said as it is: "A refines B", or "A does not refine B" when it fails
+function claimOf(n, t) {
   const no = statusOf(n, t) === "invalid", r = (n.repair || {})[t];
   const v = (yes, not) => no ? not : yes;
   if (r && r.check === "refines") return r.args[0].split("+").join(" ⊗ ") + v(" refines ", " does not refine ") + r.args[1];
@@ -2891,7 +2901,11 @@ function fillPanel() {
   box.appendChild(h("div", { class: "rp-head" },
     tagSvg(t, st), h("b", {}, checkTitle(n, t)),
     h("button", { class: "rp-x", title: "Back to the list", onclick: closeRepair }, "×")));
-  const says = st === "valid" ? "Holds." : st === "invalid" ? null : st === "unknown" ? "Not decided." : "Not checked yet.";
+  const unsure = st === "unknown" ? ((n.badge && tagOf(n.badge.text) === t ? n.badge.reason
+                                     : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
+  const says = st === "valid" ? "Holds." : st === "invalid" ? null
+             : st === "unknown" ? "Not decided" + (unsure ? ": " + reasonOf(unsure).text + (reasonOf(unsure).line ? ", line " + reasonOf(unsure).line : "") : ".")
+             : "Not checked yet.";
   if (says) box.appendChild(h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says)));
   const why = whySection(n, t, st);
   if (why) box.appendChild(why);
@@ -3192,6 +3206,7 @@ function applyOption(n, t, r, o, button) {
 function showPreview(p) {
   clearPreview(true);
   previewing = p;
+  document.getElementById("view").classList.add("previewing");   // what fails now, faded: the repair would fix it
   document.querySelectorAll("#view text[data-const]").forEach(x => {
     const k = x.getAttribute("data-const"), b = byId[x.getAttribute("data-cbox")];
     if (!(k in p.values) || !b || !b.contract || !p.owners.includes(b.contract.name)) return;
@@ -3217,6 +3232,7 @@ function clearPreview(all) {
   const keep = !all && previewing && (previewing.pinned ? previewing : previewing.keep);
   document.querySelectorAll("#view text[data-was]").forEach(x => { x.textContent = x.getAttribute("data-was"); x.removeAttribute("data-was"); });
   document.querySelectorAll("#view .pv").forEach(x => x.remove());
+  document.getElementById("view").classList.remove("previewing");
   previewing = null;
   if (keep) showPreview(keep);
 }

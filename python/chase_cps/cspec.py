@@ -146,8 +146,8 @@ def _chain(term: str) -> str:
 def _acsl(expr: str, result) -> str:
     """An ACSL expression in the words of C: \\result, ==>, <==>, \\true, chains."""
     if re.search(r"\\(old|at|forall|exists|let)\b", expr):
-        raise CProgramError(f"cannot read the clause {expr.strip()!r}: \\old, \\at, and the "
-                            "quantifiers of ACSL are not read")
+        raise CProgramError(f'cannot read the clause "{" ".join(expr.split())}": \\old, \\at, and '
+                            "the quantifiers of ACSL are not read")
     e = expr.replace("\\true", "true").replace("\\false", "false")
     if result is not None:
         e = re.sub(r"\\result\b", result, e)
@@ -162,6 +162,10 @@ def _acsl(expr: str, result) -> str:
 def _formula(expr: str, result: str, pointers: set, acsl: bool = False):
     """A clause in C as a formula of CHASE (None when it only says that the
     pointers are valid: the harness passes valid pointers)."""
+    written = " ".join(expr.split())
+    if "?" in expr:
+        raise CProgramError(f'cannot read the clause "{written}": a conditional (a ? b : c) is not '
+                            "read; write it as (!a || b) && (a || c)")
     if acsl:
         expr = _acsl(expr, result)
     kept = [t for t in _terms(expr) if not _POINTER.search(t)]
@@ -176,7 +180,8 @@ def _formula(expr: str, result: str, pointers: set, acsl: bool = False):
     try:
         return ltl.parse(e)
     except ltl.LTLSyntaxError as err:
-        raise CProgramError(f"cannot read the clause {expr.strip()!r}: {err}") from None
+        why = str(err).split(" in '")[0].split(' in "')[0]
+        raise CProgramError(f'cannot read the clause "{written}": {why}') from None
 
 
 def _bounds(node, names) -> dict:
@@ -266,12 +271,16 @@ def _read(path: str) -> tuple:
         sig = _signature(_blank_comments("".join(stripped)), name)
         pointers = {p.name for p in sig.parameters if p.pointer}
         result = f"{name}_out" if sig.returns != "void" else None
-        read = {k: [(f, a, b) for f, a, b in ((_formula(e, result, pointers), a, b)
-                                              for e, a, b in clauses[k]) if f]
+        def clause(e, at, acsl=False):     # an error says where: the file, the line, the function
+            try:
+                return _formula(e, result, pointers, acsl)
+            except CProgramError as err:
+                raise CProgramError(f"{os.path.basename(path)}, line {at}, {name}: {err}") from None
+        read = {k: [(f, a, b) for f, a, b in ((clause(e, a), a, b) for e, a, b in clauses[k]) if f]
                 for k in ("requires", "ensures")}
         for k, e, a, b in mine:
             if k in read:
-                f = _formula(e, result, pointers, acsl=True)
+                f = clause(e, a, acsl=True)
                 if f:
                     read[k].append((f, a, b))
         found.append((name, line(start), sig, result, read))

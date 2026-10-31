@@ -828,7 +828,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--rounds", type=int, help="rounds of counterexamples at most (default 50, or "
                                                     "none with --time-limit)")
     p.add_argument("--time-limit", type=float, metavar="SECONDS",
-                   help="stop the repair after SECONDS: unknown, with the least cost proved so far")
+                   help="stop the repair after SECONDS: unknown, with the least cost proved so "
+                        "far when there is one")
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the result as JSON")
     p.set_defaults(run=repair_command)

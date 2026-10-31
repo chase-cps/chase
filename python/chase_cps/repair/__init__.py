@@ -171,6 +171,21 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
 # the cost --------------------------------------------------------------------
 
 def _cost(params: dict, minimize, maximize):
+    term = maximize if maximize is not None else minimize
+    if term is not None:                  # a term over the parameters, and over them only
+        node = ltl.parse(term) if isinstance(term, str) else term
+        other = sorted(ltl.variables(node) - set(params))
+        if other:
+            raise RepairError(f"the cost {ltl.to_str(node)} uses {', '.join(other)}, which "
+                              f"{'is' if len(other) == 1 else 'are'} not a parameter: a cost is a term "
+                              f"over the parameters ({', '.join(params)})")
+        if not ltl.variables(node) & set(params):
+            raise RepairError(f"the cost {ltl.to_str(node)} has no parameter: a cost is a term "
+                              f"over the parameters ({', '.join(params)})")
+    return _cost_term(params, minimize, maximize)
+
+
+def _cost_term(params: dict, minimize, maximize):
     """(the term to minimize, its auxiliary constraints): the change by
     default, with chase_dev_<p> >= |p - p0|."""
     if maximize is not None:
@@ -262,6 +277,8 @@ def _by_projection(check, args, params, cost, aux, hard, backend, opts, timeout)
         return Repair(IMPOSSIBLE, method="projection",
                       reason="no values in the ranges pass: the projection is empty")
     if o.status not in ("optimal", "not_attained"):
+        if "cancel" in (o.reason or ""):  # the time limit came first
+            return _stopped("projection", 0, None)
         return Repair(UNKNOWN, method="projection", reason=f"the optimization: {o.status} "
                       f"{o.reason}".strip())
     out = run(check, instantiated(args, values), backend, opts)
@@ -319,7 +336,8 @@ def _left(deadline, timeout):
 def _stopped(method, k, bound, found=(), values=None):
     return Repair(UNKNOWN, dict(values or {}), method=method, rounds=k, counterexamples=list(found),
                   bound=bound, reason="stopped at the time limit" + (
-                      "; the least cost is at least the bound" if bound is not None else ""))
+                      "; the least cost is at least the bound" if bound is not None
+                      else ", before any value was found"))
 
 
 def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, rounds,
@@ -345,6 +363,8 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
                           counterexamples=found,
                           reason="no values in the ranges avoid all the counterexamples")
         if o.status not in ("optimal", "not_attained"):
+            if "cancel" in (o.reason or ""):  # the time limit came first
+                return _stopped("counterexamples", k - 1, bound, found)
             return Repair(UNKNOWN, method="counterexamples", rounds=k - 1,
                           counterexamples=found,
                           reason=f"the optimization: {o.status} {o.reason}".strip())
@@ -381,7 +401,7 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
                                   f"the values {values}")
             conditions.append(condition)
     return Repair(UNKNOWN, method="counterexamples", rounds=rounds, counterexamples=found,
-                  reason=f"no repair after {rounds} rounds")
+                  reason=f"no repair after {rounds} round{'' if rounds == 1 else 's'}")
 
 
 def _z3_holds_at(f, values: dict, params: dict) -> bool:
