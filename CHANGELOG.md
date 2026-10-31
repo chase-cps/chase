@@ -18,6 +18,12 @@ Added:
 - Named constants of contracts: `constants=` in Python and JSON, `constant`
   in specification files (kept by name, no longer only by value),
   `instantiate`, `terms`; a composition keeps them.
+- Diagrams (`chase_cps.viz`, `chase-cps view`): the named constants of a
+  contract are shown by name in its terms, with their values on a line of
+  their own (K); the steps of an interval (`G[0,9] p`, unfolded into `X`)
+  are shown folded again; a C function is drawn as the implementation of a
+  contract (`--implementation heater.c:thermostat C`, also in the `# view:`
+  lines of a file).
 - Robustness (`chase_cps.robustness`): how much a trace satisfies or
   violates a formula, by the quantitative semantics of signal temporal
   logic in discrete time, on lasso traces. `Contract.robustness(trace)`

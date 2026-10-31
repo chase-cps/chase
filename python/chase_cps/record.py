@@ -58,8 +58,9 @@ def key(check: str, *parts) -> str:
 
 
 def model_bytes(path: str) -> bytes:
-    """The text of a model file (FILE:MODULE reads FILE)."""
-    plain = path.rsplit(":", 1)[0] if path.rsplit(":", 1)[0].endswith((".v", ".sv")) else path
+    """The text of a model file (FILE:MODULE and FILE.c:FUNCTION read FILE)."""
+    head = path.rsplit(":", 1)[0]
+    plain = head if head.endswith((".v", ".sv", ".c")) else path
     with open(plain, "rb") as f:
         return f.read() + path.encode()
 

@@ -610,7 +610,7 @@ def _file_options(path: str) -> list[str]:
     for t in found:
         if after in _PATH_OPTIONS and not t.startswith("-") and not os.path.isabs(t):
             near = os.path.join(os.path.dirname(os.path.abspath(path)), t)
-            if os.path.exists(re.sub(r"(\.s?v):\w+$", r"\1", near)):
+            if os.path.exists(re.sub(r"(\.s?v|\.c):\w+$", r"\1", near)):
                 t = near
         out.append(t)
         after = t if t.startswith("-") else None

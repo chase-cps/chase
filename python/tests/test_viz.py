@@ -647,3 +647,24 @@ def test_a_failed_verify_draws_three_tags():
     assert [kind for kind, _, _ in c.checked()] == ["verify"]
     names = [t["name"] for t in viz.diagram(c)["nodes"][0]["checks"]]
     assert sorted(names) == ["A", "A∧G", "G"]
+
+
+def test_steps_are_shown_as_intervals():
+    # the terms of G[0,3] p are p, X p, X X p, X X X p; the box shows G[0,3] p,
+    # and a conjunction split at step 0 is folded with the steps after it
+    from chase_cps import ltl
+    p = [ltl.parse(t) for t in ["a", "X a", "X X a", "b < 3", "c", "X (b < 3 & c)", "X X (b < 3 & c)"]]
+    shown, groups = viz._fold(p)
+    assert shown == ["G[0,2] a", "G[0,2] (b < 3 & c)"]
+    assert groups == [[0, 1, 2], [3, 4, 5, 6]]
+    assert viz._fold([ltl.parse("X a | X X a")])[0] == ["F[1,2] a"]
+    assert viz._fold([ltl.parse("a"), ltl.parse("b")]) == (["a", "b"], [[0], [1]])
+
+
+def test_named_constants_are_shown_and_cores_still_match():
+    c = Contract.from_strings(inputs=["x"], outputs=["y"], assumptions=["x <= 5"],
+                              guarantees=["y <= x + k"], constants={"k": 2})
+    t = viz.diagram(c, open=[c])["nodes"][0]["contract"]
+    assert t["G"] == ["y <= x + k"] and t["K"] == ["k = 2"] and t["_G"] == ["y <= x + 2"]
+    node = {"contract": t}
+    assert viz._core(node, ([], ["y <= x + 2"]), False)["G"] == [0]

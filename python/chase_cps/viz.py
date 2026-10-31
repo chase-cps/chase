@@ -110,8 +110,20 @@ class _Scene:
 
     @staticmethod
     def terms(c: Contract) -> dict:
-        return {"name": c.name, "A": [ltl.to_str(a) for a in c.assumptions],
-                "G": [ltl.to_str(g) for g in c.guarantees]}
+        """The terms as shown: with the names of the constants, and the
+        intervals of steps folded again (the terms of G[0,9] p are p, X p,
+        ..., shown as G[0,9] p); "_A" and "_G" are the terms themselves (with
+        the values), "_gA" and "_gG" the terms of each shown one."""
+        a, g = c.terms
+        (sa, ga), (sg, gg) = _fold(a), _fold(g)
+        out = {"name": c.name, "A": sa, "G": sg}
+        if ga != [[i] for i in range(len(a))] or gg != [[i] for i in range(len(g))] \
+                or c.constants:
+            out.update({"_A": [ltl.to_str(t) for t in c.assumptions],
+                        "_G": [ltl.to_str(t) for t in c.guarantees], "_gA": ga, "_gG": gg})
+        if c.constants:
+            out["K"] = [f"{k} = {ltl.to_str(ltl.Num(v))}" for k, v in c.constants.items()]
+        return out
 
     # Contracts ---------------------------------------------------------------
 
@@ -178,8 +190,12 @@ class _Scene:
             fsm = state_graph(k.implementation, inputs=k.contract.inputs)
         except Exception:                     # the diagram does without it
             fsm = None
+        from .cprograms import CFunction
         name = getattr(k.implementation, "name", None) or type(k.implementation).__name__
-        source = (getattr(k.implementation, "source", None) or {}).get("kind")
+        if isinstance(k.implementation, CFunction):
+            source = "c"
+        else:
+            source = (getattr(k.implementation, "source", None) or {}).get("kind")
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
                         model={"name": name, "fsm": fsm, "source": source},
@@ -396,6 +412,67 @@ def _checks(r, kind: Optional[str] = None) -> list:
     return [(label, r, core_of(r))]
 
 
+def _unX(node):
+    """(phi, k) for X^k phi."""
+    k = 0
+    while isinstance(node, ltl.Unary) and node.op == "X":
+        node, k = node.arg, k + 1
+    return node, k
+
+
+def _interval(op: str, a: int, b: int, phi) -> str:
+    return f"{op}[{a},{b}] " + ltl.to_str(ltl.Unary(op, phi))[len(op):].lstrip()
+
+
+def _fold_term(node) -> str:
+    """A disjunction X^a phi | ... | X^b phi is shown as F[a,b] phi."""
+    parts = []
+    def flat(n):
+        if isinstance(n, ltl.Binary) and n.op == "|":
+            flat(n.left)
+            flat(n.right)
+        else:
+            parts.append(n)
+    flat(node)
+    if len(parts) > 1:
+        ks = [_unX(p) for p in parts]
+        if all(phi == ks[0][0] for phi, _ in ks) and \
+                [k for _, k in ks] == list(range(ks[0][1], ks[0][1] + len(ks))):
+            return _interval("F", ks[0][1], ks[-1][1], ks[0][0])
+    return ltl.to_str(node)
+
+
+def _fold(nodes: list) -> tuple:
+    """(the terms as shown, the indices of the terms of each): consecutive
+    terms X^a phi, X^(a+1) phi, ..., X^b phi are shown as G[a,b] phi."""
+    def conjuncts(n):
+        if isinstance(n, ltl.Binary) and n.op == "&":
+            return conjuncts(n.left) + conjuncts(n.right)
+        return [n]
+
+    shown, groups, i = [], [], 0
+    while i < len(nodes):
+        phi, k = _unX(nodes[i])
+        first = i          # the conjuncts of X^k phi may be terms of their own
+        for m in range(2, len(nodes) - i):
+            nxt, kn = _unX(nodes[i + m])
+            if kn == k + 1 and conjuncts(nxt) == [_unX(t)[0] for t in nodes[i:i + m]] \
+                    and all(_unX(t)[1] == k for t in nodes[i:i + m]):
+                phi, i = nxt, i + m - 1
+                break
+        j = i
+        while j + 1 < len(nodes) and _unX(nodes[j + 1]) == (phi, k + j + 1 - i):
+            j += 1
+        if j > i:
+            shown.append(_interval("G", k, k + j - i, phi))
+        else:
+            j = i = first
+            shown.append(_fold_term(nodes[i]))
+        groups.append(list(range(first, j + 1)))
+        i = j + 1
+    return shown, groups
+
+
 def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
     """Where the terms of the core are in the box: in its contract or in its
     composed contract, by index. All the assumptions are in an unrealizable
@@ -414,10 +491,14 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
         terms = node.get(key)
         if not terms:
             continue
-        hit = {p: [i for i, t in enumerate(terms[p]) if t in want[p]] for p in "AG"}
-        found = {terms[p][i] for p in "AG" for i in hit[p]}
+        mine = {p: terms.get("_" + p, terms[p]) for p in "AG"}     # the terms themselves
+        hit = {p: [i for i, t in enumerate(mine[p]) if t in want[p]] for p in "AG"}
+        found = {mine[p][i] for p in "AG" for i in hit[p]}
         if found and found >= want["A"] | want["G"]:
-            return dict(hit, part=key)
+            groups = {p: terms.get("_g" + p) or [[i] for i in range(len(mine[p]))] for p in "AG"}
+            shown = {p: [j for j, grp in enumerate(groups[p]) if set(grp) & set(hit[p])]
+                     for p in "AG"}
+            return dict(shown, part=key)
     return None
 
 
@@ -967,8 +1048,11 @@ def _place_in_source(d: dict, path: str) -> None:
             if name in lines and n.get("kind") in ("contract", "component", "group"):
                 n["source"] = {"line": lines[name]}
                 for p in "AG":   # the terms of the file, when they are the terms of the box
-                    if name in terms and c.get(p) is not None and len(c[p]) == len(terms[name][p]):
-                        n["source"][p] = terms[name][p]
+                    groups = c.get("_g" + p) or [[i] for i in range(len(c.get(p) or []))]
+                    count = sum(len(grp) for grp in groups)
+                    if name in terms and c.get(p) is not None and count == len(terms[name][p]):
+                        at = terms[name][p]
+                        n["source"][p] = [[at[grp[0]][0], at[grp[-1]][1]] for grp in groups]
             walk(n.get("children", []))
     walk(d["nodes"])
 
@@ -1244,12 +1328,13 @@ function wrap(f) {
   }
   out.push(rest); return out;
 }
-// Each part opens with a tag: A (assumes), G (guarantees), E (an environment).
+// Each part opens with a tag: K (named constants), A (assumes), G (guarantees), E (an environment).
 // With a core in focus, its terms are on a red ground: [kind, tag, text, in the core].
 // src: the lines of the terms in the file, [first, last], when known.
 function terms(c, out, core, src) {
   const part = (tag, fs, hit, at) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
     out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
+  if (c.K) part("K", c.K, []);           // the named constants and their values
   part("A", c.A, core ? core.A : [], src && src.A);
   if (c.E) part("E", c.E, []);
   else part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
@@ -1309,9 +1394,11 @@ function icons(n) {
   if (n.composed) out.push(["composed", "k:" + n.id, "Composition " + n.composed.name]);
   if (n.model) {             // a model with nothing to draw has its icon, grey
     const f = n.model.fsm;
-    const from = { controller: " (synthesized by slugs)", rtl: " (RTL)", json: " (JSON)", smv: " (SMV)" }[n.model.source] || "";
+    const from = { controller: " (synthesized by slugs)", rtl: " (RTL)", json: " (JSON)", smv: " (SMV)", c: " (C)" }[n.model.source] || "";
     const kind = n.model.source === "controller" ? "synth" : "model";
     if (states(n)) out.push([kind, "m:" + n.id, "model " + n.model.name + from + ", " + f.count + " states"]);
+    else if (n.model.source === "c") out.push([kind, null, "function " + n.model.name + from
+      + ": its outputs come from its inputs, one call at a time (ESBMC, CBMC)"]);
     else out.push([kind, null, "model " + n.model.name + from + (f && f.too_many
       ? ": more than " + f.count + " states, too many to show" : ": no registers, its outputs are functions of its inputs")]);
   }
