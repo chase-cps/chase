@@ -1670,10 +1670,11 @@ _PAGE = r"""<!doctype html>
   pre.code span.n { display:inline-block; width:2.4em; color:var(--faint); text-align:right; margin-right:12px;
                     user-select:none; -webkit-user-select:none; }
   #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
-  .q-item { padding:8px 12px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:2px; }
+  .q-item { padding:9px 10px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:3px; }
   .q-item.on { background:#eef3f9; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
-  .q-item .t { display:flex; gap:6px; align-items:center; font-weight:600; font-size:12px; }
+  /* the title of an item as the title of its details: no jump from one to the other */
+  .q-item .t { display:flex; gap:8px; align-items:center; font-weight:600; font-size:12.5px; }
   .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
   .q-item .v { font:11px Menlo, Monaco, monospace; color:var(--ink); }
   .tools #repairs { width:auto; padding:0 7px; gap:4px; display:none; color:var(--bad); font:600 11.5px Helvetica, Arial, sans-serif; }
