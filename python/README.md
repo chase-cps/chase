@@ -50,7 +50,8 @@ contracts of a specification written in the logics language of CHASE, and
 property` statements of SystemVerilog as a contract, and `to_sva` writes a
 contract as a checker module. `to_gr1(c, tool="slugs" | "gr1c")` writes a
 GR(1) contract for a solver you run yourself, `to_smv` and `to_smt` the
-checks of a contract for nuXmv, NuSMV, z3, or cvc5, and `load_dsl` reads a problem
+checks of a contract for nuXmv, NuSMV, z3, or cvc5, `to_c` the check of a C
+function for ESBMC or CBMC, and `load_dsl` reads a problem
 written in the domain-specific language of CHASE. The variables are
 Booleans, integer ranges,
 reals, and words (`"word[8]"`, `"signed word[8]"`); `past(x, n)` is the

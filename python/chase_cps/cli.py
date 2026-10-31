@@ -33,6 +33,8 @@ NEEDED_FOR = {
              "is_well_separated, is_vacuous",
     "z3": "the checks of formulas over a bounded number of steps (static contracts), and "
           "the real variables of the other checks (optional)",
+    "esbmc": "is_implementation of a C function (CFunction; optional)",
+    "cbmc": "the same, where ESBMC is not installed (optional)",
 }
 
 
@@ -81,7 +83,7 @@ def doctor(args=None) -> int:
             missing.append(name)
 
     model_checker = any(_location(n) for n in ("nuxmv", "nusmv"))
-    missing = [n for n in missing if n not in ("nusmv", "z3")]      # optional
+    missing = [n for n in missing if n not in ("nusmv", "z3", "esbmc", "cbmc")]      # optional
     if model_checker:   # one model checker is enough
         missing = [n for n in missing if n != "nuxmv"]
     if missing:
@@ -289,12 +291,26 @@ def _rtl(path: str, name: Optional[str] = None):
             files.append(near[m.group(1)])
 
 
+def _c_function(path: str):
+    """FILE.c:FUNCTION, a function of a C file (checked with ESBMC or CBMC)."""
+    from .cprograms import CFunction
+    file, _, name = path.rpartition(":")
+    if not file.endswith(".c") or not name:
+        raise ValueError(f"{path}: a C function is FILE.c:FUNCTION")
+    if not os.path.exists(file):
+        raise ValueError(f"no file {file}")
+    return CFunction(file, name)
+
+
 def _model(path: str, contract):
     """The model in an SMV file, in a JSON file (a state machine, or a
-    controller of slugs synthesized from the contract), or in Verilog or
+    controller of slugs synthesized from the contract), in Verilog or
     SystemVerilog (.v, .sv: the module of the contract's name, or the only
-    one, or FILE:MODULE), read with Yosys."""
-    base = path.rsplit(":", 1)[0] if path.rsplit(":", 1)[0].endswith((".v", ".sv")) else path
+    one, or FILE:MODULE), read with Yosys, or a C function (FILE.c:FUNCTION)."""
+    base = path.rsplit(":", 1)[0] if path.rsplit(":", 1)[0].endswith((".v", ".sv", ".c")) \
+        else path
+    if base.endswith(".c"):
+        return _c_function(path)
     if base.endswith((".v", ".sv")):
         if not os.path.exists(base):
             raise ValueError(f"no file {base}")
@@ -357,6 +373,9 @@ def _report(kind: str, label: str, result) -> None:
                 print(f"  {r.reason}")
                 break
     else:
+        if result.status == "invalid" and result.trace is not None:
+            print("  counterexample:")
+            print(_indent(result.trace))
         if result.controller is not None:
             nodes = result.controller.get("nodes", {}) if isinstance(result.controller, dict) else {}
             what = ("strategy forcing the environment to violate its assumptions"
@@ -404,7 +423,7 @@ def check(args) -> int:
     return 0 if passed else 1
 
 
-EXPORTS = ("smv", "smt", "gr1", "sva", "spec", "json")
+EXPORTS = ("smv", "smt", "gr1", "sva", "c", "spec", "json")
 
 
 def export(args) -> int:
@@ -448,6 +467,11 @@ def _export(args) -> str:
         raise ValueError("--refines: --to smv or --to smt")
     if args.tool and args.to not in ("smv", "gr1"):
         raise ValueError(f"--to {args.to} takes no --tool")
+    if (args.to == "c") != bool(args.function):
+        raise ValueError("--to c takes --function FILE.c:FUNCTION, the implementation to check")
+    if args.to == "c":
+        from .cprograms import to_c
+        return to_c(c, _c_function(args.function))
     if args.to == "smv":
         return ex.to_smv(c, abstract, tool=args.tool or "nuxmv")
     if args.to == "gr1":
@@ -600,7 +624,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="REFINED refines ABSTRACT (may be repeated)")
     g.add_argument("--implementation", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL (an SMV file, or a JSON file: a state "
-                        "machine or a controller of slugs) is an implementation of CONTRACT")
+                        "machine or a controller of slugs), or the C function in "
+                        "FILE.c:FUNCTION (ESBMC, CBMC), is an implementation of CONTRACT")
     g.add_argument("--implements", nargs=2, action="append", dest="implementation",
                    metavar=("MODEL", "CONTRACT"), help=argparse.SUPPRESS)
     g.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
@@ -622,7 +647,7 @@ def main(argv: list[str] | None = None) -> int:
                         "asks for (vacuity in synthesis)")
     p.add_argument("--core", action="store_true",
                    help="when a check fails, give a minimal set of terms that explains it")
-    p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv"])
+    p.add_argument("--backend", default="auto", choices=["auto", "nuxmv", "nusmv", "esbmc", "cbmc"])
     p.add_argument("--engine", default="auto",
                    choices=["auto", "ic3", "bdd", "bmc", "portfolio"],
                    help="engine of nuXmv or NuSMV: auto runs IC3 and BDDs at the same time "
@@ -637,7 +662,8 @@ def main(argv: list[str] | None = None) -> int:
         description="Write a check of a contract in the language of a tool, for the tools "
         "one runs oneself: smv (nuXmv, NuSMV) and smt (z3, cvc5) write the questions of "
         "verify, or of --refines, each with its name and how to read the answer; gr1 the "
-        "realizability question (slugs, gr1c); sva the contract as a SystemVerilog checker. "
+        "realizability question (slugs, gr1c); sva the contract as a SystemVerilog checker; "
+        "c the program that checks a C function against the contract (ESBMC, CBMC). "
         "spec and json write the contracts (all of them without --contract).")
     p.add_argument("file")
     p.add_argument("--to", required=True, choices=EXPORTS, help="the language")
@@ -648,6 +674,8 @@ def main(argv: list[str] | None = None) -> int:
                         "when the file has several)")
     p.add_argument("--refines", metavar="ABSTRACT",
                    help="the check that CONTRACT refines ABSTRACT (smv, smt)")
+    p.add_argument("--function", metavar="FILE.c:FUNCTION",
+                   help="with --to c: the C function that implements CONTRACT")
     p.add_argument("-o", "--output", help="the file to write (default: the standard output)")
     p.set_defaults(run=export)
 

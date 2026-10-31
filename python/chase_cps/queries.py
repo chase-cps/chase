@@ -28,6 +28,15 @@ class Satisfiable:
 
 
 @dataclass
+class ImplementsC:
+    """Is the C function (``chase_cps.cprograms.CFunction``) an
+    implementation of the contract: for every call whose inputs satisfy the
+    assumptions, do its outputs satisfy the guarantees?"""
+    function: Any
+    contract: Contract
+
+
+@dataclass
 class Holds:
     """Does every behavior of the model (an SMV program, see
     ``chase_cps.models``) satisfy phi? ``variables`` are those of the

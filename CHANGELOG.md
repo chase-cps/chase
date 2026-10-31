@@ -29,7 +29,15 @@ Added:
   refines) as the input of nuXmv or NuSMV, and of SMT solvers (z3, cvc5),
   for the tools one runs oneself: one named question per check, with how
   to read the answer. `chase-cps export FILE --to LANG [--tool TOOL]`
-  writes them, and also `gr1`, `sva`, `spec`, and `json`.
+  writes them, and also `gr1`, `sva`, `c`, `spec`, and `json`.
+- C functions as implementations of contracts: `is_implementation(
+  CFunction("saturate.c", "saturate"), contract)` checks with ESBMC, or
+  CBMC, that every call allowed by the assumptions satisfies the
+  guarantees, and that the function has no overflow, division by zero, or
+  access out of bounds; a failure gives the values of the call. `to_c`
+  writes the program they check; on the command line,
+  `--implementation FILE.c:FUNCTION CONTRACT`. `chase-cps check` prints the
+  counterexample of a failed implementation.
 
 Changed:
 

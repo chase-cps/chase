@@ -44,6 +44,7 @@ from .ltl import LTLSyntaxError
 from .sva import SVAError, SVAReading, parse_sva, to_sva
 from .gr1spec import GR1FormatError, to_gr1
 from .export import to_smt, to_smv
+from .cprograms import CFunction, CProgramError, to_c
 # 2. Checks on contracts, and the queries on formulas they reduce to.
 from .checks import (RedundantTerm, RefinementResult, Redundancy, Verification, accepts,
                      implements, is_environment, is_implementation, is_compatible,
@@ -66,7 +67,7 @@ __all__ = [
     # 1. Contracts and their algebra
     "Contract", "load_dsl", "load_spec", "parse_spec", "to_spec", "LTLSyntaxError",
     "parse_sva", "to_sva", "SVAReading", "SVAError",
-    "to_gr1", "GR1FormatError", "to_smv", "to_smt",
+    "to_gr1", "GR1FormatError", "to_smv", "to_smt", "to_c", "CFunction", "CProgramError",
     # 2. Checks on contracts
     "refines", "verify", "is_compatible", "is_consistent", "is_implementation",
     "is_environment", "implements", "accepts",

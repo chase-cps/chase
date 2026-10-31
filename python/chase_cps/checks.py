@@ -359,9 +359,15 @@ def is_implementation(implementation, contract: Contract, backend: str = "auto",
     hold? The implementation is an LTL formula that describes the behaviors
     of a component, or a state machine: a ``Model``, SMV text, a state
     machine in JSON, or a controller of ``synthesize`` (see
-    ``chase_cps.models``), whose every behavior must satisfy A -> G. A
+    ``chase_cps.models``), whose every behavior must satisfy A -> G, or a C
+    function (``CFunction``, checked with ESBMC or CBMC). A
     machine that refuses inputs can implement a contract only because of
     that: ``is_receptive`` checks it."""
+    from .cprograms import CFunction
+    if isinstance(implementation, CFunction):
+        from . import backends
+        from .queries import ImplementsC
+        return backends.check(ImplementsC(implementation, contract), backend, **options)
     from .models import as_model
     m = as_model(implementation, contract)
     if m is None:

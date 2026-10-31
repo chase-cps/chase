@@ -10,6 +10,7 @@ import os
 
 from ..queries import UNKNOWN, Result
 from .base import Adapter
+from .bmc import BMCAdapter
 from .nusmv import NuSMVAdapter
 from .slugs import SlugsAdapter
 from .z3 import Z3Adapter
@@ -20,6 +21,8 @@ ADAPTERS: dict[str, Adapter] = {
     "nusmv": NuSMVAdapter(tool="nusmv"),
     "slugs": SlugsAdapter(),
     "z3": Z3Adapter(),        # static formulas only; check() sends them there first
+    "esbmc": BMCAdapter("esbmc"),     # C functions
+    "cbmc": BMCAdapter("cbmc"),
 }
 
 
@@ -107,5 +110,6 @@ def _configured(adapter: Adapter, options: dict) -> Adapter:
     return a
 
 
-__all__ = ["ADAPTERS", "Adapter", "NuSMVAdapter", "SlugsAdapter", "Z3Adapter", "check", "dispatch",
+__all__ = ["ADAPTERS", "Adapter", "BMCAdapter", "NuSMVAdapter", "SlugsAdapter", "Z3Adapter", "check",
+           "dispatch",
            "register", "adapters_for"]

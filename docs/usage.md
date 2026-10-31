@@ -452,6 +452,48 @@ the contracts do not list it as an input. Without `reset` it is an input
 like the others, and the registers start with any value. The checks are those of nuXmv: they suit small
 and medium designs.
 
+### C functions
+
+A C function is a component that answers once: its parameters are the
+inputs of the contract, by name, and its return value is the output; a
+pointer parameter named as an output is written by the function. The
+formulas of such a contract have no temporal operator. `is_implementation`
+takes a `CFunction` and checks it with
+[ESBMC](https://esbmc.org/) or, without it, [CBMC](https://www.cprover.org/cbmc/)
+(`brew install esbmc`, or the packages of the two projects):
+
+````
+from chase_cps import CFunction, Contract, is_implementation
+
+open("saturate.c", "w").write("""
+int saturate(int x, int lo, int hi) {
+    if (x < lo) return lo;
+    if (x > hi) return hi;
+    return x;
+}
+""")
+sat = Contract.from_strings(name="Sat",
+                            inputs={"x": (-1000, 1000), "lo": (-100, 100), "hi": (-100, 100)},
+                            outputs={"y": (-1000, 1000)}, assumptions=["lo <= hi"],
+                            guarantees=["y >= lo & y <= hi", "(x >= lo & x <= hi) -> y = x"])
+r = is_implementation(CFunction("saturate.c", "saturate"), sat)
+print(r.status, r.backend)       # valid esbmc
+````
+
+The checker calls the function with any values of the inputs, within
+their types and the assumptions, and checks the guarantees on what it
+returns. A failure gives the values of a call that breaks them (the
+trace). The checkers also check the function itself: an arithmetic
+overflow, a division by zero, or an access out of bounds makes the result
+invalid, with the property in the `reason`. Loops are unwound up to
+`unwind` times (20, `is_implementation(f, c, unwind=100)`); a loop that
+needs more makes the result unknown.
+
+Integers are compared as integers (in `long long`); a real variable is a
+`double` or a `float` of the function, and its formulas are computed in
+`double`, with rounding. Words are not written in C yet. On the command
+line: `chase-cps check spec.ltl --implementation saturate.c:saturate Sat`.
+
 ### Queries on formulas
 
 | Query | logics_tool | Python | chase-cps check | MCP tool |
@@ -1101,6 +1143,7 @@ files of two tools differ.
 | `to_smt(c, refines=None)` | SMT (SMT-LIB 2, .smt2) | z3, cvc5 |
 | `to_gr1(c, tool="slugs")` | structured slugs, gr1c | slugs, gr1c (`tool="gr1c"`) |
 | `to_sva(c)` | SystemVerilog | Jasper, Verilator, other SVA tools |
+| `to_c(c, CFunction(...))` | C | ESBMC, CBMC |
 | `to_spec(contracts)` | logics language | CHASE, logics_tool |
 
 `to_smv` and `to_smt` write the questions of a check, each with its
@@ -1131,6 +1174,7 @@ On the command line:
 ````
 $> chase-cps export spec.ltl --to smv --contract Gen --refines Spec -o gen.smv
 $> chase-cps export spec.ltl --to gr1 --tool gr1c --contract Arbiter -o arbiter.spc
+$> chase-cps export spec.ltl --to c --contract Sat --function saturate.c:saturate -o check.c
 $> chase-cps export spec.json --to spec -o spec.ltl
 ````
 
