@@ -1091,7 +1091,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         m = _model(model, c)
         envs.append((m, c, kept("environment", _record.key("environment", _record.model_bytes(model), c),
                                 lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
-                                model=model, contract=name) if kept_or_checked else None))
+                                model=_near(model, path), contract=name) if kept_or_checked else None))
     shown, impls, why = list(items), {}, []
     for model, name in implementations:   # a contract drawn with its model, as a component
         c = get(name)
@@ -1100,7 +1100,7 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         if kept_or_checked:
             r = kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
                      lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
-                     model=model, contract=name)
+                     model=_near(model, path), contract=name)
             k.status = status(r)
             if _why(r):
                 why.append((k, "M ⊨ C", r, c))
@@ -1131,6 +1131,14 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
 
 
 _CONSTANT = re.compile(r"^\s*(integer|real)\s+constant\s+([A-Za-z_]\w*)\s+([^;\s]+)\s*;")
+
+
+def _near(model: str, path: str) -> str:
+    """A model as written next to the file: relative to its directory."""
+    try:
+        return os.path.relpath(model, os.path.dirname(os.path.abspath(path)))
+    except ValueError:
+        return model
 
 
 def _constant_lines(path: str) -> dict:
@@ -1665,7 +1673,12 @@ _PAGE = r"""<!doctype html>
             padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text; }
   .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
              animation:turn 0.8s linear infinite; }
-  .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px; }
+  .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px;
+    /* a shadow at a side where more columns are: the table scrolls */
+    background: linear-gradient(to right, var(--paper, #fff) 30%, transparent) left / 24px 100% no-repeat local,
+                linear-gradient(to left, var(--paper, #fff) 30%, transparent) right / 24px 100% no-repeat local,
+                radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.16), transparent) left / 10px 100% no-repeat scroll,
+                radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.16), transparent) right / 10px 100% no-repeat scroll; }
   .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, max-content)); gap:2px 18px;
                font:11px Menlo, Monaco, monospace; color:var(--soft); }
   .rp-values span { white-space:nowrap; }
@@ -3080,7 +3093,7 @@ function previewOf(n, t, r, o) {
 }
 function commandOf(r, s) {
   const flag = { refines: "--refines", impl: "--impl", env: "--env", verify: "--verify", compat: "--compat", consist: "--consist" }[r.check];
-  const q = a => /^[\w.+:\/-]+$/.test(a) ? a : JSON.stringify(a);
+  const q = a => { a = a.replace(/^.*\//, ""); return /^[\w.+:-]+$/.test(a) ? a : JSON.stringify(a); };   // run next to the file
   const ps = r.constants.filter(c => s.picks[c.name]).map(c => "--param " + c.name + "=" + s.ranges[c.name][0] + ".."
                                                        + s.ranges[c.name][1] + (c.type === "int" ? ":int" : ""));
   return ["chase-cps repair", q(DATA.title.split("/").pop()), flag, ...r.args.map(q), ...ps].join(" ");
@@ -3294,10 +3307,18 @@ function replay(n, tr, k) {
     if (x.getAttribute("data-side") === "left") { x.setAttribute("data-ox", x.getAttribute("x"));
       x.setAttribute("x", +x.getAttribute("x") + w0 - x.getComputedTextLength()); }
   });
+  // the two ends of a short wire say the same value: one says it
+  const shown = [...document.querySelectorAll("#view text.pv-val")].map(x => [x, x.getBoundingClientRect()]);
+  shown.forEach(([x, r], i) => {
+    if (shown.slice(0, i).some(([y, q]) => !y.hasAttribute("data-hid") && y.textContent === x.textContent
+        && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
+      x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
+  });
 }
 function clearReplay() {
   document.querySelectorAll("#view text[data-orig]").forEach(x => { x.textContent = x.getAttribute("data-orig");
     x.removeAttribute("data-orig"); x.classList.remove("pv-val");
+    if (x.hasAttribute("data-hid")) { x.removeAttribute("data-hid"); x.style.visibility = ""; }
     if (x.hasAttribute("data-ox")) { x.setAttribute("x", x.getAttribute("data-ox")); x.removeAttribute("data-ox"); } });
 }
 function afterRender() {

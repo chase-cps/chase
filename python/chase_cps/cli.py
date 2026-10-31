@@ -546,8 +546,10 @@ def repair_command(args) -> int:
         print(f"repair      {r.status}  ({r.method}, {rounds}, {r.seconds:.2f} s)")
         for k, v in r.values.items():
             print(f"  {k} = {ltl.to_str(ltl.Num(v))}")
-        if r.values:
-            print(f"  cost {ltl.to_str(ltl.Num(r.cost))}{' (optimal)' if r.optimal else ''}")
+        if r.values:                    # the change, or the value of the term optimized
+            what = (f"{args.maximize}, the most:" if getattr(args, "maximize", None)
+                    else f"{args.minimize}, the least:" if getattr(args, "minimize", None) else "change")
+            print(f"  {what} {ltl.to_str(ltl.Num(r.cost))}{' (optimal)' if r.optimal else ''}")
         if r.reason:
             print(f"  {r.reason}")
     return 0 if r.status in ("holds", "repaired") else 1
