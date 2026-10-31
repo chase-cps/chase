@@ -156,7 +156,7 @@ def stateless(function: "CFunction") -> str:
     names, depth = set(), 0
     for line in re.sub(r"//[^\n]*|/\*.*?\*/", "", text, flags=re.S).split("\n"):
         if depth == 0:
-            m = re.match(r"\s*(?:extern\s+|volatile\s+)*(?:unsigned\s+|signed\s+)?"
+            m = re.match(r"\s*(?:extern\s+|volatile\s+|static\s+)*(?:unsigned\s+|signed\s+)?"
                          r"(?:int|long|short|char|float|double|bool|_Bool|unsigned)\b([^;(]*);", line)
             if m and "const" not in line.split("=")[0]:
                 names |= {re.sub(r"[\s\*\[].*$", "", v.split("=")[0].strip()) for v in m.group(1).split(",")}

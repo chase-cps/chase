@@ -431,3 +431,9 @@ CONTRACT Room:
     g = CFunction(str(src), "counted", result="u")
     assert "count" in stateless(g)
     assert is_implementation(g, c["Thermostat"]).status == "unknown"
+    # a static variable of the file is a state too
+    filed = src.parent / "filed.c"
+    filed.write_text("static int cnt;\nint thermostat_state(int T) { cnt++; if (cnt > 3) return 1; return T < 74 ? 3 : 0; }\n")
+    h = CFunction(str(filed), "thermostat_state", result="u")
+    assert "cnt" in stateless(h)
+    assert is_implementation(h, c["Thermostat"].instantiate({"theta": 74})).status == "unknown"

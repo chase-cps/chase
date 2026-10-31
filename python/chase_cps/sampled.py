@@ -69,6 +69,10 @@ def strengthen(formula: str, lipschitz: Union[Mapping, float], period) -> ltl.No
     if period <= 0:
         raise SampledError("the period must be positive")
     rates = lipschitz if isinstance(lipschitz, Mapping) else None
+    for v, rate in (rates.items() if rates is not None else [("every variable", lipschitz)]):
+        if ltl.number(rate) < 0:
+            raise SampledError(f"the Lipschitz constant of {v} is negative ({rate}): it is a bound "
+                               "on how fast the variable changes, 0 or more")
     node = _Keep(formula).parse()
     return _margins(_nnf(_widen(node, True), False), rates, lipschitz, period)
 

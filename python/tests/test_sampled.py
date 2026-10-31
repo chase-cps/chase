@@ -140,3 +140,11 @@ def test_every_behavior_in_continuous_time():
     assert check("G[0,8] (x <= 10)", False) == "valid"      # at the samples: x <= 9
     assert check("G[0,8] (x <= 10)", True) == "invalid"     # between them, not shown
     assert check("G[0,8] (x <= 11)", True) == "valid"
+
+
+def test_a_negative_lipschitz_constant_is_refused():
+    with pytest.raises(SampledError, match="negative"):
+        strengthen("G[0,8] (x <= 11)", {"x": -1}, 0.5)
+    with pytest.raises(SampledError, match="negative"):
+        strengthen("G[0,8] (x <= 11)", -1, 0.5)
+    assert continuous("G[0,8] (x <= 11)", Trace([{"x": 10.8}], []), {"x": -100}, 1).holds is None
