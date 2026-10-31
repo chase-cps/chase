@@ -929,8 +929,10 @@ r = repair("refines", impl, spec, parameters={"lam": (0, 10)})
 print(r.status, r.values, r.cost, r.optimal)     # repaired {'lam': 5} 1 True
 ```
 
-The result is `repaired` (the values, their cost, `optimal` when no values
-of lower cost pass, and `check`, the result of the check with the values),
+The result is `holds` when the check passes with the present values (a
+repair is then a verification), `repaired` (the values, their cost,
+`optimal` when no values of lower cost pass, and `check`, the result of
+the check with the values),
 `impossible` (no values in the ranges pass, with the evidence), or `unknown`
 with the reason. The values of a repair are always checked by the check
 itself, with its usual back end. The method is chosen by the formulas:

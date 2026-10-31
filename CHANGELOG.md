@@ -12,7 +12,8 @@ Added:
   by counterexamples (nuXmv, ESBMC, z3), each counterexample becoming a
   condition on the parameters, generalized over the reals on bounded
   formulas; checks of some behavior by witnesses or by enumeration. The
-  result is repaired (optimal when no values of lower cost pass),
+  result is holds (the check passes with the present values: a
+  verification), repaired (optimal when no values of lower cost pass),
   impossible, or unknown.
 - Named constants of contracts: `constants=` in Python and JSON, `constant`
   in specification files (kept by name, no longer only by value),

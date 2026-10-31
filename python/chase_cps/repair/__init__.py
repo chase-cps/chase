@@ -15,6 +15,8 @@ units.
 
 The result is
 
+- ``holds``: the check passes with the present values, which are kept: the
+  repair is a verification;
 - ``repaired``: the values, their cost, and the check run with them (it
   passes): ``optimal`` when no values of lower cost pass;
 - ``impossible``: no values in the ranges pass, with the evidence (the
@@ -53,7 +55,7 @@ from .. import ltl
 from .problem import (CHECKS, EXISTENTIAL, UNIVERSAL, Parameter, RepairError, instantiated,
                       json_value, parameters_of, questions, run, symbolic_args)
 
-REPAIRED, IMPOSSIBLE, UNKNOWN = "repaired", "impossible", "unknown"
+HOLDS, REPAIRED, IMPOSSIBLE, UNKNOWN = "holds", "repaired", "impossible", "unknown"
 ROUNDS = 50
 ENUMERATION = 10000      # values tried at most by enumeration
 
@@ -73,7 +75,7 @@ class Repair:
     seconds: float = 0.0
 
     def __bool__(self) -> bool:
-        return self.status == REPAIRED
+        return self.status in (HOLDS, REPAIRED)
 
     def to_dict(self) -> dict:
         d = {"status": self.status, "method": self.method, "rounds": self.rounds,
@@ -112,6 +114,9 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
 
     def done(r: Repair) -> Repair:
         r.seconds = time.time() - start
+        if r.status == REPAIRED and all(r.values.get(p.name) == p.value
+                                        for p in params.values()):
+            r.status = HOLDS          # the check passes with the present values
         if maximize is not None and r.cost is not None:
             r.cost = ltl.number(-r.cost)          # the value of the term maximized
         return r
@@ -386,4 +391,5 @@ def _by_enumeration(check, args, params, cost, aux, backend, opts) -> Repair:
                   reason="no values in the ranges pass")
 
 
-__all__ = ["repair", "Repair", "RepairError", "Parameter", "REPAIRED", "IMPOSSIBLE", "UNKNOWN"]
+__all__ = ["repair", "Repair", "RepairError", "Parameter", "HOLDS", "REPAIRED", "IMPOSSIBLE",
+           "UNKNOWN"]

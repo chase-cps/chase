@@ -534,7 +534,7 @@ def repair_command(args) -> int:
             print(f"  cost {ltl.to_str(ltl.Num(r.cost))}{' (optimal)' if r.optimal else ''}")
         if r.reason:
             print(f"  {r.reason}")
-    return 0 if r.status == "repaired" else 1
+    return 0 if r.status in ("holds", "repaired") else 1
 
 
 def _parameter(text: str):
@@ -787,9 +787,10 @@ def main(argv: list[str] | None = None) -> int:
         description="Find the values of constants of the contracts (constant in a "
         "specification file, constants in JSON) that make a check pass, at the least "
         "cost: by default the least change, the sum of |p - p0|. The checks are named as "
-        "in chase-cps check. The values are checked by the check itself. The exit status is "
-        "0 when the check is repaired, 1 when no values in the ranges pass or the repair "
-        "does not finish, and 2 on an error in the input.")
+        "in chase-cps check. The values are checked by the check itself; when the check "
+        "passes with the present values, the result is holds. The exit status is 0 when the "
+        "check holds or is repaired, 1 when no values in the ranges pass or the repair does "
+        "not finish, and 2 on an error in the input.")
     p.add_argument("file")
     g = p.add_argument_group("the check (one)")
     g.add_argument("--verify", metavar="CONTRACT")

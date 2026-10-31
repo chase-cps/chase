@@ -173,12 +173,12 @@ def test_against_every_value_and_another_back_end():
         if best is None:
             assert r.status == "impossible"
             continue
-        assert r.status == "repaired" and r.optimal and r.cost == best
+        assert r.status == ("holds" if best == 0 else "repaired") and r.optimal and r.cost == best
         # the values pass with nuXmv too
         assert refines(impl, spec.instantiate(r.values), backend="nuxmv").status == "valid"
         # and with real parameters, by projection, at the same cost
         real = repair("refines", impl, spec, parameters={"p": (0, 12), "q": (0, 12)})
-        assert real.status == "repaired" and real.cost <= best
+        assert real.status in ("holds", "repaired") and real.cost <= best
 
 
 @needs_z3
@@ -312,3 +312,59 @@ def test_without_z3(monkeypatch):
     monkeypatch.setattr(backend_z3, "_z3", None)
     r = repair("refines", IMPL, SPEC, parameters={"lam": (0, 10)})
     assert r.status == "unknown" and "pip install chase-cps[z3]" in r.reason
+
+
+
+# repair as a verification: it holds exactly when the check passes ---------------
+
+@needs_nuxmv
+def test_repair_holds_exactly_when_the_check_passes():
+    pytest.importorskip("chase_cps._native")
+    from chase_cps import verify
+    rng = random.Random(11)
+    seen = set()
+    # static contracts over integers and over reals
+    for _ in range(40):
+        impl, spec = _problem(rng)
+        spec = spec.instantiate({"p": rng.randint(0, 12), "q": rng.randint(0, 12)})
+        passes = refines(impl, spec).status == "valid"
+        for kind in ((), ("int",)):
+            r = repair("refines", impl, spec,
+                       parameters={"p": (0, 12, *kind), "q": (0, 12, *kind)})
+            assert (r.status == "holds") == passes, (spec.terms, r.status)
+            if passes:
+                assert r.cost == 0 and r.values == spec.constants
+        seen.add(passes)
+    # some behavior: verify
+    for lam in range(0, 9):
+        tight = Contract.from_strings(name="T", inputs={"x": (0, 9)}, outputs={"y": (0, 20)},
+                                      guarantees=["y >= x + 15", "y <= 20 - lam"],
+                                      constants={"lam": lam})
+        passes = verify(tight).status == "sat"
+        r = repair("verify", tight, parameters={"lam": (0, 10)})
+        assert (r.status == "holds") == passes, lam
+        seen.add(passes)
+    # LTL, with nuXmv
+    c = parse_spec(ARBITER)
+    system = c["Client"].compose(c["Arbiter"]).compose(c["Wait"])
+    for k in range(0, 5):
+        spec = c["Spec"].instantiate({"k": k})
+        passes = refines(system, spec).status == "valid"
+        r = repair("refines", system, spec, parameters={"k": (0, 9, "int")})
+        assert (r.status == "holds") == passes, k
+        assert r.values == {"k": max(k, 2)}
+    assert seen == {True, False}
+
+
+@needs_esbmc
+def test_repair_of_a_c_function_holds_exactly_when_it_implements():
+    f = CFunction("heater.c", "heater", source=HEATER)
+    for theta in (60, 69, 70, 71, 90):
+        ctrl = Contract.from_strings(name="Ctrl", inputs={"temp": (0, 120)},
+                                     outputs={"u": (0, 3)},
+                                     guarantees=["temp <= theta -> u = 3", "temp > theta -> u = 0"],
+                                     constants={"theta": theta})
+        passes = is_implementation(f, ctrl).status == "valid"
+        r = repair("impl", f, ctrl, parameters={"theta": (0, 120, "int")})
+        assert (r.status == "holds") == passes == (theta == 70)
+        assert r.values == {"theta": 70}
