@@ -1742,13 +1742,13 @@ function wrap(f) {
   }
   out.push(rest); return out;
 }
-// Each part opens with a tag: K (named constants), A (assumes), G (guarantees), E (an environment).
+// Each part opens with a tag: θ (parameters: named constants), A (assumes), G (guarantees), E (an environment).
 // With a core in focus, its terms are on a red ground: [kind, tag, text, in the core].
 // src: the lines of the terms in the file, [first, last], when known.
 function terms(c, out, core, src) {
   const part = (tag, fs, hit, at) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
     out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
-  if (c.K) part("K", c.K, []);           // the named constants and their values
+  if (c.K) part("θ", c.K, []);           // the parameters (named constants) and their values
   part("A", c.A, core ? core.A : [], src && src.A);
   if (c.E) part("E", c.E, []);
   else part("G", c.G.length ? c.G : ["true"], core ? core.G : [], c.G.length && src && src.G);
@@ -2494,7 +2494,7 @@ function help() {
   sample(s => { box(5, "#f5f7f7", "#17393b", 1.2)(s);
                 el("rect", { x: 14, y: 6, width: 20, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
          "inside: refines the outer box");
-  [["contract", "named constants K, assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
+  [["contract", "parameters θ, assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
    ["model", "model given (RTL, JSON, SMV)"], ["synth", "model synthesized (slugs)"]].forEach(([k, t]) =>
     sample(svg => icon(svg, k, 16, 2, false, t), t));
   sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: 4, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
@@ -2837,8 +2837,8 @@ function fillPanel() {
   if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
   // the constants
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix: the values of the constants"),
-    h("div", { class: "rp-note", style: "margin:0 0 4px" }, "Pick the constants that may change, and their ranges."));
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix: the values of the parameters (θ)"),
+    h("div", { class: "rp-note", style: "margin:0 0 4px" }, "Pick the parameters that may change, and their ranges."));
   r.constants.forEach(c => {
     const [lo, hi] = s.ranges[c.name];
     const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
@@ -2862,7 +2862,7 @@ function fillPanel() {
   } else {
     run.appendChild(h("button", { class: "rp-btn main", disabled: !how || !picked.length,
                                   onclick: () => findRepairs(n, t) }, s.options.length ? "Find again" : "Find repairs"));
-    run.appendChild(h("span", { class: "rp-says" }, !picked.length ? "Pick a constant to change."
+    run.appendChild(h("span", { class: "rp-says" }, !picked.length ? "Pick a parameter to change."
       : picked.length > 1 ? "Each alone, and all together." : ""));
   }
   sec.appendChild(h("div", { style: "margin-top:8px" }, run));
@@ -2955,9 +2955,9 @@ function traceTable(tr, first, req) {
 function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
   const points = n.contract && n.contract.K
-    ? ["The constants (K) are repaired from the specification file.",
+    ? ["The parameters (θ) are repaired from the specification file.",
        "Open it in VS Code, or with chase-cps view FILE --serve."]
-    : ["No value can fix it: the check reads no named constant.",
+    : ["No value can fix it: the check reads no parameter (θ).",
        "What fails is a rule: the counterexample shows where.",
        "Change the terms of a part, or of the requirement."]
        .concat(t === "⪯" ? ["What a part must meet: divide the requirement by the other parts."] : []);
@@ -3154,8 +3154,8 @@ function fillProblems(list) {
       : best ? best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
       : r ? "may change: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")
       : t === "A∧G" ? "the terms in conflict: in the box"
-      : n.contract && n.contract.K ? "constants (K): repaired from the specification file"
-      : "no constant: a rule to change";
+      : n.contract && n.contract.K ? "parameters (θ): repaired from the specification file"
+      : "no parameter: a rule to change";
     const steps = w && w.trace ? (w.trace.steps.length === 1 ? "one call or step" : w.trace.steps.length + " steps") : null;
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
                                onclick: () => openRepair(n, t) },

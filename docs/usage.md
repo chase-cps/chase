@@ -1016,7 +1016,7 @@ code, and a deadline in LTL.
   and ⪯ (refines), green when the check holds,
   red when it does not. A click on a red tag with a core puts the terms of
   the core on a red ground.
-- The named constants of a contract are on a line of their own (K), and
+- The named constants of a contract (its parameters) are on a line of their own (θ), and
   the terms use their names.
 - A click on ⪯, M ⊨ C, or E ⊨ A (or on a red A∧G) opens the panel of the
   check, by its tag: the named constants of its contracts, each with a
