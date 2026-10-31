@@ -1309,7 +1309,16 @@ def repair_request(path: str, request: dict, timeout: float = 300) -> dict:
         low, high = ltl.number(str(q["low"])), ltl.number(str(q["high"]))
         params[q["name"]] = (low, high, "int") if q.get("type") == "int" else (low, high)
     return repair(check, *arguments, parameters=params,
-                  timeout=float(request.get("timeout", timeout))).to_dict()
+                  timeout=float(request.get("timeout", timeout)),
+                  time_limit=float(request["time_limit"]) if request.get("time_limit") else None).to_dict()
+
+
+def _repair_in_process(path, request, out):
+    try:
+        out.put({"result": repair_request(path, request)})
+    except Exception as e:               # the reason goes to the page
+        out.put({"error": str(e) if isinstance(e, (ValueError, RuntimeError, KeyError))
+                 else f"{type(e).__name__}: {e}"})
 
 
 def set_constants(text: str, edits) -> str:
@@ -1342,6 +1351,7 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
     import threading
 
     state = {"mtime": None, "version": 0, "data": None, "error": None, "page": None}
+    jobs = {}                           # the repairs running, by the id the page gave them
     lock = threading.Lock()
 
     drawing = threading.Lock()          # one drawing at a time: the others serve what is there
@@ -1393,14 +1403,29 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
             self.wfile.write(data)
 
         def do_POST(self):
-            if self.headers.get("X-CHASE") != "1" or self.path not in ("/repair", "/apply"):
+            if self.headers.get("X-CHASE") != "1" or self.path not in ("/repair", "/apply", "/repair-stop"):
                 self.send_response(403)
                 self.end_headers()
                 return
             try:
                 asked = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
-                if self.path == "/repair":
-                    reply = {"result": repair_request(path, asked)}
+                if self.path == "/repair":     # in a process of its own: a stop ends it
+                    import multiprocessing as mp
+                    queue = mp.Queue()
+                    job = mp.Process(target=_repair_in_process, args=(path, asked, queue), daemon=True)
+                    with lock:
+                        jobs[str(asked.get("id"))] = job
+                    job.start()
+                    job.join()
+                    with lock:
+                        jobs.pop(str(asked.get("id")), None)
+                    reply = queue.get() if not queue.empty() else {"error": "stopped"}
+                elif self.path == "/repair-stop":
+                    with lock:
+                        job = jobs.get(str(asked.get("id")))
+                    if job is not None and job.is_alive():
+                        job.kill()
+                    reply = {"ok": True}
                 else:
                     with open(path, encoding="utf-8") as f:
                         text = f.read()
@@ -2936,7 +2961,9 @@ function optionCard(n, t, r, s, o, sig) {
   if (res.status !== "repaired") {
     const text = res.status === "holds" ? "Holds with the present values: nothing to change."
       : res.status === "impossible" ? "No value of " + names + " in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " works: widen the range, pick another constant, or change a rule."
-      : "Not decided" + (res.reason ? ": " + res.reason : ".");
+      : res.bound !== undefined && res.bound !== null
+        ? "Stopped at the time limit. The least change is at least " + res.bound + " (proved); no value found yet."
+        : "Not decided" + (res.reason ? ": " + res.reason : ".");
     const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : "") },
       h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + "changing " + names));
     if (res.status === "impossible" && !old) card.appendChild(h("div", { class: "rp-b" },
@@ -3024,6 +3051,7 @@ function stopRepairs(r) {
   renderPanel(); renderQueue();
 }
 let repairSeq = 0;
+const TIME_LIMIT = 60;                   // seconds for a repair asked by the page (the editor has its setting)
 const asked = {};
 function askRepair(req, s) {
   const how = backend();
@@ -3038,9 +3066,11 @@ function askRepair(req, s) {
   }
   if (how === "serve") {
     const ctl = new AbortController();
-    s.cancel = () => ctl.abort();
+    const id = ++repairSeq;
+    s.cancel = () => { ctl.abort(); fetch("/repair-stop", { method: "POST", body: JSON.stringify({ id }),
+      headers: { "Content-Type": "application/json", "X-CHASE": "1" } }).catch(() => {}); };
     return fetch("/repair", { method: "POST", headers: { "Content-Type": "application/json", "X-CHASE": "1" },
-                              body: JSON.stringify(req), signal: ctl.signal })
+                              body: JSON.stringify(Object.assign({ id, time_limit: TIME_LIMIT }, req)), signal: ctl.signal })
       .then(x => x.json()).then(x => { if (x.error) throw new Error(x.error); return x.result; });
   }
   return Promise.reject(new Error("This page cannot run repairs."));

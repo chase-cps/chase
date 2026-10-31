@@ -776,3 +776,49 @@ def test_a_core_is_found_on_a_term_shown_folded():
     assert node["contract"]["A"] == ["F[0,2] p"]
     raw = ltl.to_str(c.assumptions[0])
     assert viz._core(node, ([raw], []), False)["A"] == [0]
+
+
+@pytest.mark.skipif(not HAS_MC, reason="nuXmv/NuSMV not installed")
+def test_a_served_repair_stops_on_demand(tmp_path):
+    # a repair asked of chase-cps view --serve runs in a process of its own: a
+    # stop ends it at once
+    pytest.importorskip("z3")
+    import json, os, socket, subprocess, sys, threading, time, urllib.request
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "benchmarks"))
+    from repair_scaling import family, requirement
+    from chase_cps import to_spec
+    cs, last = family(64, 2)
+    f = tmp_path / "chain.ltl"
+    f.write_text(to_spec(cs + [requirement(last, 0)], name="chain"))
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    p = subprocess.Popen([sys.executable, "-m", "chase_cps", "view", str(f), "--no-checks", "--serve",
+                          "--port", str(port)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    def post(route, body):
+        req = urllib.request.Request(f"http://127.0.0.1:{port}{route}", data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json", "X-CHASE": "1"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.loads(r.read())
+    try:
+        for _ in range(150):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/version", timeout=2)
+                break
+            except OSError:
+                time.sleep(0.2)
+        parts = "+".join(c.name for c in cs)
+        ask = {"id": 7, "check": "refines", "args": [parts, "Req"], "time_limit": 100,
+               "params": [{"name": "lam", "low": 0, "high": 10000, "type": "real"},
+                          {"name": "x1", "low": 0, "high": 100, "type": "real"}]}
+        got = {}
+        t = threading.Thread(target=lambda: got.update(post("/repair", ask)))
+        start = time.time()
+        t.start()
+        time.sleep(1.5)
+        assert post("/repair-stop", {"id": 7}) == {"ok": True}
+        t.join(30)
+        assert got == {"error": "stopped"} and time.time() - start < 10
+    finally:
+        p.terminate()
+        p.wait()

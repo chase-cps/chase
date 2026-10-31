@@ -568,7 +568,7 @@ def _repair(args):
     parameters = dict(_parameter(p) for p in args.param)
     return repair(check, *arguments, parameters=parameters, minimize=args.minimize,
                   maximize=args.maximize, method=args.method, rounds=args.rounds,
-                  timeout=args.timeout)
+                  timeout=args.timeout, time_limit=args.time_limit)
 
 
 def _quiet(run):
@@ -808,7 +808,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--maximize", metavar="TERM")
     p.add_argument("--method", default="auto",
                    choices=["auto", "projection", "counterexamples", "enumeration"])
-    p.add_argument("--rounds", type=int, default=50, help="rounds of counterexamples at most")
+    p.add_argument("--rounds", type=int, help="rounds of counterexamples at most (default 50, or "
+                                                    "none with --time-limit)")
+    p.add_argument("--time-limit", type=float, metavar="SECONDS",
+                   help="stop the repair after SECONDS: unknown, with the least cost proved so far")
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the result as JSON")
     p.set_defaults(run=repair_command)

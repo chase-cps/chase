@@ -73,6 +73,7 @@ class Repair:
     counterexamples: list = field(default_factory=list)   # [(question, trace)]
     reason: str = ""
     seconds: float = 0.0
+    bound: object = None             # stopped before the end: the least cost proved so far
 
     def __bool__(self) -> bool:
         return self.status in (HOLDS, REPAIRED)
@@ -92,6 +93,8 @@ class Repair:
                                     for q, t in self.counterexamples]
         if self.reason:
             d["reason"] = self.reason
+        if self.bound is not None:
+            d["bound"] = json_value(self.bound)
         return d
 
 
@@ -105,12 +108,17 @@ METHODS = ("auto", "projection", "counterexamples", "enumeration")
 
 
 def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
-           backend: str = "auto", method: str = "auto", rounds: int = ROUNDS,
-           timeout: float = 300, **options) -> Repair:
+           backend: str = "auto", method: str = "auto", rounds: int | None = None,
+           timeout: float = 300, time_limit: float | None = None, **options) -> Repair:
     """The values of the parameters, within their ranges, at the least cost,
     that make the check on the arguments pass. ``method`` forces one of the
-    methods (``auto`` chooses by the formulas)."""
+    methods (``auto`` chooses by the formulas). ``timeout`` bounds each check;
+    ``time_limit`` the whole repair: stopped there, the result is unknown,
+    with the least cost proved so far (``bound``) when there is one."""
     start = time.time()
+    deadline = start + time_limit if time_limit else None
+    if rounds is None:                   # with a time limit, the time decides
+        rounds = ROUNDS if deadline is None else 10 ** 6
     if minimize is not None and maximize is not None:
         raise RepairError("give minimize or maximize, not both")
     params = parameters_of(check, args, parameters)
@@ -126,6 +134,8 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
             r.status = HOLDS          # the check passes with the present values
         if maximize is not None and r.cost is not None:
             r.cost = ltl.number(-r.cost)          # the value of the term maximized
+        if maximize is not None and r.bound is not None:
+            r.bound = ltl.number(-r.bound)        # maximized: at most this
         return r
 
     if method not in METHODS:
@@ -150,12 +160,12 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
     if check in EXISTENTIAL and method in ("auto", "projection") and not applicable(asked):
         return done(_by_witnesses(check, args, asked, params, cost, aux, backend, opts, timeout))
     if method == "enumeration" or (method == "auto" and check in EXISTENTIAL):
-        return done(_by_enumeration(check, args, params, cost, aux, backend, opts))
+        return done(_by_enumeration(check, args, params, cost, aux, backend, opts, deadline))
     if check in EXISTENTIAL:
         return done(Repair(UNKNOWN, method="counterexamples",
                            reason=f"{check} asks for a behavior: it has no counterexamples"))
     return done(_by_counterexamples(check, args, asked, params, cost, aux, backend, opts,
-                                    rounds, timeout))
+                                    rounds, timeout, deadline))
 
 
 # the cost --------------------------------------------------------------------
@@ -298,8 +308,22 @@ def _rename(node, mapping: dict):
     return node
 
 
+def _left(deadline, timeout):
+    """The time for one more step: the timeout, or less near the deadline (None: none left)."""
+    if deadline is None:
+        return timeout
+    left = deadline - time.time()
+    return None if left <= 0 else min(timeout, left)
+
+
+def _stopped(method, k, bound, found=(), values=None):
+    return Repair(UNKNOWN, dict(values or {}), method=method, rounds=k, counterexamples=list(found),
+                  bound=bound, reason="stopped at the time limit" + (
+                      "; the least cost is at least the bound" if bound is not None else ""))
+
+
 def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, rounds,
-                        timeout) -> Repair:
+                        timeout, deadline=None) -> Repair:
     from .instantiate import on_trace
     from ..queries import Holds, Implies
     from .project import generalized
@@ -310,8 +334,12 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
     # behaviors are those of its code, not of the formulas.
     general = not (check == "impl" and isinstance(args[0], CFunction))
     conditions, extra, found = [], [], []
+    bound = None
     for k in range(1, rounds + 1):
-        o, values = _best(params, cost, aux, conditions, extra, timeout)
+        left = _left(deadline, timeout)
+        if left is None:
+            return _stopped("counterexamples", k - 1, bound, found)
+        o, values = _best(params, cost, aux, conditions, extra, left)
         if o.status == "infeasible":
             return Repair(IMPOSSIBLE, method="counterexamples", rounds=k - 1,
                           counterexamples=found,
@@ -320,10 +348,17 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
             return Repair(UNKNOWN, method="counterexamples", rounds=k - 1,
                           counterexamples=found,
                           reason=f"the optimization: {o.status} {o.reason}".strip())
-        out = run(check, instantiated(args, values), backend, opts)
+        if o.value is not None:            # every value left costs at least this (its infimum): a bound
+            bound = o.value if bound is None else max(bound, o.value)
+        left = _left(deadline, timeout)
+        if left is None:
+            return _stopped("counterexamples", k - 1, bound, found, values)
+        out = run(check, instantiated(args, values), backend, {**opts, "timeout": left})
         if out.passed:
             return Repair(REPAIRED, values, _cost_of(cost, aux, values, params),
                           o.status == "optimal", "counterexamples", out.result, k, found)
+        if out.passed is None and deadline is not None and time.time() >= deadline:
+            return _stopped("counterexamples", k, bound, found, values)
         if out.passed is None or not out.counterexamples:
             return Repair(UNKNOWN, values, method="counterexamples", check=out.result,
                           rounds=k, counterexamples=found,
@@ -372,7 +407,7 @@ def _holds_at(condition, values) -> bool:
     return holds(substitute(condition, values), Trace(prefix=[], loop=[{}]))
 
 
-def _by_enumeration(check, args, params, cost, aux, backend, opts) -> Repair:
+def _by_enumeration(check, args, params, cost, aux, backend, opts, deadline=None) -> Repair:
     ps = list(params.values())
     if not all(p.integer for p in ps):
         return Repair(UNKNOWN, method="enumeration",
@@ -389,7 +424,10 @@ def _by_enumeration(check, args, params, cost, aux, backend, opts) -> Repair:
                   for vs in itertools.product(*[range(p.low, p.high + 1) for p in ps])]
     candidates.sort(key=lambda v: _cost_of(cost, aux, v, params))
     for k, values in enumerate(candidates, 1):
-        out = run(check, instantiated(args, values), backend, opts)
+        left = _left(deadline, opts.get("timeout", 300))
+        if left is None:                 # the values before cost less, and fail
+            return _stopped("enumeration", k - 1, _cost_of(cost, aux, values, params))
+        out = run(check, instantiated(args, values), backend, {**opts, "timeout": left})
         if out.passed:
             return Repair(REPAIRED, values, _cost_of(cost, aux, values, params), True,
                           "enumeration", out.result, k)

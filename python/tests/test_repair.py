@@ -368,3 +368,22 @@ def test_repair_of_a_c_function_holds_exactly_when_it_implements():
         r = repair("impl", f, ctrl, parameters={"theta": (0, 120, "int")})
         assert (r.status == "holds") == passes == (theta == 70)
         assert r.values == {"theta": 70}
+
+
+def test_a_time_limit_stops_with_a_bound(tmp_path):
+    # a large timing family (python/benchmarks): stopped after a second, the
+    # repair is unknown with the least cost proved so far; without the limit,
+    # the least cost found is at least that bound
+    pytest.importorskip("z3")
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "benchmarks"))
+    from repair_scaling import composed, requirement
+    c, last = composed(48, 2)
+    req = requirement(last, 0)
+    params = {"lam": (0, 10000), "x1": (0, 100)}
+    stopped = repair("refines", c, req, parameters=params, minimize="lam", time_limit=1)
+    assert stopped.status == "unknown" and stopped.bound is not None
+    assert stopped.seconds < 5
+    assert stopped.to_dict()["bound"] == float(stopped.bound) or stopped.to_dict()["bound"] == stopped.bound
+    full = repair("refines", c, req, parameters=params, minimize="lam", time_limit=120)
+    assert full.status == "repaired" and full.cost >= stopped.bound
