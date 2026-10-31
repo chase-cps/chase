@@ -117,10 +117,9 @@ class _Scene:
         a, g = c.terms
         (sa, ga), (sg, gg) = _fold(a), _fold(g)
         out = {"name": c.name, "A": sa, "G": sg}
-        if ga != [[i] for i in range(len(a))] or gg != [[i] for i in range(len(g))] \
-                or c.constants:
-            out.update({"_A": [ltl.to_str(t) for t in c.assumptions],
-                        "_G": [ltl.to_str(t) for t in c.guarantees], "_gA": ga, "_gG": gg})
+        raw_a, raw_g = [ltl.to_str(t) for t in c.assumptions], [ltl.to_str(t) for t in c.guarantees]
+        if sa != raw_a or sg != raw_g:     # shown otherwise: the cores are found on the terms
+            out.update({"_A": raw_a, "_G": raw_g, "_gA": ga, "_gG": gg})
         if c.constants:
             out["K"] = [f"{k} = {ltl.to_str(ltl.Num(v))}" for k, v in c.constants.items()]
         return out

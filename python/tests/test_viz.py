@@ -766,3 +766,13 @@ def test_a_served_page_repairs_and_writes_the_file(tmp_path):
     finally:
         p.terminate()
         p.wait()
+
+
+def test_a_core_is_found_on_a_term_shown_folded():
+    # the term F[0,2] p is shown folded, and its core is still found
+    from chase_cps import ltl
+    c = Contract.from_strings(inputs=["p"], outputs=["q"], assumptions=["F[0,2] p"], guarantees=["q"])
+    node = {"contract": viz.diagram(c, open=[c])["nodes"][0]["contract"]}
+    assert node["contract"]["A"] == ["F[0,2] p"]
+    raw = ltl.to_str(c.assumptions[0])
+    assert viz._core(node, ([raw], []), False)["A"] == [0]
