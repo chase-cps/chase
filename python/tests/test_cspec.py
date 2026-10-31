@@ -186,3 +186,11 @@ def test_acsl_not_read(tmp_path, clause, why):
     p.write_text(f"/*@ {clause} */\nint f(int x) {{ return x; }}\n")
     with pytest.raises(CProgramError, match=why):
         load_c(str(p))
+
+
+def test_acsl_chain_in_parentheses(tmp_path):
+    p = tmp_path / "limit.c"
+    p.write_text("/*@ requires -100 <= v <= 100;\n    ensures (-3 <= v <= 3) ==> \\result == v; */\n"
+                 "int limit(int v) { return v > 3 ? 3 : (v < -3 ? -3 : v); }\n")
+    c, _ = load_c(str(p))["limit"]
+    assert terms(c.guarantees) == ["(-3 <= v & v <= 3) -> limit_out = v"]

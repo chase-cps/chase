@@ -152,6 +152,10 @@ def _acsl(expr: str, result) -> str:
     if result is not None:
         e = re.sub(r"\\result\b", result, e)
     e = e.replace("<==>", " <-> ").replace("==>", " -> ")
+    # a chain of simple operands, also inside parentheses: (a <= b <= c) is (a <= b && b <= c)
+    atom = r"-?[\w.]+'?"
+    e = re.sub(rf"({atom})\s*(<=|>=|<|>)\s*({atom})\s*(<=|>=|<|>)\s*({atom})",
+               r"(\1 \2 \3 && \3 \4 \5)", e)
     return " && ".join(_chain(t) for t in _terms(e))
 
 
