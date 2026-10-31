@@ -41,8 +41,8 @@ class BMCAdapter(Adapter):
         return self.binary() is not None
 
     def emit(self, query: ImplementsC) -> str:
-        from ..cprograms import to_c
-        return to_c(query.contract, query.function)
+        from ..cprograms import program
+        return program(query.function, query.contract)
 
     def run(self, query: ImplementsC) -> Result:
         from ..cprograms import CProgramError
@@ -159,7 +159,7 @@ def _esbmc(query, out: str):
     for block in re.findall(r"Violated property:\n(.*?)(?:\n\n|\Z)", out, re.S):
         lines = [l.strip() for l in block.splitlines() if l.strip()]
         where, what = lines[0], (lines[1] if len(lines) > 1 else "")
-        if "function main" in where and what.startswith("assertion"):
+        if "function main" in where and what.startswith(("assertion", "__VERIFIER_error")):
             failed.append(GUARANTEES)
         else:
             failed.append(f"{what} ({where})")

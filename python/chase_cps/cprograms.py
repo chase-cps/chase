@@ -3,7 +3,7 @@
     from chase_cps import CFunction, is_implementation, to_c
     f = CFunction("saturate.c", "saturate")
     r = is_implementation(f, contract)          # ESBMC, else CBMC
-    open("check_saturate.c", "w").write(to_c(contract, f))
+    open("check_saturate.c", "w").write(to_c("impl", f, contract))
 
 A function is a component that answers once: its parameters are the inputs
 of the contract, by name, and its return value is the output (or the
@@ -11,8 +11,8 @@ output named by ``result``); a pointer parameter named as an output is
 written by the function. The formulas of the contract say something about
 one call: no temporal operator, no x', no past(x, n).
 
-The check writes a C program (``to_c``) that calls the function with any
-values of the inputs, within their types and the assumptions, and asserts
+The check writes a C program (``to_c("impl", f, c)``) that calls the function with any
+values of the inputs, within their types and the assumptions, and checks
 the guarantees on the outputs; then ESBMC or CBMC checks it. They also
 check the function itself (an arithmetic overflow, a division by zero, an
 access out of bounds): a failure there makes the result invalid, with the
@@ -153,9 +153,17 @@ def roles(contract: Contract, function: CFunction) -> tuple:
     return sig, result
 
 
-def to_c(contract: Contract, function: CFunction) -> str:
-    """The C program that checks that the function is an implementation of
-    the contract: give it with the file of the function to ESBMC or CBMC."""
+def to_c(check: str, function: CFunction, contract: Contract) -> str:
+    """``to_c("impl", f, c)``: the C program that checks that the function is
+    an implementation of the contract (``is_implementation(f, c)``); give it
+    with the file of the function to ESBMC or CBMC."""
+    if check != "impl":
+        raise ValueError(f"check {check!r}: to_c writes impl, the check of a C function")
+    return program(function, contract)
+
+
+def program(function: CFunction, contract: Contract) -> str:
+    """The C program of ``to_c("impl", function, contract)``."""
     _static(contract)
     sig, result = roles(contract, function)
     types = {p.name: p.type for p in sig.parameters}
@@ -169,13 +177,14 @@ def to_c(contract: Contract, function: CFunction) -> str:
     lines = [f"/* Contract {contract.name}, implemented by {function.name} ({file}): written",
              "   by CHASE (chase_cps.to_c). Run: esbmc THIS_FILE " + file +
              " --overflow-check --unwind 20",
-             f"   or: cbmc THIS_FILE {file} --unwind 20 --unwinding-assertions */",
-             "#include <assert.h>"]
+             f"   or: cbmc THIS_FILE {file} --unwind 20 --unwinding-assertions */"]
     lines += [l.strip() for l in function.text().splitlines()      # the types of the function
-              if re.match(r"\s*#\s*include\s*<", l) and "assert.h" not in l]
+              if re.match(r"\s*#\s*include\s*<", l)]
     lines += ["", sig.declaration + ";"]
     lines += [f"{_c_type(k)} __VERIFIER_nondet_{k}(void);" for k in nondets]
-    lines += ["void __VERIFIER_assume(int);", "", "int main(void) {"]
+    # the functions of SV-COMP, which ESBMC and CBMC know (no header needed)
+    lines += ["void __VERIFIER_assume(int);", "void __VERIFIER_error(void);", "",
+              "int main(void) {"]
     for p in sig.parameters:
         lines.append(f"    {p.type} {p.name} = __VERIFIER_nondet_{_NONDET[p.type]}();")
     domain = [w.domain(v) for v in contract.inputs]
@@ -194,10 +203,10 @@ def to_c(contract: Contract, function: CFunction) -> str:
     checks.append(w.formula(contract.guarantee))
     g = " && ".join(f"({c})" for c in checks) if len(checks) > 1 else checks[0]
     if inputs_only:
-        lines.append(f"    assert({g});   /* the guarantees */")
+        lines.append(f"    if (!({g})) __VERIFIER_error();   /* the guarantees */")
     else:
-        lines.append(f"    assert(!({w.formula(contract.assumption)}) || {g});   "
-                     "/* the assumptions imply the guarantees */")
+        lines.append(f"    if (!(!({w.formula(contract.assumption)}) || {g})) __VERIFIER_error();"
+                     "   /* the assumptions imply the guarantees */")
     lines += ["    return 0;", "}"]
     return "\n".join(lines) + "\n"
 

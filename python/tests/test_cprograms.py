@@ -94,13 +94,13 @@ def test_outputs_by_pointer_reals_and_booleans(tool):
 
 def test_the_program():
     f = CFunction("sat.c", "saturate", source=RIGHT)
-    text = to_c(SAT, f)
+    text = to_c("impl", f, SAT)
     assert "int saturate(int x, int lo, int hi);" in text
     assert "__VERIFIER_assume((((long long)lo) <= ((long long)hi)));" in text
-    assert "int y = saturate(x, lo, hi);" in text and "assert(" in text
+    assert "int y = saturate(x, lo, hi);" in text and "__VERIFIER_error();" in text
     # assumptions on an output: the guarantees are asserted when they hold
     odd = SAT.assume("y >= -50")
-    assert "assert(!(" in to_c(odd, f)
+    assert "if (!(!(" in to_c("impl", f, odd)
     sig, result = roles(SAT, f)
     assert result == "y" and [p.name for p in sig.parameters] == ["x", "lo", "hi"]
 
@@ -108,17 +108,17 @@ def test_the_program():
 def test_what_cannot_be_checked():
     f = CFunction("sat.c", "saturate", source=RIGHT)
     with pytest.raises(CProgramError, match="answers once"):
-        to_c(SAT.ensure("G (y >= lo)"), f)
+        to_c("impl", f, SAT.ensure("G (y >= lo)"))
     other = Contract.from_strings(name="Other", inputs={"x": (0, 9), "z": (0, 9)},
                                   outputs={"y": (0, 9)}, guarantees=["y = x"])
     with pytest.raises(CProgramError, match="the parameter lo is not an input"):
-        to_c(other, f)
+        to_c("impl", f, other)
     with pytest.raises(CProgramError, match="no definition of the function clamp"):
-        to_c(SAT, CFunction("sat.c", "clamp", source=RIGHT))
+        to_c("impl", CFunction("sat.c", "clamp", source=RIGHT), SAT)
     words = Contract.from_strings(name="Words", inputs={"x": "word[8]"}, outputs={"y": "word[8]"},
                                   guarantees=["y = x"])
     with pytest.raises(CProgramError, match="words"):
-        to_c(words, CFunction("w.c", "f", source="unsigned char f(unsigned char x) { return x; }"))
+        to_c("impl", CFunction("w.c", "f", source="unsigned char f(unsigned char x) { return x; }"), words)
     r = is_implementation(CFunction("sat.c", "clamp", source=RIGHT), SAT, "esbmc")
     assert r.status == "unknown" and "no definition" in r.reason
 
@@ -139,6 +139,6 @@ def test_the_command_line(tmp_path, capfd):
     assert "implementation saturate |= Sat" in out and "counterexample:" in out
     assert main(["check", str(spec), "--implementation", f"{tmp_path}/wrong.c", "Sat"]) == 2
     assert "FILE.c:FUNCTION" in capfd.readouterr().err
-    assert main(["export", str(spec), "--to", "c", "--function", f"{tmp_path}/right.c:saturate"]) == 0
+    assert main(["export", str(spec), "--to", "c", "--impl", f"{tmp_path}/right.c:saturate", "Sat"]) == 0
     assert "int y = saturate(x, lo, hi);" in capfd.readouterr().out
-    assert main(["export", str(spec), "--to", "c"]) == 2
+    assert main(["export", str(spec), "--to", "c", "--verify", "Sat"]) == 2

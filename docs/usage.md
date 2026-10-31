@@ -460,7 +460,7 @@ pointer parameter named as an output is written by the function. The
 formulas of such a contract have no temporal operator. `is_implementation`
 takes a `CFunction` and checks it with
 [ESBMC](https://esbmc.org/) or, without it, [CBMC](https://www.cprover.org/cbmc/)
-(`brew install esbmc`, or the packages of the two projects):
+(`chase-cps install esbmc` on Linux, `brew install esbmc` on macOS):
 
 ````
 from chase_cps import CFunction, Contract, is_implementation
@@ -492,7 +492,7 @@ needs more makes the result unknown.
 Integers are compared as integers (in `long long`); a real variable is a
 `double` or a `float` of the function, and its formulas are computed in
 `double`, with rounding. Words are not written in C yet. On the command
-line: `chase-cps check spec.ltl --implementation saturate.c:saturate Sat`.
+line: `chase-cps check spec.ltl --impl saturate.c:saturate Sat`.
 
 ### Queries on formulas
 
@@ -1131,52 +1131,67 @@ Receptiveness is a CTL check and always uses BDDs.
 
 ### Files for the tools you run yourself
 
-The checks call the open-source tools (nuXmv, NuSMV, z3, slugs) directly.
-For a tool that you run yourself, such as a tool under license or another
-solver, a check is written as the input file of the tool. The functions
-are named after the language of the file; `tool` names the tool where the
-files of two tools differ.
+The checks call the open-source tools (nuXmv, NuSMV, z3, slugs, ESBMC,
+CBMC) directly. For a tool that you run yourself, such as a tool under
+license or another solver, a check is written as the input file of the
+tool. A function is named after the language of the file. Its first
+argument is the check, then come the arguments of the check, in the order
+of the function of the check; `tool` names the tool where the files of two
+tools differ.
+
+| Check | Function of the check | Questions in the file |
+|---|---|---|
+| `verify` | `verify(c)` | `compat`, `consist`, `feasible` |
+| `compat` | `is_compatible(c)` | `compat` |
+| `consist` | `is_consistent(c)` | `consist` |
+| `refines` | `refines(c1, c2)` | `assumptions`, `guarantees` |
+| `impl` | `is_implementation(m, c)` | `impl` |
+| `env` | `is_environment(e, c)` | `env` |
 
 | Function | Language | Tools |
 |---|---|---|
-| `to_smv(c, refines=None, tool="nuxmv")` | SMV | nuXmv, NuSMV (`tool="nusmv"`) |
-| `to_smt(c, refines=None)` | SMT (SMT-LIB 2, .smt2) | z3, cvc5 |
+| `to_smv(check, ..., tool="nuxmv")` | SMV | nuXmv, NuSMV (`tool="nusmv"`) |
+| `to_smt(check, ...)` | SMT (SMT-LIB 2, .smt2) | z3, cvc5 |
+| `to_c("impl", f, c)` | C | ESBMC, CBMC |
 | `to_gr1(c, tool="slugs")` | structured slugs, gr1c | slugs, gr1c (`tool="gr1c"`) |
 | `to_sva(c)` | SystemVerilog | Jasper, Verilator, other SVA tools |
-| `to_c(c, CFunction(...))` | C | ESBMC, CBMC |
 | `to_spec(contracts)` | logics language | CHASE, logics_tool |
 
-`to_smv` and `to_smt` write the questions of a check, each with its
-name and a comment that says how to read the answer:
-
-- a contract alone: `compatible`, `consistent`, and `feasible`, as
-  `verify`;
-- with `refines=abstract`: `assumptions` and `guarantees`, as `refines`.
-
+Each question has its name and a comment that says how to read the answer.
 A question of satisfiability is written in SMV as its negation: the
 specification is false when the formula can hold, and the counterexample
-is a behavior that satisfies it. `to_smt` takes the contracts whose
-formulas read a bounded number of steps (x at step k is `x@k`) and needs
-z3 to write the file.
+is a behavior that satisfies it. For `impl` and `env` of a state machine,
+`to_smv` writes its model with the specification. `to_smt` takes formulas
+that read a bounded number of steps (x at step k is `x@k`) and needs z3 to
+write the file. `to_gr1` writes the realizability question of a contract,
+`to_sva` a contract, and `to_spec` contracts.
 
 ````
 from chase_cps import Contract, to_smv
 
-gen = Contract.from_strings(name="Gen", inputs={"n": (0, 20)}, outputs={"p": "real"},
-                            assumptions=["n <= 4"], guarantees=["p >= 2.5 * n", "p <= 30"])
-spec = Contract.from_strings(name="Spec", inputs={"n": (0, 20)}, outputs={"p": "real"},
-                             assumptions=["n <= 4"], guarantees=["p >= 12", "p <= 30"])
-open("gen.smv", "w").write(to_smv(gen, refines=spec))
+c1 = Contract.from_strings(name="Gen", inputs={"n": (0, 20)}, outputs={"p": "real"},
+                           assumptions=["n <= 4"], guarantees=["p >= 2.5 * n", "p <= 30"])
+c2 = Contract.from_strings(name="Spec", inputs={"n": (0, 20)}, outputs={"p": "real"},
+                           assumptions=["n <= 4"], guarantees=["p >= 12", "p <= 30"])
+open("refines.smv", "w").write(to_smv("refines", c1, c2))     # does c1 refine c2?
 ````
 
-On the command line:
+On the command line, `export` takes the checks of `check`, one at a time:
 
 ````
-$> chase-cps export spec.ltl --to smv --contract Gen --refines Spec -o gen.smv
-$> chase-cps export spec.ltl --to gr1 --tool gr1c --contract Arbiter -o arbiter.spc
-$> chase-cps export spec.ltl --to c --contract Sat --function saturate.c:saturate -o check.c
+$> chase-cps export spec.ltl --to smv --refines Gen Spec -o refines.smv
+$> chase-cps export spec.ltl --to smt --verify Gen -o gen.smt2
+$> chase-cps export spec.ltl --to smv --impl arbiter.smv Arbiter -o impl.smv
+$> chase-cps export spec.ltl --to c --impl saturate.c:saturate Sat -o check.c
+$> chase-cps export spec.ltl --to gr1 --tool gr1c --realizable Arbiter -o arbiter.spc
 $> chase-cps export spec.json --to spec -o spec.ltl
 ````
+
+In `chase-cps check`, the checks have the same names: `--verify`,
+`--compat`, `--consist`, `--refines`, `--impl`, `--env`, `--recep`
+(`--compatible`, `--consistent`, `--implementation`, `--environment`, and
+`--receptive` still work). `--verify`, `--compat`, and `--consist` take
+contracts, or check every contract (or those of `--contracts`).
 
 The full API of the Python package is in the
 [API reference](https://chase-cps.github.io/api/).

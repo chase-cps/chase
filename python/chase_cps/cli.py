@@ -200,24 +200,28 @@ def _checks(args, contracts):
     """(kind, label, function) for each check asked, in order."""
     out = []
     every = args.contracts or list(contracts)
-    if not (args.verify or args.compatible or args.consistent or args.refines
-            or args.implementation or args.environment or args.receptive or args.realizable or args.synthesize
-            or args.well_separated or args.vacuous):
-        args.verify = True
+    if all(x is None for x in (args.verify, args.compatible, args.consistent)) and not (
+            args.refines or args.implementation or args.environment or args.receptive
+            or args.realizable or args.synthesize or args.well_separated or args.vacuous):
+        args.verify = []
+    # --verify, --compat, --consist: the contracts named, else those of
+    # --contracts, else all
+    named = {k: (getattr(args, k) or every) if getattr(args, k) is not None else []
+             for k in ("verify", "compatible", "consistent")}
     options = {"timeout": args.timeout}
     game = dict(options)   # slugs has no engine to choose
     if args.engine != "auto":
         options["engine"] = args.engine
-    for name in every if args.verify or args.compatible or args.consistent else []:
+    for name in dict.fromkeys(named["verify"] + named["compatible"] + named["consistent"]):
         c = _contract(name, contracts)
-        if args.verify:
+        if name in named["verify"]:
             out.append(("verify", name,
                         lambda c=c: checks.verify(c, args.backend, core=args.core, **options)))
-        if args.compatible:
+        if name in named["compatible"]:
             out.append(("compatible", name,
                         lambda c=c: checks.is_compatible(c, args.backend, core=args.core,
                                                          **options)))
-        if args.consistent:
+        if name in named["consistent"]:
             out.append(("consistent", name,
                         lambda c=c: checks.is_consistent(c, args.backend, core=args.core,
                                                          **options)))
@@ -445,40 +449,56 @@ def export(args) -> int:
 def _export(args) -> str:
     from . import export as ex
     from .contract import to_spec
+    from .cprograms import to_c
     from .gr1spec import to_gr1
     from .sva import to_sva
     contracts = _read(args.file)
-    if args.to in ("spec", "json"):
-        chosen = [_contract(n, contracts) for n in args.contract] if args.contract \
-            else list(contracts.values())
-        if args.refines or args.tool:
-            raise ValueError(f"--to {args.to} takes no --refines or --tool")
-        if args.to == "spec":
-            return to_spec(chosen)
-        return json.dumps({"contracts": [c.to_dict() for c in chosen]}, indent=2) + "\n"
-    if not args.contract and len(contracts) > 1:
-        raise ValueError(f"--contract: one of {', '.join(contracts)}")
-    if args.contract and len(args.contract) > 1:
-        raise ValueError(f"--to {args.to} writes one contract (NAME or NAME+NAME+...)")
-    c = _contract(args.contract[0], contracts) if args.contract \
-        else next(iter(contracts.values()))
-    abstract = _contract(args.refines, contracts) if args.refines else None
-    if abstract is not None and args.to not in ("smv", "smt"):
-        raise ValueError("--refines: --to smv or --to smt")
+    asked = [(k, getattr(args, k)) for k in ("verify", "compatible", "consistent", "refines",
+                                              "implementation", "environment", "realizable")
+             if getattr(args, k) is not None]
     if args.tool and args.to not in ("smv", "gr1"):
         raise ValueError(f"--to {args.to} takes no --tool")
-    if (args.to == "c") != bool(args.function):
-        raise ValueError("--to c takes --function FILE.c:FUNCTION, the implementation to check")
-    if args.to == "c":
-        from .cprograms import to_c
-        return to_c(c, _c_function(args.function))
-    if args.to == "smv":
-        return ex.to_smv(c, abstract, tool=args.tool or "nuxmv")
+    if args.to in ("sva", "spec", "json"):
+        if asked:
+            raise ValueError(f"--to {args.to} writes contracts: --contract, not a check")
+        chosen = [_contract(n, contracts) for n in args.contract] if args.contract \
+            else list(contracts.values())
+        if args.to == "spec":
+            return to_spec(chosen)
+        if args.to == "json":
+            return json.dumps({"contracts": [c.to_dict() for c in chosen]}, indent=2) + "\n"
+        if len(chosen) != 1:
+            raise ValueError(f"--to sva writes one contract: --contract, one of "
+                             f"{', '.join(contracts)}")
+        return to_sva(chosen[0])
+    if len(asked) != 1 or args.contract:
+        raise ValueError(f"--to {args.to} writes one check: --verify, --compat, --consist, "
+                         "--refines, --impl, --env, or --realizable")
+    kind, value = asked[0]
+    check = {"compatible": "compat", "consistent": "consist", "implementation": "impl",
+             "environment": "env"}.get(kind, kind)
     if args.to == "gr1":
-        return to_gr1(c, tool=args.tool or "slugs")
-    if args.to == "smt":
-        return ex.to_smt(c, abstract)
-    return to_sva(c)
+        if check != "realizable":
+            raise ValueError("--to gr1 writes --realizable")
+        return to_gr1(_contract(value, contracts), tool=args.tool or "slugs")
+    if check == "realizable":
+        raise ValueError("--realizable: --to gr1")
+    if args.to == "c":
+        if check != "impl":
+            raise ValueError("--to c writes --impl FILE.c:FUNCTION CONTRACT")
+        return to_c("impl", _c_function(value[0]), _contract(value[1], contracts))
+    if check in ("impl", "env"):
+        c = _contract(value[1], contracts)
+        if value[0].rpartition(":")[0].endswith(".c") or value[0].endswith(".c"):
+            raise ValueError("a C function is written with --to c")
+        arguments = (_model(value[0], c), c)
+    elif check == "refines":
+        arguments = tuple(_contract(n, contracts) for n in value)
+    else:
+        arguments = (_contract(value, contracts),)
+    if args.to == "smv":
+        return ex.to_smv(check, *arguments, tool=args.tool or "nuxmv")
+    return ex.to_smt(check, *arguments)
 
 
 def _quiet(run):
@@ -613,25 +633,31 @@ def main(argv: list[str] | None = None) -> int:
         "passes, 1 when a check fails or does not finish, and 2 on an error in the input.")
     p.add_argument("file")
     p.add_argument("--contracts", nargs="+", metavar="CONTRACT",
-                   help="the contracts for --verify, --compatible, and --consistent (default: all)")
+                   help="the contracts for --verify, --compat, and --consist without "
+                        "contracts (default: all)")
     g = p.add_argument_group("checks on contracts (nuXmv)")
-    g.add_argument("--verify", action="store_true",
+    g.add_argument("--verify", nargs="*", metavar="CONTRACT",
                    help="the assumptions and the guarantees can hold together, A & G "
                         "satisfiable (the default)")
-    g.add_argument("--compatible", action="store_true", help="some environment satisfies A")
-    g.add_argument("--consistent", action="store_true", help="some behavior satisfies A -> G")
-    g.add_argument("--refines", nargs=2, action="append", metavar=("REFINED", "ABSTRACT"),
-                   help="REFINED refines ABSTRACT (may be repeated)")
-    g.add_argument("--implementation", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+    g.add_argument("--compat", "--compatible", nargs="*", dest="compatible", metavar="CONTRACT",
+                   help="some environment satisfies A")
+    g.add_argument("--consist", "--consistent", nargs="*", dest="consistent", metavar="CONTRACT",
+                   help="some behavior satisfies A -> G")
+    g.add_argument("--refines", nargs=2, action="append", metavar=("C1", "C2"),
+                   help="C1 refines C2 (may be repeated)")
+    g.add_argument("--impl", "--implementation", nargs=2, action="append", dest="implementation",
+                   metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL (an SMV file, or a JSON file: a state "
                         "machine or a controller of slugs), or the C function in "
                         "FILE.c:FUNCTION (ESBMC, CBMC), is an implementation of CONTRACT")
     g.add_argument("--implements", nargs=2, action="append", dest="implementation",
                    metavar=("MODEL", "CONTRACT"), help=argparse.SUPPRESS)
-    g.add_argument("--environment", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+    g.add_argument("--env", "--environment", nargs=2, action="append", dest="environment",
+                   metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL is an environment of CONTRACT: its "
                         "behaviors satisfy the assumptions")
-    g.add_argument("--receptive", nargs=2, action="append", metavar=("MODEL", "CONTRACT"),
+    g.add_argument("--recep", "--receptive", nargs=2, action="append", dest="receptive",
+                   metavar=("MODEL", "CONTRACT"),
                    help="the state machine in MODEL accepts every input that the "
                         "assumptions of CONTRACT allow")
     g = p.add_argument_group("GR(1) synthesis (slugs)")
@@ -658,24 +684,32 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(run=check)
 
     p = sub.add_parser(
-        "export", help="write a check of a contract as the input of a tool",
-        description="Write a check of a contract in the language of a tool, for the tools "
-        "one runs oneself: smv (nuXmv, NuSMV) and smt (z3, cvc5) write the questions of "
-        "verify, or of --refines, each with its name and how to read the answer; gr1 the "
-        "realizability question (slugs, gr1c); sva the contract as a SystemVerilog checker; "
-        "c the program that checks a C function against the contract (ESBMC, CBMC). "
-        "spec and json write the contracts (all of them without --contract).")
+        "export", help="write a check as the input of a tool",
+        description="Write a check in the language of a tool, for the tools one runs "
+        "oneself. The checks are named as in chase-cps check: --verify, --compat, "
+        "--consist, --refines, --impl, --env (smv: nuXmv, NuSMV; smt: z3, cvc5; c: "
+        "--impl of a C function, ESBMC, CBMC), and --realizable (gr1: slugs, gr1c); each "
+        "question of the check has its name and how to read the answer. sva writes a "
+        "contract as a SystemVerilog checker; spec and json write contracts (all of them "
+        "without --contract).")
     p.add_argument("file")
     p.add_argument("--to", required=True, choices=EXPORTS, help="the language")
     p.add_argument("--tool", help="the tool, where the files of two tools differ: smv "
                    "(nuxmv, nusmv) and gr1 (slugs, gr1c)")
+    g = p.add_argument_group("the check (one)")
+    g.add_argument("--verify", metavar="CONTRACT")
+    g.add_argument("--compat", "--compatible", dest="compatible", metavar="CONTRACT")
+    g.add_argument("--consist", "--consistent", dest="consistent", metavar="CONTRACT")
+    g.add_argument("--refines", nargs=2, metavar=("C1", "C2"))
+    g.add_argument("--impl", "--implementation", nargs=2, dest="implementation",
+                   metavar=("MODEL", "CONTRACT"),
+                   help="MODEL: SMV, JSON, or FILE.c:FUNCTION for --to c")
+    g.add_argument("--env", "--environment", nargs=2, dest="environment",
+                   metavar=("MODEL", "CONTRACT"))
+    g.add_argument("--realizable", metavar="CONTRACT")
     p.add_argument("--contract", nargs="+", metavar="CONTRACT",
-                   help="the contract: NAME, or NAME+NAME+... for the composition (needed "
-                        "when the file has several)")
-    p.add_argument("--refines", metavar="ABSTRACT",
-                   help="the check that CONTRACT refines ABSTRACT (smv, smt)")
-    p.add_argument("--function", metavar="FILE.c:FUNCTION",
-                   help="with --to c: the C function that implements CONTRACT")
+                   help="for sva, spec, json: the contracts (NAME, or NAME+NAME+... for the "
+                        "composition)")
     p.add_argument("-o", "--output", help="the file to write (default: the standard output)")
     p.set_defaults(run=export)
 

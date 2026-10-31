@@ -19,6 +19,7 @@ import tarfile
 import tempfile
 import time
 import urllib.request
+import zipfile
 
 NUXMV_LICENSE = """\
 nuXmv is distributed by Fondazione Bruno Kessler (FBK) under its own license:
@@ -66,7 +67,20 @@ NUXMV_MACOS_LIBS = {"libxml2": "libxml2.16.dylib", "gmp": "libgmp.10.dylib",
 LINUX_PACKAGES = {"libxml2.so.2": ("libxml2", "libxml2"), "libedit.so.2": ("libedit2", "libedit"),
                   "libgmp.so.10": ("libgmp10", "gmp")}
 
-TOOLS = ("nuxmv", "nusmv", "slugs")
+# ESBMC (Apache-2.0): the Linux builds of the project. Its macOS build links the
+# libraries of one version of Homebrew; there, brew install esbmc.
+ESBMC = {
+    ("Linux", "x86_64"): (
+        "https://github.com/esbmc/esbmc/releases/download/v8.6/esbmc-linux.zip",
+        "07b00b4a2590fe285edb5ce063ca2e5fbb368bbe556cfe139014c173717637f6",
+        "release/bin/esbmc"),
+    ("Linux", "aarch64"): (
+        "https://github.com/esbmc/esbmc/releases/download/v8.6/esbmc-linux-armv8.zip",
+        "d3e9fbdeba2ba6cfeb54b32c8fb8a9cd8125f6c5f92fbf05a212a4c2289fcc12",
+        "release/bin/esbmc"),
+}
+
+TOOLS = ("nuxmv", "nusmv", "slugs", "esbmc")
 
 
 class InstallError(Exception):
@@ -108,6 +122,11 @@ def guideline(tool: str) -> str:
                  "and put bin/NuSMV in the PATH or set CHASE_NUSMV to its path.",
         "slugs": "Build slugs from https://github.com/VerifiableRobotics/slugs (make in src/), "
                  "and put src/slugs in the PATH or set CHASE_SLUGS to its path.",
+        "esbmc": "On macOS: brew install esbmc. Elsewhere, download ESBMC from "
+                 "https://github.com/esbmc/esbmc/releases, and put bin/esbmc in the PATH or set "
+                 "CHASE_ESBMC to its path.",
+        "cbmc": "Install CBMC from https://www.cprover.org/cbmc/ (brew install cbmc, apt install "
+                "cbmc), and put cbmc in the PATH or set CHASE_CBMC to its path.",
     }[tool] + " The CHASE Docker image (https://github.com/chase-cps/chase) contains the tools."
 
 
@@ -117,6 +136,8 @@ def installable(tool: str) -> bool:
         return this_platform() in NUXMV
     if tool == "nusmv":
         return this_platform() in NUSMV
+    if tool == "esbmc":
+        return this_platform() in ESBMC
     return tool == "slugs" and platform.system() in ("Linux", "Darwin")
 
 
@@ -132,7 +153,7 @@ def install(tool: str, accept_license: bool = False, log=print) -> str:
         raise InstallError(f"unknown tool {tool!r}; the tools are {', '.join(TOOLS)}")
     if tool == "slugs":
         return _install_slugs(log)
-    table = NUXMV if tool == "nuxmv" else NUSMV
+    table = {"nuxmv": NUXMV, "nusmv": NUSMV, "esbmc": ESBMC}[tool]
     system, machine = this_platform()
     if (system, machine) not in table:
         hint = (" On macOS, install nuXmv instead (chase-cps install nuxmv): the NuSMV builds "
@@ -147,6 +168,8 @@ def install(tool: str, accept_license: bool = False, log=print) -> str:
     libs = _homebrew_libs() if tool == "nuxmv" and system == "Darwin" else None
     root = _download_and_unpack(tool, url, sha256, log)
     executable = os.path.join(root, member)
+    if tool == "esbmc":          # a zip archive keeps no modes
+        os.chmod(executable, 0o755)
     name = os.path.basename(executable)
     if system == "Linux":
         _check_shared_libraries(tool, executable)
@@ -184,19 +207,30 @@ def _download_and_unpack(tool: str, url: str, sha256: str, log) -> str:
         archive = os.path.join(tmp, "archive")
         _download(url, archive, sha256, log)
         unpacked = os.path.join(tmp, "unpacked")
-        with tarfile.open(archive, "r:*") as tar:
-            if hasattr(tarfile, "data_filter"):
-                tar.extractall(unpacked, filter="data")
-            else:
-                for m in tar.getmembers():
-                    if m.name.startswith("/") or ".." in m.name.split("/"):
-                        raise InstallError(f"unsafe path {m.name!r} in {url}")
-                tar.extractall(unpacked)
+        if url.endswith(".zip"):
+            with zipfile.ZipFile(archive) as z:
+                for name in z.namelist():
+                    if name.startswith("/") or ".." in name.split("/"):
+                        raise InstallError(f"unsafe path {name!r} in {url}")
+                z.extractall(unpacked)
+        else:
+            _untar(archive, unpacked, url)
         if os.path.exists(dest):
             shutil.rmtree(dest)
         os.rename(unpacked, dest)
     log(f"Unpacked into {dest}")
     return dest
+
+
+def _untar(archive: str, unpacked: str, url: str) -> None:
+    with tarfile.open(archive, "r:*") as tar:
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(unpacked, filter="data")
+        else:
+            for m in tar.getmembers():
+                if m.name.startswith("/") or ".." in m.name.split("/"):
+                    raise InstallError(f"unsafe path {m.name!r} in {url}")
+            tar.extractall(unpacked)
 
 
 def _link(name: str, target: str) -> None:
@@ -321,7 +355,8 @@ def _verify(tool: str, path: str, log) -> str:
     from . import gr1, logic
     from .contract import Contract
     from .queries import REALIZABLE, VALID
-    env = {"nuxmv": "CHASE_NUXMV", "nusmv": "CHASE_NUSMV", "slugs": "CHASE_SLUGS"}[tool]
+    env = {"nuxmv": "CHASE_NUXMV", "nusmv": "CHASE_NUSMV", "slugs": "CHASE_SLUGS",
+           "esbmc": "CHASE_ESBMC"}[tool]
     old = os.environ.get(env)
     os.environ[env] = path
     try:
@@ -330,6 +365,14 @@ def _verify(tool: str, path: str, log) -> str:
                                       name="Check")
             r = gr1.is_realizable(c, "slugs", timeout=60)
             ok = r.status == REALIZABLE
+        elif tool == "esbmc":
+            from .checks import is_implementation
+            from .cprograms import CFunction
+            c = Contract.from_strings(inputs={"x": (0, 9)}, outputs={"y": (0, 10)},
+                                      guarantees=["y = x + 1"], name="Check")
+            f = CFunction("check.c", "next", source="int next(int x) { return x + 1; }")
+            r = is_implementation(f, c, "esbmc", timeout=60)
+            ok = r.status == VALID
         else:
             r = logic.implies("G a", "F a", {"a": "bool"}, tool, timeout=60)
             ok = r.status == VALID

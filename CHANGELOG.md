@@ -28,19 +28,26 @@ Added:
   (whether a better value exists, and whether it is reached); they need z3
   4.12 or later. `chase-cps doctor` lists z3. The Docker image installs z3
   with pip (the package of Ubuntu is z3 4.8).
-- `to_smv` and `to_smt` write the checks of a contract (verify, or
-  refines) as the input of nuXmv or NuSMV, and of SMT solvers (z3, cvc5),
-  for the tools one runs oneself: one named question per check, with how
-  to read the answer. `chase-cps export FILE --to LANG [--tool TOOL]`
-  writes them, and also `gr1`, `sva`, `c`, `spec`, and `json`.
+- `to_smv` and `to_smt` write a check as the input of nuXmv or NuSMV, and
+  of SMT solvers (z3, cvc5), for the tools one runs oneself: the check,
+  then its arguments, as in `to_smv("refines", c1, c2)` or
+  `to_smv("impl", model, c)`; one named question per question of the
+  check, with how to read the answer. `chase-cps export FILE --to LANG`
+  takes the checks of `chase-cps check` (`--refines C1 C2`, `--impl MODEL
+  C`, ...), and also writes `gr1` (`--realizable`), `sva`, `spec`, and
+  `json`.
+- `chase-cps check` has short names for its checks: `--compat`,
+  `--consist`, `--impl`, `--env`, `--recep` (the long names still work);
+  `--verify`, `--compat`, and `--consist` take the contracts to check.
 - C functions as implementations of contracts: `is_implementation(
   CFunction("saturate.c", "saturate"), contract)` checks with ESBMC, or
   CBMC, that every call allowed by the assumptions satisfies the
   guarantees, and that the function has no overflow, division by zero, or
-  access out of bounds; a failure gives the values of the call. `to_c`
-  writes the program they check; on the command line,
-  `--implementation FILE.c:FUNCTION CONTRACT`. `chase-cps check` prints the
-  counterexample of a failed implementation.
+  access out of bounds; a failure gives the values of the call.
+  `to_c("impl", f, c)` writes the program they check; on the command line,
+  `--impl FILE.c:FUNCTION CONTRACT`. `chase-cps check` prints the
+  counterexample of a failed implementation. `chase-cps install esbmc`
+  installs ESBMC on Linux, and the Docker image has it.
 
 Changed:
 

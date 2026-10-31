@@ -397,13 +397,18 @@ def _holds(model, phi, contract: Contract, what: str, backend: str, context,
            **options) -> Result:
     """Does every behavior of the model satisfy phi (within the context)?"""
     from . import backends
+    return backends.check(holds_query(model, phi, contract, what, context), backend, **options)
+
+
+def holds_query(model, phi, contract: Contract, what: str, context=None):
+    """The query: does every behavior of the model satisfy phi?"""
     from .queries import Holds
     k = _context(context, contract.variables)
     spec = phi if k is None else ltl.Binary("->", k, phi)
     for _ in range(getattr(model, "start", 0)):      # the steps of a reset come first
         spec = ltl.Unary("X", spec)
     model.check_variables(ltl.variables(spec), what, contract.variables)
-    return backends.check(Holds(model.smv, spec, dict(model.variables)), backend, **options)
+    return Holds(model.smv, spec, dict(model.variables))
 
 
 

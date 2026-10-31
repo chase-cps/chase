@@ -65,24 +65,29 @@ def _expected(contract, abstract=None, backend="auto"):
 
 
 def test_the_questions():
-    assert [n for n, _ in questions(ARB)] == ["compatible", "consistent", "feasible"]
-    assert [n for n, _ in questions(GEN, SPEC)] == ["assumptions", "guarantees"]
-    text = to_smv(ARB)
+    assert [n for n, _ in questions("verify", ARB)[1]] == ["compat", "consist", "feasible"]
+    assert [n for n, _ in questions("compat", ARB)[1]] == ["compat"]
+    assert [n for n, _ in questions("refines", GEN, SPEC)[1]] == ["assumptions", "guarantees"]
+    with pytest.raises(ValueError, match="refines takes 2 argument"):
+        questions("refines", GEN)
+    with pytest.raises(ValueError, match="one of verify, compat"):
+        questions("compatible", GEN)
+    text = to_smv("verify", ARB)
     assert "LTLSPEC NAME feasible := " in text and "next is chase_next" in text
     assert "chase_next : boolean;" in text
     with pytest.raises(ValueError, match="NuSMV takes no real"):
-        to_smv(GEN, tool="nusmv")
+        to_smv("verify", GEN, tool="nusmv")
     with pytest.raises(ValueError, match="one of nuxmv, nusmv"):
-        to_smv(ARB, tool="jasper")
+        to_smv("verify", ARB, tool="jasper")
 
 
 @needs_nuxmv
 def test_nuxmv_answers_as_chase(tmp_path):
     want = _expected(ARB)
-    got = _nuxmv(to_smv(ARB), tmp_path)
+    got = _nuxmv(to_smv("verify", ARB), tmp_path)
     assert got == ["false" if w else "true" for w in want]
     want = _expected(GEN, SPEC)
-    got = _nuxmv(to_smv(GEN, refines=SPEC), tmp_path, reals=True)
+    got = _nuxmv(to_smv("refines", GEN, SPEC), tmp_path, reals=True)
     assert got == ["true" if w else "false" for w in want] == ["true", "false"]
 
 
@@ -109,10 +114,10 @@ def test_z3_answers_as_nuxmv():
                                       guarantees=[_formula(rng, 2), _formula(rng, 1)])
                 for k in "ab")
         want = _expected(a, backend="nuxmv")
-        assert _z3(to_smt(a)) == ["sat" if w else "unsat" for w in want]
+        assert _z3(to_smt("verify", a)) == ["sat" if w else "unsat" for w in want]
         seen.update(want)
         want = _expected(a, b, backend="nuxmv")
-        assert _z3(to_smt(a, refines=b)) == ["unsat" if w else "sat" for w in want]
+        assert _z3(to_smt("refines", a, b)) == ["unsat" if w else "sat" for w in want]
         seen.update(want)
     assert seen == {True, False}
 
@@ -120,13 +125,13 @@ def test_z3_answers_as_nuxmv():
 @needs_z3
 def test_smt_takes_formulas_over_bounded_steps_only():
     with pytest.raises(ValueError, match="bounded number of steps"):
-        to_smt(ARB)
-    text = to_smt(GEN, refines=SPEC)
+        to_smt("verify", ARB)
+    text = to_smt("refines", GEN, SPEC)
     assert text.count("(check-sat)") == 2 and text.count("(reset)") == 1
     steps = Contract.from_strings(name="Steps", inputs={"x": (0, 9)}, outputs={"y": (0, 9)},
                                   assumptions=["x = 0", "G[0,2] (x' = x + 1)"],
                                   guarantees=["X X (y = x + past(x, 1))"])
-    assert "x@2" in to_smt(steps) and _z3(to_smt(steps)) == ["sat", "sat", "sat"]
+    assert "x@2" in to_smt("verify", steps) and _z3(to_smt("verify", steps)) == ["sat", "sat", "sat"]
     assert '(echo "guarantees")' in text and text.count("(set-logic ALL)") == 2
 
 
@@ -135,8 +140,8 @@ def test_the_command(tmp_path, capfd):
     spec = tmp_path / "two.json"
     spec.write_text(json.dumps({"contracts": [GEN.to_dict(), SPEC.to_dict()]}))
     assert main(["export", str(spec), "--to", "smv"]) == 2
-    assert "--contract: one of Gen, Spec" in capfd.readouterr().err
-    assert main(["export", str(spec), "--to", "smv", "--contract", "Gen", "--refines", "Spec"]) == 0
+    assert "writes one check" in capfd.readouterr().err
+    assert main(["export", str(spec), "--to", "smv", "--refines", "Gen", "Spec"]) == 0
     out = capfd.readouterr().out
     assert out.startswith("-- Gen refines Spec") and "LTLSPEC NAME guarantees" in out
     assert main(["export", str(spec), "--to", "sva", "--tool", "jasper", "--contract", "Gen"]) == 2
@@ -156,7 +161,42 @@ def test_the_command_writes_only_the_file_on_the_standard_output(tmp_path, capfd
     path.write_text(to_spec([Contract.from_strings(
         name="Arb", inputs={"r": "bool"}, outputs={"g": "bool"}, assumptions=["G F r"],
         guarantees=["G (r -> F g)"])]))
-    assert main(["export", str(path), "--to", "smv", "-o", str(tmp_path / "arb.smv")]) == 0
+    assert main(["export", str(path), "--to", "smv", "--verify", "Arb", "-o",
+                 str(tmp_path / "arb.smv")]) == 0
     assert capfd.readouterr().out == ""
-    assert main(["export", str(path), "--to", "smv"]) == 0
+    assert main(["export", str(path), "--to", "smv", "--verify", "Arb"]) == 0
     assert capfd.readouterr().out.startswith("-- verify Arb")
+
+
+ECHO = """MODULE main
+IVAR
+  req : boolean;
+VAR
+  grant : boolean;
+ASSIGN
+  init(grant) := FALSE;
+  next(grant) := req;
+"""
+
+
+@needs_nuxmv
+def test_impl_and_env_of_a_state_machine(tmp_path):
+    from chase_cps import Model, is_environment, is_implementation
+    m = Model.from_smv(ECHO)
+    late = Contract.from_strings(name="Late", inputs={"req": "bool"}, outputs={"grant": "bool"},
+                                 guarantees=["G (req -> X grant)"])
+    soon = Contract.from_strings(name="Soon", inputs={"req": "bool"}, outputs={"grant": "bool"},
+                                 guarantees=["G (req -> grant)"])
+    rare = Contract.from_strings(name="Rare", inputs={"req": "bool"}, outputs={"grant": "bool"},
+                                 assumptions=["G F !grant"], guarantees=["true"])
+    for c, check in ((late, "impl"), (soon, "impl"), (rare, "env")):
+        text = to_smv(check, m, c)
+        assert text.startswith("-- ") and f"LTLSPEC NAME {check} := " in text
+        want = (is_implementation if check == "impl" else is_environment)(m, c).status
+        assert _nuxmv(text, tmp_path) == ["true" if want == "valid" else "false"]
+    # a formula as the implementation: an implication, also for z3
+    text = to_smt("impl", "y = x + 1", Contract.from_strings(
+        name="Inc", inputs={"x": (0, 5)}, outputs={"y": (0, 9)}, guarantees=["y >= 1"]))
+    assert _z3(text) == ["unsat"]
+    with pytest.raises(ValueError, match="to_smv"):
+        to_smt("impl", m, late)

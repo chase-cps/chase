@@ -87,6 +87,16 @@ RUN git clone https://github.com/VerifiableRobotics/slugs /opt/slugs \
     && cd src && make -j"$(nproc)" \
     && ln -s /opt/slugs/src/slugs /usr/local/bin/slugs
 
+# ESBMC (C programs; Apache-2.0): the Linux build of the project, as
+# chase-cps install esbmc downloads it
+ARG ESBMC_VERSION=v8.6
+RUN case "${TARGETARCH}" in arm64) f=esbmc-linux-armv8.zip ;; *) f=esbmc-linux.zip ;; esac \
+    && curl -fsSL -o /tmp/esbmc.zip \
+        "https://github.com/esbmc/esbmc/releases/download/${ESBMC_VERSION}/$f" \
+    && python3 -c "import zipfile; zipfile.ZipFile('/tmp/esbmc.zip').extractall('/opt/esbmc')" \
+    && chmod +x /opt/esbmc/release/bin/esbmc && ln -s /opt/esbmc/release/bin/esbmc /usr/local/bin/esbmc \
+    && rm /tmp/esbmc.zip && esbmc --version
+
 # NuSMV (above), Yosys for RTL input (yowasp-yosys, ISC license; the first
 # run compiles it, so it is run once here), and z3 (MIT license; the package of
 # Ubuntu, 4.8, is older than chase-cps needs)
