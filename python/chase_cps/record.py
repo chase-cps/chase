@@ -105,6 +105,15 @@ class Record:
              "seconds": round(seconds, 2), "at": datetime.datetime.now().isoformat(timespec="seconds")}
         if getattr(result, "failed", None):
             e["failed"] = result.failed           # the assumptions or the guarantees
+        # the counterexample and the reason of the side that fails: the page shows them again
+        failed = getattr(result, "failed", None)
+        part = getattr(result, failed, None) if failed in ("assumptions", "guarantees") else result
+        trace = getattr(part, "trace", None)
+        if trace is not None and hasattr(trace, "to_dict"):
+            e["trace"] = trace.to_dict()
+        reason = getattr(part, "reason", "") or getattr(result, "reason", "")
+        if reason:
+            e["reason"] = reason
         core = getattr(result, "core", None)
         terms = getattr(core, "core", None)
         if isinstance(terms, Contract):
@@ -151,4 +160,14 @@ def as_result(e: dict):
                details={"kept": e.get("at", "")})
     if e.get("core"):
         r.core = (e["core"].get("assumptions", []), e["core"].get("guarantees", []))
+    if e.get("trace") or e.get("reason"):       # the counterexample kept, on the side that fails
+        from .queries import Trace
+        t = Trace(prefix=e["trace"].get("prefix", []), loop=e["trace"].get("loop", [])) if e.get("trace") else None
+        side = Result(status=e["result"], backend=e.get("tool", ""), reason=e.get("reason", ""))
+        side.trace = t
+        if e.get("failed") in ("assumptions", "guarantees"):
+            r.failed = e["failed"]
+            setattr(r, e["failed"], side)
+        else:
+            r.trace, r.reason = t, e.get("reason", "")
     return r

@@ -83,3 +83,15 @@ def test_a_model_with_no_specification_is_not_a_contract(tmp_path):
     assert not has_specs(str(p))
     with pytest.raises(ValueError, match="not a specification"):
         _read(str(p))
+
+
+@NUXMV
+def test_the_counterexample_is_kept_with_the_result(smv, tmp_path):
+    # drawn twice with the results kept: the second drawing reads the result,
+    # and still shows the counterexample and the term it breaks
+    from chase_cps import viz
+    kept = str(tmp_path / "relay.results.json")
+    first = viz.from_spec(smv, check=True, results=kept)["nodes"][0]["badge"]
+    second = viz.from_spec(smv, check=True, results=kept)["nodes"][0]["badge"]
+    assert second["status"] == "invalid"
+    assert second["why"]["trace"] == first["why"]["trace"] and second["why"]["violated"] == [4]
