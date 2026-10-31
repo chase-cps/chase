@@ -2494,7 +2494,7 @@ function help() {
   sample(s => { box(5, "#f5f7f7", "#17393b", 1.2)(s);
                 el("rect", { x: 14, y: 6, width: 20, height: 8, rx: 3, fill: "#fff", stroke: "#17393b" }, s); },
          "inside: refines the outer box");
-  [["contract", "assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
+  [["contract", "named constants K, assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
    ["model", "model given (RTL, JSON, SMV)"], ["synth", "model synthesized (slugs)"]].forEach(([k, t]) =>
     sample(svg => icon(svg, k, 16, 2, false, t), t));
   sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: 4, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
@@ -2755,12 +2755,14 @@ function showInspector(tab) {
   inspector.open = true;
   if (tab) inspector.tab = tab;
   document.body.classList.add("insp");
+  document.getElementById("repairs").classList.add("on");     // pressed while the panel is open
   renderInspector();
 }
 function hideInspector() {
   if (inspector.open) shiftView(1);
   inspector.open = false;
   document.body.classList.remove("insp");
+  document.getElementById("repairs").classList.remove("on");
   closeRepair();
 }
 async function openRepair(n, t) {
@@ -2905,7 +2907,7 @@ function whySection(n, t, st) {
       const slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
         oninput: e => { panel.step = +e.target.value; say(panel.step); replay(n, w.trace, panel.step); } });
       say(panel.step || 0);
-      sec.appendChild(h("div", { class: "rp-step" }, "On the diagram:", slider, label));
+      sec.appendChild(h("div", { class: "rp-step" }, "Values on the diagram, step:", slider, label));
     } else sec.appendChild(h("div", { class: "rp-note" }, "These values are on the diagram, in blue."));
   } else {
     sec.appendChild(h("div", {}, "The counterexample was not kept with the result" + (inEditor()
