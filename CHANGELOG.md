@@ -10,6 +10,11 @@ Added:
   formula in continuous time (`continuous` on a trace, or any check over
   every behavior). `chase-cps view --period` draws the steps of a
   counterexample as times.
+- SMV models with their specifications (`chase_cps.smvspec`): an SMV file
+  with `LTLSPEC` or `INVARSPEC` is a component, its specifications the
+  guarantees of its contract, checked with nuXmv; `chase-cps view
+  FILE.smv` and VS Code draw it. A counterexample shows booleans as T and
+  F in its table.
 - Contracts written in C, in the clauses of ESBMC (`__ESBMC_requires`,
   `__ESBMC_ensures`) or of CBMC (`__CPROVER_requires`,
   `__CPROVER_ensures`), or in ACSL (Frama-C, `/*@ requires ...; ensures

@@ -1001,6 +1001,8 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
     spec = _read(path)
     if path.endswith(".c") and not implementations:   # each function with its code
         implementations = [(f"{path}:{name}", name) for name in spec]
+    if path.endswith(".smv") and not implementations:  # the module with its specifications
+        implementations = [(path, name) for name in spec]
     made = {}
 
     def get(expression):              # one box per expression
@@ -1286,10 +1288,11 @@ def _place_in_source(d: dict, path: str) -> None:
             lines[m.group(1)] = number
     terms = (_sva_term_lines(text) if path.endswith((".v", ".sv", ".sva"))
              else {} if path.endswith(".json") else _term_lines(text))
-    if path.endswith(".c"):           # the functions, and their clauses
+    if path.endswith((".c", ".smv")):     # the functions and their clauses, the module and its specifications
         from .cspec import places
+        from .smvspec import places as smv_places
         try:
-            lines, terms = places(path)
+            lines, terms = (smv_places if path.endswith(".smv") else places)(path)
         except ValueError:
             return
 
@@ -2967,13 +2970,14 @@ function traceTable(tr, first, req) {
     const notes = [tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
     return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
   }
-  const t = h("table", { class: "rp-trace" });
+  const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
+  const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
     tr.steps.map((_, i) => h("th", { title: (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
                                             + (DATA.period ? "step " + i : "") },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
-    h("td", { class: "v" }, tr.vars[i]), tr.steps.map(st => h("td", {}, fmt(st[i])))));
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map(st => h("td", {}, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);

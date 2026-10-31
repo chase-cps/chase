@@ -26,8 +26,8 @@ DEMOS = os.path.join(ROOT, "demos")
 pytestmark = pytest.mark.skipif(not HAS_NATIVE, reason="CHASE modules not installed")
 SPECS = sorted(glob.glob(os.path.join(DEMOS, "**", "*.ltl"), recursive=True))
 SVA = [f for f in sorted(glob.glob(os.path.join(DEMOS, "**", "sva", "*.sv"), recursive=True))]
-# C with the clauses of ESBMC and CBMC (no check is run: no checker is needed)
-CSPECS = sorted(glob.glob(os.path.join(os.path.dirname(__file__), "data", "*_clauses.c")))
+# C with the clauses of ESBMC, CBMC, ACSL; SMV with its specifications (no check is run)
+CSPECS = sorted(glob.glob(os.path.join(os.path.dirname(__file__), "data", "*_clauses.*")))
 
 EDITOR = """
 window.posted = [];

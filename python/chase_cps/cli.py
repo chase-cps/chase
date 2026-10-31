@@ -142,10 +142,15 @@ def _read(path: str) -> dict[str, Contract]:
     if ext == ".c":                   # the functions, with their clauses of ESBMC or CBMC
         from .cspec import load_c
         return {name: c for name, (c, _) in load_c(path).items()}
+    if ext == ".smv":                 # the module main, with its specifications
+        from . import smvspec
+        if smvspec.has_specs(path):
+            return {name: c for name, (c, _) in smvspec.load_smv(path).items()}
     if ext in (".smv", ".v", ".vhd", ".py", ".h"):
         raise ValueError(f"{os.path.basename(path)} is not a specification: CHASE reads contracts "
-                         "from .ltl (the logics language), .json, .sv, and .c files (the clauses "
-                         "of ESBMC or CBMC); a model (.smv, RTL, a C function FILE.c:FUNCTION) is "
+                         "from .ltl (the logics language), .json, .sv, .c files (the clauses "
+                         "of ESBMC, CBMC, or ACSL), and .smv files with LTLSPEC or INVARSPEC; a "
+                         "model (.smv, RTL, a C function FILE.c:FUNCTION) is "
                          "drawn as the implementation of a contract (--implementation MODEL "
                          "CONTRACT)")
     return load_spec(path)
@@ -351,6 +356,9 @@ def _model(path: str, contract):
             return models.Model.from_controller(data, contract,
                                                 name=os.path.splitext(os.path.basename(path))[0])
         return models.Model.from_dict(data)
+    from . import smvspec
+    if smvspec.has_specs(path):       # checked without its specifications
+        return smvspec.model(path)
     return models.Model.from_smv(path)
 
 

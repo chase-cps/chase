@@ -1,0 +1,16 @@
+-- A relay: the grant follows the request one step later.
+MODULE main
+IVAR
+  req : boolean;
+VAR
+  grant : boolean;
+  n : 0..3;
+ASSIGN
+  init(grant) := FALSE;
+  next(grant) := req;
+  init(n) := 0;
+  next(n) := (n < 3 & req) ? n + 1 : n;
+LTLSPEC G (req -> X grant)
+LTLSPEC G (n <= 3) & F G (n <= 3)
+INVARSPEC !(grant & n = 4)
+LTLSPEC G F grant
