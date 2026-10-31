@@ -111,16 +111,16 @@ def test_a_counterexample_becomes_a_condition():
 # the braking system (ContrACT, MEMOCODE 2026) ----------------------------------
 
 def _aeb():
-    with open(os.path.join(HERE, "data", "aeb.json")) as f:
-        return {d["name"]: Contract.from_dict(d) for d in json.load(f)["contracts"]}
+    from chase_cps import load_spec
+    return load_spec(os.path.join(HERE, "data", "braking.ltl"))
 
 
 @needs_z3
 def test_the_braking_system_as_in_the_paper():
     pytest.importorskip("chase_cps._native")
     c = _aeb()
-    pedal = c["p"].compose(c["a"]).compose(c["b"])
-    camera = c["c"].compose(c["d"]).compose(c["e"]).compose(c["f"])
+    pedal = c["BrakePedal"].compose(c["PedalProcessing"]).compose(c["Brake1"])
+    camera = c["Camera"].compose(c["Detection"]).compose(c["Link"]).compose(c["Brake2"])
     # Brake 1 waits up to 3.05 on its path plus 1 from the camera path: 4.05 > 4
     assert refines(pedal, c["SysB"]).status == "invalid"
     r = repair("refines", pedal, c["SysB"], parameters={"lam_b": (0, 10)})

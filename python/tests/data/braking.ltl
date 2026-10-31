@@ -1,0 +1,161 @@
+NAME: braking;
+
+# The automatic emergency braking system of ContrACT (Xiao, Lutz,
+# Castillo-Effen, Nuzzo, MEMOCODE 2026, Section V.A). Each event v has
+# three times: t_v its timestamp (from the schedule), d_v its start (tau in
+# the paper), T_v its completion. The worst-case latencies X are those of
+# Table I. The contracts are those that ContrACT builds (Section III-C),
+# with the assumption and the guarantee split into terms.
+#
+#   pedal path:  BrakePedal (p) -> PedalProcessing (a) -> Brake1 (b)
+#   camera path: Camera (c) -> Detection (d) -> Link (e) -> Brake2 (f)
+#
+# Brake1 and Brake2 are reactions of the same Braking reactor: one of them
+# can delay the other (the offset Y of the paper).
+
+# A source: it starts at its timestamp or later, and runs at most 0.05.
+CONTRACT BrakePedal:
+    output real variable t_p;
+    output real variable d_p;
+    output real variable T_p;
+    Assumptions:
+        true;
+    Guarantees:
+        t_p <= d_p;
+        d_p <= T_p;
+        T_p - d_p <= 0.05;
+
+# A processor triggered by p: it takes the timestamp of p, starts when p
+# completes, and runs at most 3.
+CONTRACT PedalProcessing:
+    input real variable t_p;
+    input real variable d_p;
+    input real variable T_p;
+    output real variable t_a;
+    output real variable d_a;
+    output real variable T_a;
+    Assumptions:
+        t_p <= d_p;
+    Guarantees:
+        t_a = t_p;
+        d_a = T_p;
+        t_a <= d_a;
+        d_a <= T_a;
+        T_a - d_a <= 3;
+
+# Brake 1, triggered by a: it starts when a completes, and takes no time.
+CONTRACT Brake1:
+    input real variable t_a;
+    input real variable d_a;
+    input real variable T_a;
+    output real variable t_b;
+    output real variable d_b;
+    output real variable T_b;
+    Assumptions:
+        t_a <= d_a;
+    Guarantees:
+        t_b = t_a;
+        d_b = T_a;
+        t_b <= d_b;
+        d_b <= T_b;
+        T_b - d_b <= 0;
+
+# The camera, a source.
+CONTRACT Camera:
+    output real variable t_c;
+    output real variable d_c;
+    output real variable T_c;
+    Assumptions:
+        true;
+    Guarantees:
+        t_c <= d_c;
+        d_c <= T_c;
+        T_c - d_c <= 0;
+
+# The obstacle detection, triggered by the camera; it runs at most 2.
+CONTRACT Detection:
+    input real variable t_c;
+    input real variable d_c;
+    input real variable T_c;
+    output real variable t_d;
+    output real variable d_d;
+    output real variable T_d;
+    Assumptions:
+        t_c <= d_c;
+    Guarantees:
+        t_d = t_c;
+        d_d = T_c;
+        t_d <= d_d;
+        d_d <= T_d;
+        T_d - d_d <= 2;
+
+# The network link: the receiver is scheduled kappa after the sender (the
+# inconsistency), and the data arrives at most 9 after d completes.
+CONTRACT Link:
+    input real variable t_d;
+    input real variable d_d;
+    input real variable T_d;
+    output real variable t_e;
+    output real variable d_e;
+    output real variable T_e;
+    real constant kappa 10;
+    Assumptions:
+        t_d <= d_d;
+    Guarantees:
+        t_e - t_d = kappa;
+        T_d <= T_e;
+        T_e <= T_d + 9;
+        t_e <= d_e;
+
+# Brake 2: it starts when the event is released (d_e) and the data has
+# arrived (T_e), at the later of the two.
+CONTRACT Brake2:
+    input real variable t_e;
+    input real variable d_e;
+    input real variable T_e;
+    output real variable t_f;
+    output real variable d_f;
+    output real variable T_f;
+    Assumptions:
+        t_e <= d_e;
+    Guarantees:
+        t_f = t_e;
+        d_f >= d_e;
+        d_f >= T_e;
+        d_f <= d_e | d_f <= T_e;
+        d_f <= T_f;
+        T_f - d_f <= 0;
+
+# The requirement on Brake 1 (equation (8)): given that the pedal event is
+# released at most offset after its timestamp (the delay that the camera
+# path can cause, 1 for the original design), Brake 1 starts at most lam_b
+# after its timestamp.
+CONTRACT SysB:
+    input real variable t_p;
+    input real variable d_p;
+    output real variable t_b;
+    output real variable d_b;
+    real constant offset 1;
+    real constant lam_b 4;
+    Assumptions:
+        t_p <= d_p;
+        d_p - t_p <= offset;
+    Guarantees:
+        d_b - t_b <= lam_b;
+
+# What the camera path may delay Brake 1 by: Brake 2 starts at most y_f
+# after its timestamp, its inputs released on time. Brake 1 absorbs
+# 4 - 3.05 = 0.95; y_f = 0 asks for no delay at all.
+CONTRACT DelayF:
+    input real variable t_c;
+    input real variable d_c;
+    input real variable t_e;
+    input real variable d_e;
+    output real variable t_f;
+    output real variable d_f;
+    real constant y_f 0.95;
+    Assumptions:
+        t_c = d_c;
+        t_e = d_e;
+    Guarantees:
+        d_f - t_f <= y_f;
