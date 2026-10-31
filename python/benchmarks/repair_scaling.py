@@ -113,6 +113,8 @@ def main():
     ap.add_argument("--sizes", type=int, nargs="+", default=[4, 8, 16, 32, 64])
     ap.add_argument("--k", type=int, nargs="+", default=[1, 2, 4])
     ap.add_argument("--limit", type=float, default=120)
+    ap.add_argument("--projection-up-to", type=int, default=16,
+                    help="run the projection (quantifier elimination) up to this n only")
     ap.add_argument("--json")
     a = ap.parse_args()
     rows = []
@@ -120,7 +122,9 @@ def main():
     print("|---|---|---|---|---|---|---|---|---|---|")
     for n in a.sizes:
         for k in a.k:
-            res = {m: run(m, n, k, a.limit) for m in ("auto", "counterexamples", "projection")}
+            res = {m: run(m, n, k, a.limit) for m in ("auto", "counterexamples", "projection")
+                   if m != "projection" or n <= a.projection_up_to}
+            res.setdefault("projection", {"error": "not run"})
             base = next((v for v in res.values() if "compose" in v), {})
             cell = lambda v, key="repair": f"> {v['timeout']:.0f}" if "timeout" in v else \
                 (f"{v[key]:.2f}" if v.get(key) is not None else v.get("error", "-"))
