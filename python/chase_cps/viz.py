@@ -1512,7 +1512,11 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
             pass
 
     refresh()
-    server = http.server.ThreadingHTTPServer((host, port), Handler)
+    try:
+        server = http.server.ThreadingHTTPServer((host, port), Handler)
+    except OSError as e:              # the port is taken: say so, and how to choose another
+        raise ValueError(f"cannot serve on {host}:{port} ({e.strerror}): give another port, "
+                         f"--port {port + 1}") from None
     print(f"Drawing {path} on http://{host}:{port} (Ctrl-C to stop)", flush=True)
     try:
         server.serve_forever()
@@ -1551,7 +1555,7 @@ _PAGE = r"""<!doctype html>
           --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --grid:#d3dbdb; --ground:#fcfdfd; }
   html, body { height:100%; overflow:hidden; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--ground); }
-  #top { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
+  #top { position:fixed; top:0; left:0; right:0; z-index:10; display:flex; justify-content:space-between; align-items:flex-start;
          padding:10px 12px 0 18px; pointer-events:none; }
   #top > * { pointer-events:auto; }
   .tools { display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e3e8e8; border-radius:8px;
@@ -1696,7 +1700,7 @@ _PAGE = r"""<!doctype html>
                 linear-gradient(to left, var(--paper, #fff) 30%, transparent) right / 24px 100% no-repeat local,
                 radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.16), transparent) left / 10px 100% no-repeat scroll,
                 radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.16), transparent) right / 10px 100% no-repeat scroll; }
-  .rp-values { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, max-content)); gap:2px 18px;
+  .rp-values { display:flex; flex-wrap:wrap; gap:2px 18px;
                font:11px Menlo, Monaco, monospace; color:var(--soft); }
   .rp-values span { white-space:nowrap; }
   #view.previewing rect.core-row { fill:#e6efe6; }
@@ -1731,7 +1735,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Names of the ports" onclick="flip(this, 'names')"><svg viewBox="0 0 16 16"><rect x="4.5" y="3" width="7" height="10" rx="1.5"/><path d="M1.5 6h3M1.5 10h3M11.5 8h3"/></svg></button>
     <button class="on" title="Types of the ports (ranges, reals, bit vectors)" onclick="flip(this, 'types')"><svg viewBox="0 0 16 16"><path d="M1.5 8h13" stroke-width="2.4"/><path d="M6.5 11.5l3-7"/></svg></button>
     <button id="conds" class="on" title="Transition labels of the models: the inputs that take each transition" onclick="flip(this, 'conditions')"><svg viewBox="0 0 16 16"><circle cx="3" cy="11" r="1.8"/><circle cx="13" cy="11" r="1.8"/><path d="M4.8 11h6.4"/><rect x="5" y="3" width="6" height="4" rx="1"/></svg></button>
-    <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
+    <button class="on" title="Results of the checks (A∧G, A, G, R, WS, ¬V, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
     <button id="repairs" title="The panel of the checks: open or close (Esc)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
@@ -1878,12 +1882,15 @@ function lines(n) {
   return out;
 }
 const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
-function showTerms(n, c) {     // the whole contract, in the panel
+function showTerms(n, c) {     // the whole contract, in the panel, with the core in focus on red
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), ts = [];
-  terms(c, ts, null, c === n.contract ? n.source : null);
-  document.getElementById("poptitle").textContent = n.title + " · Contract " + c.name;
-  document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t, , at]) =>
+  const core = focused(n), which = c === n.contract ? "contract" : "composed";
+  terms(c, ts, core && core.part === which ? core : null, c === n.contract ? n.source : null);
+  document.getElementById("poptitle").textContent = n.title + " · Contract " + c.name
+    + (ts.some(t => t[3]) ? " · the terms of the core in red" : "");
+  document.getElementById("popview").innerHTML = "<table class='fsm'>" + ts.map(([k, tag, t, hit, at]) =>
     "<tr" + (at ? " data-line='" + at[0] + "'" + (inEditor() ? " title='double click: line " + at[0] + "'" : "") : "")
+    + (hit ? " style='background:#f6dcd9'" : "")
     + "><td class='st'>" + (tag || "") + "</td><td>" + esc(t) + "</td></tr>").join("") + "</table>";
   document.getElementById("pop").style.display = "flex";
 }
@@ -3011,7 +3018,9 @@ function whySection(n, t, st) {
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
   const code = n.model && n.model.source === "c";
   // said only when the table does not: which side fails
-  const lead = w && w.failed === "assumptions" ? "Accepted by " + req + ", not by the parts." : null;
+  const lead = w && w.failed === "assumptions"
+    ? "The environment of this trace meets the assumptions of " + req + " and breaks an assumption of the "
+      + "parts: " + req + " allows an input that the parts do not accept." : null;
   if (w && w.trace) {
     if (lead) sec.appendChild(h("div", {}, lead));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
@@ -3048,8 +3057,9 @@ const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) 
 function traceTable(tr, first, req) {
   const fmt = v => v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
-  const one = tr.steps.length === 1;
-  if (one) {                            // one call: name = value, in columns
+  // one call of a function: name = value; one state repeated forever is a table, with its ↺
+  const one = tr.steps.length === 1 && (tr.loop === null || tr.loop === undefined);
+  if (one) {                            // one call: name = value, in rows that wrap
     const grid = h("div", { class: "rp-values" }, order.map(i => h("span", { class: first.includes(tr.vars[i]) ? "port" : "" },
       tr.vars[i] + " = " + fmt(tr.steps[0][i]))));
     const notes = [tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
@@ -3072,6 +3082,8 @@ function traceTable(tr, first, req) {
     wrap.appendChild(more);
   }
   const notes = [tr.cut ? "The first " + tr.steps.length + " steps." : null,
+                 tr.loop !== null && tr.loop !== undefined
+                   ? "↺ " + timeOf(tr.loop) + ": from this step on, the steps repeat forever." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
   return wrap;
@@ -3086,7 +3098,8 @@ function noRepairSection(n, t) {
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
     ? ["Repair θ in VS Code, or with chase-cps view FILE --serve."]
-    : ["No parameter (θ) to tune: change a term of a part or of the requirement."]
+    : ["No named constant to repair: change a term of a part or of the requirement. A constant declared "
+       + "in the file (integer constant k 2;) can be repaired."]
        .concat(t === "⪯" ? ["What a part must guarantee: divide the requirement by the other parts (divide)."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
@@ -3301,7 +3314,7 @@ function fillProblems(list) {
       : r ? "θ: " + r.constants.map(c => c.name).join(", ")
       : t === "A∧G" ? "terms in conflict"
       : w && w.reason ? reasonOf(w.reason).text
-      : "no θ to tune";
+      : "no constant to repair";
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
                                onclick: () => openRepair(n, t) },
       h("div", { class: "t" }, tagSvg(t, "invalid"), checkTitle(n, t)),

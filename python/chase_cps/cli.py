@@ -706,7 +706,15 @@ def view(args) -> int:
         print("progress: " + json.dumps(event), file=sys.stderr, flush=True)
     shown = progress if args.progress else None
 
+    first = args
+
     def make() -> dict:
+        args = first
+        if first.serve and hasattr(first, "reparse"):   # the options of the file, as it is now
+            try:
+                args = first.reparse()
+            except SystemExit:
+                raise ValueError("the options of the file (# view: ...) cannot be read") from None
         if args.format == "json" and args.output in (None, "-"):    # the JSON alone on the standard output
             return _quiet(lambda: viz.from_spec(args.file, args.contracts or (), args.refines or (),
                                                 args.environment or (), check=args.check and checks,
@@ -724,7 +732,11 @@ def view(args) -> int:
                              budget=args.budget, progress=shown, period=args.period)
 
     if args.serve:
-        return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
+        try:
+            return viz.serve(make, args.file, args.port, args.host, elk=args.elk)
+        except ValueError as e:
+            print(f"chase-cps view: {e}", file=sys.stderr)
+            return 2
     try:
         d = make()
     except (ValueError, RuntimeError) as e:
@@ -954,7 +966,10 @@ def main(argv: list[str] | None = None) -> int:
                         "known (lines 'progress: {json}'), for an editor")
     p.set_defaults(run=view)
 
-    args = parser.parse_args(_with_file_options(sys.argv[1:] if argv is None else list(argv)))
+    given = sys.argv[1:] if argv is None else list(argv)
+    args = parser.parse_args(_with_file_options(given))
+    # chase-cps view --serve reads the options of the file again when it changes
+    args.reparse = lambda: parser.parse_args(_with_file_options(given))
     return args.run(args)
 
 

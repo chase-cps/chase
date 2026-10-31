@@ -370,7 +370,7 @@ CONTRACT Bound:
     assert "Does not hold" not in text         # the red tag says it
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "No parameter (θ) to tune" in text
+    assert "No named constant to repair" in text
     # the panel is docked: the view moves under it, the panel stays
     before = page.locator("#insp").bounding_box()
     page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
@@ -473,4 +473,17 @@ def test_an_input_that_nothing_drives(browser, tmp_path):
     assert q.count() == 1 and "warn" in (q.get_attribute("style") or "")
     assert "not driven" in q.get_attribute("data-tip")
     assert not page.evaluate("[...document.querySelectorAll('#view text')].some(t => t.textContent === 'not driven')")
+    page.close()
+
+
+def test_a_counterexample_of_one_state_repeated_forever(browser, tmp_path):
+    # one state repeated forever is a table with its ↺; one call of a function is name = value
+    from chase_cps import Contract
+    c = Contract.from_strings(name="C", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)"])
+    page, errors = open_page(browser, tmp_path, viz.diagram(c))
+    lasso = page.evaluate("traceTable({vars: ['mode', 'speed'], steps: [[false, 120]], loop: 0}, [], 'C').outerHTML")
+    assert "<table" in lasso and "↺" in lasso and "repeat forever" in lasso
+    call = page.evaluate("traceTable({vars: ['x', 'y'], steps: [[1, 2]], loop: null}, [], 'C').outerHTML")
+    assert "rp-values" in call and "x = 1" in call
+    assert not errors
     page.close()
