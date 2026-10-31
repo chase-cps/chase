@@ -175,6 +175,18 @@ Assertions, and GR(1) contracts are written for slugs or gr1c (`to_gr1`).
 `chase_cps.viz` and `chase-cps view` draw contracts, components, and
 systems as a web page, with the results of the checks on the boxes.
 
+The package also:
+
+- repairs a design: the values of named constants that make a check pass,
+  at the least change (`repair`, `chase-cps repair`, with z3);
+- checks formulas over real numbers and bounded intervals of steps with z3,
+  and gives their robustness on a trace;
+- reads the contracts written in a C file (the clauses of ESBMC, CBMC, or
+  ACSL) and checks each function against its own with ESBMC or CBMC;
+- reads SMV models with their `LTLSPEC` and `INVARSPEC`;
+- checks a refinement in continuous time, when a step is a sample
+  (`chase_cps.sampled`, `chase-cps check --period --lipschitz`).
+
 The package, together with the compiled CHASE modules, is installed with:
 
 ````
