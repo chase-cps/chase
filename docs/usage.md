@@ -725,10 +725,10 @@ contract is unrealizable; `synthesize` also builds the controller. The
 console writes the input file of slugs or gr1c, which decide realizability
 and build the controller.
 
-`to_gr1(c, format=...)` writes a GR(1) contract as the input of a GR(1)
+`to_gr1(c, tool=...)` writes a GR(1) contract as the input of a GR(1)
 solver, to run by hand, as `to_sva` does for the tools of SystemVerilog.
-`format="slugs"` (the default) is the file that chase-cps gives to slugs,
-in the structured format of slugs; `format="gr1c"` is the input of gr1c
+`tool="slugs"` (the default) is the file that chase-cps gives to slugs,
+in the structured format of slugs; `tool="gr1c"` is the input of gr1c
 (`gr1c -r spec.spc`). The inputs are the variables of the environment and
 the outputs those of the system. Structured slugs has no subtraction or
 multiplication; gr1c compares an integer only with a constant and starts
@@ -1064,6 +1064,52 @@ NuSMV has no IC3: without nuXmv, the default first looks for a
 counterexample with BMC, then proves with BDDs. The SMT engine of nuXmv
 (real variables with arithmetic) works with `ic3` and `bmc` only.
 Receptiveness is a CTL check and always uses BDDs.
+
+### Files for the tools you run yourself
+
+The checks call the open-source tools (nuXmv, NuSMV, z3, slugs) directly.
+For a tool that you run yourself, such as a tool under license or another
+solver, a check is written as the input file of the tool. The functions
+are named after the language of the file; `tool` names the tool where the
+files of two tools differ.
+
+| Function | Language | Tools |
+|---|---|---|
+| `to_smv(c, refines=None, tool="nuxmv")` | SMV | nuXmv, NuSMV (`tool="nusmv"`) |
+| `to_smtlib(c, refines=None)` | SMT-LIB 2 | z3, cvc5 |
+| `to_gr1(c, tool="slugs")` | structured slugs, gr1c | slugs, gr1c (`tool="gr1c"`) |
+| `to_sva(c)` | SystemVerilog | Jasper, Verilator, other SVA tools |
+| `to_spec(contracts)` | logics language | CHASE, logics_tool |
+
+`to_smv` and `to_smtlib` write the questions of a check, each with its
+name and a comment that says how to read the answer:
+
+- a contract alone: `compatible`, `consistent`, and `feasible`, as
+  `verify`;
+- with `refines=abstract`: `assumptions` and `guarantees`, as `refines`.
+
+A question of satisfiability is written in SMV as its negation: the
+specification is false when the formula can hold, and the counterexample
+is a behavior that satisfies it. `to_smtlib` takes the contracts whose
+formulas have no temporal operator and needs z3 to write the file.
+
+````
+from chase_cps import Contract, to_smv
+
+gen = Contract.from_strings(name="Gen", inputs={"n": (0, 20)}, outputs={"p": "real"},
+                            assumptions=["n <= 4"], guarantees=["p >= 2.5 * n", "p <= 30"])
+spec = Contract.from_strings(name="Spec", inputs={"n": (0, 20)}, outputs={"p": "real"},
+                             assumptions=["n <= 4"], guarantees=["p >= 12", "p <= 30"])
+open("gen.smv", "w").write(to_smv(gen, refines=spec))
+````
+
+On the command line:
+
+````
+$> chase-cps export spec.ltl --to smv --contract Gen --refines Spec -o gen.smv
+$> chase-cps export spec.ltl --to gr1 --tool gr1c --contract Arbiter -o arbiter.spc
+$> chase-cps export spec.json --to spec -o spec.ltl
+````
 
 The full API of the Python package is in the
 [API reference](https://chase-cps.github.io/api/).

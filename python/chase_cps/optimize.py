@@ -5,7 +5,7 @@ contract (its assumptions and its guarantees: the behaviors where both
 hold). The answer gives the value and the values of the variables that
 reach it, for design-space exploration.
 
-z3 answers (``pip install chase-cps[reals]``): exact for linear arithmetic
+z3 answers (``pip install chase-cps[z3]``): exact for linear arithmetic
 over the integers and the reals, with Booleans and any Boolean structure.
 """
 

@@ -38,7 +38,7 @@ ARITH = Contract.from_strings(
 
 
 def test_sections_and_declarations():
-    text = to_gr1(ARITH, format="gr1c")
+    text = to_gr1(ARITH, tool="gr1c")
     assert "ENV:\n\tx [0, 3]\n\ty [0, 3];" in text
     assert "SYS:\n\tb\n\tz [0, 6];" in text
     assert "ENVINIT:\n\t(x=0);" in text and "SYSGOAL:" in text
@@ -47,7 +47,7 @@ def test_sections_and_declarations():
 
 @needs_mc
 def test_the_text_says_the_same_contract():
-    back = read_back(ARITH, to_gr1(ARITH, format="gr1c"))
+    back = read_back(ARITH, to_gr1(ARITH, tool="gr1c"))
     assert refines(ARITH, back).status == "valid"
     assert refines(back, ARITH).status == "valid"
 
@@ -55,7 +55,7 @@ def test_the_text_says_the_same_contract():
 def test_integers_are_written_from_zero():
     c = Contract.from_strings(name="Shift", inputs={"x": (2, 5)}, outputs={"y": "bool"},
                               guarantees=["G (y <-> x = 3)"])
-    text = to_gr1(c, format="gr1c")
+    text = to_gr1(c, tool="gr1c")
     assert "x [0, 3]" in text and "(x=1)" in text and "x = value - 2" in text
 
 
@@ -63,14 +63,14 @@ def test_what_gr1c_cannot_take():
     real = Contract.from_strings(name="Real", inputs={"w": "real"}, outputs={"y": "bool"},
                                  guarantees=["G (y -> w > 0.5)"])
     with pytest.raises(GR1FormatError, match="Booleans and bounded integers"):
-        to_gr1(real, format="gr1c")
+        to_gr1(real, tool="gr1c")
     not_gr1 = Contract.from_strings(name="Until", inputs=["a"], outputs=["b"], guarantees=["a U b"])
     with pytest.raises(GR1FormatError, match="not a GR"):
-        to_gr1(not_gr1, format="gr1c")
+        to_gr1(not_gr1, tool="gr1c")
     two_steps = Contract.from_strings(name="Two", inputs={"x": (0, 1)}, outputs=["b"],
                                       guarantees=["G (b -> X (x' = 1))"])
     with pytest.raises(GR1FormatError, match="one step ahead"):
-        to_gr1(two_steps, format="gr1c")
+        to_gr1(two_steps, tool="gr1c")
 
 
 FAIR = Contract.from_strings(name="Fair", inputs=["req1", "req2"], outputs=["grant1", "grant2"],
@@ -88,13 +88,14 @@ def test_the_slugs_format_is_the_file_given_to_slugs():
     with pytest.raises(GR1FormatError, match="slugs has no -"):
         to_gr1(ARITH)
     with pytest.raises(ValueError, match="one of slugs, gr1c"):
-        to_gr1(FAIR, format="smv")
+        to_gr1(FAIR, tool="smv")
+    assert to_gr1(FAIR, format="slugs") == text       # the former name of tool
 
 
 @pytest.mark.skipif(shutil.which("gr1c") is None, reason="gr1c not installed")
 def test_gr1c_answers_as_slugs(tmp_path):
     for c, expected in ((FAIR, "realizable"), (GREEDY, "unrealizable")):
         path = tmp_path / (c.name + ".spc")
-        path.write_text(to_gr1(c, format="gr1c"))
+        path.write_text(to_gr1(c, tool="gr1c"))
         out = subprocess.run(["gr1c", "-r", str(path)], capture_output=True, text=True).stdout
         assert ("Not realizable" not in out) == (expected == "realizable")

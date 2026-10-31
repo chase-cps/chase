@@ -3,18 +3,18 @@ themselves, as ``to_sva`` writes a contract for the tools of SystemVerilog.
 
     from chase_cps import to_gr1
     open("spec.structuredSlugs", "w").write(to_gr1(contract))      # slugs
-    open("spec.spc", "w").write(to_gr1(contract, format="gr1c"))   # gr1c
+    open("spec.spc", "w").write(to_gr1(contract, tool="gr1c"))     # gr1c
 
 The inputs of the contract are the variables of the environment, its
 outputs those of the system. Each term goes to the part of its GR(1) class:
 an initial term, a safety term G f, or a justice term G F f.
 
-``format="slugs"`` (the default) is the structured format of slugs, the
+``tool="slugs"`` (the default) is the structured format of slugs, the
 file that chase-cps gives to slugs; the compiler of slugs
 (tools/StructuredSlugsParser/compiler.py) turns it into the input of slugs.
 It has no subtraction, multiplication, or division.
 
-``format="gr1c"`` is the input of gr1c (S. Livingston,
+``tool="gr1c"`` is the input of gr1c (S. Livingston,
 https://github.com/tulip-control/gr1c). gr1c compares an integer only with
 a constant, and its domains start at 0: an integer variable of the range
 (low, high) is written over [0, high - low], and a relation with arithmetic
@@ -25,28 +25,31 @@ from __future__ import annotations
 
 import itertools
 from fractions import Fraction
+from typing import Optional
 
 from . import ltl
 from .contract import Contract
 
 MAX_VALUES = 4096     # the assignments a relation may expand to
-FORMATS = ("slugs", "gr1c")
+TOOLS = ("slugs", "gr1c")
 
 
 class GR1FormatError(ValueError):
     """The contract cannot be written in the format asked for."""
 
 
-def to_gr1(contract: Contract, format: str = "slugs") -> str:
+def to_gr1(contract: Contract, tool: str = "slugs", format: Optional[str] = None) -> str:
     """The GR(1) specification of the contract, in the input format of slugs
-    (structured slugs) or of gr1c."""
-    if format not in FORMATS:
-        raise ValueError(f"format {format!r}: one of {', '.join(FORMATS)}")
+    (structured slugs) or of gr1c. ``format`` is the former name of
+    ``tool``."""
+    tool = format or tool
+    if tool not in TOOLS:
+        raise ValueError(f"tool {tool!r}: one of {', '.join(TOOLS)}")
     from .gr1 import gr1_roles
     problem = gr1_roles(contract)
     if problem:
         raise GR1FormatError(f"contract {contract.name}: {problem}")
-    if format == "slugs":
+    if tool == "slugs":
         return _slugs(contract)
     return _gr1c(contract)
 
@@ -60,7 +63,7 @@ def _slugs(contract: Contract) -> str:
         ops = _operators(t) & {"-", "*", "/", "mod", "neg"}
         if ops:
             raise GR1FormatError(f"contract {contract.name}: slugs has no {', '.join(sorted(ops))} "
-                                 f"(in {ltl.to_str(t)}); format='gr1c' writes it as values")
+                                 f"(in {ltl.to_str(t)}); tool='gr1c' writes it as values")
     from types import SimpleNamespace
     from .backends.slugs import SlugsAdapter
     return SlugsAdapter().emit(SimpleNamespace(contract=contract))

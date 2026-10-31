@@ -22,7 +22,7 @@ from .base import Adapter
 
 try:
     import z3 as _z3
-except ImportError:                  # optional: pip install chase-cps[reals]
+except ImportError:                  # optional: pip install chase-cps[z3]
     _z3 = None
 
 TEMPORAL = ("G", "F", "X", "U", "R")
@@ -52,7 +52,7 @@ def why_not(query) -> str:
     """Why z3 cannot answer the query, or "" when it can."""
     from ..words import word_type
     if _z3 is None:
-        return "z3 is not installed: pip install chase-cps[reals]"
+        return "z3 is not installed: pip install chase-cps[z3]"
     if not all(static(f) for f in formulas(query)):
         return "z3 answers formulas without temporal operators, x' or past(x, n)"
     words = sorted(v for v, t in query.variables.items() if word_type(t))

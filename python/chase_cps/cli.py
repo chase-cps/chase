@@ -50,7 +50,7 @@ def _location(name: str) -> str | None:
 
 def _how_to_install(name: str) -> str:
     if name == "z3":
-        return "pip install chase-cps[reals]"
+        return "pip install chase-cps[z3]"
     if tools.installable(name):
         flag = " --accept-license" if name == "nuxmv" else ""
         note = " (academic and non-commercial use only)" if name == "nuxmv" else ""
@@ -404,6 +404,59 @@ def check(args) -> int:
     return 0 if passed else 1
 
 
+EXPORTS = ("smv", "smtlib", "gr1", "sva", "spec", "json")
+
+
+def export(args) -> int:
+    """Write a check of a contract, or the contracts, in the language of a
+    tool."""
+    try:
+        text = _quiet(lambda: _export(args))
+    except (ValueError, RuntimeError) as e:
+        print(f"chase-cps export: {e}", file=sys.stderr)
+        return 2
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(text)
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
+def _export(args) -> str:
+    from . import export as ex
+    from .contract import to_spec
+    from .gr1spec import to_gr1
+    from .sva import to_sva
+    contracts = _read(args.file)
+    if args.to in ("spec", "json"):
+        chosen = [_contract(n, contracts) for n in args.contract] if args.contract \
+            else list(contracts.values())
+        if args.refines or args.tool:
+            raise ValueError(f"--to {args.to} takes no --refines or --tool")
+        if args.to == "spec":
+            return to_spec(chosen)
+        return json.dumps({"contracts": [c.to_dict() for c in chosen]}, indent=2) + "\n"
+    if not args.contract and len(contracts) > 1:
+        raise ValueError(f"--contract: one of {', '.join(contracts)}")
+    if args.contract and len(args.contract) > 1:
+        raise ValueError(f"--to {args.to} writes one contract (NAME or NAME+NAME+...)")
+    c = _contract(args.contract[0], contracts) if args.contract \
+        else next(iter(contracts.values()))
+    abstract = _contract(args.refines, contracts) if args.refines else None
+    if abstract is not None and args.to not in ("smv", "smtlib"):
+        raise ValueError("--refines: --to smv or --to smtlib")
+    if args.tool and args.to not in ("smv", "gr1"):
+        raise ValueError(f"--to {args.to} takes no --tool")
+    if args.to == "smv":
+        return ex.to_smv(c, abstract, tool=args.tool or "nuxmv")
+    if args.to == "gr1":
+        return to_gr1(c, tool=args.tool or "slugs")
+    if args.to == "smtlib":
+        return ex.to_smtlib(c, abstract)
+    return to_sva(c)
+
+
 def _quiet(run):
     """run(), with what the CHASE libraries print on the standard output sent
     to the standard error."""
@@ -578,6 +631,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, default=300, help="seconds per check")
     p.add_argument("--json", action="store_true", help="print the results as JSON")
     p.set_defaults(run=check)
+
+    p = sub.add_parser(
+        "export", help="write a check of a contract as the input of a tool",
+        description="Write a check of a contract in the language of a tool, for the tools "
+        "one runs oneself: smv (nuXmv, NuSMV) and smtlib (z3, cvc5) write the questions of "
+        "verify, or of --refines, each with its name and how to read the answer; gr1 the "
+        "realizability question (slugs, gr1c); sva the contract as a SystemVerilog checker. "
+        "spec and json write the contracts (all of them without --contract).")
+    p.add_argument("file")
+    p.add_argument("--to", required=True, choices=EXPORTS, help="the language")
+    p.add_argument("--tool", help="the tool, where the files of two tools differ: smv "
+                   "(nuxmv, nusmv) and gr1 (slugs, gr1c)")
+    p.add_argument("--contract", nargs="+", metavar="CONTRACT",
+                   help="the contract: NAME, or NAME+NAME+... for the composition (needed "
+                        "when the file has several)")
+    p.add_argument("--refines", metavar="ABSTRACT",
+                   help="the check that CONTRACT refines ABSTRACT (smv, smtlib)")
+    p.add_argument("-o", "--output", help="the file to write (default: the standard output)")
+    p.set_defaults(run=export)
 
     p = sub.add_parser(
         "view", help="draw the contracts of a specification",
