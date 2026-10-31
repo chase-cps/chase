@@ -668,3 +668,97 @@ def test_named_constants_are_shown_and_cores_still_match():
     assert t["G"] == ["y <= x + k"] and t["K"] == ["k = 2"] and t["_G"] == ["y <= x + 2"]
     node = {"contract": t}
     assert viz._core(node, ([], ["y <= x + 2"]), False)["G"] == [0]
+
+
+COUNT = """NAME: count;
+CONTRACT Counter:
+    output integer (0:9) variable n;
+    integer constant top 3;
+    Assumptions:
+        true;
+    Guarantees:
+        n = 0;
+        G ((n < top -> n' = n + 1) & (n >= top -> n' = n));
+CONTRACT Bound:
+    output integer (0:9) variable n;
+    real constant k 1;
+    Assumptions:
+        true;
+    Guarantees:
+        G (n <= k);
+"""
+
+
+def test_a_check_says_what_repair_needs(tmp_path):
+    # the check as chase-cps repair takes it, and each constant: its value,
+    # its type as declared, where it is declared, part or requirement
+    f = tmp_path / "count.ltl"
+    f.write_text(COUNT)
+    d = viz.from_spec(str(f), refines=[("Counter", "Bound")])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    r = bound["repair"]["⪯"]
+    assert r["check"] == "refines" and r["args"] == ["Counter", "Bound"]
+    cs = {c["name"]: c for c in r["constants"]}
+    assert cs["top"]["role"] == "part" and cs["top"]["type"] == "int" and cs["top"]["value"] == "3"
+    assert cs["top"]["owners"] == [{"contract": "Counter", "role": "part", "line": 4}]
+    assert cs["k"]["role"] == "requirement" and cs["k"]["type"] == "real"   # real constant k 1
+    assert cs["k"]["owners"][0]["line"] == 12
+    assert bound["repair"]["A∧G"]["check"] == "verify"
+
+
+def test_constants_are_written_in_their_declarations():
+    out = viz.set_constants(COUNT, [{"line": 4, "name": "top", "value": "1"},
+                                    {"line": 12, "name": "k", "value": "3.5"}])
+    lines = out.split("\n")
+    assert lines[3].strip() == "integer constant top 1;" and lines[11].strip() == "real constant k 3.5;"
+    assert len(lines) == len(COUNT.split("\n"))
+    with pytest.raises(ValueError, match="does not declare"):
+        viz.set_constants(COUNT, [{"line": 5, "name": "top", "value": "1"}])
+    with pytest.raises(ValueError, match="not a number"):
+        viz.set_constants(COUNT, [{"line": 4, "name": "top", "value": "1/3"}])
+
+
+@pytest.mark.skipif(not HAS_MC, reason="nuXmv/NuSMV not installed")
+def test_a_served_page_repairs_and_writes_the_file(tmp_path):
+    # chase-cps view --serve: POST /repair runs the repair, POST /apply writes
+    # the value; without the header of the page, neither
+    pytest.importorskip("z3")
+    import json, socket, subprocess, sys, time, urllib.request
+    f = tmp_path / "count.ltl"
+    f.write_text(COUNT)
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    p = subprocess.Popen([sys.executable, "-m", "chase_cps", "view", str(f), "--refines", "Counter", "Bound",
+                          "--no-checks", "--serve", "--port", str(port)], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL)
+    try:
+        def post(route, body, header=True):
+            req = urllib.request.Request(f"http://127.0.0.1:{port}{route}", data=json.dumps(body).encode(),
+                                         headers={"Content-Type": "application/json",
+                                                  **({"X-CHASE": "1"} if header else {})})
+            try:
+                with urllib.request.urlopen(req, timeout=120) as r:
+                    return r.status, json.loads(r.read() or b"{}")
+            except urllib.error.HTTPError as e:
+                return e.code, None
+        for _ in range(100):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/version", timeout=2)
+                break
+            except OSError:
+                time.sleep(0.2)
+        ask = {"check": "refines", "args": ["Counter", "Bound"],
+               "params": [{"name": "top", "low": 0, "high": 9, "type": "int"}]}
+        assert post("/repair", ask, header=False)[0] == 403
+        code, reply = post("/repair", ask)
+        assert code == 200 and reply["result"]["status"] == "repaired", reply
+        assert reply["result"]["text"] == {"top": "1"}
+        code, reply = post("/apply", {"edits": [{"line": 4, "name": "top", "value": "1"}]})
+        assert reply == {"ok": True}
+        assert "integer constant top 1;" in f.read_text()
+        code, reply = post("/apply", {"edits": [{"line": 5, "name": "top", "value": "1"}]})
+        assert "does not declare" in reply["error"]
+    finally:
+        p.terminate()
+        p.wait()

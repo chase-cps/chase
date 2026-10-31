@@ -24,6 +24,13 @@ Added:
   are shown folded again; a C function is drawn as the implementation of a
   contract (`--implementation heater.c:thermostat C`, also in the `# view:`
   lines of a file).
+- Repair in the diagram: a click on the result of a check (⪯, M ⊨ C,
+  E ⊨ A, a red A∧G) opens its panel, with the named constants of its
+  contracts, the repairs found, a repair drawn on the diagram when pointed
+  at, and Apply, which writes the value in the file (VS Code, and
+  `chase-cps view --serve`: POST /repair and /apply). A click on ⪯ no longer
+  folds the box: the button at its top right does. With two or more checks
+  that fail, the tools list them.
 - Robustness (`chase_cps.robustness`): how much a trace satisfies or
   violates a formula, by the quantitative semantics of signal temporal
   logic in discrete time, on lasso traces. `Contract.robustness(trace)`

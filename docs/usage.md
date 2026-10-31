@@ -979,7 +979,7 @@ code, and a deadline in LTL.
 - Refinement is nesting: a decomposition, or a contract, is drawn inside
   the box of the contract it refines, on as many levels as there are
   refinements. A box with boxes inside folds them away (the button at its
-  top right, or a click on ⪯). A quotient is a hatched hole next to the
+  top right). A quotient is a hatched hole next to the
   known parts, with what refines it inside.
 - An environment is a grey box on the left of what it drives: the outside
   of the design, checked against the assumptions only. Something that has a
@@ -990,6 +990,21 @@ code, and a deadline in LTL.
   and ⪯ (refines), green when the check holds,
   red when it does not. A click on a red tag with a core puts the terms of
   the core on a red ground.
+- The named constants of a contract are on a line of their own (K), and
+  the terms use their names.
+- A click on ⪯, M ⊨ C, or E ⊨ A (or on a red A∧G) opens the panel of the
+  check, by its tag: the named constants of its contracts, each with a
+  range, which may change (those of the parts at first; a constant of the
+  contract refined is a requirement, changed only when you pick it), and
+  the repairs that `chase-cps repair` finds, each alone and all together.
+  Pointing at a repair draws it on the diagram: the value struck out, the
+  new one, and the tag as it would be. **Apply** writes the value in the
+  declaration of the constant (twice for a requirement), and the checks run
+  again. The repairs found before for other checks are then out of date,
+  found again when asked. With two or more checks that fail, a button in
+  the tools lists them, with the constants they share. Repairs run in VS
+  Code and in `chase-cps view FILE --serve`; a page saved as a file shows
+  the command line.
 - The operations are written as in Benveniste et al. (Contracts for System
   Design, 2018): ⊗ composition, ∧ conjunction and • merging (viewpoints of
   one component: one box with the ports of the result, the viewpoints

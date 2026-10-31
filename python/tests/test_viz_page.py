@@ -260,3 +260,72 @@ def test_the_check_button_and_the_checks_running(browser, tmp_path, monkeypatch)
     # not in an editor: no button
     plain, errors = open_page(browser, tmp_path, viz.from_spec(path), editor=False)
     assert not plain.locator("#run").is_visible() and not errors
+
+
+def test_a_red_tag_opens_its_repairs(browser, tmp_path):
+    # a click on the ⪯ that fails opens the panel by it (the boxes inside stay):
+    # the constants, a repair asked of the editor for the part's constant, the
+    # result shown, the change drawn on the diagram when pointed at, and Apply
+    # asks the editor to write the value
+    from test_viz import COUNT
+    f = tmp_path / "count.ltl"
+    f.write_text(COUNT)
+    d = viz.from_spec(str(f), refines=[("Counter", "Bound")])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["badge"]["status"] = "invalid"
+    page, errors = open_page(browser, tmp_path, d)
+    tag = page.locator('[data-check$="|⪯"]').bounding_box()
+    page.mouse.click(tag["x"] + tag["width"] / 2, tag["y"] + tag["height"] / 2)
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert page.evaluate("folded.size") == 0
+    asked = page.evaluate("posted.filter(m => m.type === 'chase-repair')")
+    assert len(asked) == 1           # the constant of the part at once; the requirement k only when picked
+    assert asked[0]["request"]["check"] == "refines" and asked[0]["request"]["args"] == ["Counter", "Bound"]
+    assert [q["name"] for q in asked[0]["request"]["params"]] == ["top"]
+    assert page.locator("#repair input[type=checkbox]").evaluate_all("xs => xs.map(x => x.checked)") == [True, False]
+    page.evaluate("""id => window.postMessage({ type: 'chase-repair-result', id, result: { status: 'repaired',
+        method: 'counterexamples', rounds: 2, seconds: 0.1, values: { top: 1 }, text: { top: '1' }, cost: 2,
+        optimal: true } }, '*')""", asked[0]["id"])
+    page.wait_for_selector("#repair .rp-opt.repaired", timeout=5000)
+    assert "top 3 → 1" in page.inner_text("#repair .rp-opt")
+    card = page.locator("#repair .rp-opt.repaired").bounding_box()
+    page.mouse.move(card["x"] + 20, card["y"] + 10)
+    page.wait_for_timeout(100)
+    assert page.locator("#view text[data-was]").all_text_contents() == ["top = 3 → 1"]
+    assert page.locator("#view .pv").count() == 1          # the tag as it would be
+    page.mouse.move(5, 400)
+    page.wait_for_timeout(100)
+    assert page.locator("#view text[data-was]").count() == 0
+    apply = page.locator("#repair button", has_text="Apply").bounding_box()
+    page.mouse.click(apply["x"] + apply["width"] / 2, apply["y"] + apply["height"] / 2)
+    edits = page.evaluate("posted.filter(m => m.type === 'chase-apply').map(m => m.edits)")
+    assert edits == [[{"line": 4, "name": "top", "value": "1"}]]
+    # the requirement: picked by hand, its repair asks twice before it is written
+    box = page.locator("#repair input[type=checkbox]").nth(1).bounding_box()
+    page.mouse.click(box["x"] + 5, box["y"] + 5)
+    find = page.locator("#repair button", has_text="Find").bounding_box()
+    page.mouse.click(find["x"] + 5, find["y"] + 5)
+    asked = page.evaluate("posted.filter(m => m.type === 'chase-repair')")
+    assert [q["name"] for q in asked[-1]["request"]["params"]] == ["top"]   # each alone, then together
+    for i, (name, value) in enumerate([("top", "1"), ("k", "3"), (None, None)]):
+        page.wait_for_function(f"posted.filter(m => m.type === 'chase-repair').length >= {i + 2}", timeout=5000)
+        a = page.evaluate("posted.filter(m => m.type === 'chase-repair')")[i + 1]
+        page.evaluate("""([id, name, value]) => window.postMessage({ type: 'chase-repair-result', id, result: name
+            ? { status: 'repaired', method: 'projection', rounds: 1, seconds: 0.1, values: { [name]: +value },
+                text: { [name]: value }, cost: 2, optimal: true }
+            : { status: 'impossible', method: 'counterexamples', rounds: 3, seconds: 0.1 } }, '*')""",
+                      [a["id"], name, value])
+    page.wait_for_function("document.querySelectorAll('#repair .rp-opt').length === 3", timeout=5000)
+    k = page.locator("#repair .rp-opt", has_text="k 1 → 3").locator("button", has_text="Apply")
+    b = k.bounding_box()
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+    assert page.inner_text("#repair .rp-opt:has-text('k 1 → 3') button.warn") == "Change the requirement?"
+    assert len(page.evaluate("posted.filter(m => m.type === 'chase-apply')")) == 1     # not yet
+    b = page.locator("#repair .rp-opt:has-text('k 1 → 3') button.warn").bounding_box()
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+    assert page.evaluate("posted.filter(m => m.type === 'chase-apply').pop().edits") == [
+        {"line": 12, "name": "k", "value": "3"}]
+    assert "No value of top, k" in page.inner_text("#repair")
+    page.keyboard.press("Escape")
+    assert not page.is_visible("#repair")
+    assert errors == []

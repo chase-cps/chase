@@ -82,6 +82,7 @@ class Repair:
              "seconds": round(self.seconds, 3)}
         if self.values:
             d["values"] = {k: json_value(v) for k, v in self.values.items()}
+            d["text"] = {k: _text(v) for k, v in self.values.items()}   # as a file writes them
             d["cost"] = json_value(self.cost)
             d["optimal"] = self.optimal
         if self.check is not None and hasattr(self.check, "to_dict"):
@@ -92,6 +93,15 @@ class Repair:
         if self.reason:
             d["reason"] = self.reason
         return d
+
+
+def _text(v):
+    """The value as a specification file writes it, or None when it has no
+    finite decimal expansion (1/3)."""
+    try:
+        return ltl.to_str(ltl.Num(v))
+    except ValueError:
+        return None
 
 
 METHODS = ("auto", "projection", "counterexamples", "enumeration")

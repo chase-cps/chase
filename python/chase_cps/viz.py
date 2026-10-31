@@ -504,7 +504,7 @@ def _core(node: dict, core, unrealizable: bool) -> Optional[dict]:
 
 def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments: Iterable = (),
             context=None, open: Iterable = (), title: Optional[str] = None,
-            results: bool = True, connect: Iterable = ()) -> dict:
+            results: bool = True, connect: Iterable = (), repairs: Iterable = ()) -> dict:
     """The diagram of contracts, components, and systems, as data for the
     page. ``refines`` lists (refined, abstract) or (refined, abstract,
     status), where the status is a string or the result of ``refines``: the
@@ -533,7 +533,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
     the same ``context``), and a refinement given without its status takes
     the one kept. A contract that has changed since a check shows nothing of
     it. The items in ``connect`` are wired side by side: an output of one to
-    the inputs of the others with the same name."""
+    the inputs of the others with the same name. ``repairs`` lists (item,
+    tag, about): what the page needs to repair the check of the tag on the
+    box of the item (see ``from_spec``)."""
     scene = _Scene()
     checks = list(checks)
     nodes, top, own = [], {}, {}           # own: the box an item drew, before any nesting
@@ -693,6 +695,10 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         holes = [n for n in _boxes(nodes) if n["kind"] == "hole" and scene.objs.get(n["id"]) == id(obj)]
         for n in holes or boxes:        # a quotient: its holes, not the box of the dividend
             n["open"] = True
+    for obj, name, about in repairs:     # on the box that shows the result of the check
+        n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
+        if n is not None:
+            n.setdefault("repair", {})[name] = about
     if context is not None:
         from .logic import _formula
         context = [context] if isinstance(context, (str, ltl.Node)) else list(context)
@@ -933,13 +939,88 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
                                    model=model, contract=name))
         shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
     drawn = {id(x) for x in items}
+    repairs = _repairs(path, refines, pairs, implementations, environments, envs, shown, atoms,
+                       written, get)
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
                 open=[get(e) for e in open], title=title or os.path.basename(path),
-                connect=[get(n) for n in connect if id(get(n)) in drawn])
+                connect=[get(n) for n in connect if id(get(n)) in drawn], repairs=repairs)
     _place_in_source(d, path)
     if rec is not None and check:     # the whole file checked: the results of old versions go
         rec.save(prune=not contracts and (deadline is None or time.monotonic() <= deadline))
     return d
+
+
+_CONSTANT = re.compile(r"^\s*(integer|real)\s+constant\s+([A-Za-z_]\w*)\s+([^;\s]+)\s*;")
+
+
+def _constant_lines(path: str) -> dict:
+    """{(contract, constant): (line, "int" or "real")} of the declarations
+    of the named constants in a file of the logics language (lines from 1)."""
+    out, name = {}, None
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return out
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = re.sub(r"(//|#).*", "", raw)
+        m = re.match(r"\s*CONTRACT\s+([A-Za-z_]\w*)", line)
+        if m:
+            name = m.group(1)
+            continue
+        m = _CONSTANT.match(line)
+        if m and name:
+            out[(name, m.group(2))] = (number, "int" if m.group(1) == "integer" else "real")
+    return out
+
+
+def _repairs(path, refines, pairs, implementations, environments, envs, shown, atoms,
+             written, get) -> list:
+    """(item, tag, about) for each check drawn whose contracts have named
+    constants: the check as chase-cps repair takes it (its arguments as
+    written in the file or on the command line), and the constants, each
+    with its value, its type, and where it is declared, in which contract,
+    as a part of what is checked or as its requirement."""
+    lines = _constant_lines(path)
+
+    def constants(roles):              # [(contract of the file, role)] -> [constant]
+        found = {}
+        for c, role in roles:
+            for k, v in c.constants.items():
+                line, kind = lines.get((c.name, k), (None, "int" if isinstance(v, int) else "real"))
+                e = found.setdefault(k, {"name": k, "value": _number_text(v), "type": kind,
+                                         "owners": []})
+                e["owners"].append({"contract": c.name, "role": role, "line": line})
+        for e in found.values():       # a part when a part declares it
+            roles_of = {o["role"] for o in e["owners"]}
+            e["role"] = "part" if "part" in roles_of else roles_of.pop()
+        return list(found.values())
+
+    out = []
+
+    def add(obj, tag, check, args, roles):
+        cs = constants(roles)
+        if cs:
+            out.append((obj, tag, {"check": check, "args": list(args), "constants": cs}))
+    for (a, b, _), (x, y) in zip(pairs, refines):
+        add(b, "⪯", "refines", (x, y), [(c, "part") for c in written(a, [])]
+            + [(c, "requirement") for c in written(b, [])])
+    for model, name in implementations:
+        c = get(name)
+        k = next((k for k in shown if isinstance(k, Component) and k.contract is c), c)
+        add(k, "M ⊨ C", "impl", (model, name), [(x, "contract") for x in written(c, [])])
+    for (model, name), (m, c, _) in zip(environments, envs):
+        add(m, "E ⊨ A", "env", (model, name), [(x, "contract") for x in written(c, [])])
+    for c in atoms:
+        add(c, "A∧G", "verify", (c.name,), [(c, "contract")])
+    return out
+
+
+def _number_text(v) -> str:
+    try:
+        return ltl.to_str(ltl.Num(v))
+    except ValueError:                  # no finite decimal expansion
+        return str(v)
 
 
 def _has_assertions(path: str) -> bool:
@@ -1063,12 +1144,56 @@ def notebook(item, **kwargs) -> str:
     return f'<iframe srcdoc="{page}" style="width:100%;height:520px;border:0"></iframe>'
 
 
+def repair_request(path: str, request: dict, timeout: float = 300) -> dict:
+    """The repair a page asks for, on the specification at path: request is
+    {"check", "args" (as chase-cps repair takes them), "params": [{"name",
+    "low", "high", "type": "int" or "real"}]}. The result of
+    ``Repair.to_dict``."""
+    from .cli import _contract, _model, _read
+    from .repair import repair
+    spec = _read(path)
+    check, args = request["check"], list(request["args"])
+    if check in ("impl", "env"):
+        c = _contract(args[1], spec)
+        arguments = (_model(args[0], c), c)
+    elif check == "refines":
+        arguments = tuple(_contract(a, spec) for a in args)
+    else:
+        arguments = (_contract(args[0], spec),)
+    params = {}
+    for q in request["params"]:
+        low, high = ltl.number(str(q["low"])), ltl.number(str(q["high"]))
+        params[q["name"]] = (low, high, "int") if q.get("type") == "int" else (low, high)
+    return repair(check, *arguments, parameters=params,
+                  timeout=float(request.get("timeout", timeout))).to_dict()
+
+
+def set_constants(text: str, edits) -> str:
+    """The text of a specification with the values of named constants
+    changed: each edit is {"line" (from 1), "name", "value"}, the line of
+    the declaration of the constant."""
+    lines = text.split("\n")
+    for e in edits:
+        i = int(e["line"]) - 1
+        value = str(e["value"])
+        if not re.fullmatch(r"-?\d+(\.\d+)?", value):
+            raise ValueError(f"{e['name']}: {value} is not a number a file can write")
+        pattern = re.compile(r"(\bconstant\s+" + re.escape(e["name"]) + r"\s+)([^;\s]+)")
+        if not 0 <= i < len(lines) or not pattern.search(lines[i]):
+            raise ValueError(f"line {i + 1} does not declare the constant {e['name']}")
+        lines[i] = pattern.sub(lambda m: m.group(1) + value, lines[i], count=1)
+    return "\n".join(lines)
+
+
 def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
           elk: Optional[str] = None) -> int:
     """Serves the diagram make() on http://host:port, and draws it again
     whenever the file at path changes: the page in the browser takes the new
     drawing in place, and keeps the view. When the file cannot be drawn, the
-    page keeps the last diagram and says why. Stops with Ctrl-C."""
+    page keeps the last diagram and says why. The page asks for repairs
+    (POST /repair) and writes the values of constants in the file (POST
+    /apply), with the header X-CHASE (a page of another site cannot send
+    it). Stops with Ctrl-C."""
     import http.server
     import threading
 
@@ -1119,6 +1244,32 @@ def serve(make, path: str, port: int = 8765, host: str = "127.0.0.1",
             data = text.encode()
             self.send_response(200)
             self.send_header("Content-Type", kind)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_POST(self):
+            if self.headers.get("X-CHASE") != "1" or self.path not in ("/repair", "/apply"):
+                self.send_response(403)
+                self.end_headers()
+                return
+            try:
+                asked = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+                if self.path == "/repair":
+                    reply = {"result": repair_request(path, asked)}
+                else:
+                    with open(path, encoding="utf-8") as f:
+                        text = f.read()
+                    text = set_constants(text, asked.get("edits", []))
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(text)
+                    reply = {"ok": True}
+            except Exception as e:      # the reason goes to the page
+                reply = {"error": str(e) if isinstance(e, (ValueError, RuntimeError, KeyError))
+                         else f"{type(e).__name__}: {e}"}
+            data = json.dumps(reply).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(data)
@@ -1238,6 +1389,63 @@ _PAGE = r"""<!doctype html>
   table.fsm td { padding:3px 16px 3px 0; border-bottom:1px solid #f1f4f4; vertical-align:top; }
   table.fsm td.st { color:var(--teal); font-weight:600; border-bottom:1px solid #e3e8e8; }
   table.fsm td.when { color:var(--soft); }
+  #repair, #queue { position:fixed; display:none; background:#fff; border:1px solid #d5dddd; border-radius:10px;
+                    box-shadow:0 10px 36px rgba(0,0,0,.16); font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+                    color:var(--ink); overflow:auto; max-height:calc(100vh - 70px); }
+  #repair { width:400px; max-width:calc(100vw - 24px); z-index:9; }
+  #queue { right:12px; top:46px; width:300px; max-width:calc(100vw - 24px); z-index:8; }
+  .rp-head { display:flex; gap:8px; align-items:center; padding:9px 10px 8px 14px; border-bottom:1px solid #e3e8e8;
+             position:sticky; top:0; background:#fff; }
+  .rp-head b { flex:1; font-size:12.5px; font-weight:600; min-width:0; overflow-wrap:anywhere; }
+  .rp-x { border:0; background:none; cursor:pointer; color:var(--soft); font-size:16px; line-height:1; padding:2px 6px; border-radius:5px; }
+  .rp-x:hover { background:var(--fill); color:var(--teal); }
+  .rp-tag { flex:none; display:block; }
+  .rp-chip { flex:none; font:600 10.5px 'Arial Unicode MS', 'Segoe UI', Helvetica, Arial, sans-serif; color:#fff; border-radius:4px;
+             padding:1px 6px; background:var(--faint); }
+  .rp-chip.valid { background:var(--ok); } .rp-chip.invalid { background:var(--bad); }
+  .rp-sec { padding:8px 14px 10px; border-bottom:1px solid #f1f4f4; }
+  .rp-sec:last-child { border-bottom:0; }
+  .rp-says { color:var(--soft); }
+  .rp-h { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--soft); margin:2px 0 6px; }
+  .rp-row { display:grid; grid-template-columns:16px minmax(0,1fr) auto; gap:2px 6px; align-items:center; padding:4px 0; }
+  .rp-row + .rp-row { border-top:1px dashed #edf1f1; }
+  .rp-row input[type=checkbox] { margin:0; accent-color:var(--teal); }
+  .rp-name { font:11.5px Menlo, Monaco, monospace; }
+  .rp-who { grid-column:2 / span 2; color:var(--soft); font-size:11px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .rp-role { font-size:10.5px; border:1px solid var(--line); border-radius:4px; padding:0 5px; color:var(--soft); }
+  .rp-role.requirement { color:var(--warn); border-color:var(--warn); }
+  .rp-range { display:flex; gap:3px; align-items:center; color:var(--soft); font:11px Menlo, Monaco, monospace; }
+  .rp-range input { width:54px; font:11px Menlo, Monaco, monospace; border:1px solid #d5dddd; border-radius:4px; padding:1px 4px; color:var(--ink); }
+  .rp-btn { font:600 11.5px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
+            border-radius:6px; padding:3px 10px; cursor:pointer; color:var(--teal); white-space:nowrap; }
+  .rp-btn:hover { background:var(--fill); }
+  .rp-btn.main { background:var(--teal); border-color:var(--teal); color:#fff; }
+  .rp-btn.on { background:#e6eeee; }
+  .rp-btn.warn { border-color:var(--warn); color:var(--warn); }
+  .rp-btn:disabled { opacity:.45; cursor:default; background:#fff; }
+  .rp-btn.main:disabled { background:var(--teal); }
+  .rp-run { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .rp-opt { border:1px solid #e3e8e8; border-radius:8px; padding:7px 10px; margin:6px 0 0; display:grid;
+            grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; align-items:center; }
+  .rp-opt.repaired { border-color:#b9d6c4; } .rp-opt.repaired:hover, .rp-opt.shown { border-color:var(--ok); background:#f6faf7; }
+  .rp-opt.old { opacity:.6; }
+  .rp-v { font:11.5px Menlo, Monaco, monospace; overflow-wrap:anywhere; }
+  .rp-v s { color:var(--bad); } .rp-v em { font-style:normal; color:var(--ok); font-weight:600; }
+  .rp-m { grid-column:1; color:var(--soft); font-size:11px; }
+  .rp-b { grid-row:1 / span 2; grid-column:2; display:flex; gap:4px; align-items:center; }
+  .rp-note { color:var(--soft); font-size:11px; margin-top:6px; }
+  .rp-err { color:var(--bad); font-size:11px; margin-top:6px; white-space:pre-wrap; }
+  .rp-cmd { font:10.5px/1.5 Menlo, Monaco, monospace; background:var(--fill); border:1px solid #e3e8e8; border-radius:6px;
+            padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text; }
+  .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
+             animation:turn 0.8s linear infinite; }
+  .q-item { padding:8px 12px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:2px; }
+  .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
+  .q-item .t { display:flex; gap:6px; align-items:center; font-weight:600; font-size:12px; }
+  .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
+  .q-item .v { font:11px Menlo, Monaco, monospace; color:var(--ink); }
+  .tools #repairs { width:auto; padding:0 7px; gap:4px; display:none; color:var(--bad); font:600 11.5px Helvetica, Arial, sans-serif; }
+  .tools #repairs svg { stroke:currentColor; }
 </style></head><body>
 <div id="top"><div id="context"></div>
   <span class="tools">
@@ -1250,6 +1458,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Results of the checks (A, G, R, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
+    <button id="repairs" title="The checks that fail, and their repairs" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
@@ -1259,6 +1468,8 @@ _PAGE = r"""<!doctype html>
 <div id="busy">checking…</div>
 <div id="tip"></div>
 <div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
+<div id="repair" role="dialog" aria-label="The check and its repairs"></div>
+<div id="queue" role="dialog" aria-label="The checks that fail"></div>
 __ELK__
 <script>
 let DATA = __DATA__;
@@ -1616,15 +1827,18 @@ function drawNode(g, e, ox, oy) {
     if (key) c.onclick = (kind === "model" || kind === "synth") && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
     ix += ICON + 4; });
   if (checks(n).length) ix += 6;
-  checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core
-    const t = el("g", {}, box), on = focus[n.id] === i;
+  checks(n).forEach((c, i) => {      // a click on a check that has a core shows the core; on one that fails, its repairs
+    const t = el("g", { "data-check": n.id + "|" + c.name, "data-text": c.name }, box), on = focus[n.id] === i;
+    const fix = c.status === "invalid" && n.repair && n.repair[c.name];
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + " — " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
-           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
+           + (c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : "") + (fix ? ", and the repairs" : ""));
     if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
-    if (c.core) { t.setAttribute("class", "icon");
-      t.onclick = () => { if (on) delete focus[n.id];
+    if (c.core || fix) { t.setAttribute("class", "icon");
+      t.onclick = () => { if (fix && !on) openRepair(n, c.name);
+        if (!c.core) return;
+        if (on) delete focus[n.id];
         else { focus[n.id] = i; open.add((c.core.part === "composed" ? "k:" : "c:") + n.id); } render(); }; } });
   if (busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A")) {
     const known = (progressed[n.contract.name] || {})["A∧G"];   // A ∧ G: known already, or being checked
@@ -1643,13 +1857,14 @@ function drawNode(g, e, ox, oy) {
     f.onclick = fold(n.id);
     rx -= ICON + 6;
   }
-  if (n.badge && show.checks) { const b = el("g", {}, box), w = tagWidth(n.badge.text);
+  if (n.badge && show.checks) { const b = el("g", { "data-check": n.id + "|" + tagOf(n.badge.text), "data-text": n.badge.text,
+                                                   class: "icon" }, box), w = tagWidth(n.badge.text);
     const known = busy && !n.badge.status && n.contract && (progressed[n.contract.name] || {})[n.badge.text];
     if (busy && !n.badge.status && !known) pending(b, rx - w, y + 6, n.badge.text);
     else tag(b, rx - w, y + 6, n.badge.text, n.badge.status || known);
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + " — " + (SAYS[n.badge.status] || "not checked")
-           + (inside(n) ? ". Click: hide or show the boxes inside" : ""));
-    if (inside(n)) { b.setAttribute("class", "icon"); b.onclick = fold(n.id); } }
+           + ". Click: the check" + ((n.repair || {})[tagOf(n.badge.text)] ? ", and its repairs" : ""));
+    b.onclick = () => openRepair(n, tagOf(n.badge.text)); }
   sz.ls.forEach(([k, label, s, core, at], i) => {
     const frame = r => el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3,
                                      fill: "none", stroke: "var(--teal)", "stroke-width": 1.5 }, r);
@@ -1665,7 +1880,9 @@ function drawNode(g, e, ox, oy) {
       if (label) { el("rect", { x: x + PAD, y: ty - 10, width: 13, height: 13, rx: 3, fill: "var(--teal)" }, row);
                    const t = text(row, x + PAD + 6.5, ty, "s", label); t.setAttribute("text-anchor", "middle");
                    t.setAttribute("style", "font-size:9.5px;font-weight:700;fill:#fff"); }
-      text(row, x + PAD + 20, ty, "f", s); }
+      const ft = text(row, x + PAD + 20, ty, "f", s);
+      if (n.contract && (n.contract.K || []).includes(s)) {      // a named constant: a repair shown changes it
+        ft.setAttribute("data-const", s.split(" = ")[0]); ft.setAttribute("data-cbox", n.id); } }
     else if (k === "more") {
       if (at && at.length) { row.setAttribute("class", "trow"); row.setAttribute("data-hidden", JSON.stringify(at)); frame(row); }
       const t = text(row, x + PAD + 20, ty, "s", s);
@@ -1777,6 +1994,7 @@ function place() {
     dots.setAttribute("width", step); dots.setAttribute("height", step);
     dots.setAttribute("patternTransform", `translate(${cam.x % step},${cam.y % step})`);
   }
+  placePanel();
 }
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
@@ -1831,6 +2049,7 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
     zoomAt(e.clientX, e.clientY, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)));          // a pinch comes with ctrl
   }, { passive: false });
   document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeRepair(); return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
       if (!cam) return;
     if (e.key === "+" || e.key === "=") zoomBy(1.25);
@@ -1983,6 +2202,7 @@ async function render() {
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
   (out.edges || []).forEach(ed => drawEdge(g, ed, 0, 0));
   select(selectedLine, false, selectedAt);
+  afterRender();
 }
 
 // From the diagram to the text, and back: a double click on a box asks the
@@ -2059,7 +2279,7 @@ function help() {
     sample(svg => icon(svg, k, 16, 2, false, t), t));
   sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: 4, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
                 el("path", { d: "M20.5 11.5 L24 8 L27.5 11.5", fill: "none", stroke: "#17393b", "stroke-width": 1.4 }, s); },
-         "hide the boxes inside (or click ⪯)");
+         "hide the boxes inside");
   // a check: green when it holds, red when not, grey when undecided
   const pair = (t, d) => { const d2 = document.createElement("div");
     const svg = el("svg", { width: 88, height: 20 }, d2), w = tagWidth(t);
@@ -2069,6 +2289,7 @@ function help() {
    ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"],
    ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) => pair(t, d));
   sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");
+  sample(s => { tag(s, 4, 2, "⪯", "invalid"); }, "click a result: the check, and its repairs");
   const wire = (w, d) => sample(s => el("line", { x1: 4, y1: 10, x2: 44, y2: 10, stroke: "#7d8c8d", "stroke-width": w }, s), d);
   wire(1.1, "Boolean");
   wire(1.8, "integer or real");
@@ -2163,6 +2384,7 @@ function load(data, token) {
   document.title = DATA.title;
   drawContext();
   if (token > staleAt) stale(null);    // a newer reason stays
+  rebindPanel();
   return render();
 }
 // The file cannot be drawn as it is now: the diagram of the last version
@@ -2183,6 +2405,10 @@ window.addEventListener("message", e => {
   else if (m.type === "chase-select") select(m.line, true, m.at);
   else if (m.type === "chase-busy") setBusy(m.on);
   else if (m.type === "chase-progress") progress(m.event);
+  else if (m.type === "chase-repair-result") {
+    const a = asked[m.id];
+    if (a) { delete asked[m.id]; if (m.error) a.no(new Error(m.error)); else a.ok(m.result); }
+  }
 });
 // Export: the whole diagram as it is drawn (what is open stays open), on a
 // white ground, the colors written out, so that the file stands alone.
@@ -2214,6 +2440,421 @@ function exported() {
   return { text, w, h };
 }
 let vscodeApi = null;
+// Repair. A click on the result of a check (⪯, M ⊨ C, E ⊨ A, or a red A∧G)
+// opens its panel by the tag: the named constants of the contracts of the
+// check, which of them may change and within which range, and the repairs,
+// found by chase-cps repair (run by the editor, or by chase-cps view
+// --serve); each has passed the check itself. A repair pointed at shows on
+// the diagram what it changes: the value struck out, the new one, and the
+// tag as it would be. With two or more checks that fail, the tools list
+// them all. A repair applied changes the declaration of the constant in the
+// file; the checks that read it run again, and the repairs found before for
+// other checks are marked out of date, found again when asked.
+const REPAIRS = {};       // the check (by its key) -> { picks, ranges, options, running, error }
+let panel = null;         // the panel open: { id, tag, nkey }
+let previewing = null;    // a repair drawn on the diagram: { id, tag, values, from, owners, pinned }
+const repairKey = r => r.check + " " + r.args.join(" ");
+const repairSig = r => JSON.stringify(r.constants.map(c => [c.name, c.value]));
+const backend = () => inEditor() ? "editor" : (location.protocol.startsWith("http") ? "serve" : null);
+const tagOf = t => t.startsWith("⪯") ? "⪯" : t.startsWith("E ⊨ A") ? "E ⊨ A" : t;
+function statusOf(n, t) {
+  if (n.badge && tagOf(n.badge.text) === t) return n.badge.status;
+  return ((n.checks || []).find(c => c.name === t) || {}).status;
+}
+function failing() {
+  const out = [];
+  boxes.forEach(n => Object.keys(n.repair || {}).forEach(t => { if (statusOf(n, t) === "invalid") out.push([n, t]); }));
+  return out;
+}
+function defaultRange(c) {
+  const v = Number(c.value), int = c.type === "int";
+  if (v > 0) return [0, int ? Math.max(2 * v, v + 10) : 2 * v];
+  if (v < 0) return [int ? Math.min(2 * v, v - 10) : 2 * v, 0];
+  return [-10, 10];
+}
+function stateOf(r) {
+  const k = repairKey(r);
+  const s = REPAIRS[k] = REPAIRS[k] || { picks: {}, ranges: {}, options: [], running: null, error: null };
+  r.constants.forEach(c => {
+    if (!(c.name in s.picks)) s.picks[c.name] = c.role !== "requirement";   // a requirement: only when asked
+    if (!(c.name in s.ranges)) s.ranges[c.name] = defaultRange(c);
+  });
+  return s;
+}
+// one element: h("div", { class: "x", onclick: f }, children...)
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in attrs || {}) {
+    const v = attrs[k];
+    if (v === undefined || v === null || v === false) continue;
+    if (k.startsWith("on")) e[k] = v;
+    else if (k === "class") e.className = v;
+    else if (k === "checked" || k === "disabled" || k === "value") e[k] = v;
+    else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => { if (c !== null && c !== undefined && c !== false)
+    e.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c); });
+  return e;
+}
+function checkTitle(n, t) {
+  const r = (n.repair || {})[t];
+  if (r && r.check === "refines") return r.args[0].split("+").join(" ⊗ ") + " refines " + r.args[1];
+  if (r && r.check === "impl") return r.args[0].split("/").pop() + " implements " + r.args[1];
+  if (r && r.check === "env") return r.args[0].split("/").pop() + " is an environment of " + r.args[1];
+  if (r) return "A ∧ G of " + r.args[0] + " can hold";
+  return n.title;
+}
+// the tag of a check as the diagram draws it, for a panel
+function tagSvg(t, status) {
+  const svg = el("svg", { width: tagWidth(t) + 2, height: 18, class: "rp-tag" });
+  tag(svg, 1, 1, t, status || null);
+  return svg;
+}
+async function openRepair(n, t) {
+  const keys = keysOf(DATA.nodes);
+  panel = { id: n.id, tag: t, nkey: keys[n.id] };
+  document.getElementById("queue").style.display = "none";
+  const r0 = (n.repair || {})[t];
+  if (r0) {                             // the boxes that declare the constants, open: their values show
+    const owners = new Set(r0.constants.flatMap(c => c.owners.map(o => o.contract)));
+    let more = false;
+    (function walk(b) { if (b.contract && owners.has(b.contract.name) && !open.has("c:" + b.id)) { open.add("c:" + b.id); more = true; }
+                        (b.children || []).forEach(walk); })(n);
+    if (more) await render();
+  }
+  renderPanel();
+  makeRoom();
+  placePanel();
+  const r = (n.repair || {})[t];
+  if (r && backend() && statusOf(n, t) === "invalid") {   // found at once: the constants that may change already
+    const s = stateOf(r);
+    if (!s.running && !s.options.some(o => o.sig === repairSig(r)) && r.constants.some(c => s.picks[c.name]))
+      findRepairs(n, t);
+  }
+}
+// the diagram moves left when the panel would cover it on the right of the tag
+// where the panel goes: right of the box of the tag, at the height of the tag
+function anchorOf() {
+  const a = panel && document.querySelector('#view [data-check="' + panel.id + "|" + panel.tag + '"]');
+  if (!a) return null;
+  const t = a.getBoundingClientRect(), b = a.closest("[data-box]");
+  const outer = b ? b.querySelector("rect").getBoundingClientRect() : t;
+  return { left: outer.left, right: Math.max(t.right, outer.right), top: t.top, bottom: t.bottom };
+}
+function makeRoom() {
+  const box = document.getElementById("repair"), r = anchorOf();
+  if (!r || !cam) return;
+  const need = r.right + 10 + box.offsetWidth - (innerWidth - 12);
+  if (need > 0 && need < r.left - 60) { cam.x -= need; place(); }
+}
+function closeRepair() {
+  panel = null;
+  clearPreview(true);
+  document.getElementById("repair").style.display = "none";
+}
+// after a new drawing: the panel stays on the box that says the same
+function rebindPanel() {
+  previewing = null;
+  if (!panel) return;
+  const keys = keysOf(DATA.nodes), id = Object.keys(keys).find(i => keys[i] === panel.nkey);
+  if (!id || !byId[id]) { closeRepair(); return; }
+  panel.id = id;
+  renderPanel();
+}
+const ROLE = { part: "part", requirement: "requirement", contract: "contract" };
+function renderPanel() {
+  const box = document.getElementById("repair");
+  if (!panel) { box.style.display = "none"; return; }
+  const n = byId[panel.id];
+  if (!n) { closeRepair(); return; }
+  const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
+  box.innerHTML = "";
+  box.style.display = "block";
+  box.appendChild(h("div", { class: "rp-head" },
+    tagSvg(t, st), h("b", {}, checkTitle(n, t)),
+    h("button", { class: "rp-x", title: "Close (Esc)", onclick: closeRepair }, "×")));
+  const says = st === "valid" ? "Holds with the present values." : st === "invalid" ? "Does not hold with the present values."
+             : st === "unknown" ? "Not decided." : "Not checked yet.";
+  const head = h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says));
+  box.appendChild(head);
+  if (!r) {
+    head.appendChild(h("div", { class: "rp-note" }, n.contract && n.contract.K
+      ? "Repairs are found on a specification file: open it with chase-cps view FILE --serve, or in VS Code."
+      : "This check reads no named constant. A repair changes named constants: write the number to change as one "
+        + "(integer constant k 2; or real constant lam 4.5;) and use its name in the terms."));
+    return;
+  }
+  const s = stateOf(r), sig = repairSig(r);
+  // the constants
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Constants that may change"));
+  r.constants.forEach(c => {
+    const [lo, hi] = s.ranges[c.name];
+    const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
+      onchange: e => { const x = Number(e.target.value); if (Number.isFinite(x)) s.ranges[c.name][i] = x; renderQueue(); } });
+    sec.appendChild(h("div", { class: "rp-row" },
+      h("input", { type: "checkbox", checked: !!s.picks[c.name], "aria-label": "may change " + c.name,
+                   onchange: e => { s.picks[c.name] = e.target.checked; renderPanel(); } }),
+      h("span", { class: "rp-name" }, c.name + " = " + c.value),
+      h("span", { class: "rp-range" }, num(lo, 0), "..", num(hi, 1)),
+      h("span", {}),
+      h("span", { class: "rp-who" }, (c.type === "int" ? "integer" : "real") + " · " + c.owners.map(o => o.contract).join(", "),
+        h("span", { class: "rp-role " + c.role }, ROLE[c.role] || c.role),
+        c.role === "requirement" ? "changed only with your consent" : null)));
+  });
+  const picked = r.constants.filter(c => s.picks[c.name]);
+  const run = h("div", { class: "rp-run" });
+  if (s.running) {
+    run.appendChild(h("span", { class: "rp-spin" }));
+    run.appendChild(h("span", { class: "rp-says" }, "Finding repairs… " + s.running.done + " of " + s.running.of));
+    run.appendChild(h("button", { class: "rp-btn", onclick: () => stopRepairs(r) }, "Stop"));
+  } else {
+    run.appendChild(h("button", { class: "rp-btn main", disabled: !how || !picked.length,
+                                  onclick: () => findRepairs(n, t) }, s.options.length ? "Find again" : "Find repairs"));
+    run.appendChild(h("span", { class: "rp-says" }, !picked.length ? "Pick a constant to change."
+      : picked.length > 1 ? "Each alone, and all together." : ""));
+  }
+  sec.appendChild(h("div", { style: "margin-top:8px" }, run));
+  box.appendChild(sec);
+  // the repairs
+  if (s.options.length || s.error) {
+    const out = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Repairs"));
+    s.options.forEach(o => out.appendChild(optionCard(n, t, r, s, o, sig)));
+    if (s.error) out.appendChild(h("div", { class: "rp-err" }, s.error));
+    out.appendChild(h("div", { class: "rp-note" }, "Each value has passed the check itself. Point at a repair to see it on the diagram."));
+    box.appendChild(out);
+  }
+  if (!how) box.appendChild(h("div", { class: "rp-sec" },
+    h("div", { class: "rp-note", style: "margin-top:0" }, "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve. On the command line:"),
+    h("div", { class: "rp-cmd" }, commandOf(r, s))));
+}
+function optionCard(n, t, r, s, o, sig) {
+  const res = o.res, old = o.sig !== sig && !o.applied;
+  const names = o.names.join(", ");
+  if (res.status !== "repaired") {
+    const text = res.status === "holds" ? "Holds with the present values: nothing to change."
+      : res.status === "impossible" ? "No value of " + names + " in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " makes it hold."
+      : "Not decided" + (res.reason ? ": " + res.reason : ".");
+    const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : "") },
+      h("div", { class: "rp-v" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + "changing " + names));
+    if (res.status === "impossible" && !old) card.appendChild(h("div", { class: "rp-b" },
+      h("button", { class: "rp-btn", onclick: () => { o.names.forEach(k => { const [a, b] = s.ranges[k], w = Math.max(b - a, 1);
+        s.ranges[k] = [a - w / 2, b + w / 2].map(x => r.constants.find(c => c.name === k).type === "int" ? Math.round(x) : x); });
+        findRepairs(n, t); } }, "Widen")));
+    return card;
+  }
+  const v = h("div", { class: "rp-v" });
+  o.names.forEach((k, i) => { if (i) v.appendChild(document.createTextNode("   "));
+    v.append(k + " ", h("s", {}, o.from[k]), " → ", h("em", {}, res.text[k] === null ? String(res.values[k]) : res.text[k])); });
+  const meta = [o.applied ? "Applied: in the file" : old ? "Out of date" : null, "cost " + res.cost, res.optimal ? "optimal" : "least found",
+                res.method + (res.rounds ? ", " + res.rounds + (res.rounds === 1 ? " round" : " rounds") : ""),
+                res.seconds + " s"].filter(Boolean).join(" · ");
+  const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
+  const lines = o.names.every(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners.every(w => w.line));
+  const exact = o.names.every(k => res.text[k] !== null);
+  const can = backend() && !old && lines && exact && !o.applied;
+  const shown = previewing && previewing.pinned && previewing.option === o;
+  const apply = h("button", { class: "rp-btn" + (can ? " main" : ""), disabled: !can,
+    title: !exact ? "This value has no finite decimal: write a nearby one by hand" : !lines ? "No declaration of the constant in the file"
+         : req ? "Changes a requirement" : "Write the value in the file",
+    onclick: e => applyOption(n, t, r, o, e.target) }, o.applied ? "Applied" : "Apply");
+  const card = h("div", { class: "rp-opt repaired" + (old ? " old" : "") + (shown ? " shown" : ""),
+                          onmouseenter: () => { if (!old) showPreview(previewOf(n, t, r, o)); },
+                          onmouseleave: () => clearPreview(false) },
+    v, h("div", { class: "rp-m" }, meta),
+    h("div", { class: "rp-b" },
+      h("button", { class: "rp-btn" + (shown ? " on" : ""), disabled: old, title: "Keep it drawn on the diagram",
+                    onclick: () => { if (shown) clearPreview(true); else { const p = previewOf(n, t, r, o); p.pinned = true; showPreview(p); }
+                                     renderPanel(); } }, "Preview"),
+      apply));
+  return card;
+}
+function previewOf(n, t, r, o) {
+  const owners = [];
+  o.names.forEach(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners.forEach(w => owners.push(w.contract)));
+  const values = {};
+  o.names.forEach(k => { values[k] = o.res.text[k] === null ? String(o.res.values[k]) : o.res.text[k]; });
+  return { id: n.id, tag: t, values, from: o.from, owners, option: o, pinned: false };
+}
+function commandOf(r, s) {
+  const flag = { refines: "--refines", impl: "--impl", env: "--env", verify: "--verify", compat: "--compat", consist: "--consist" }[r.check];
+  const q = a => /^[\w.+:\/-]+$/.test(a) ? a : JSON.stringify(a);
+  const ps = r.constants.filter(c => s.picks[c.name]).map(c => "--param " + c.name + "=" + s.ranges[c.name][0] + ".."
+                                                       + s.ranges[c.name][1] + (c.type === "int" ? ":int" : ""));
+  return ["chase-cps repair", q(DATA.title), flag, ...r.args.map(q), ...ps].join(" ");
+}
+// The repairs of the constants picked: each alone, then all together.
+async function findRepairs(n, t) {
+  const r = n.repair[t], s = stateOf(r);
+  const names = r.constants.filter(c => s.picks[c.name]).map(c => c.name);
+  if (!names.length || s.running) return;
+  const runs = names.map(k => [k]);
+  if (names.length > 1) runs.push(names);
+  const sig = repairSig(r), from = {};
+  r.constants.forEach(c => { from[c.name] = c.value; });
+  const token = {};
+  s.options = []; s.error = null; s.running = { done: 0, of: runs.length, token };
+  clearPreview(true);
+  renderPanel(); renderQueue();
+  for (const ks of runs) {
+    const params = ks.map(k => ({ name: k, low: s.ranges[k][0], high: s.ranges[k][1],
+                                  type: r.constants.find(c => c.name === k).type }));
+    const ranges = {}; ks.forEach(k => { ranges[k] = s.ranges[k].slice(); });
+    try {
+      const res = await askRepair({ check: r.check, args: r.args, params }, s);
+      if (!s.running || s.running.token !== token) return;
+      s.options.push({ names: ks, res, sig, from, ranges });
+    } catch (e) {
+      if (!s.running || s.running.token !== token) return;
+      s.error = String(e && e.message || e);
+      break;
+    }
+    s.running.done++;
+    renderPanel(); renderQueue();
+  }
+  s.running = null;
+  renderPanel(); renderQueue();
+}
+function stopRepairs(r) {
+  const s = stateOf(r);
+  if (s.cancel) s.cancel();
+  s.running = null;
+  renderPanel(); renderQueue();
+}
+let repairSeq = 0;
+const asked = {};
+function askRepair(req, s) {
+  const how = backend();
+  if (how === "editor") {
+    vscodeApi = vscodeApi || acquireVsCodeApi();
+    const id = ++repairSeq;
+    return new Promise((ok, no) => {
+      asked[id] = { ok, no };
+      s.cancel = () => { vscodeApi.postMessage({ type: "chase-repair-stop", id }); delete asked[id]; };
+      vscodeApi.postMessage({ type: "chase-repair", id, request: req });
+    });
+  }
+  if (how === "serve") {
+    const ctl = new AbortController();
+    s.cancel = () => ctl.abort();
+    return fetch("/repair", { method: "POST", headers: { "Content-Type": "application/json", "X-CHASE": "1" },
+                              body: JSON.stringify(req), signal: ctl.signal })
+      .then(x => x.json()).then(x => { if (x.error) throw new Error(x.error); return x.result; });
+  }
+  return Promise.reject(new Error("This page cannot run repairs."));
+}
+function applyOption(n, t, r, o, button) {
+  const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
+  if (req && !button.getAttribute("data-sure")) {       // a requirement: asked twice
+    button.setAttribute("data-sure", "1");
+    button.textContent = "Change the requirement?";
+    button.className = "rp-btn warn";
+    return;
+  }
+  const edits = [];
+  o.names.forEach(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners
+    .forEach(w => edits.push({ line: w.line, name: k, value: o.res.text[k] })));
+  o.applied = true;
+  clearPreview(true);
+  const how = backend();
+  if (how === "editor") {
+    vscodeApi = vscodeApi || acquireVsCodeApi();
+    vscodeApi.postMessage({ type: "chase-apply", edits });
+  } else if (how === "serve") {
+    fetch("/apply", { method: "POST", headers: { "Content-Type": "application/json", "X-CHASE": "1" },
+                      body: JSON.stringify({ edits }) })
+      .then(x => x.json()).then(x => { if (x.error) { o.applied = false; stateOf(r).error = x.error; renderPanel(); } });
+  }
+  renderPanel();
+}
+// What a repair changes, drawn on the diagram without laying it out again.
+function showPreview(p) {
+  clearPreview(true);
+  previewing = p;
+  document.querySelectorAll("#view text[data-const]").forEach(x => {
+    const k = x.getAttribute("data-const"), b = byId[x.getAttribute("data-cbox")];
+    if (!(k in p.values) || !b || !b.contract || !p.owners.includes(b.contract.name)) return;
+    x.setAttribute("data-was", x.textContent);
+    x.textContent = k + " = ";
+    el("tspan", { fill: "var(--bad)", "text-decoration": "line-through" }, x).textContent = p.from[k];
+    el("tspan", { fill: "var(--ok)", "font-weight": "600" }, x).textContent = " → " + p.values[k];
+  });
+  const g = document.querySelector('#view [data-check="' + p.id + "|" + p.tag + '"]');
+  if (g) {
+    const r0 = g.querySelector("rect"), x = +r0.getAttribute("x"), y = +r0.getAttribute("y");
+    const w = el("g", { class: "pv" }, g);
+    tag(w, x, y, g.getAttribute("data-text"), null);
+    w.querySelector("rect").setAttribute("stroke", "var(--ok)");
+    w.querySelector("rect").setAttribute("stroke-dasharray", "3 2");
+    w.querySelectorAll("path").forEach(q => q.setAttribute("stroke", "var(--ok)"));
+    w.querySelectorAll("text").forEach(q => q.style.fill = "var(--ok)");
+    tip(w, "would hold with this repair");
+  }
+}
+function clearPreview(all) {
+  if (previewing && previewing.pinned && !all) {       // back to the one kept
+    const keep = previewing; previewing = null; showPreview(keep); return;
+  }
+  document.querySelectorAll("#view text[data-was]").forEach(x => { x.textContent = x.getAttribute("data-was"); x.removeAttribute("data-was"); });
+  document.querySelectorAll("#view .pv").forEach(x => x.remove());
+  if (all || !(previewing && previewing.pinned)) previewing = null;
+}
+function placePanel() {
+  const box = document.getElementById("repair");
+  if (!panel || box.style.display === "none") return;
+  const r = anchorOf();
+  const W = innerWidth, H = innerHeight, w = box.offsetWidth, hh = box.offsetHeight;
+  if (!r) { box.style.left = Math.max(12, W - w - 12) + "px"; box.style.top = "46px"; return; }
+  let x = r.right + 10;
+  if (x + w > W - 12) x = r.left - w - 10;               // on the left of the tag
+  if (x < 12) x = Math.max(12, Math.min(W - w - 12, r.left));
+  let y = x === r.right + 10 || x === r.left - w - 10 ? r.top - 8 : r.bottom + 8;
+  y = Math.max(46, Math.min(y, H - hh - 12));
+  box.style.left = x + "px"; box.style.top = y + "px";
+}
+// The checks that fail, with their repairs: on the tools when there are two or more.
+function renderQueue() {
+  const list = failing(), b = document.getElementById("repairs"), q = document.getElementById("queue");
+  b.style.display = list.length >= 2 ? "inline-flex" : "none";
+  document.getElementById("repcount").textContent = list.length;
+  if (list.length < 2) { q.style.display = "none"; return; }
+  if (q.style.display !== "block") return;
+  q.innerHTML = "";
+  q.appendChild(h("div", { class: "rp-head" }, h("b", {}, "Checks that fail · " + list.length),
+    h("button", { class: "rp-x", title: "Close", onclick: () => { q.style.display = "none"; } }, "×")));
+  const names = list.map(([n, t]) => n.repair[t].constants.flatMap(c => c.owners.map(o => o.contract + "." + c.name)));
+  list.forEach(([n, t], i) => {
+    const r = n.repair[t], s = stateOf(r), sig = repairSig(r);
+    const best = s.options.find(o => o.res.status === "repaired" && o.sig === sig);
+    const old = !best && s.options.some(o => o.sig !== sig);
+    const shared = list.map((x, j) => j !== i && names[j].filter(k => names[i].includes(k)).length ? x[0].title : null).filter(Boolean);
+    q.appendChild(h("div", { class: "q-item", onclick: () => { bringTo(n, t); openRepair(n, t); } },
+      h("div", { class: "t" }, tagSvg(t, "invalid"), checkTitle(n, t)),
+      h("div", { class: "s" }, "constants: " + r.constants.map(c => c.name + (c.role === "requirement" ? " (requirement)" : "")).join(", ")),
+      s.running ? h("div", { class: "s" }, "finding repairs…")
+      : best ? h("div", { class: "v" }, best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", "))
+      : old ? h("div", { class: "s old" }, "repairs out of date: the file has changed")
+      : h("div", { class: "s" }, "no repair found yet"),
+      shared.length ? h("div", { class: "s" }, "shares a constant with " + shared.join(", ")) : null));
+  });
+}
+function toggleQueue() {
+  const q = document.getElementById("queue");
+  q.style.display = q.style.display === "block" ? "none" : "block";
+  renderQueue();
+}
+// the view moves so that the tag of the check is in the middle
+function bringTo(n, t) {
+  const a = document.querySelector('#view [data-check="' + n.id + "|" + t + '"]'), v = document.getElementById("view");
+  if (!a || !cam) return;
+  const r = a.getBoundingClientRect();
+  cam.x += v.clientWidth * 0.4 - r.left; cam.y += v.clientHeight * 0.4 - r.top;
+  place();
+}
+function afterRender() {
+  if (previewing) { const p = previewing; previewing = null; showPreview(p); }
+  placePanel();
+  renderQueue();
+}
 // The checks run by the editor: the button starts them (or stops them), and
 // the places where their results will be show three dots meanwhile.
 function setBusy(on) {
