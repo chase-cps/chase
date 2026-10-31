@@ -98,10 +98,7 @@ class Repair:
 def _text(v):
     """The value as a specification file writes it, or None when it has no
     finite decimal expansion (1/3)."""
-    try:
-        return ltl.to_str(ltl.Num(v))
-    except ValueError:
-        return None
+    return ltl.to_str(ltl.Num(v)) if ltl._decimal(v) else None
 
 
 METHODS = ("auto", "projection", "counterexamples", "enumeration")
@@ -137,10 +134,12 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
     if _z3 is None:
         return done(Repair(UNKNOWN, reason="repair optimizes with z3, which is not installed: "
                                            "pip install chase-cps[z3]"))
-    from .project import applicable, regions
+    from .project import LIMIT, applicable, eliminated, regions
     if method in ("auto", "projection"):
         why = applicable(asked) or ("an integer parameter" if any(
             p.integer for p in params.values()) else "")
+        if not why and method == "auto" and eliminated(asked, params) > LIMIT:
+            why = f"more than {LIMIT} variables to eliminate"     # by counterexamples, faster
         if not why and check in UNIVERSAL:
             hard, why = regions(asked, params, timeout)
             if hard is not None:
@@ -335,7 +334,7 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
             # the values of the parameters under which this behavior, its reals
             # free, still breaks the question (bounded formulas), else under
             # which the trace itself still does
-            piece = generalized(q, trace, params, timeout) \
+            piece = generalized(q, trace, params, values, timeout) \
                 if general and isinstance(q, Implies) else None
             if piece is not None and _z3_holds_at(piece, values, params):
                 extra.append(_z3_not(piece))

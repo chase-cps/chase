@@ -100,15 +100,26 @@ def _compose_constants(out: "Contract", c1: "Contract", c2: "Contract") -> None:
             raise ValueError(f"constant {k} is {c1.constants[k]} in {c1.name} and "
                              f"{c2.constants[k]} in {c2.name}")
 
-    def saturated(c):
+    def saturated(c):                  # a composition again: (X, G) for (X | !G, G)
         a, g = c.terms
         a, g = ltl.conjunction(a), ltl.conjunction(g)
-        return a, (g if a == ltl.Const(True) else ltl.Binary("->", a, g))
+        if a == ltl.Const(True):
+            return a, g
+        rest = [d for d in _disjuncts(a) if d != ltl.Unary("!", g)]
+        if len(rest) < len(_disjuncts(a)):
+            return (ltl.disjunction(rest) if rest else ltl.Const(False)), g
+        return a, ltl.Binary("->", a, g)
     (a1, g1), (a2, g2) = saturated(c1), saturated(c2)
     both = ltl.Binary("&", g1, g2)
     assumption = ltl.Binary("|", ltl.Binary("&", a1, a2), ltl.Unary("!", both))
     out.constants = {**c1.constants, **c2.constants}
     out.parametric = ([assumption], [both])
+
+
+def _disjuncts(n) -> list:
+    if isinstance(n, ltl.Binary) and n.op == "|":
+        return _disjuncts(n.left) + _disjuncts(n.right)
+    return [n]
 
 
 def _normalize_vars(vs) -> dict[str, VarType]:
@@ -321,10 +332,15 @@ class Contract:
 
     @property
     def saturated_guarantee(self) -> ltl.Node:
-        """A -> G."""
+        """A -> G. When A is X | !G (a composition is), A -> G is G: the
+        guarantee is saturated already, and is not written twice (folded
+        compositions would double in size at each step)."""
         if not self.assumptions:
             return self.guarantee
-        return ltl.Binary("->", self.assumption, self.guarantee)
+        g = self.guarantee
+        if ltl.Unary("!", g) in _disjuncts(self.assumption):
+            return g
+        return ltl.Binary("->", self.assumption, g)
 
     def robustness(self, trace) -> dict:
         """How much a trace satisfies the assumptions, the guarantees, and
@@ -934,6 +950,8 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     # The operations of the core library are defined on saturated contracts.
     c1 = c1.saturate()
     c2 = c2.saturate(c2.name + "_2" if c1.name == c2.name else None)
+    if operation == "composition":     # a composition again: its A is X | !G
+        c1, c2 = _lean(c1), _lean(c2)
     # Variables with the same name are the same variable (connected ports).
     for v in set(c1.variables) & set(c2.variables):
         if c1.variables[v] != c2.variables[v]:
@@ -962,6 +980,23 @@ def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     out.inputs = {v: t for v, t in variables.items() if v not in outputs}
     out.outputs = {v: t for v, t in variables.items() if v in outputs}
     return out
+
+
+def _lean(c: Contract) -> Contract:
+    """A saturated contract whose assumption is X | !G, as the composition
+    of the core library writes it, with X as its assumption: composed with
+    C3, ((X | !G) & A3) | !(G & G3) is (X & A3) | !(G & G3), since !G
+    implies !(G & G3). Without it, the assumptions of folded compositions
+    grow with the square of their number."""
+    if not c.assumptions:
+        return c
+    g = c.guarantee
+    ds = _disjuncts(c.assumption)
+    rest = [d for d in ds if d != ltl.Unary("!", g)]
+    if len(rest) == len(ds):
+        return c
+    a = ltl.disjunction(rest) if rest else ltl.Const(False)
+    return Contract(c.name, dict(c.inputs), dict(c.outputs), [a], list(c.guarantees))
 
 
 # Provenance ------------------------------------------------------------------

@@ -11,13 +11,36 @@ optimization of the cost over the parameters outside the first sets and
 inside the second ones, checked by the solver (chase_cps.optimize).
 
 When z3 cannot eliminate a variable (an integer, a nonlinear term), the
-projection is not used: the repair goes by counterexamples.
+projection is not used: the repair goes by counterexamples. The
+elimination grows fast with the variables and the disjunctions (a contract
+that starts at the later of two events has one): by default it is tried
+only on questions with at most LIMIT variables to eliminate, and the larger
+ones go by counterexamples, each generalized by a model-based projection
+(``generalized``), which is cheap.
 """
 
 from __future__ import annotations
 
 from .. import ltl
 from ..queries import Implies, Satisfiable
+
+
+LIMIT = 12          # variables to eliminate, at most, for the projection by default
+
+
+def eliminated(asked: list, params: dict) -> int:
+    """The most variables a question has besides the parameters (each of its
+    steps counted), what the projection eliminates."""
+    from ..backends import z3 as backend_z3
+    most = 0
+    for _, q in asked:
+        e = backend_z3.Encoding(q.variables, rigid=params)
+        if isinstance(q, Implies):
+            e.formula(q.phi), e.formula(q.psi)
+        else:
+            e.formula(q.phi)
+        most = max(most, sum(1 for (n, _) in e.vars if n not in params))
+    return most
 
 
 def applicable(asked: list) -> str:
@@ -84,12 +107,18 @@ def _has_quantifier(z3, f) -> bool:
     return False
 
 
-def generalized(question, trace, params: dict, timeout: float):
-    """The values of the parameters for which the behavior of the trace,
-    with its integers and Booleans as they are and its reals free, still
-    breaks the question: a z3 formula over the parameters (it holds at the
-    values of the trace), or None when it cannot be computed. A
-    counterexample then removes a set of values, not one."""
+def generalized(question, trace, params: dict, values: dict, timeout: float):
+    """Values of the parameters for which the behavior of the trace, with its
+    integers and Booleans as they are and its reals free, still breaks the
+    question: a z3 formula over the parameters that holds at the values the
+    trace was found with, or None when it cannot be computed. A
+    counterexample then removes a set of values, not one.
+
+    The set is a model-based projection (Komuravelli, Gurfinkel, Chaki, CAV
+    2014; Bjoerner, Janota, LPAR 2015) of the behaviors that break the
+    question, at the values: every value in it breaks the question (it is
+    inside the projection), and it is computed in polynomial time on linear
+    arithmetic, where the whole projection may take exponential time."""
     from ..backends import z3 as backend_z3
     z3 = backend_z3._z3
     if z3 is None or applicable([("q", question)]):
@@ -107,12 +136,12 @@ def generalized(question, trace, params: dict, timeout: float):
         if step < len(states):
             return states[step]
         return states[start + (step - start) % len(trace.loop)] if trace.loop else states[-1]
-    fixed, reals = [], []
+    fixed, others = [], []
     for (name, step), v in e.vars.items():
         if name in params:
             continue
+        others.append(v)
         if z3.is_real(v):
-            reals.append(v)
             continue
         if step < 0:            # before step 0: past(x, n), from the history of the trace
             value = at(0).get(f"chase_past{-step}_{name}")
@@ -121,5 +150,44 @@ def generalized(question, trace, params: dict, timeout: float):
         if value is None:
             return None
         fixed.append(v == (z3.BoolVal(value) if isinstance(value, bool) else value))
-    projected = _eliminate(z3, reals, z3.And(*body, *fixed, *e.bounds()), timeout)
-    return projected
+    point = []
+    for name, p in params.items():
+        if name not in values:
+            return None
+        v = e.var(name)
+        point.append(v == (z3.RealVal(str(values[name])) if z3.is_real(v) else z3.IntVal(int(values[name]))))
+    return _project_at(z3, others, z3.And(*body, *fixed, *e.bounds()), point, timeout)
+
+
+def _project_at(z3, xs, body, point, timeout):
+    """A model-based projection of body on the variables but xs, at a model
+    of body with the point: a formula over those variables that holds at
+    the point and implies that body holds for some xs; None when there is no
+    such model, or when a variable of xs is left (nonlinear terms)."""
+    from z3 import z3core, z3types
+    s = z3.Solver()
+    s.set("timeout", int(timeout * 1000))
+    s.add(body, *point)
+    if s.check() != z3.sat:
+        return None
+    if not xs:
+        return body
+    m = s.model()
+    bound = (z3types.Ast * len(xs))(*[x.as_ast() for x in xs])
+    try:
+        r = z3core.Z3_qe_model_project(body.ctx.ref(), m.model, len(xs), bound, body.as_ast())
+    except z3.Z3Exception:
+        return None
+    f = z3.simplify(z3.BoolRef(r, body.ctx))
+    left = {x.get_id() for x in xs}
+    todo, seen = [f], set()
+    while todo:
+        x = todo.pop()
+        if x.get_id() in seen:
+            continue
+        seen.add(x.get_id())
+        if x.get_id() in left or z3.is_quantifier(x):
+            return None
+        if z3.is_app(x):
+            todo.extend(x.children())
+    return f

@@ -424,22 +424,65 @@ def _interval(op: str, a: int, b: int, phi) -> str:
     return f"{op}[{a},{b}] " + ltl.to_str(ltl.Unary(op, phi))[len(op):].lstrip()
 
 
-def _fold_term(node) -> str:
-    """A disjunction X^a phi | ... | X^b phi is shown as F[a,b] phi."""
-    parts = []
-    def flat(n):
-        if isinstance(n, ltl.Binary) and n.op == "|":
-            flat(n.left)
-            flat(n.right)
-        else:
-            parts.append(n)
-    flat(node)
-    if len(parts) > 1:
-        ks = [_unX(p) for p in parts]
-        if all(phi == ks[0][0] for phi, _ in ks) and \
-                [k for _, k in ks] == list(range(ks[0][1], ks[0][1] + len(ks))):
-            return _interval("F", ks[0][1], ks[-1][1], ks[0][0])
+def _items(n, op):
+    if isinstance(n, ltl.Binary) and n.op == op:
+        return _items(n.left, op) + _items(n.right, op)
+    return [n]
+
+
+def _chain(node, op):
+    """(a, b, phi) when node is X^a phi op X^(a+1) phi op ... op X^b phi
+    (op & for G[a,b], | for F[a,b]), else None. phi may itself be made of
+    op: its terms come first, as the unrolling writes them."""
+    items = _items(node, op)
+    if len(items) < 2:
+        return None
+    first = next((i for i, t in enumerate(items) if isinstance(t, ltl.Unary) and t.op == "X"), None)
+    if first is None:
+        return None
+    phi, k = _unX(items[first])
+    a = k - 1 if first else k
+    if first:                          # phi at step 0: its own terms before X phi
+        if items[:first] != _items(phi, op) or k != 1:
+            return None
+    rest = items[first:]
+    if [_unX(t) for t in rest] != [(phi, k + i) for i in range(len(rest))]:
+        return None
+    return a, k + len(rest) - 1, phi
+
+
+def _show(node) -> str:
+    """The formula, with the steps of an interval folded again, also inside
+    (F[0,10] G[0,5] p, not F[0,10] (p & X p & ...))."""
+    if not _has_chain(node):
+        return ltl.to_str(node)
+    for op, name in (("|", "F"), ("&", "G")):
+        c = _chain(node, op)
+        if c:
+            a, b, phi = c
+            inner = _show(phi)
+            bare = _atomic(phi) or _chain(phi, "&") or _chain(phi, "|")     # F[0,10] G[0,5] p
+            return f"{name}[{a},{b}] " + (inner if bare else f"({inner})")
+    if isinstance(node, ltl.Binary):
+        side = lambda n: _show(n) if _atomic(n) else f"({_show(n)})"
+        return f"{side(node.left)} {node.op} {side(node.right)}"
+    if isinstance(node, ltl.Unary):
+        return f"{node.op} ({_show(node.arg)})"
     return ltl.to_str(node)
+
+
+def _atomic(n) -> bool:
+    return not isinstance(n, ltl.Binary) or n.op in ("=", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/")
+
+
+def _has_chain(node) -> bool:
+    if isinstance(node, ltl.Binary):
+        if node.op in ("&", "|") and _chain(node, node.op):
+            return True
+        return _has_chain(node.left) or _has_chain(node.right)
+    if isinstance(node, ltl.Unary):
+        return _has_chain(node.arg)
+    return False
 
 
 def _fold(nodes: list) -> tuple:
@@ -467,7 +510,7 @@ def _fold(nodes: list) -> tuple:
             shown.append(_interval("G", k, k + j - i, phi))
         else:
             j = i = first
-            shown.append(_fold_term(nodes[i]))
+            shown.append(_show(nodes[i]))
         groups.append(list(range(first, j + 1)))
         i = j + 1
     return shown, groups
@@ -928,18 +971,30 @@ def from_spec(path: str, contracts: Iterable = (), refines: Iterable = (),
         envs.append((m, c, status(kept("environment", _record.key("environment", _record.model_bytes(model), c),
                                        lambda m=m, c=c: _checks_.is_environment(m, c, timeout=timeout),
                                        model=model, contract=name)) if kept_or_checked else None))
-    shown = list(items)
+    shown, impls = list(items), {}
     for model, name in implementations:   # a contract drawn with its model, as a component
         c = get(name)
         m = _model(model, c)
-        k = Component(c.name, c, m)
+        k = impls[id(c)] = Component(c.name, c, m)
         if kept_or_checked:
             k.status = status(kept("implementation", _record.key("implementation", _record.model_bytes(model), c),
                                    lambda m=m, c=c: _checks_.is_implementation(m, c, timeout=timeout),
                                    model=model, contract=name))
-        shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
+    # a part with a model, in a decomposition: the decomposition is drawn as
+    # its components, each with its model when it has one
+    inner = set()
+    for i, (a, b, st) in enumerate(pairs):
+        parts = written(a, [])
+        if a.origin and a.origin[0] == "composition" and any(id(x) in impls for x in parts):
+            pairs[i] = (System(a.name, [impls.get(id(x)) or Component(x.name, x) for x in parts]), b, st)
+            inner |= {id(x) for x in parts}
+    for model, name in implementations:
+        c = get(name)
+        if id(c) not in inner:
+            k = impls[id(c)]
+            shown = [k if x is c else x for x in shown] if any(x is c for x in shown) else shown + [k]
     drawn = {id(x) for x in items}
-    repairs = _repairs(path, refines, pairs, implementations, environments, envs, shown, atoms,
+    repairs = _repairs(path, refines, pairs, implementations, environments, envs, impls, atoms,
                        written, get)
     d = diagram(*shown, refines=pairs, checks=marks, environments=envs,
                 open=[get(e) for e in open], title=title or os.path.basename(path),
@@ -974,7 +1029,7 @@ def _constant_lines(path: str) -> dict:
     return out
 
 
-def _repairs(path, refines, pairs, implementations, environments, envs, shown, atoms,
+def _repairs(path, refines, pairs, implementations, environments, envs, impls, atoms,
              written, get) -> list:
     """(item, tag, about) for each check drawn whose contracts have named
     constants: the check as chase-cps repair takes it (its arguments as
@@ -1003,12 +1058,12 @@ def _repairs(path, refines, pairs, implementations, environments, envs, shown, a
         if cs:
             out.append((obj, tag, {"check": check, "args": list(args), "constants": cs}))
     for (a, b, _), (x, y) in zip(pairs, refines):
+        a = get(x)                      # the contracts, also when drawn as components
         add(b, "⪯", "refines", (x, y), [(c, "part") for c in written(a, [])]
             + [(c, "requirement") for c in written(b, [])])
     for model, name in implementations:
         c = get(name)
-        k = next((k for k in shown if isinstance(k, Component) and k.contract is c), c)
-        add(k, "M ⊨ C", "impl", (model, name), [(x, "contract") for x in written(c, [])])
+        add(impls[id(c)], "M ⊨ C", "impl", (model, name), [(x, "contract") for x in written(c, [])])
     for (model, name), (m, c, _) in zip(environments, envs):
         add(m, "E ⊨ A", "env", (model, name), [(x, "contract") for x in written(c, [])])
     for c in atoms:
@@ -1017,10 +1072,7 @@ def _repairs(path, refines, pairs, implementations, environments, envs, shown, a
 
 
 def _number_text(v) -> str:
-    try:
-        return ltl.to_str(ltl.Num(v))
-    except ValueError:                  # no finite decimal expansion
-        return str(v)
+    return ltl.to_str(ltl.Num(v)) if ltl._decimal(v) else str(v)    # 1/3: no finite decimal
 
 
 def _has_assertions(path: str) -> bool:

@@ -418,6 +418,15 @@ def conjunction(nodes: list[Node]) -> Node:
     return result
 
 
+def disjunction(nodes: list[Node]) -> Node:
+    if not nodes:
+        return Const(False)
+    result = nodes[0]
+    for n in nodes[1:]:
+        result = Binary("|", result, n)
+    return result
+
+
 def conjuncts(node: Node) -> list[Node]:
     """Split a formula on its top-level conjunctions."""
     if isinstance(node, Binary) and node.op == "&":
@@ -482,12 +491,23 @@ def to_smv(node: Node) -> str:
     return f"({to_smv(node.left)} {op} {to_smv(node.right)})"
 
 
+def _decimal(value) -> bool:
+    try:
+        number_text(value)
+        return True
+    except ValueError:
+        return False
+
+
 def to_str(node: Node) -> str:
     """Readable formula in the standard syntax (parenthesized where needed)."""
     return _pretty(node, 0)
 
 
 def _pretty(node: Node, outer: int) -> str:
+    if isinstance(node, Num) and not _decimal(node.value):   # 1/3, read back as a quotient
+        v = Fraction(node.value)
+        return f"{'-' if v < 0 else ''}({abs(v.numerator)} / {v.denominator})"
     if isinstance(node, (Const, Var, Num)):
         return to_chase(node)
     if isinstance(node, Unary):

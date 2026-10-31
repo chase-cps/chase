@@ -659,6 +659,10 @@ def test_steps_are_shown_as_intervals():
     assert groups == [[0, 1, 2], [3, 4, 5, 6]]
     assert viz._fold([ltl.parse("X a | X X a")])[0] == ["F[1,2] a"]
     assert viz._fold([ltl.parse("a"), ltl.parse("b")]) == (["a", "b"], [[0], [1]])
+    # inside: F[0,2] G[0,1] (a & b), unrolled
+    nested = ltl.parse("(a & b & X (a & b)) | X (a & b & X (a & b)) | X X (a & b & X (a & b))")
+    assert viz._fold([nested])[0] == ["F[0,2] G[0,1] (a & b)"]
+    assert viz._fold([ltl.parse("a | X b")])[0] == ["a | X b"]
 
 
 def test_named_constants_are_shown_and_cores_still_match():
