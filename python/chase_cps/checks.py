@@ -283,7 +283,9 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
     guarantees even when the environment breaks its justice assumptions.
     The two differ only when the assumptions are wrong, for instance
     unsatisfiable, or constrain the outputs; each keeps what the other may
-    change.
+    change. Terms in conflict (A & G unsatisfiable) imply every term: then no
+    term is dropped, and the reason says so (verify with core gives the
+    conflict).
 
     With core, each removed term carries a minimal set of the terms that
     imply it.
@@ -303,6 +305,13 @@ def remove_redundant(contract: Contract, backend: str = "auto", context=None,
         out.contract.guarantees = [t for j, t in enumerate(c.guarantees) if j + n in alive]
         out.removed_assumptions = [t.term for t in out.removed if t.part == "assumption"]
         out.removed_guarantees = [t.term for t in out.removed if t.part == "guarantee"]
+        return out
+    # terms in conflict imply every term: none is dropped, so that the conflict
+    # stays in the contract (verify with core gives it)
+    if context is None and (c.assumptions or c.guarantees) and \
+            verify(c, backend, **options).status == UNSAT:
+        out.reason = ("the assumptions and the guarantees are in conflict (A & G is unsatisfiable): "
+                      "no term is dropped, as each would be implied; verify with core gives the conflict")
         return out
     check = _Implications(list(c.assumptions) + list(c.guarantees), c.variables, backend,
                           context, **options)

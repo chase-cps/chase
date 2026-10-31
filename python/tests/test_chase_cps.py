@@ -762,7 +762,9 @@ def test_remove_redundant_for_synthesis():
     # assumption on the outputs
     bad = Contract.from_strings(inputs=["x"], outputs=["g"], assumptions=["G F (x & !x)"],
                                 guarantees=["G g", "G !g"], name="Bad")
-    assert remove_redundant(bad).contract.guarantees == []
+    # terms in conflict (A & G unsatisfiable) are all kept, said in the reason
+    kept = remove_redundant(bad)
+    assert len(kept.contract.guarantees) == 2 and "conflict" in kept.reason
     assert len(remove_redundant(bad, synth=True).contract.guarantees) == 2
     out = Contract.from_strings(inputs=["x"], outputs=["g"], assumptions=["G F g"],
                                 guarantees=["G g"], name="Out")
@@ -1263,3 +1265,18 @@ def test_intervals_that_are_refused(formula, error):
     from chase_cps import ltl
     with pytest.raises(ltl.LTLSyntaxError, match=error):
         ltl.parse(formula)
+
+
+def test_terms_in_conflict_are_not_dropped():
+    # merged viewpoints that conflict: every term would be implied; none is dropped
+    from chase_cps.backends import ADAPTERS
+    if not (ADAPTERS["nuxmv"].available() or ADAPTERS["nusmv"].available()):
+        pytest.skip("no model checker")
+    from chase_cps import Contract, remove_redundant
+    f = Contract.from_strings(name="Func", inputs=["near"], outputs=["brake"], guarantees=["G (near -> brake)"])
+    t = Contract.from_strings(name="Timing", inputs=["near"], outputs=["brake", "warn"],
+                              assumptions=["G F near"], guarantees=["G (near -> !brake)", "G (warn <-> near)"])
+    m = f.merge(t, discharge=True)
+    assert len(m.guarantees) == 3
+    r = remove_redundant(m)
+    assert not r.removed_guarantees and "conflict" in r.reason
