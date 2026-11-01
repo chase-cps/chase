@@ -133,7 +133,9 @@ def _c_source(f) -> Optional[dict]:
     return {"file": os.path.basename(f.path), "parts": parts} if parts else None
 
 
-MAX_STEPS, MAX_VARIABLES = 12, 40
+# the steps and variables of a counterexample kept in the page: the table shows the first steps, the
+# waveform all of them
+MAX_STEPS, MAX_VARIABLES = 200, 40
 
 
 def _why(result, contract=None) -> Optional[dict]:
@@ -1717,6 +1719,48 @@ _PAGE = r"""<!doctype html>
   #pop header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
+  /* the waveform: a window over the diagram, the names and values on the left, the steps scrolled and zoomed */
+  #wave { position:fixed; left:50%; top:9vh; transform:translateX(-50%); width:min(92vw, 1400px); max-height:min(80vh, 900px);
+          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 10px 36px rgba(0,0,0,.16);
+          display:none; flex-direction:column; z-index:11; outline:none; overflow:hidden; }
+  #wave header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:16px; align-items:center; }
+  #wave header b { font-size:13px; font-weight:400; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #wave header b b { font-weight:600; }
+  .wv-where { font:12px Menlo, Monaco, monospace; color:var(--soft); white-space:nowrap; }
+  .wv-tools { display:flex; gap:2px; align-items:center; }
+  .wv-keys { display:none; position:absolute; right:12px; top:46px; z-index:3; background:#fff; border:1px solid #d5dddd;
+             border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.12); padding:8px 12px; font-size:12px; color:var(--ink); }
+  .wv-keys.on { display:block; } #wave.keys { min-height:min(80vh, 340px); }
+  .wv-keys div { display:flex; gap:12px; padding:2px 0; } .wv-keys kbd { font:11px Menlo, Monaco, monospace; min-width:150px; color:var(--teal); }
+  .wv-scroll { flex:0 1 auto; overflow:auto; position:relative; cursor:default; scrollbar-width:none; }
+  .wv-scroll::-webkit-scrollbar { display:none; }
+  .wv-scroll.pan { cursor:grabbing; }
+  .wv-grid { position:relative; min-width:100%; }
+  .wv-row { display:flex; align-items:stretch; border-bottom:1px solid #f1f4f4; }
+  .wv-row.odd .wv-left { background:#fafbfb; }
+  .wv-left { position:sticky; left:0; z-index:1; flex:none; display:flex; align-items:center; width:260px; background:#fff;
+             border-right:1px solid #e3e8e8; box-sizing:border-box; padding-left:12px; cursor:pointer; }
+  .wv-left.sel { box-shadow:inset 3px 0 #17393b; }
+  .wv-name { width:156px; flex:none; font:11px Menlo, Monaco, monospace; color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wv-name.port { color:var(--ink); font-weight:600; }
+  .wv-val { flex:1; min-width:0; font:11px Menlo, Monaco, monospace; color:#2f6fb5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wv-val small { display:block; color:var(--faint); font-size:9.5px; }
+  .wv-plot { flex:none; width:22px; height:22px; margin-right:4px; padding:0; border:0; background:none; color:var(--faint); border-radius:5px; cursor:pointer; }
+  .wv-plot svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.4; }
+  .wv-plot:hover, .wv-plot.on { color:var(--teal); background:var(--fill); }
+  .wv-axis { position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid #d5dddd; }
+  .wv-axis .wv-left { z-index:3; cursor:default; }
+  .wv-axis .wv-name { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; }
+  .wv-at { font-weight:600; }
+  .wv-svg { display:block; flex:none; }
+  .wv-tick { font:10.5px Menlo, Monaco, monospace; fill:var(--soft); }
+  .wv-tick.cur { fill:#2f6fb5; font-weight:700; } .wv-tick.fail { fill:#b03a2e; font-weight:700; } .wv-tick.ghost { fill:var(--faint); }
+  .wv-loop { font:10px Helvetica, Arial, sans-serif; fill:var(--soft); }
+  .wv-fails { font:bold 10px Helvetica, Arial, sans-serif; fill:#b03a2e; }
+  .wv-v { font:11px Menlo, Monaco, monospace; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:#f7f9f9; stroke-width:4px; }
+  #wave .wv-bar { margin:4px 16px 0 276px; }
+  #wave footer { display:flex; gap:16px; padding:6px 16px 8px; font-size:11.5px; color:var(--soft); border-top:1px solid #f1f4f4; }
+  #wave footer .wv-note { flex:1; } #wave footer .wv-hint { color:var(--faint); white-space:nowrap; }
   table.fsm { border-collapse:collapse; font:11.5px Menlo, Monaco, monospace; }
   table.fsm th { font:600 11.5px -apple-system, Helvetica, Arial, sans-serif; text-align:left; color:var(--soft);
                  padding:6px 16px 6px 0; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
@@ -1893,6 +1937,7 @@ _PAGE = r"""<!doctype html>
 <div id="busy">checking…</div>
 <div id="tip"></div>
 <div id="pop"><header><b id="poptitle"></b><button class="ib" title="Close" aria-label="Close" onclick="closePop()"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></header><div id="popview"></div></div>
+<div id="wave" tabindex="-1" role="dialog" aria-label="Waveform"></div>
 <div id="insp" role="complementary" aria-label="The checks" tabindex="-1"><div id="insp-bar"></div><div id="repair"></div></div>
 __ELK__
 <script>
@@ -2539,6 +2584,7 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
     if (e.key === "Escape") {      // the help first, the model window, the details (back to the list), the panel
       const help = document.getElementById("help"), pop = document.getElementById("pop");
       if (help.style.display === "block") help.style.display = "none";
+      else if (WAVE.open) closeWave();
       else if (pop.style.display === "flex") closePop();
       else if (inspector.open && inspector.tab === "details" && panel) closeRepair();
       else hideInspector();
@@ -3124,6 +3170,7 @@ function showInspector(tab) {
   renderQueue();
 }
 function hideInspector() {
+  closeWave();
   if (inspector.open) shiftView(1);
   inspector.open = false;
   document.body.classList.remove("insp");
@@ -3132,6 +3179,7 @@ function hideInspector() {
   closeRepair();
 }
 async function openRepair(n, t) {
+  closeWave();                         // the waveform is of one check
   const keys = keysOf(DATA.nodes);
   // the counterexample opens at the step where a term fails first, when it has one
   const w0 = n.badge && tagOf(n.badge.text) === t ? n.badge.why : ((n.checks || []).find(c => c.name === t) || {}).why;
@@ -3155,6 +3203,7 @@ async function openRepair(n, t) {
   }
 }
 function closeRepair() {
+  closeWave();
   panel = null;
   clearPreview(true);
   clearReplay();
@@ -3276,9 +3325,18 @@ function whySection(n, t, st) {
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     const last = w.trace.steps.length - 1;
     // the table picks the step on the diagram: a click on a column, or the arrow keys
-    const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k); };
-    const table = traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req, last > 0 ? panel.step || 0 : null, go);
+    const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k);
+                      if (WAVE.open) WAVE.setStep(k); };
+    const first = w.trace.vars.filter(v => named.has(v));
+    const table = traceTable(w.trace, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
+    if (last > 0) {                     // the waveform: every step kept, in a window over the diagram
+      const head = sec.firstChild;
+      head.classList.add("rp-hb");
+      head.textContent = "";
+      head.append(h("span", {}, "Counterexample"),
+                  iconButton(GLYPH.wave, "Open the waveform", () => openWave(w.trace, first, checkTitle(n, t), go)));
+    }
     sec.appendChild(table);
   } else {
     sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
@@ -3304,6 +3362,7 @@ function reasonOf(r) {
   return m ? { text: m[1].charAt(0).toUpperCase() + m[1].slice(1), line: +m[2] } : { text: r, line: null };
 }
 // A step as the page shows it: its number, or its time i·Δτ when the diagram has a period.
+const TABLE_STEPS = 12;          // the steps of a counterexample in the table (all of them in the waveform)
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
 // With a step (the one on the diagram): its column marked blue, the column of the step that fails
@@ -3319,6 +3378,9 @@ function traceTable(tr, first, req, step, onPick) {
     const notes = [tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
     return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
   }
+  // the table shows the first steps; the waveform all those kept
+  const kept = tr.steps.length, keptCut = tr.cut;
+  if (kept > TABLE_STEPS) tr = Object.assign({}, tr, { steps: tr.steps.slice(0, TABLE_STEPS) });
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
   const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
   const picks = step !== null && step !== undefined && onPick;
@@ -3388,7 +3450,8 @@ function traceTable(tr, first, req, step, onPick) {
                    (rows.length - LIMIT) + " more variables");
     out.appendChild(more);
   }
-  const notes = [tr.cut ? "The first " + tr.steps.length + " steps." : null,
+  const notes = [kept > TABLE_STEPS ? "The first " + TABLE_STEPS + " of " + kept + (keptCut ? " steps kept" : " steps")
+                   + "; the waveform shows them all." : keptCut ? "The first " + kept + " steps." : null,
                  tr.loop !== null && tr.loop !== undefined
                    ? "↺ " + timeOf(tr.loop) + ": from this step on, the steps repeat forever." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
@@ -3690,6 +3753,301 @@ function fillProblems(list) {
         what ? h("div", { class: best ? "v" : "s" }, what) : null)));
   });
 }
+// The waveform of a counterexample: a window over the diagram, a row per variable and the steps as
+// columns, as the waveform viewers draw a simulation. The names and the values at the cursor stay on
+// the left; the steps scroll and zoom. The step that fails first is a red column, the loop a shaded
+// span with one more pass drawn faded, the current step a blue cursor that the table and the diagram
+// follow (and the other way round).
+const WAVE = { open: false };
+const WV = { name: 168, value: 92, axis: 44, row: 24, bool: 22, plot: 56, min: 6, max: 160 };
+function openWave(tr, first, title, pick) {
+  closeWave();
+  const box = document.getElementById("wave"), n = tr.steps.length;
+  const loop = tr.loop === null || tr.loop === undefined ? null : tr.loop;
+  const ghost = loop === null ? 0 : n - loop;           // one more pass of the loop, faded
+  const cols = n + ghost;
+  const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
+  const kind = i => tr.steps.every(st => st[i] === null || st[i] === undefined || typeof st[i] === "boolean") ? "bool"
+    : tr.steps.every(st => st[i] === null || st[i] === undefined || typeof st[i] === "number") ? "num" : "text";
+  const S = { cur: panel && panel.step !== undefined && panel.step !== null ? panel.step : (tr.at || 0), px: 32,
+              plots: new Set(), sel: order.length ? order[0] : null };
+  const valueAt = (c, i) => tr.steps[c < n ? c : loop + (c - n)][i];
+  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const label = k => DATA.period ? timeOf(k) : String(k);
+  const NS = "http://www.w3.org/2000/svg";
+  const sv = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag);
+    Object.entries(attrs || {}).forEach(([a, v]) => e.setAttribute(a, v)); if (parent) parent.appendChild(e); return e; };
+
+  // the bar: the check, the step at the cursor, the zoom, the keys, the cross
+  const where = h("span", { class: "wv-where" });
+  const keys = h("div", { class: "wv-keys" });
+  const bar = h("header", {}, h("b", {}, richOf(title)), where,
+    h("span", { class: "wv-tools" },
+      iconButton(GLYPH.zout, "Zoom out (-)", () => zoom(1 / 1.5)),
+      iconButton(GLYPH.zin, "Zoom in (+)", () => zoom(1.5)),
+      iconButton(GLYPH.fit, "All the steps (0)", fitAll),
+      iconButton(GLYPH.keys, "Keys (?)", () => box.classList.toggle("keys", keys.classList.toggle("on"))),
+      iconButton('<path d="M4 4l8 8M12 4l-8 8"/>', "Close (Esc)", closeWave)));
+  const scroll = h("div", { class: "wv-scroll" });
+  const grid = h("div", { class: "wv-grid" });
+  scroll.appendChild(grid);
+  const thumb = h("div", {}), sbar = h("div", { class: "rp-bar wv-bar" }, thumb);
+  const foot = h("footer", {}, h("span", { class: "wv-span" }),
+    h("span", { class: "wv-note" }, (loop !== null ? "↺ From step " + label(loop) + " on, the steps repeat forever (one more pass faded). " : "")
+      + (tr.cut ? "The first " + n + " steps are kept. " : "")),
+    h("span", { class: "wv-hint" }, "Click a step · drag to move · Ctrl/⌘ + wheel to zoom · ? for the keys"));
+  keys.innerHTML = [["← →", "step"], ["Home End", "first, last step"], ["F", "the step that fails"], ["L", "the start of the loop"],
+    ["↑ ↓", "row"], ["Enter", "a row of numbers as a plot"], ["+ − 0", "zoom in, out, all"],
+    ["Ctrl or ⌘ + wheel", "zoom where it points"], ["drag, Shift + wheel", "move along the steps"], ["Esc", "close"]]
+    .map(([k, d]) => "<div><kbd>" + k + "</kbd><span>" + d + "</span></div>").join("");
+  box.innerHTML = "";
+  box.append(bar, keys, scroll, sbar, foot);
+  box.style.display = "flex";
+  WAVE.open = true;
+  WAVE.setStep = k => { S.cur = k; draw(); show(k); };
+  WAVE.px = () => S.px;                  // for the tests: the width of a step, the step at a point
+  WAVE.stepAt = x => stepAt(x);
+
+  const avail = () => Math.max(120, scroll.clientWidth - WV.name - WV.value - 16);
+  function fitAll() { S.px = Math.max(WV.min, Math.min(WV.max, avail() / cols)); draw(); scroll.scrollLeft = 0; }
+  function zoom(f, atX) {                // around a point of the view (the middle of the steps in view, by default)
+    const x = atX === undefined ? avail() / 2 : atX;
+    const at = (scroll.scrollLeft + x) / S.px;
+    S.px = Math.max(WV.min, Math.min(WV.max, S.px * f));
+    draw();
+    scroll.scrollLeft = at * S.px - x;
+  }
+  function show(k) {                     // the step k in view
+    const x0 = k * S.px, x1 = x0 + S.px, a = scroll.scrollLeft, b = a + avail();
+    if (x0 < a) scroll.scrollLeft = x0 - S.px; else if (x1 > b) scroll.scrollLeft = x1 - avail() + S.px;
+  }
+  const stepAt = clientX => {
+    const r = scroll.getBoundingClientRect();
+    const c = Math.floor((scroll.scrollLeft + clientX - r.left - WV.name - WV.value) / S.px);
+    return c < 0 || c >= cols ? null : c < n ? c : loop + (c - n);
+  };
+
+  function draw() {
+    const W = cols * S.px, every = [1, 2, 5, 10, 20, 50, 100].find(e => e * S.px >= 30) || 200;
+    grid.style.width = (WV.name + WV.value + W + 16) + "px";
+    grid.innerHTML = "";
+    words = [];
+    // the axis: the steps (or the times), the step that fails, the loop, the cursor
+    const ax = h("div", { class: "wv-row wv-axis" },
+      h("div", { class: "wv-left" }, h("span", { class: "wv-name" }, DATA.period ? "t (s)" : "step"),
+        h("span", { class: "wv-val wv-at" }, (DATA.period ? "t = " : "step ") + label(S.cur))));
+    const asvg = sv("svg", { width: W + 16, height: WV.axis, class: "wv-svg" });
+    ax.appendChild(asvg);
+    if (loop !== null) {                  // the loop: a bracket over its steps
+      const x0 = loop * S.px, x1 = n * S.px;
+      const atLeft = tr.at !== null && tr.at !== undefined && tr.at * S.px < x0 + 70 && tr.at * S.px + S.px > x0 - 30;
+      sv("rect", { x: x0, y: 19, width: x1 - x0, height: WV.axis - 19, fill: "#f2f6f6" }, asvg);
+      sv("path", { d: `M${x0 + 1} 15V9H${x1 - 1}V15`, fill: "none", stroke: "#7d8c8d", "stroke-width": 1 }, asvg);
+      const t = sv("text", { x: atLeft ? x1 - 6 : x0 + 6, y: 3, "text-anchor": atLeft ? "end" : "start",
+                             "dominant-baseline": "hanging", class: "wv-loop" }, asvg);
+      t.textContent = "↺ loop";
+      const bg = sv("rect", { fill: "#fff" }, asvg);
+      asvg.insertBefore(bg, t);
+      requestAnimationFrame(() => { const b = t.getBBox(); bg.setAttribute("x", b.x - 3); bg.setAttribute("y", b.y);
+                                    bg.setAttribute("width", b.width + 6); bg.setAttribute("height", b.height); });
+    }
+    if (S.cur !== tr.at) sv("rect", { x: S.cur * S.px, y: 19, width: S.px, height: WV.axis - 19, fill: "#e6effa" }, asvg);
+    if (tr.at !== undefined && tr.at !== null) {   // the step that fails: a red column under "fails ▾"
+      const x = tr.at * S.px, m = x + S.px / 2;
+      sv("rect", { x, y: 19, width: S.px, height: WV.axis - 19, fill: "#fbeceb" }, asvg);
+      const t = sv("text", { x: m, y: 3, "text-anchor": "middle", "dominant-baseline": "hanging", class: "wv-fails" }, asvg);
+      t.textContent = "fails";
+      const bg = sv("rect", { fill: "#fff" }, asvg);
+      asvg.insertBefore(bg, t);
+      requestAnimationFrame(() => { const b = t.getBBox(); bg.setAttribute("x", b.x - 3); bg.setAttribute("y", b.y);
+                                    bg.setAttribute("width", b.width + 6); bg.setAttribute("height", b.height); });
+      sv("path", { d: `M${m - 4} 14h8l-4 5z`, fill: "#b03a2e" }, asvg);
+    }
+    sv("line", { x1: S.cur * S.px + 1, y1: 19, x2: S.cur * S.px + 1, y2: WV.axis, stroke: "#2f6fb5", "stroke-width": 2 }, asvg);
+    for (let c = 0; c < cols; c++) {
+      const k = c < n ? c : loop + (c - n), x = c * S.px;
+      sv("line", { x1: x, y1: c % every ? WV.axis - 4 : WV.axis - 8, x2: x, y2: WV.axis, stroke: "#b6c1c1" }, asvg);
+      if (c % every === 0 || (c < n && (k === tr.at || k === S.cur))) {
+        const t = sv("text", { x: x + S.px / 2, y: WV.axis - 11, "text-anchor": "middle",
+          class: "wv-tick" + (c >= n ? " ghost" : k === tr.at ? " fail" : k === S.cur ? " cur" : "") }, asvg);
+        t.textContent = c >= n ? label(c) : label(k);
+      }
+    }
+    if (ghost) sv("text", { x: cols * S.px + 4, y: WV.axis - 11, class: "wv-tick ghost" }, asvg).textContent = "…";
+    grid.appendChild(ax);
+    // the rows
+    order.forEach((i, r) => {
+      const kd = kind(i), plot = kd === "num" && S.plots.has(i);
+      const H = plot ? WV.plot : kd === "bool" ? WV.bool : WV.row;
+      const nums = tr.steps.map(st => st[i]).filter(v => typeof v === "number");
+      const lo = Math.min(...nums), hi = Math.max(...nums);
+      const nm = h("span", { class: "wv-name" + (first.includes(tr.vars[i]) ? " port" : ""), title: tr.vars[i] }, tr.vars[i]);
+      const valv = h("span", { class: "wv-val" }, fmt(tr.steps[S.cur][i]));
+      const short = v => Number.isInteger(v) ? String(v) : String(+v.toPrecision(4));
+      if (plot) valv.append(h("small", {}, "max " + short(hi)), h("small", {}, "min " + short(lo)));
+      const left = h("div", { class: "wv-left" + (S.sel === i ? " sel" : "") }, nm, valv);
+      if (kd === "num") {
+        const tg = h("button", { class: "wv-plot" + (plot ? " on" : ""), "data-tip": plot ? "Show as values" : "Show as a plot",
+                                 "aria-label": plot ? "Show as values" : "Show as a plot",
+                                 onclick: e => { e.stopPropagation(); S.plots.has(i) ? S.plots.delete(i) : S.plots.add(i); draw(); } });
+        tg.innerHTML = '<svg viewBox="0 0 16 16"><path d="' + (plot ? "M2 6h12M2 10h12" : "M1.5 12h3V8h3V4h3v5h4") + '"/></svg>';
+        left.appendChild(tg);
+      }
+      left.addEventListener("click", () => { S.sel = i; draw(); });
+      const row = h("div", { class: "wv-row" + (r % 2 ? " odd" : ""), style: "height:" + H + "px" }, left);
+      const svg = sv("svg", { width: W + 16, height: H, class: "wv-svg" });
+      row.appendChild(svg);
+      // the marks behind: the loop, the step that fails, the cursor
+      if (loop !== null) sv("rect", { x: loop * S.px, y: 0, width: (n - loop) * S.px, height: H, fill: "#f2f6f6" }, svg);
+      if (S.cur !== tr.at) sv("rect", { x: S.cur * S.px, y: 0, width: S.px, height: H, fill: "#e6effa" }, svg);
+      if (tr.at !== undefined && tr.at !== null) sv("rect", { x: tr.at * S.px, y: 0, width: S.px, height: H, fill: "#fbeceb" }, svg);
+      const draw1 = (from, to, g) => {
+        if (kd === "bool") {
+          const hiY = 5, loY = H - 5;
+          let d = "";
+          for (let c = from; c < to; c++) {
+            const v = valueAt(c, i), x = c * S.px;
+            if (v === null || v === undefined) { sv("rect", { x, y: hiY, width: S.px, height: loY - hiY, fill: "url(#wvhatch)" }, g); continue; }
+            const y = v ? hiY : loY;
+            if (v) sv("rect", { x, y: hiY, width: S.px, height: loY - hiY, fill: "#d5e6e3" }, g);
+            d += (d && c > from ? "L" : "M") + x + " " + y + "H" + (x + S.px);
+          }
+          sv("path", { d, fill: "none", stroke: "#17393b", "stroke-width": 1.5 }, g);
+        } else if (plot) {
+          const y = v => lo === hi ? H / 2 : H - 6 - (v - lo) / (hi - lo) * (H - 12);
+          let d = "";
+          for (let c = from; c < to; c++) {
+            const v = valueAt(c, i); if (typeof v !== "number") continue;
+            d += (d ? "L" : "M") + c * S.px + " " + y(v) + "H" + (c + 1) * S.px;
+          }
+          sv("path", { d, fill: "none", stroke: "#17393b", "stroke-width": 1.5 }, g);
+        } else {                          // a box for each run of one value
+          let c = from;
+          while (c < to) {
+            const v = valueAt(c, i); let e = c + 1;
+            while (e < to && fmt(valueAt(e, i)) === fmt(v)) e++;
+            const x0 = c * S.px + .5, x1 = e * S.px - .5, s = Math.min(4, (x1 - x0) / 4), top = 4, bot = H - 4, mid = H / 2;
+            const p = sv("path", { d: `M${x0} ${mid}L${x0 + s} ${top}H${x1 - s}L${x1} ${mid}L${x1 - s} ${bot}H${x0 + s}Z`,
+              fill: v === null || v === undefined ? "url(#wvhatch)" : "#f7f9f9", stroke: "#7d8c8d", "stroke-width": 1 }, g);
+            const steps = c === e - 1 ? "step " + label(c < n ? c : loop + c - n) : "steps " + label(c < n ? c : loop + c - n) + " to " + label(e - 1 < n ? e - 1 : loop + e - 1 - n);
+            sv("title", {}, p).textContent = tr.vars[i] + " = " + fmt(v) + " (" + steps + ")";
+            if (x1 - x0 - 2 * s >= 17)
+              words.push({ t: sv("text", { y: mid, "text-anchor": "middle", "dominant-baseline": "central", class: "wv-v" }, g),
+                           a: x0 + s, b: x1 - s, txt: fmt(v), shown: null });
+            c = e;
+          }
+        }
+      };
+      draw1(0, n, svg);
+      if (ghost) draw1(n, cols, sv("g", { opacity: ".35" }, svg));
+      // the cursor on top
+      sv("line", { x1: S.cur * S.px + 1, y1: 0, x2: S.cur * S.px + 1, y2: H, stroke: "#2f6fb5", "stroke-width": 2 }, svg);
+      grid.appendChild(row);
+    });
+    const defs = sv("svg", { width: 0, height: 0, style: "position:absolute" });
+    defs.innerHTML = '<defs><pattern id="wvhatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+      + '<rect width="6" height="6" fill="#f2f4f4"/><line x1="0" y1="0" x2="0" y2="6" stroke="#d3dbdb" stroke-width="2"/></pattern></defs>';
+    grid.appendChild(defs);
+    const at = k => DATA.period ? "t = " + label(k) + " s" : "step " + label(k);
+    where.textContent = "cursor at " + at(S.cur) + (tr.at !== undefined && tr.at !== null ? " · fails at " + at(tr.at) : "");
+    place();
+  }
+  let words = [];                        // the words of the boxes: {t, a, b, txt}
+  function place() {                     // the words of the boxes, the bar under the steps and the steps in view
+    const v0 = scroll.scrollLeft, v1 = v0 + scroll.clientWidth - WV.name - WV.value;
+    const cx = S.cur * S.px + 1;
+    words.forEach(w => {                 // in the middle of the part in view, cut to fit it, beside the cursor
+      let a = Math.max(w.a, v0), b = Math.min(w.b, v1);
+      if (Math.abs((a + b) / 2 - cx) < w.txt.length * 3.3 + 6 && a < cx && cx < b)
+        if (cx - a > b - cx) b = cx - 2; else a = cx + 2;
+      const room = Math.floor((b - a - 4) / 6.6);
+      const txt = room < 2 ? "" : w.txt.length <= room ? w.txt : w.txt.slice(0, room - 1) + "…";
+      if (txt !== w.shown) { w.t.textContent = txt; w.shown = txt; }
+      if (txt) w.t.setAttribute("x", (a + b) / 2);
+    });
+    const over = scroll.scrollWidth > scroll.clientWidth + 1;
+    sbar.classList.toggle("on", over);
+    const a = Math.max(0, Math.floor(scroll.scrollLeft / S.px)), b = Math.min(cols, Math.ceil((scroll.scrollLeft + avail()) / S.px)) - 1;
+    foot.firstChild.textContent = over ? (DATA.period ? "t " + label(a) + " to " + label(Math.min(b, n - 1)) : "steps " + a + " to " + Math.min(b, n - 1))
+      + " of " + n + " in view" : n + " steps";
+    if (!over) return;
+    const w = sbar.clientWidth, vis = avail() / (scroll.scrollWidth - WV.name - WV.value);
+    thumb.style.width = Math.max(24, w * Math.min(1, vis)) + "px";
+    thumb.style.left = (w - thumb.offsetWidth) * scroll.scrollLeft / Math.max(1, scroll.scrollWidth - scroll.clientWidth) + "px";
+  }
+  scroll.addEventListener("scroll", place);
+  // the bar: drag its thumb, or click it to page
+  sbar.addEventListener("mousedown", e => { if (e.target === thumb) return;
+    scroll.scrollLeft += (e.offsetX < thumb.offsetLeft ? -1 : 1) * avail(); });
+  thumb.addEventListener("mousedown", e => {
+    e.preventDefault(); e.stopPropagation();
+    const x0 = e.clientX, s0 = scroll.scrollLeft, k = scroll.scrollWidth / sbar.clientWidth;
+    thumb.classList.add("drag");
+    const move = m => { scroll.scrollLeft = s0 + (m.clientX - x0) * k; };
+    const up = () => { thumb.classList.remove("drag"); removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", move); addEventListener("mouseup", up);
+  });
+  // a click on the steps picks one; a drag moves along them
+  let down = null;
+  scroll.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target.closest(".wv-left")) return;
+    down = { x: e.clientX, s: scroll.scrollLeft, moved: false };
+  });
+  WAVE.move = e => {
+    if (!down) return;
+    if (Math.abs(e.clientX - down.x) > 4) { down.moved = true; scroll.classList.add("pan"); }
+    if (down.moved) scroll.scrollLeft = down.s - (e.clientX - down.x);
+  };
+  addEventListener("pointermove", WAVE.move);
+  WAVE.up = e => {
+    if (!down) return;
+    const was = down; down = null; scroll.classList.remove("pan");
+    if (!was.moved) { const k = stepAt(e.clientX); if (k !== null) pick(k); }
+  };
+  addEventListener("pointerup", WAVE.up);
+  // Ctrl or Cmd and the wheel (a pinch too) zoom where they point; the wheel alone scrolls
+  scroll.addEventListener("wheel", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const r = scroll.getBoundingClientRect();
+    zoom(Math.exp(-e.deltaY * 0.01), Math.max(0, e.clientX - r.left - WV.name - WV.value));
+  }, { passive: false });
+  box.onkeydown = e => {
+    const k = e.key;
+    const go = s => { e.preventDefault(); pick(Math.max(0, Math.min(n - 1, s))); };
+    if (k === "Escape") { closeWave(); e.preventDefault(); }
+    else if (k === "ArrowLeft" || k === "ArrowRight") go(S.cur + (k === "ArrowLeft" ? -1 : 1));
+    else if (k === "Home") go(0);
+    else if (k === "End") go(n - 1);
+    else if ((k === "f" || k === "F") && tr.at !== undefined && tr.at !== null) go(tr.at);
+    else if ((k === "l" || k === "L") && loop !== null) go(loop);
+    else if (k === "+" || k === "=") zoom(1.5);
+    else if (k === "-") zoom(1 / 1.5);
+    else if (k === "0") fitAll();
+    else if (k === "?") box.classList.toggle("keys", keys.classList.toggle("on"));
+    else if (k === "ArrowUp" || k === "ArrowDown") {
+      const at = order.indexOf(S.sel), to = order[Math.max(0, Math.min(order.length - 1, at + (k === "ArrowUp" ? -1 : 1)))];
+      S.sel = to; draw(); e.preventDefault();
+    } else if (k === "Enter" && S.sel !== null && kind(S.sel) === "num") {
+      S.plots.has(S.sel) ? S.plots.delete(S.sel) : S.plots.add(S.sel); draw();
+    } else return;
+    e.stopPropagation();
+  };
+  // at first: every step in view, if each has room; else 32 pixels a step, the step that fails in view
+  S.px = Math.min(120, avail() / cols);  // all the steps in the width; a long trace opens readable, to move along
+  if (S.px < 24) S.px = 32;
+  draw();
+  show(tr.at !== undefined && tr.at !== null ? tr.at : S.cur);
+  box.focus();
+}
+function closeWave() {
+  const box = document.getElementById("wave");
+  if (!box || !WAVE.open) return;
+  box.style.display = "none"; box.innerHTML = ""; box.classList.remove("keys");
+  WAVE.open = false;
+  if (WAVE.up) removeEventListener("pointerup", WAVE.up);
+  if (WAVE.move) removeEventListener("pointermove", WAVE.move);
+}
 // The code of a C function in the details, folded: its title says whose it is.
 function codeSection(n) {
   const c = n.model && n.model.code;
@@ -3737,6 +4095,11 @@ const GLYPH = {
   apply: '<path d="M3.2 8.4l3 3 6.6-7"/>',
   longer: '<circle cx="8" cy="8" r="5.6"/><path d="M8 4.8V8l2.2 1.6"/>',
   prev: '<path d="M10 3.5L5.5 8l4.5 4.5"/>',
+  wave: '<path d="M1.5 11h2.5V5h3v6h2.5V5h3v6h2"/>',
+  zin: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4M7 5v4"/>',
+  zout: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4"/>',
+  fit: '<path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3"/>',
+  keys: '<rect x="1.5" y="4" width="13" height="8" rx="1.5"/><path d="M4 6.6h.5M6.5 6.6h.5M9 6.6h.5M11.5 6.6h.5M5 9.4h6"/>',
   next: '<path d="M6 3.5L10.5 8 6 12.5"/>',
 };
 // an icon button; one that cannot act now stays in view, with its tip saying why (not disabled: a
