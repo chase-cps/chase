@@ -1809,7 +1809,7 @@ _PAGE = r"""<!doctype html>
              animation:turn 0.8s linear infinite; }
   /* the steps in view, and a page back or on: only when the table is wider than the panel */
   .rp-trace-top { display:none; align-items:center; justify-content:flex-end; gap:2px; margin-top:2px; color:var(--soft); font-size:11px; }
-  .rp-trace-top.on { display:flex; } .rp-span { margin-right:4px; }
+  .rp-trace-top.on { display:flex; }
   /* a scroll bar of the page, always drawn: the one of the system shows only while scrolling (macOS) */
   .rp-tracebox .rp-tracewrap { scrollbar-width:none; } .rp-tracebox .rp-tracewrap::-webkit-scrollbar { display:none; }
   .rp-bar { display:none; position:relative; height:8px; margin:5px 0 2px; border-radius:4px; background:#edf1f1; cursor:pointer; }
@@ -3338,12 +3338,11 @@ function traceTable(tr, first, req, step, onPick) {
   t.style.setProperty("--cw", widest + "ch");
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
-  // the table scrolls under its first column; above it, the steps in view and a page back or on
-  const span = h("span", { class: "rp-span" });
+  // the table scrolls under its first column; above it, a page back or on
   const turn = d => { const v = t.querySelector("th, td.v");
                       wrap.scrollLeft += d * Math.max(40, wrap.clientWidth - (v ? v.offsetWidth : 0) - 8); };
   const prev = iconButton(GLYPH.prev, "Earlier steps", () => turn(-1)), next = iconButton(GLYPH.next, "Later steps", () => turn(1));
-  const top = h("div", { class: "rp-trace-top" }, span, prev, next);
+  const top = h("div", { class: "rp-trace-top" }, prev, next);
   // the bar under the table: its thumb is the part in view; drag it, or click the bar to page
   const thumb = h("div", {}), bar = h("div", { class: "rp-bar" }, thumb);
   const out = h("div", { class: "rp-tracebox" }, top, wrap, bar);
@@ -3368,15 +3367,6 @@ function traceTable(tr, first, req, step, onPick) {
     const w = bar.clientWidth;
     thumb.style.width = Math.max(24, w * wrap.clientWidth / wrap.scrollWidth) + "px";
     thumb.style.left = (w - thumb.offsetWidth) * wrap.scrollLeft / Math.max(1, wrap.scrollWidth - wrap.clientWidth) + "px";
-    const v = t.querySelector("th, td.v"), from = wrap.scrollLeft + (v ? v.offsetWidth : 0), to = wrap.scrollLeft + wrap.clientWidth;
-    // a step is in view when the middle of its column is (not hidden under the first column, not cut at the edge)
-    const seen = [...t.querySelectorAll("th[data-k]")].filter(c => c.offsetLeft + c.offsetWidth / 2 >= from
-                                                                   && c.offsetLeft + c.offsetWidth / 2 <= to);
-    if (seen.length) {
-      const a = +seen[0].dataset.k, b = +seen[seen.length - 1].dataset.k;
-      span.textContent = DATA.period ? "t " + timeOf(a) + "–" + timeOf(b) + " of " + timeOf(0) + "–" + timeOf(last)
-                                     : "steps " + a + "–" + b + " of " + tr.steps.length;
-    }
     prev.style.visibility = wrap.scrollLeft > 1 ? "visible" : "hidden";
     next.style.visibility = wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 1 ? "visible" : "hidden";
   };
