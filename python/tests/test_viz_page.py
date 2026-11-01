@@ -468,8 +468,8 @@ def test_the_code_of_a_c_function(browser, tmp_path):
 
 
 def test_one_call_of_a_c_function_is_its_values(browser, tmp_path):
-    # the counterexample of a C function is one call: its inputs and outputs as name = value, not a
-    # table of one step with "from this step on, the steps repeat forever"
+    # the counterexample of a C function is one call: its inputs and outputs as name = value, each on
+    # its line (In, Out), not a table of one step with "from this step on, the steps repeat forever"
     from chase_cps import CFunction, Component, Contract
     src = tmp_path / "f.c"
     src.write_text("int f(int a) { return a + 2; }\n")
@@ -481,7 +481,7 @@ def test_one_call_of_a_c_function_is_its_values(browser, tmp_path):
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|M ⊨ C"]'))
     page.wait_for_selector("#repair .rp-head", timeout=5000)
-    assert page.locator("#repair .rp-values").inner_text().split("\n") == ["a = 1", "b = 3"]
+    assert page.locator("#repair .rp-io").inner_text().split() == ["In", "a", "=", "1", "Out", "b", "=", "3"]
     assert page.locator("#repair table.rp-trace").count() == 0
     assert "repeat forever" not in page.inner_text("#repair") and "↺" not in page.inner_text("#repair")
     assert page.locator(OPEN_WAVE).count() == 0
@@ -599,7 +599,7 @@ def test_the_panel_goes_from_the_list_to_the_details_and_back(browser, tmp_path)
     # the code of the function: in the details, folded, after the counterexample
     code = page.locator("#repair details.rp-code")
     assert code.count() == 1 and not code.evaluate("d => d.open")
-    assert page.inner_text("#repair details.rp-code summary").endswith("f.c: inc")
+    assert page.inner_text("#repair details.rp-code summary").split() == ["CODE", "f.c", "·", "inc"]
     order = page.evaluate("[...document.querySelectorAll('#repair > *')].map(e => e.className)")
     assert order.index("rp-sec rp-code") > [i for i, c in enumerate(order) if c == "rp-sec"][0]
     click(page, page.locator("#repair details.rp-code summary"))
@@ -1308,11 +1308,134 @@ def test_the_waveform_hint_tells_only_what_can_be_done(browser, tmp_path):
     assert errors == []
 
 
-def test_the_waveform_of_a_long_trace_is_quick(browser, tmp_path):
-    # 200 steps and 40 variables: the table shows the first 12, the waveform all; opening it and a zoom are quick
+def test_the_table_pages_through_every_step(browser, tmp_path):
+    # 200 steps: the table holds them all; it opens on the step that fails, a far step picked in the
+    # waveform (the loop, L) comes into the middle of the table, and the page buttons reach the last step
     page, errors = wave_page(browser, tmp_path, LONG)
-    assert page.locator("#repair table.rp-trace th[data-k]").count() == 12
-    assert "The first 12 of 200 steps" in page.inner_text("#repair")
+    wrap = page.locator("#repair .rp-tracewrap")
+    def seen(k):
+        w, c = wrap.bounding_box(), page.locator(f'#repair table.rp-trace th[data-k="{k}"]').bounding_box()
+        return c["x"] >= w["x"] - 1 and c["x"] + c["width"] <= w["x"] + w["width"] + 1
+    assert seen(120)
+    page.keyboard.press("l")
+    page.wait_for_timeout(100)
+    assert seen(150) and not seen(120)
+    nxt = page.locator('#repair button[aria-label="Later steps"]')
+    for _ in range(40):
+        if not nxt.is_visible() or seen(199):
+            break
+        click(page, nxt)
+        page.wait_for_timeout(30)
+    assert seen(199)
+    assert errors == []
+
+
+def test_an_environment_shows_the_step_and_the_assumption_it_breaks(browser, tmp_path):
+    # the panel of E ⊨ A: the step where an assumption of the box it drives fails first (red), and that
+    # assumption red on the box and listed in the panel
+    page, errors = open_page(browser, tmp_path, environment_breaking()[0])
+    click(page, page.locator('[data-check$="|E ⊨ A"]'))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    assert page.locator("#repair table.rp-trace th.fail").inner_text() == "0"
+    assert "The assumptions it breaks (red):" in page.inner_text("#repair")
+    arb = page.evaluate("Object.values(byId).find(n => n.title === 'Arb').id")
+    assert page.locator(f'[data-box="{arb}"] > g rect.core-row').count() >= 1
+    assert "Fails at step 0" in page.evaluate("factsOf(byId[panel.id], 'E ⊨ A', null, byId[panel.id].badge.why)")
+    assert errors == []
+
+
+def environment_breaking(whole=False):
+    """A contract Arb whose assumption an environment breaks at step 0 (or, whole, over the whole run)."""
+    from chase_cps import Contract, Model
+    from chase_cps.queries import Result, Trace
+    c = Contract.from_strings(name="Arb", inputs=["req"], outputs=["grant"],
+                              assumptions=["F req" if whole else "G ((req & !grant) -> X req)"], guarantees=["G F grant"])
+    env = Model.from_dict({"name": "Env", "inputs": {}, "outputs": {"req": "bool"}, "states": ["s"], "initial": "s",
+                           "transitions": [{"from": "s", "outputs": {"req": False}, "to": "s"}]})
+    run = [{"req": not whole, "grant": False}, {"req": False, "grant": False}]
+    r = Result("invalid", trace=Trace(prefix=run, loop=[{"req": False, "grant": False}]))
+    d = viz.diagram(c, environments=[(env, c, r)])
+    return d, c
+
+
+def test_an_environment_breaks_an_assumption_at_a_step_or_over_the_whole_run():
+    for whole in (False, True):
+        d, c = environment_breaking(whole)
+        env, arb = d["nodes"]
+        w = env["badge"]["why"]
+        assert w["parts"] == {arb["id"]: [0]} and w["broken"][0].startswith("Arb: ")
+        assert (w.get("at"), w["trace"].get("at"), w.get("whole")) == ((None, None, True) if whole else (0, 0, None))
+
+
+def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path):
+    # an unrealizable contract: the panel says how many guarantees cannot all be met, lists them, and a
+    # click on one flashes its lines on the diagram; How to fix is worded for realizability
+    from chase_cps import Contract
+    c = Contract.from_strings(name="R1", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)", "G (x -> !y)", "G F x"])
+    d = viz.diagram(c)
+    d["nodes"][0]["checks"] = [{"name": "R", "status": "invalid", "reason": "", "core": {"part": "contract", "A": [], "G": [0, 1]}}]
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|R"]'))
+    page.wait_for_selector("#repair .rp-terms", timeout=5000)
+    text = page.inner_text("#repair")
+    assert "These 2 guarantees cannot all be met." in text and "The terms in conflict" not in text
+    terms = page.locator("#repair .rp-term")
+    assert terms.count() == 2 and "x -> !y" in terms.nth(1).inner_text()
+    assert page.locator("#repair .rp-term .f").first.evaluate("e => getComputedStyle(e).fontFamily").startswith("Menlo")
+    click(page, terms.nth(1))
+    page.wait_for_timeout(150)
+    box = d["nodes"][0]["id"]
+    assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G1"] rect.flash').count() >= 1
+    assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G0"] rect.flash').count() == 0
+    assert "Weaken a red guarantee" in text and "integer constant k 2;" in page.inner_text("#repair code.cmd")
+    assert "requirement" not in text.split("How to fix".upper())[-1].lower().replace("requires", "")
+    assert errors == []
+
+
+def test_a_command_breaks_only_between_its_words(browser, tmp_path):
+    # the repair command of a page that cannot run repairs, in a narrow panel: no flag cut at "--"
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT)
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["badge"]["status"] = "invalid"
+    page, errors = open_page(browser, tmp_path, d, editor=False)
+    page.set_viewport_size({"width": 900, "height": 800})
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair .rp-cmd", timeout=5000)
+    spans = page.locator("#repair .rp-cmd > span")
+    assert "--refines" in spans.all_inner_texts() and all(" " not in w for w in spans.all_inner_texts())
+    assert page.evaluate("[...document.querySelectorAll('#repair .rp-cmd > span')].every(s => s.getClientRects().length === 1)")
+    lines = page.evaluate("""(() => { const ys = new Set([...document.querySelectorAll('#repair .rp-cmd > span')]
+                                       .map(s => Math.round(s.getBoundingClientRect().top))); return ys.size; })()""")
+    assert lines > 1                                       # it wraps, at the spaces only
+    assert errors == []
+
+
+def test_back_to_problems_keeps_the_waveform_for_the_next(browser, tmp_path):
+    # the waveform open, back to Problems, then a problem: it opens with its waveform
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    click(page, page.locator("#insp-bar button.back"))
+    page.wait_for_selector("#repair .q-item", timeout=5000)
+    assert not page.is_visible("#wave")
+    click(page, page.locator("#repair .q-item").first)
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    assert page.is_visible("#wave")
+    page.keyboard.press("Escape")                          # the drawer closed: the next one opens without it
+    page.wait_for_timeout(100)
+    click(page, page.locator("#insp-bar button.back"))
+    page.wait_for_selector("#repair .q-item", timeout=5000)
+    click(page, page.locator("#repair .q-item").first)
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    assert not page.is_visible("#wave")
+    assert errors == []
+
+
+def test_the_waveform_of_a_long_trace_is_quick(browser, tmp_path):
+    # 200 steps and 40 variables: the table and the waveform hold them all; opening it and a zoom are quick
+    page, errors = wave_page(browser, tmp_path, LONG)
+    assert page.locator("#repair table.rp-trace th[data-k]").count() == 200
+    assert "The first" not in page.inner_text("#repair")
     assert page.locator("#wave .wv-row[data-i]").count() == 40
     page.keyboard.press("Escape")
     ms = page.evaluate("""(() => { const t = performance.now();
