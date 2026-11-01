@@ -229,3 +229,23 @@ def test_a_check_with_no_answer_is_said_so(monkeypatch):
     monkeypatch.setattr(module, "run", lambda *a, **k: Outcome(None, None, [], "timeout"))
     r = repair("refines", STOP, CONCEPT, parameters=RANGES, method="copies")
     assert r.status == "unknown" and "gave no answer" in r.reason and "timeout" in r.reason
+
+
+@needs_nuxmv
+def test_the_context_of_a_state_machine_after_its_reset():
+    # the check reads the context after the steps of a reset, and so does the
+    # repair: u in the reset step is free, so y reaches 5 at step 1, and the
+    # least c is 5 (with the context from step 0, the repair saw c = 1)
+    import dataclasses
+    from chase_cps import Model, is_implementation
+    m = dataclasses.replace(Model.from_smv("""MODULE main
+IVAR u : 0..5;
+VAR y : 0..9;
+ASSIGN init(y) := 9; next(y) := u;
+"""), start=1)
+    c = Contract.from_strings(name="Low", inputs={"u": (0, 5)}, outputs={"y": (0, 9)},
+                              constants={"c": 0}, guarantees=["G (y <= c)"])
+    r = repair("impl", m, c, parameters={"c": (0, 9, "int")}, context="G (u <= 1)", time_limit=120)
+    assert r.status == "repaired" and r.values == {"c": 5}, (r.status, r.values, r.reason)
+    assert is_implementation(m, c.instantiate({"c": 5}), context="G (u <= 1)").status == "valid"
+    assert is_implementation(m, c.instantiate({"c": 4}), context="G (u <= 1)").status == "invalid"

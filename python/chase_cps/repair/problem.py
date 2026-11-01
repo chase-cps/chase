@@ -110,22 +110,33 @@ def instantiated(args: tuple, values: dict) -> tuple:
     return tuple(out)
 
 
-def questions(check: str, sym_args: tuple, params: Optional[dict] = None) -> list:
+def questions(check: str, sym_args: tuple, params: Optional[dict] = None, context=None) -> list:
     """(name, query) of the check on the contracts with the parameters as
     variables (see chase_cps.export). A state machine gets the parameters
-    as frozen variables (FROZENVAR), which its contract reads."""
+    as frozen variables (FROZENVAR), which its contract reads, and the
+    context as the check reads it: after the steps of a reset."""
     from ..cprograms import CFunction
     from ..queries import Implies
     if check == "impl" and isinstance(sym_args[0], CFunction):
         c = sym_args[1]
         return [("impl", Implies(c.assumption, c.guarantee, c.variables))]
-    if check in ("impl", "env") and params:
+    m = None
+    if check in ("impl", "env"):
         from ..models import as_model
         m = as_model(sym_args[0], sym_args[1])
-        if m is not None:
-            sym_args = (with_parameters(m, params),) + tuple(sym_args[1:])
+        if m is not None and params:
+            m = with_parameters(m, params)
+            sym_args = (m,) + tuple(sym_args[1:])
     from ..export import questions as export_questions
-    return export_questions(check, *sym_args)[1]
+    asked = export_questions(check, *sym_args)[1]
+    if m is not None and context is not None:
+        from ..checks import holds_query
+        c = sym_args[1]
+        phi = c.saturated_guarantee if check == "impl" else c.assumption
+        what = f"the contract {c.name}" if check == "impl" else f"the assumptions of {c.name}"
+        asked = [(name, holds_query(m, phi, c, what, context))
+                 for name, _ in asked]
+    return asked
 
 
 def with_parameters(model, params: dict):

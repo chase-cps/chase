@@ -129,7 +129,7 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
         raise RepairError("give minimize or maximize, not both")
     params = parameters_of(check, args, parameters)
     sym = symbolic_args(check, args, params)
-    asked = _within(questions(check, sym, params), options.get("context"))
+    asked = _within(questions(check, sym, params, options.get("context")), options.get("context"))
     cost, aux = _cost(params, minimize, maximize)
     opts = {"timeout": timeout, **options}
 
@@ -210,8 +210,8 @@ def _within(asked: list, context) -> list:
             out.append((name, Implies(ltl.Binary("&", k, q.phi), q.psi, q.variables)))
         elif isinstance(q, Satisfiable):
             out.append((name, Satisfiable(ltl.Binary("&", k, q.phi), q.variables)))
-        elif isinstance(q, Holds):
-            out.append((name, Holds(q.model, ltl.Binary("->", k, q.phi), q.variables)))
+        elif isinstance(q, Holds):      # a state machine: the context is in it already (questions)
+            out.append((name, q))
         else:
             out.append((name, q))
     return out
