@@ -1809,6 +1809,7 @@ _PAGE = r"""<!doctype html>
              animation:turn 0.8s linear infinite; }
   /* the steps in view, and a page back or on: only when the table is wider than the panel */
   .rp-trace-top { display:none; align-items:center; justify-content:flex-end; gap:2px; margin-top:2px; color:var(--soft); font-size:11px; }
+  .rp-h .rp-trace-top { margin:0; }
   .rp-trace-top.on { display:flex; }
   /* a scroll bar of the page, always drawn: the one of the system shows only while scrolling (macOS) */
   .rp-tracebox .rp-tracewrap { scrollbar-width:none; } .rp-tracebox .rp-tracewrap::-webkit-scrollbar { display:none; }
@@ -1828,7 +1829,7 @@ _PAGE = r"""<!doctype html>
   #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
-  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px;
+  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px; white-space:nowrap;
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:center; color:var(--soft); }
@@ -3279,6 +3280,12 @@ function whySection(n, t, st) {
     const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k); };
     const table = traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
+    if (table.nav) {                    // the page back and on of a wide table: on the line of the heading
+      const head = sec.firstChild;
+      head.classList.add("rp-hb");
+      head.textContent = "";
+      head.append(h("span", {}, "Counterexample"), table.nav);
+    }
     sec.appendChild(table);
   } else {
     sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
@@ -3346,6 +3353,7 @@ function traceTable(tr, first, req, step, onPick) {
   // the bar under the table: its thumb is the part in view; drag it, or click the bar to page
   const thumb = h("div", {}), bar = h("div", { class: "rp-bar" }, thumb);
   const out = h("div", { class: "rp-tracebox" }, top, wrap, bar);
+  out.nav = top;                        // the caller may put it on the line of its heading
   bar.addEventListener("mousedown", e => {
     if (e.target === thumb) return;
     turn(e.offsetX < thumb.offsetLeft ? -1 : 1);
