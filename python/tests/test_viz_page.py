@@ -467,6 +467,27 @@ def test_the_code_of_a_c_function(browser, tmp_path):
     assert errors == []
 
 
+def test_one_call_of_a_c_function_is_its_values(browser, tmp_path):
+    # the counterexample of a C function is one call: its inputs and outputs as name = value, not a
+    # table of one step with "from this step on, the steps repeat forever"
+    from chase_cps import CFunction, Component, Contract
+    src = tmp_path / "f.c"
+    src.write_text("int f(int a) { return a + 2; }\n")
+    c = Contract.from_strings(inputs={"a": (0, 3)}, outputs={"b": (0, 9)}, guarantees=["b = a + 1"])
+    d = viz.diagram(Component("F", c, CFunction(str(src), "f", result="b")))
+    node, = [n for n in d["nodes"] if (n.get("model") or {}).get("source") == "c"]
+    node["badge"] = {"text": "M ⊨ C", "status": "invalid", "why": {"violated": [0], "at": 0, "trace": {
+        "vars": ["a", "b"], "more": 0, "steps": [[1, 3]], "loop": 0, "cut": False, "at": 0}}}
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|M ⊨ C"]'))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert page.locator("#repair .rp-values").inner_text().split("\n") == ["a = 1", "b = 3"]
+    assert page.locator("#repair table.rp-trace").count() == 0
+    assert "repeat forever" not in page.inner_text("#repair") and "↺" not in page.inner_text("#repair")
+    assert page.locator(OPEN_WAVE).count() == 0
+    assert errors == []
+
+
 def test_the_button_of_the_transition_labels(browser, tmp_path):
     # shown only with a model drawn with its transitions; a model too large to
     # draw (no transitions) leaves the page as it is
@@ -599,6 +620,43 @@ def test_the_panel_goes_from_the_list_to_the_details_and_back(browser, tmp_path)
     page.wait_for_selector("#repair .rp-head", timeout=5000)
     click(page, page.locator("#insp-bar button.back"))
     assert page.locator("#repair .q-item").count() == 2
+    assert errors == []
+
+
+def test_the_panel_keeps_a_whole_diagram_whole(browser, tmp_path):
+    # a diagram seen whole when the panel opens is seen whole in the room left of the panel (fitted
+    # to it if need be), and fitted to the whole window again when the panel closes; before, its left
+    # went under the window by half the panel
+    from test_viz import COUNT
+    long = " & ".join(f"(n != {k} | X n != {k + 1})" for k in range(9))        # a box wider than tall
+    (tmp_path / "count.ltl").write_text(COUNT + f"""CONTRACT Wide:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        G ({long});
+""")
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")], open=["Wide"])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": MIXED["at"], "trace": MIXED})
+    page, errors = open_page(browser, tmp_path, d)
+    page.set_viewport_size({"width": 900, "height": 1400})        # the diagram fitted to the width
+    click(page, page.locator('button[onclick="fit()"]'))
+    def span():
+        bs = [page.locator("[data-box]").nth(i).bounding_box() for i in range(page.locator("[data-box]").count())]
+        bs = [b for b in bs if b]
+        return min(b["x"] for b in bs), max(b["x"] + b["width"] for b in bs)
+    left0, right0 = span()
+    assert left0 >= 0 and right0 <= 900 and right0 - left0 > 900 - 424        # whole, wider than the room left
+    click(page, page.locator("#repairs"))
+    page.wait_for_selector("#insp", state="visible")
+    left, right = span()
+    assert left >= 0 and right <= page.locator("#insp").bounding_box()["x"]
+    page.keyboard.press("Escape")                                  # the details, the list
+    page.keyboard.press("Escape")                                  # the panel
+    assert not page.is_visible("#insp")
+    left, right = span()                                           # (its box opened by the details: larger)
+    assert left >= 0 and right <= 900 and right - left > 900 - 424
     assert errors == []
 
 
@@ -891,6 +949,42 @@ def test_the_diagram_ends_above_the_waveform(browser, tmp_path):
     assert errors == []
 
 
+def test_a_tall_diagram_stays_readable_above_the_waveform(browser, tmp_path):
+    # a diagram seen whole and tall: fitted above the drawer it would be too small to read (as LMFSM
+    # was); its scale is kept and the box of the check brought above the drawer; at the close, the
+    # view of before
+    from test_viz import COUNT
+    more = "".join(f"""CONTRACT Tall{j}:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+""" + "".join(f"        G (n != {k} | X n != {(k + j) % 9});\n" for k in range(8)) for j in range(4))
+    (tmp_path / "count.ltl").write_text(COUNT + more)
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")], open=[f"Tall{j}" for j in range(4)])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": MIXED["at"], "trace": MIXED})
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    click(page, page.locator('button[onclick="fit()"]'))
+    page.wait_for_timeout(100)
+    k0 = page.evaluate("cam.k")
+    box = page.locator(f'[data-box="{bound["id"]}"] > rect')
+    before = box.bounding_box()
+    click(page, page.locator(OPEN_WAVE))
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    page.wait_for_timeout(200)
+    assert page.evaluate("fitScale()") < 0.7 * k0                  # the fit would have made it small
+    assert page.evaluate("cam.k") >= 0.7 * k0
+    r, top = box.bounding_box(), page.locator("#wave").bounding_box()["y"]
+    assert r["y"] >= 0 and r["y"] + r["height"] <= top             # the box of the check above the drawer
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(100)
+    assert box.bounding_box() == pytest.approx(before, abs=1)
+    assert errors == []
+
+
 def test_the_waveform_has_no_group_heading_for_one_group(browser, tmp_path):
     # every variable in the terms of the requirement: no heading at all
     page, errors = wave_page(browser, tmp_path, {"vars": ["n"], "more": 0, "cut": False, "loop": 1, "at": 1,
@@ -1038,15 +1132,26 @@ def test_the_markers_out_of_view_have_a_way_to_them(browser, tmp_path):
     page.keyboard.press("Home")
     page.wait_for_timeout(100)
     right = page.locator("#wave .wv-edge.r button")
-    assert right.all_inner_texts() == ["fails at 120 ▸", "↺ loop from 150 ▸"]
+    assert right.all_inner_texts() == ["↺ loop from 150 ▸", "fails at 120 ▸"]   # each in the lane of its mark
     assert page.locator("#wave .wv-edge:not(.r) button").count() == 0
-    click(page, right.first)
+    click(page, right.last)
     page.wait_for_timeout(100)
     assert "Step 120" in page.inner_text("#wave header")
     assert "fails at 120" not in page.inner_text("#wave .wv-edge.r")
+    # the loop's button on the first line, over nothing of "fails ▾" of the step in view (it was over it)
+    loop_b = page.locator("#wave .wv-edge.r button").bounding_box()
+    word = page.locator("#wave .wv-axis text.wv-fails").bounding_box()
+    assert loop_b["y"] + loop_b["height"] <= word["y"] + 0.5
     page.keyboard.press("End")
     page.wait_for_timeout(100)
-    assert page.locator("#wave .wv-edge:not(.r) button").all_inner_texts() == ["◂ fails at 120", "◂ ↺ loop from 150"]
+    left = page.locator("#wave .wv-edge:not(.r) button")
+    assert left.all_inner_texts() == ["◂ ↺ loop from 150", "◂ fails at 120"]
+    page.keyboard.press("l")                                       # the loop in view, the step that fails not:
+                                                                   # its button on the second line still
+    page.wait_for_timeout(100)
+    assert left.all_inner_texts() == ["◂ fails at 120"]
+    lane = page.locator("#wave .wv-axis text.wv-loop").bounding_box()
+    assert left.bounding_box()["y"] >= lane["y"] + lane["height"] - 0.5
     assert errors == []
 
 

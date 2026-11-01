@@ -1783,9 +1783,12 @@ _PAGE = r"""<!doctype html>
   .wv-loop { font:600 10px Helvetica, Arial, sans-serif; fill:var(--teal); }
   .wv-fails { font:bold 10px Helvetica, Arial, sans-serif; fill:#b03a2e; }
   .wv-v { font:11px Menlo, Monaco, monospace; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:#f7f9f9; stroke-width:4px; }
-  .wv-edge { position:absolute; z-index:4; display:flex; gap:6px; }
-  .wv-edge.r { right:22px; }
-  .wv-edge button { border:0; background:#fff; padding:2px 6px; border-radius:4px; cursor:pointer; box-shadow:0 0 0 1px #e3e8e8; }
+  /* each in the lane of its mark: the loop on the first line, the step that fails on the second */
+  .wv-edge { position:absolute; z-index:4; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .wv-edge.r { right:22px; align-items:flex-end; }
+  .wv-edge span { height:12px; }
+  .wv-edge button { border:0; background:#fff; padding:0 6px; height:12px; line-height:12px; border-radius:4px; cursor:pointer;
+                    box-shadow:0 0 0 1px #e3e8e8; }
   .wv-edge button.wv-fails { color:#b03a2e; } .wv-edge button.wv-loop { color:var(--teal); }
   .wv-edge button:hover { background:var(--fill); }
   #wave .wv-bar { display:block; visibility:hidden; flex:none; margin:4px 16px 0 0; }   /* its room kept: the drawer does not jump */
@@ -2563,10 +2566,14 @@ function place() {
     dots.setAttribute("patternTransform", `translate(${cam.x % step},${cam.y % step})`);
   }
 }
+// the scale of the whole diagram in the view: a small diagram is made larger too, up to 1.5 times
+function fitScale() {
+  const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
+  return Math.min(1.5, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
+}
 function fit() {
   const v = document.getElementById("view"), W = v.clientWidth, H = v.clientHeight - TOP;
-  // a small diagram is made larger too, up to 1.5 times
-  const k = Math.min(1.5, (W - 40) / Math.max(size0.w, 1), (H - 30) / Math.max(size0.h, 1));
+  const k = fitScale();
   cam = { k, x: Math.max(20, (W - size0.w * k) / 2), y: TOP + Math.max(10, (H - size0.h * k) / 2) };
   place();
 }
@@ -3192,24 +3199,33 @@ function tagSvg(t, status) {
 // list. A click on the tag of a check picks it.
 let inspector = { open: false, tab: "problems" };
 // the view keeps its middle when the panel takes the right of the window, or gives it back
+// the panel opened or closed: the diagram keeps its middle in the middle of the room left; a diagram
+// seen whole that the panel would cut is fitted to the room left, and fitted again when it closes
 function shiftView(sign) {
   const panelWidth = innerWidth > 820 ? 424 : 0;
-  if (cam && panelWidth) { cam.x += sign * panelWidth / 2; place(); }
+  if (!cam || !panelWidth) return;
+  const W = document.getElementById("view").clientWidth;
+  const whole = w => cam.x >= -1 && cam.x + size0.w * cam.k <= w + 1;
+  if (sign < 0 && whole(W) && !whole(W - panelWidth)) { inspector.fitted = true; return "fit"; }
+  if (sign > 0 && inspector.fitted) { inspector.fitted = false; return "fit"; }
+  cam.x += sign * panelWidth / 2; place();
 }
 function showInspector(tab) {
-  if (!inspector.open) shiftView(-1);
+  const how = !inspector.open ? shiftView(-1) : null;
   inspector.open = true;
   if (tab) inspector.tab = tab;
   document.body.classList.add("insp");
+  if (how === "fit") fit();
   document.getElementById("repairs").classList.add("on");     // pressed while the panel is open
   renderInspector();
   renderQueue();
 }
 function hideInspector() {
   closeWave();
-  if (inspector.open) shiftView(1);
+  const how = inspector.open ? shiftView(1) : null;
   inspector.open = false;
   document.body.classList.remove("insp");
+  if (how === "fit") fit();
   document.getElementById("repairs").classList.remove("on");
   renderQueue();
   closeRepair();
@@ -3372,7 +3388,9 @@ function whySection(n, t, st) {
     const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k);
                       if (WAVE.open) WAVE.setStep(k); };
     const first = w.trace.vars.filter(v => named.has(v));
-    const table = traceTable(w.trace, first, req, last > 0 ? panel.step || 0 : null, go);
+    // one call of a C function: its inputs and outputs, not a state repeated forever
+    const shown = code && last === 0 ? { ...w.trace, loop: null } : w.trace;
+    const table = traceTable(shown, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
     // the waveform: every step kept, in a drawer under the diagram; its button on the line of the panel
     if (last > 0) panel.wave = () => openWave(w.trace, first, checkTitle(n, t), go, req);
@@ -4100,9 +4118,13 @@ function openWave(tr, first, title, pick, reqName) {
     if (over) {                             // the step that fails or the loop out of view: a way to it at the edge
       const go = (k, cls, word, key) => (k < a ? edgeL : edgeR).append(h("button", { class: cls, "data-tip": "Go there (" + key + ")",
         onclick: () => { pick(k); box.focus({ preventScroll: true }); } }, k < a ? "◂ " + word : word + " ▸"));   // the keys stay
-      if (fails && (tr.at < a || tr.at > b)) go(tr.at, "wv-fails", "fails at " + label(tr.at), "F");
       if (loop !== null && (loop > b || loop < a)) go(loop, "wv-loop", "↺ loop from " + label(loop), "L");   // its word out of view
-      edgeL.style.top = edgeR.style.top = (scroll.offsetTop + 4) + "px";
+      if (fails && (tr.at < a || tr.at > b)) {
+        const side = tr.at < a ? edgeL : edgeR;
+        if (!side.childNodes.length) side.append(h("span"));       // the first line, that of the loop, kept
+        go(tr.at, "wv-fails", "fails at " + label(tr.at), "F");
+      }
+      edgeL.style.top = edgeR.style.top = scroll.offsetTop + "px";
       edgeL.style.left = (L + 6) + "px";
     }
     if (below) fade.style.top = (scroll.offsetTop + scroll.clientHeight - 12) + "px";
@@ -4233,7 +4255,8 @@ function openWave(tr, first, title, pick, reqName) {
   addEventListener("resize", WAVE.resize);
 }
 // The diagram ends above the drawer, as it ends left of the details: what was in the middle stays in the
-// middle; a diagram seen whole that the drawer would cut is fitted to the room left, and again at the close.
+// middle; a diagram seen whole that the drawer would cut is fitted to the room left (or, tall, its box of
+// the check brought into view), and at the close the view of before comes back.
 function viewAboveWave(on) {
   const v = document.getElementById("view"), box = document.getElementById("wave");
   const h0 = v.clientHeight;
@@ -4242,9 +4265,16 @@ function viewAboveWave(on) {
   v.style.bottom = on ? Math.max(0, innerHeight - box.getBoundingClientRect().top + 8) + "px" : "";
   const d = h0 - v.clientHeight;
   if (!cam || !d) return;
+  if (!on && WAVE.cam0) { cam = WAVE.cam0; WAVE.cam0 = null; place(); return; }   // the view of before the drawer
+  const cam0 = { ...cam };
   cam.y -= d / 2;
-  if (on && was && !whole(v.clientHeight)) { fit(); WAVE.fitted = true; }
-  else if (!on && WAVE.fitted) { fit(); WAVE.fitted = false; }
+  // a diagram seen whole that the drawer would cut: fitted above it, unless that makes it hard to read
+  // (a tall diagram); then its scale kept and the box of the check brought into view
+  if (on && was && !whole(v.clientHeight)) {
+    WAVE.cam0 = WAVE.cam0 || cam0;
+    const n = panel && byId[panel.id];
+    if (fitScale() >= 0.7 * cam.k || !n) fit(); else { place(); bringInto(n); }
+  }
   else place();
 }
 function closeWave(keepView) {
