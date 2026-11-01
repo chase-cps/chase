@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.4 (2026-11-01)
 
 Added:
 
@@ -9,18 +9,26 @@ Added:
   copies of the state, with the same answers and no temporal operator, and
   finds the least cost with z3; chosen by `auto` for these terms (two real
   constants inside `G`, which the counterexamples of nuXmv did not end on,
-  now take a fraction of a second, with the least cost shown). It reads
-  the context; an integer variable beside a real constant, whose
-  counterexamples remove one value each, goes by the projection of the
-  copies; when it has no answer (an optimization that z3 does not end),
-  `auto` goes on with the other methods and says so. A term that z3 does not read (`mod`)
-  makes the repair unknown with the reason instead of an error.
+  now take a fraction of a second, with the least cost shown). The copies
+  are the small-model property of the formulas of temporal height one
+  (Demri and Schnoebelen, 2002). It reads the context; an integer variable
+  beside a real constant, whose counterexamples remove one value each,
+  goes by the projection of the copies; when it has no answer (an
+  optimization that z3 does not end), `auto` goes on with the other
+  methods and says so.
 
 Fixed:
 
 - Repair of a state machine against a contract with constants: the
   constants are declared in the model (FROZENVAR); the questions failed
   with "the model does not declare" them.
+- Repair of a state machine with a reset within a context: the context is
+  read after the steps of the reset, as the check reads it.
+- Repair: a term that z3 does not read (`mod`) makes the repair unknown
+  with the reason, not an error; a final check with no answer says so,
+  not that the check fails.
+- Viewer: with no named constant, "How to fix" says how to declare one,
+  instead of reading as if the file had one.
 
 ## 0.6.3 (2026-11-01)
 

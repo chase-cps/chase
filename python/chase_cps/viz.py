@@ -3207,8 +3207,8 @@ function noRepairSection(n, t) {
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
     ? ["Repair the named constants in VS Code, or with chase-cps view FILE --serve."]
-    : ["No named constant to repair: change a term of a part or of the requirement. A constant declared "
-       + "in the file (integer constant k 2;) can be repaired."]
+    : ["No named constant to repair: change a term of a part or of the requirement. To repair a number, "
+       + "declare it as a named constant in the file, as in: integer constant k 2;"]
        .concat(t === "⪯" ? ["What a part must guarantee: divide the requirement by the other parts (divide)."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
