@@ -85,6 +85,18 @@ def sampled(formula: str, lipschitz: Union[Mapping, float], period, known: bool 
     return _text(_margins(_nnf(_widen(node, True, known), False, known), rates, lipschitz, period, known))
 
 
+def _grouped(text: str) -> bool:
+    """Is the text one group in parentheses, as "(a | b)" and not "(a) & (b)"?"""
+    if not (text.startswith("(") and text.endswith(")")):
+        return False
+    depth = 0
+    for i, ch in enumerate(text):
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        if depth == 0 and i < len(text) - 1:
+            return False
+    return True
+
+
 def _text(node) -> str:
     """The formula, with the operators that have an interval written with it."""
     held = []
@@ -104,7 +116,7 @@ def _text(node) -> str:
             return ltl.to_str(hold(n))
         interval = f"[{n.steps[0]},{n.steps[1]}]"
         args = [write(a) for a in n.args]
-        arg = lambda a: a if " " not in a or (a.startswith("(") and a.endswith(")")) else f"({a})"
+        arg = lambda a: a if " " not in a or _grouped(a) else f"({a})"
         text = (f"{n.op}{interval} {arg(args[0])}" if len(args) == 1
                 else f"{arg(args[0])} {n.op}{interval} {arg(args[1])}")
         return text if top else f"({text})"
@@ -348,6 +360,9 @@ def spec(text: str, lipschitz, period, assumptions: str, guarantees: str) -> tup
     used so."""
     out, part, start, head, body = text.splitlines(keepends=True), None, None, "", []
     name, refused = None, {}
+    if isinstance(lipschitz, Mapping):        # a named constant does not change: rate 0
+        fixed = re.findall(r"(?im)^\s*(?:integer\s+|real\s+)?constant\s+(\w+)", text)
+        lipschitz = {**{c: 0 for c in fixed}, **lipschitz}
     lines = list(out)
     role = {"A": assumptions, "G": guarantees}
 

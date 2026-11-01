@@ -40,6 +40,23 @@ def test_the_intervals_are_written_as_intervals():
     assert text("(x <= 4) U[0,9] (y >= 1)") == "(x + 1 < 4) U[1,8] (y - 1 > 1)"
 
 
+def test_a_term_in_parentheses_keeps_them_under_an_interval():
+    # "(a | b) & (c | d)" starts and ends with a parenthesis, but is not one
+    # group: under G[0,9] it must be written in parentheses again
+    from chase_cps.sampled import sampled
+    f = "G[0,9] ((x <= 3 | y <= 4) & (x >= 0 | y >= 0))"
+    assert sampled(f, {"x": 1, "y": 1}, 1, known=True) == f
+
+
+def test_a_named_constant_needs_no_rate():
+    # a constant does not change: its rate is 0 unless given
+    from chase_cps.sampled import spec
+    text = ("NAME: t;\nconstant theta 74;\nCONTRACT C:\n  inputs: real T;\n  outputs: boolean h;\n"
+            "  assumptions: true;\n  guarantees: G[0,9] (T <= theta);\n")
+    changed, refused = spec(text, {"T": 0.1}, 1, "known", "show")
+    assert refused == {} and "G[0,10] (T + 0.1 < theta)" in changed
+
+
 def test_the_margins():
     # (|2| Lx + |-1| Ly) period
     same("G[0,6] (2 * x - y <= 3)", {"x": 1, "y": 2}, "0.5", "G[0,7] (2 * x - y + 2 < 3)")
