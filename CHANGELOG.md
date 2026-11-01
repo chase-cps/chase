@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.6.2 (2026-11-01)
+
+Fixed:
+
+- Traces of nuXmv: the state that closes a loop is dropped also when the
+  model has inputs, and the loop starts where the trace breaks the
+  specification (nuXmv marks every state equal to the last one as a start
+  of the loop; from the last mark, a counterexample of a model with inputs
+  could hold the specification).
+- RTL with a reset: the reset is driven by the model, so a contract that
+  names it (an SVA checker with `disable iff`) is checked for receptiveness
+  without it.
+- `remove_redundant`: terms in conflict (A & G unsatisfiable) are all kept,
+  and the reason says so; a merge with discharge of viewpoints in conflict
+  no longer drops terms.
+- slugs: a term with `-`, `*`, `/`, or `mod` is unknown with the reason and
+  how to write it.
+
+Added:
+
+- `is_implementation`: a failed check has in `details.violated` the
+  guarantees its counterexample breaks, as a refinement has.
+- Viewer: a counterexample opens at the step where a term fails first; a
+  refinement that fails on the assumptions marks the assumptions of the
+  parts that its trace breaks; a quotient names the candidate in its hole;
+  a small diagram fits the window larger; the boxes inside a box are in the
+  order that sends the fewest wires back, and opening a box does not move
+  the others.
+
 ## 0.6.1 (2026-10-31)
 
 0.6.0 was tagged but not published: the tests of its wheels, run without a
