@@ -1,6 +1,19 @@
 # Changelog
 
-## 0.6.2 (2026-11-01)
+## 0.6.3 (2026-11-01)
+
+0.6.2 was tagged and tested on TestPyPI, not published: its demos found
+two more bugs.
+
+Fixed:
+
+- Continuous time: a term in parentheses under an interval keeps them;
+  `G[0,9] ((a | b) & (c | d))` was written without them, and the check
+  read it as a conjunction. A named constant needs no Lipschitz constant.
+- Repair: a cost with a factor that is 0 (`3 * (1 - wmax)` at `wmax = 1`)
+  no longer raises a division by 0.
+
+## 0.6.2 (2026-11-01, not published)
 
 Fixed:
 
