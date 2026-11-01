@@ -391,7 +391,7 @@ CONTRACT Bound:
     assert "Does not hold" not in text         # the red tag says it
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "To repair a number of the terms, give it a name" in text      # G (n <= 1) has a number
+    assert "To repair a number of the terms, name it in the file" in text      # G (n <= 1) has a number
     # the panel is docked: the view moves under it, the panel stays
     before = page.locator("#insp").bounding_box()
     page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
@@ -1473,7 +1473,7 @@ def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path)
     page.wait_for_selector("#repair .rp-terms", timeout=5000)
     text = page.inner_text("#repair")
     assert "No component can meet both guarantees for every input that the assumptions allow" in text
-    assert "The terms in conflict" not in text and "give it a name" not in text   # no number in the terms
+    assert "The terms in conflict" not in text and "name it in the file" not in text   # no number in the terms
     terms = page.locator("#repair .rp-term")
     assert terms.count() == 2 and "x -> !y" in terms.nth(1).inner_text()
     assert page.locator("#repair .rp-term .f").first.evaluate("e => getComputedStyle(e).fontFamily").startswith("Menlo")
@@ -1482,7 +1482,7 @@ def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path)
     box = d["nodes"][0]["id"]
     assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G1"] rect.flash').count() >= 1
     assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G0"] rect.flash').count() == 0
-    assert "Weaken a red guarantee" in text and "give it a name" not in text     # no number in its terms
+    assert "Weaken a red guarantee" in text and "name it in the file" not in text     # no number in its terms
     assert "requirement" not in text.split("How to fix".upper())[-1].lower().replace("requires", "")
     assert errors == []
 

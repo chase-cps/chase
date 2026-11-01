@@ -63,7 +63,7 @@ from .queries import Implies, Realizable, Result, Satisfiable, Trace
 from .system import Component, System
 from . import viz
 
-__version__ = "0.6.5"
+__version__ = "0.7.0"
 
 __all__ = [
     # 1. Contracts and their algebra

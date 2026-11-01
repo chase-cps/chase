@@ -1096,7 +1096,9 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
         for n in boxes:
             tag = n.get("badge", {}).get("text", "")
             if tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe"):
-                n["badge"]["why"] = _why(result, against[0] if against else None)
+                # what it is checked against: given, else the contract of a system (its refinement)
+                high = against[0] if against else obj.contract if isinstance(obj, System) and name == "⪯" else None
+                n["badge"]["why"] = _why(result, high)
                 break
     for env, node, target, result in breaks:     # the assumptions an environment breaks
         for n in _boxes(nodes):
@@ -2141,7 +2143,7 @@ _PAGE = r"""<!doctype html>
     <button class="on" title="Results of the checks (A∧G, A, G, R, WS, ¬V, ⪯, M ⊨ C, E ⊨ A) and their cores" onclick="flip(this, 'checks')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="3"/><path d="M5.5 8l1.8 1.8L10.5 6.3"/></svg></button>
     <span class="sep" id="runsep"></span>
     <button id="run" title="Check: A ∧ G of each contract, and the refinements, implementations, and environments drawn" onclick="runChecks()"><svg viewBox="0 0 16 16"><path class="idle" d="M5 3.2v9.6L13 8z"/><path class="turn" d="M8 2.2a5.8 5.8 0 1 1-5.8 5.8"/></svg></button>
-    <button id="repairs" title="The panel of the checks: open or close (Esc)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
+    <button id="repairs" title="Problems: the checks that fail (open or close, Esc)" onclick="toggleQueue()"><svg viewBox="0 0 16 16"><path d="M10.2 2.4a3.2 3.2 0 0 0-3.9 4.1L2.6 10.2a1.3 1.3 0 0 0 1.8 1.8l3.7-3.7a3.2 3.2 0 0 0 4.1-3.9l-1.9 1.9-1.6-.4-.4-1.6z"/></svg><span id="repcount"></span></button>
     <span class="sep"></span>
     <button title="Export the whole diagram (SVG, PNG, PDF)" onclick="exportMenu()"><svg viewBox="0 0 16 16"><path d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v2h11v-2"/></svg></button>
     <button title="What the shapes mean" onclick="help()"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4"/><circle cx="8" cy="11.6" r=".4"/></svg></button>
@@ -2607,8 +2609,9 @@ function drawNode(g, e, ox, oy) {
     const known = busy && !n.badge.status && n.contract && (progressed[n.contract.name] || {})[n.badge.text];
     if (busy && !n.badge.status && !known) pending(b, rx - w, y + 6, n.badge.text);
     else tag(b, rx - w, y + 6, n.badge.text, n.badge.status || known);
-    tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")
-           + ". Click: the check" + ((n.repair || {})[tagOf(n.badge.text)] ? ", and its repairs" : ""));
+    // the tip says the check as the panel does ("Room and Thermostat do not refine Comfort")
+    tip(b, plainOf(checkTitle(n, tagOf(n.badge.text))) + ". Click for the details"
+           + ((n.repair || {})[tagOf(n.badge.text)] ? " and the repairs" : "") + ".");
     b.onclick = () => openRepair(n, tagOf(n.badge.text)); }
   sz.ls.forEach(([k, label, s, core, at, term], i) => {
     const frame = r => el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3,
@@ -3519,8 +3522,9 @@ function fillPanel() {
                                      : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
   const says = st === "valid" ? "Holds." : st === "invalid" ? null
              : st === "unknown" ? "Not decided" + (unsure ? ": " + reasonOf(unsure).text + (reasonOf(unsure).line ? ", line " + reasonOf(unsure).line : "") : ".")
-             : "Not checked yet." + (n.clash ? " The parts do not agree: " + Object.values(n.clash).join("; ")
-                                                + ". Their composition is not defined until this is fixed." : "");
+             : n.clash ? "The parts do not agree: " + Object.values(n.clash).join("; ")
+                         + ". Their composition is not defined, so this cannot be checked until that is fixed."
+             : "Not checked yet.";
   if (says) box.appendChild(h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says)));
   const why = whySection(n, t, st);
   if (why) box.appendChild(why);
@@ -3600,13 +3604,12 @@ function whySection(n, t, st) {
     const all = these(list.length, nA && nG ? "term" : nA ? "assumption" : "guarantee", nA && nG ? "terms" : nA ? "assumptions" : "guarantees");
     // what the core says, for the kind of check: no strategy (R), terms false together (consistency),
     // assumptions the component's outputs can make false (WS)
-    const together = list.length === 1 ? "" : list.length === 2 ? " both" : " all";
     const say = t === "R" ? "No component can meet " + all.toLowerCase().replace(/^these \d+ /, list.length === 2 ? "both " : "these " + list.length + " ")
-                            + " for every input that the assumptions allow: the environment can always make one fail."
+                            + " for every input that the assumptions allow: the environment has a strategy that makes one fail."
       : t === "¬V" ? (nA ? these(nA, "assumption makes ", "assumptions make ") + (nG === 1 ? "a guarantee" : nG + " guarantees") + " vacuous."
                          : these(nG, "guarantee is", "guarantees are") + " vacuous.")
       : t === "WS" ? "With " + all.toLowerCase() + ", the component can make an assumption false by its outputs, and so meet the contract without its guarantees."
-      : all + (list.length === 1 ? " cannot hold." : " cannot" + together + " hold together.");
+      : all + (list.length === 1 ? " cannot hold." : list.length === 2 ? " cannot both hold." : " cannot all hold together.");
     sec.appendChild(h("div", {}, say));
     sec.appendChild(h("div", { class: "rp-terms" }, list.map(([p, i, f]) =>
       h("button", { class: "rp-term", title: "Show it on the diagram", onclick: () => showTerm(n, c.core.part + ":" + p + i) },
@@ -3804,12 +3807,16 @@ function noRepairSection(n, t) {
   // a number of the terms (not a step of an interval, F[0,6]) can be repaired once it is named
   const terms = [].concat((n.contract || {}).A || [], (n.contract || {}).G || []).join(" ").replace(/\[[^\]]*\]/g, "");
   const named = /(^|[^\w'])\d+(\.\d+)?\b/.test(terms)
-    ? ["To repair a number of the terms, give it a name in the file, as ", code("integer constant k 2;"), ", and write k in the term."] : null;
+    ? ["To repair a number of the terms, name it in the file and write the name in the term:",
+       h("div", { class: "rp-cmd" }, "integer constant k 2;")] : null;
   // the constants that can change, and whose they are: "theta (Thermostat), tmax (Comfort)"
   const r0 = (n.repair || {})[t];
+  // else those of the parts inside (first: the requirement may be right) and of the box
+  const inner = []; (function walk(b) { (b.children || []).forEach(c => { inner.push(c); walk(c); }); })(n);
+  const ks = [...inner, n].flatMap(b => ((b.contract || {}).K || []).map(x => x.split(" = ")[0] + " (" + b.contract.name + ")"));
   const owned = r0 && r0.constants && r0.constants.length
     ? r0.constants.map(c => c.name + " (" + [...new Set(c.owners.map(o => o.contract))].join(", ") + ")").join(", ")
-    : ((n.contract || {}).K || []).map(x => x.split(" = ")[0]).join(", ");
+    : [...new Set(ks)].join(", ");
   const holed = (n.children || []).some(c => c.kind === "hole") || n.kind === "hole";
   const of = t === "E ⊨ A" ? (() => { const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
                                       return to ? (to.contract && to.contract.name) || to.title : null; })() : null;
@@ -3817,7 +3824,7 @@ function noRepairSection(n, t) {
     ? ["Fix the code, or exclude such inputs with a requires clause."]
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]
-    : n.contract && n.contract.K
+    : owned
     ? [["Repair " + owned + " in VS Code, or with ", code("chase-cps view FILE --serve"), "."]]
     : [{ "⪯": "Change a term of a part or of the requirement.",
          "E ⊨ A": "Change the environment, or weaken the assumptions" + (of ? " of " + of : "") + ".",
@@ -4431,7 +4438,8 @@ function openWave(tr, first, title, pick, reqName) {
         if (roomOf(...side) >= Math.min(2, w.txt.length)) [a, b] = side;
       }
       const room = roomOf(a, b);
-      const txt = w.txt.length <= room ? w.txt : w.alt.length <= room ? w.alt : room >= 3 ? w.alt.slice(0, room - 1) + "…" : "";
+      // cut, a value says it is cut: "2…", or "…" in a box of one letter, never an empty box that looks unchanged
+      const txt = w.txt.length <= room ? w.txt : w.alt.length <= room ? w.alt : room >= 2 ? w.alt.slice(0, room - 1) + "…" : room >= 1 ? "…" : "";
       if (txt !== w.shown) { w.t.textContent = txt; w.shown = txt; }
       if (txt) w.t.setAttribute("x", (a + b) / 2);
     });
