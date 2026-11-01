@@ -34,7 +34,18 @@ a set of values by a model-based projection, lead to the least cost in a
 few rounds with no model checker (chase_cps.repair._on_copies); for a
 check of satisfiability the witnesses are found with the values at once.
 The repair is still run through the check itself, as every repair is (the
-encoding is checked, not trusted).
+encoding is checked, not trusted). That check sees the values of a repair
+only: impossible and optimal rest on the equivalence above.
+
+This is the small-model property of the formulas of temporal height one:
+position 0 and one witness for each temporal subformula keep the truth of
+every subformula (Demri and Schnoebelen, The complexity of propositional
+linear temporal logics in simple cases, Information and Computation 2002,
+Definition 7.2, Lemma 7.1, Proposition 7.2); for F and G, Sistla and
+Clarke, The complexity of propositional linear temporal logics, JACM 1985,
+Theorems 3.4 and 3.5. The argument reads each atom on one state, so atoms
+of arithmetic keep it. It needs the terms flat (G F p depends on the order
+of the states) and the steps free (a model, or x', links them).
 """
 
 from __future__ import annotations
@@ -101,28 +112,39 @@ def reducible(asked: list) -> str:
     return ""
 
 
-def _copy(node, k: int, params):
+def _copy(node, k: int, params, tag: str):
     """The formula with its variables (not the parameters) renamed to copy k."""
     if isinstance(node, ltl.Var):
-        return node if node.name in params else ltl.Var(f"{node.name}__c{k}")
+        return node if node.name in params else ltl.Var(f"{node.name}{tag}{k}")
     if isinstance(node, ltl.Unary):
-        return ltl.Unary(node.op, _copy(node.arg, k, params))
+        return ltl.Unary(node.op, _copy(node.arg, k, params, tag))
     if isinstance(node, ltl.Binary):
-        return ltl.Binary(node.op, _copy(node.left, k, params), _copy(node.right, k, params))
+        return ltl.Binary(node.op, _copy(node.left, k, params, tag),
+                          _copy(node.right, k, params, tag))
     return node
 
 
-def _replaced(node, n: int, params):
+def _replaced(node, n: int, params, tag: str):
     """The formula on the copies 0..n."""
     if _one_step(node):
-        return _copy(node, 0, params)
+        return _copy(node, 0, params, tag)
     if isinstance(node, ltl.Unary) and node.op == "G":
-        return ltl.conjunction([_copy(node.arg, k, params) for k in range(n + 1)])
+        return ltl.conjunction([_copy(node.arg, k, params, tag) for k in range(n + 1)])
     if isinstance(node, ltl.Unary) and node.op == "F":
-        return ltl.disjunction([_copy(node.arg, k, params) for k in range(n + 1)])
+        return ltl.disjunction([_copy(node.arg, k, params, tag) for k in range(n + 1)])
     if isinstance(node, ltl.Unary):
-        return ltl.Unary(node.op, _replaced(node.arg, n, params))
-    return ltl.Binary(node.op, _replaced(node.left, n, params), _replaced(node.right, n, params))
+        return ltl.Unary(node.op, _replaced(node.arg, n, params, tag))
+    return ltl.Binary(node.op, _replaced(node.left, n, params, tag),
+                      _replaced(node.right, n, params, tag))
+
+
+def _tag(names, n: int) -> str:
+    """The mark of the copies (x__c0, ...), longer when a name has it already
+    (a constant named x__c1 with a variable x)."""
+    tag = "__c"
+    while any(f"{v}{tag}{k}" in names for v in names for k in range(n + 1)):
+        tag = "_" + tag
+    return tag
 
 
 def on_copies(asked: list, params) -> list:
@@ -132,15 +154,30 @@ def on_copies(asked: list, params) -> list:
     out = []
     for name, q in asked:
         n = max(len(invariants(q)), 1)
+        tag = _tag(set(q.variables) | set(params), n)
         variables = {}
         for v, t in q.variables.items():
             if v in params:
                 variables[v] = t
             else:
-                variables.update({f"{v}__c{k}": t for k in range(n + 1)})
+                variables.update({f"{v}{tag}{k}": t for k in range(n + 1)})
         if isinstance(q, Implies):
-            out.append((name, Implies(_replaced(q.phi, n, params), _replaced(q.psi, n, params),
-                                      variables)))
+            out.append((name, Implies(_replaced(q.phi, n, params, tag),
+                                      _replaced(q.psi, n, params, tag), variables)))
         else:
-            out.append((name, Satisfiable(_replaced(q.phi, n, params), variables)))
+            out.append((name, Satisfiable(_replaced(q.phi, n, params, tag), variables)))
     return out
+
+
+def unread(copies: list, params) -> str:
+    """Why z3 does not read the questions on the copies (a term such as
+    mod), or ""."""
+    from ..backends import z3 as backend_z3
+    for name, q in copies:
+        e = backend_z3.Encoding(q.variables, rigid=params)
+        try:
+            for f in [q.phi, q.psi] if isinstance(q, Implies) else [q.phi]:
+                e.formula(f)
+        except ValueError as err:
+            return f"{name}: {err}"
+    return ""

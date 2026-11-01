@@ -81,16 +81,19 @@ def regions(asked: list, params: dict, timeout: float):
 def _eliminate(z3, xs, body, timeout):
     if not xs:
         return body
-    goal = z3.Goal()
-    goal.add(z3.Exists(xs, body))
-    tactic = z3.TryFor(z3.Then("simplify", "qe", "simplify"), int(timeout * 1000))
-    try:
-        result = tactic(goal)
-    except z3.Z3Exception:
-        return None
-    parts = [z3.And(*g) if len(g) else z3.BoolVal(True) for g in result]
-    f = z3.Or(*parts) if len(parts) != 1 else parts[0]
-    return None if _has_quantifier(z3, f) else f
+    for qe in ("qe", "qe2"):         # qe2 also eliminates integers among reals
+        goal = z3.Goal()
+        goal.add(z3.Exists(xs, body))
+        tactic = z3.TryFor(z3.Then("simplify", qe, "simplify"), int(timeout * 1000))
+        try:
+            result = tactic(goal)
+        except z3.Z3Exception:
+            continue
+        parts = [z3.And(*g) if len(g) else z3.BoolVal(True) for g in result]
+        f = z3.Or(*parts) if len(parts) != 1 else parts[0]
+        if not _has_quantifier(z3, f):
+            return f
+    return None
 
 
 def _has_quantifier(z3, f) -> bool:

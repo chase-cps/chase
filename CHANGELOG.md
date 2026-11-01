@@ -9,7 +9,12 @@ Added:
   copies of the state, with the same answers and no temporal operator, and
   finds the least cost with z3; chosen by `auto` for these terms (two real
   constants inside `G`, which the counterexamples of nuXmv did not end on,
-  now take a fraction of a second, with the least cost shown).
+  now take a fraction of a second, with the least cost shown). It reads
+  the context; an integer variable beside a real constant, whose
+  counterexamples remove one value each, goes by the projection of the
+  copies; when it has no answer (an optimization that z3 does not end),
+  `auto` goes on with the other methods and says so. A term that z3 does not read (`mod`)
+  makes the repair unknown with the reason instead of an error.
 
 Fixed:
 

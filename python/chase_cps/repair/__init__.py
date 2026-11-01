@@ -129,12 +129,17 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
         raise RepairError("give minimize or maximize, not both")
     params = parameters_of(check, args, parameters)
     sym = symbolic_args(check, args, params)
-    asked = questions(check, sym, params)
+    asked = _within(questions(check, sym, params), options.get("context"))
     cost, aux = _cost(params, minimize, maximize)
     opts = {"timeout": timeout, **options}
 
+    first = []                        # copies, tried first by auto without an answer
+
     def done(r: Repair) -> Repair:
         r.seconds = time.time() - start
+        if first:
+            r.reason = "; ".join(x for x in (
+                r.reason, f"tried first by copies, with no answer ({first[0].reason})") if x)
         if r.status == REPAIRED and all(r.values.get(p.name) == p.value
                                         for p in params.values()):
             r.status = HOLDS          # the check passes with the present values
@@ -156,8 +161,16 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
         why = reducible(asked)
         if why:
             return done(Repair(UNKNOWN, method="copies", reason=why))
-        return done(_by_copies(check, args, asked, params, cost, aux, backend, opts, rounds,
-                               timeout, deadline))
+        r = _by_copies(check, args, asked, params, cost, aux, backend, opts, rounds,
+                       timeout, deadline)
+        if method == "copies" or r.status != UNKNOWN or _left(deadline, timeout) is None:
+            return done(r)
+        first.append(r)               # auto: the method it takes for the other terms
+        present = {p.name: p.value for p in params.values()}
+        now = run(check, instantiated(args, present), backend, opts) \
+            if minimize is None and maximize is None else None
+        if now is not None and now.passed:     # no change is the least change
+            return done(Repair(HOLDS, present, ltl.number(0), True, "check", now.result, 0))
     if method in ("auto", "projection"):
         why = applicable(asked) or ("an integer parameter" if any(
             p.integer for p in params.values()) else "")
@@ -179,6 +192,29 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
                            reason=f"{check} asks for a behavior: it has no counterexamples"))
     return done(_by_counterexamples(check, args, asked, params, cost, aux, backend, opts,
                                     rounds, timeout, deadline))
+
+
+def _within(asked: list, context) -> list:
+    """The questions within the context, as the checks read it (chase_cps.
+    logic): a premise of each question."""
+    if context is None:
+        return asked
+    from ..logic import _context
+    from ..queries import Holds, Implies, Satisfiable
+    out = []
+    for name, q in asked:
+        k = _context(context, q.variables)
+        if k is None:
+            out.append((name, q))
+        elif isinstance(q, Implies):
+            out.append((name, Implies(ltl.Binary("&", k, q.phi), q.psi, q.variables)))
+        elif isinstance(q, Satisfiable):
+            out.append((name, Satisfiable(ltl.Binary("&", k, q.phi), q.variables)))
+        elif isinstance(q, Holds):
+            out.append((name, Holds(q.model, ltl.Binary("->", k, q.phi), q.variables)))
+        else:
+            out.append((name, q))
+    return out
 
 
 # the cost --------------------------------------------------------------------
@@ -309,10 +345,10 @@ def _by_copies(check, args, asked, params, cost, aux, backend, opts, rounds, tim
     """Invariants: the questions on copies of the state (chase_cps.repair.
     copies), which have no temporal operator: their witnesses at once for a
     check of satisfiability, else their counterexamples, found by z3."""
-    from .copies import on_copies
-    from .project import applicable
+    from .copies import on_copies, unread
+    from .project import LIMIT, applicable, eliminated, regions
     copies = on_copies(asked, params)
-    why = applicable(copies)
+    why = applicable(copies) or unread(copies, params)
     if why:
         return Repair(UNKNOWN, method="copies", reason=why)
     if check in EXISTENTIAL:
@@ -320,6 +356,17 @@ def _by_copies(check, args, asked, params, cost, aux, backend, opts, rounds, tim
     else:
         r = _on_copies(check, args, copies, params, cost, aux, backend, opts, rounds,
                        timeout, deadline)
+        left = _left(deadline, timeout)
+        if r.status == UNKNOWN and r.check is None and left is not None \
+                and eliminated(copies, params) <= LIMIT:
+            # the rounds spent (an integer variable each round removes one value
+            # of a real parameter): the projection of the copies, exact
+            hard, _ = regions(copies, params, left)
+            if hard is not None:
+                p = _by_projection(check, args, params, cost, aux, hard, backend, opts, left)
+                if p.status != UNKNOWN:
+                    p.rounds = r.rounds + 1
+                    r = p
     r.method = "copies"
     return r
 
@@ -378,6 +425,10 @@ def _on_copies(check, args, copies, params, cost, aux, backend, opts, rounds, ti
             if out.passed:
                 return Repair(REPAIRED, values, _cost_of(cost, aux, values, params),
                               o.status == "optimal", "copies", out.result, k)
+            if out.passed is None:
+                return Repair(UNKNOWN, values, method="copies", check=out.result, rounds=k,
+                              reason="the check gave no answer with the values that pass on "
+                                     f"the copies ({out.reason or 'no reason given'})")
             return Repair(UNKNOWN, values, method="copies", check=out.result, rounds=k,
                           reason="the check does not pass with the values that pass on the "
                                  f"copies ({out.reason or 'it failed'})")
@@ -405,6 +456,10 @@ def _by_witnesses(check, args, asked, params, cost, aux, backend, opts, timeout)
     if out.passed:
         return Repair(REPAIRED, values, _cost_of(cost, aux, values, params),
                       o.status == "optimal", "witnesses", out.result, 1)
+    if out.passed is None:
+        return Repair(UNKNOWN, values, method="witnesses", check=out.result, rounds=1,
+                      reason="the check gave no answer with the values found "
+                             f"({out.reason or 'no reason given'})")
     return Repair(UNKNOWN, values, method="witnesses", check=out.result, rounds=1,
                   reason="the check does not pass with the values found "
                          f"({out.reason or 'it failed'})")
@@ -490,8 +545,16 @@ def _by_counterexamples(check, args, asked, params, cost, aux, backend, opts, ro
                 extra.append(_z3_not(piece))
                 continue
             spec = ltl.Binary("->", q.phi, q.psi) if isinstance(q, Implies) else q.phi
-            condition = on_trace(spec, trace, params)
-            if _holds_at(condition, values):
+            try:
+                condition = on_trace(spec, trace, params)
+                kept = _holds_at(condition, values)
+            except RepairError:
+                raise
+            except ValueError as e:      # a term that is not evaluated on a trace (mod)
+                return Repair(UNKNOWN, method="counterexamples", rounds=k,
+                              counterexamples=found,
+                              reason=f"a counterexample is not read on the parameters: {e}")
+            if kept:
                 raise RepairError(f"internal: the counterexample of {name} is not one with "
                                   f"the values {values}")
             conditions.append(condition)

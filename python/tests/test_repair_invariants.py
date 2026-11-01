@@ -168,3 +168,64 @@ def test_a_state_machine_against_a_contract_with_constants():
     r = repair("impl", MACHINE, CONCEPT, parameters={"dmax": (0.8, 1.2)}, time_limit=120)
     assert r.status == "repaired", r.reason
     assert r.values == {"dmax": Fraction(11, 10)}        # 0.5 * 1.6 + 0.3
+
+
+# the edges of copies -------------------------------------------------------------
+
+def _c(name, inputs, outputs, assumptions, guarantees, constants):
+    return Contract.from_strings(name=name, inputs=inputs, outputs=outputs, constants=constants,
+                                 assumptions=assumptions, guarantees=guarantees)
+
+
+@needs_nuxmv
+def test_copies_read_the_context():
+    # without the context x <= 1, no c passes; with it, c = 1
+    low = _c("L", {"x": "real"}, {"y": "real"}, [], ["G (y <= x)"], {})
+    high = _c("H", {"x": "real"}, {"y": "real"}, [], ["G (y <= c)"], {"c": 0})
+    r = repair("refines", low, high, parameters={"c": (0, 10)}, context="G (x <= 1)")
+    assert r.status == "repaired" and r.method == "copies" and r.values == {"c": 1}
+
+
+@needs_nuxmv
+def test_copies_of_a_variable_do_not_take_the_name_of_a_constant():
+    # a constant named x__c1, as the first copy of x would be: compat holds at 0
+    c = _c("A", {"x": "real"}, {"y": "real"}, ["G (x < x__c1)"], ["G (y = x)"], {"x__c1": 0})
+    r = repair("compat", c, parameters={"x__c1": (0, 10)})
+    assert r.status == "holds", r.reason
+
+
+@needs_nuxmv
+def test_a_term_that_z3_does_not_read_is_unknown_with_the_reason():
+    low = _c("L", {"n": (0, 7)}, {}, [], ["G (n mod 2 = 0)"], {})
+    high = _c("H", {"n": (0, 7)}, {}, [], ["G (n <= c)"], {"c": 0})
+    r = repair("refines", low, high, parameters={"c": (0, 10)})
+    assert r.status == "unknown" and "mod" in r.reason
+
+
+@needs_nuxmv
+def test_an_integer_variable_and_a_real_constant():
+    # each counterexample removes one step of n: the projection of the copies
+    # gives the least c at once
+    low = _c("L", {"n": (0, 100)}, {}, [], ["G true"], {})
+    high = _c("H", {"n": (0, 100)}, {}, [], ["G (n <= c)"], {"c": 0})
+    r = repair("refines", low, high, parameters={"c": (0, 200)})
+    assert r.status == "repaired" and r.values == {"c": 100} and r.optimal
+
+
+@needs_nuxmv
+def test_copies_with_no_answer_go_on_with_the_other_methods():
+    # z3 gives no best value with integers and reals; the present values pass
+    c = _c("K", {"n": (-2, 3)}, {}, [], ["G (n + 1 > c2)", "G (c3 + 1 >= c1 | c2 - 1 < 1)"],
+           {"c1": 0, "c2": 0, "c3": 0})
+    r = repair("consist", c, parameters={"c1": (-2, 3), "c2": (-2, 3), "c3": (-2, 3)})
+    assert r.status == "holds" and "copies" in r.reason
+
+
+@needs_nuxmv
+def test_a_check_with_no_answer_is_said_so(monkeypatch):
+    import importlib
+    from chase_cps.repair.problem import Outcome
+    module = importlib.import_module("chase_cps.repair")
+    monkeypatch.setattr(module, "run", lambda *a, **k: Outcome(None, None, [], "timeout"))
+    r = repair("refines", STOP, CONCEPT, parameters=RANGES, method="copies")
+    assert r.status == "unknown" and "gave no answer" in r.reason and "timeout" in r.reason
