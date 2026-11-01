@@ -1186,7 +1186,7 @@ def test_the_waveform_zooms_and_moves(browser, tmp_path):
     page, errors = wave_page(browser, tmp_path, LONG)
     sl = "document.querySelector('#wave .wv-scroll').scrollLeft"
     px, L = page.evaluate("WAVE.px()"), page.evaluate("WAVE.left()")
-    assert px == 32 and page.evaluate(sl) > 0            # too many steps to fit: the step that fails in view
+    assert px >= 32 and page.evaluate(sl) > 0            # too many steps to fit: the step that fails in view
     assert "steps " in page.inner_text("#wave footer .wv-span") and "of 200 in view" in page.inner_text("#wave footer .wv-span")
     click(page, page.locator('#wave button[aria-label="Zoom in (+)"]'))
     assert page.evaluate("WAVE.px()") == pytest.approx(px * 1.5)
@@ -1201,7 +1201,8 @@ def test_the_waveform_zooms_and_moves(browser, tmp_path):
     page.wait_for_timeout(100)
     assert page.evaluate("WAVE.px()") > px and under() == k
     click(page, page.locator('#wave button[aria-label="Show all steps (0)"]'))
-    assert page.evaluate("WAVE.px()") == 6 and page.evaluate(sl) == 0   # all the steps, as small as they go
+    assert page.evaluate("WAVE.px()") < 6 and page.evaluate(sl) == 0    # all the steps, below 6 pixels a step
+    assert page.inner_text("#wave footer .wv-span").startswith("200 steps")
     page.keyboard.press("+"); page.keyboard.press("+"); page.keyboard.press("+")
     s0 = page.evaluate(sl)
     x, y = sc["x"] + L, sc["y"] + 80
@@ -1299,7 +1300,9 @@ def test_the_waveform_hint_tells_only_what_can_be_done(browser, tmp_path):
     hint = page.locator("#wave footer .wv-hint")
     page.set_viewport_size({"width": 1600, "height": 800})
     page.wait_for_timeout(150)
-    assert "drag to pan" not in hint.inner_text() and "Ctrl/⌘ + wheel to zoom" in hint.inner_text()
+    mac = page.evaluate("/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)")
+    assert "drag to pan" not in hint.inner_text() and ("⌘" if mac else "Ctrl") + " + wheel to zoom" in hint.inner_text()
+    assert "Ctrl/⌘" not in hint.inner_text()              # the key of this computer, as in the keys
     page.keyboard.press("+"); page.keyboard.press("+")
     assert "drag to pan" in hint.inner_text()
     page.set_viewport_size({"width": 1100, "height": 800})
@@ -1382,4 +1385,126 @@ def test_a_value_label_sits_beside_the_cursor(browser, tmp_path):
     line = row.locator("line[stroke='#2f6fb5']").bounding_box()          # at step 1: the larger part is right
     word = row.locator("text.wv-v", has_text="7").bounding_box()
     assert word["x"] > line["x"] + line["width"]
+    assert errors == []
+
+
+def wave_middle(page, k):
+    """How far the middle of the column of step k is from the middle of the steps in view, in pixels."""
+    return page.evaluate(f"""(() => {{ const s = document.querySelector('#wave .wv-scroll'), L = WAVE.left(), px = WAVE.px();
+      return ({k} + .5) * px - (s.scrollLeft + (Math.max(120, s.clientWidth - L - 16)) / 2); }})()""")
+
+
+def test_a_long_waveform_opens_with_its_values_whole_and_no_stub_words(browser, tmp_path):
+    # at first a step wide enough for most values (not "1…"), the step that fails in the middle; zoomed
+    # out until two characters would fit, a box shows no word rather than "2…"
+    page, errors = wave_page(browser, tmp_path, LONG)
+    words = lambda: [t for t in page.locator("#wave .wv-v").all_text_contents() if t]
+    shown = words()
+    assert shown and sum(t.endswith("…") for t in shown) <= 0.2 * len(shown)
+    assert abs(wave_middle(page, 120)) <= 1
+    page.keyboard.press("0")
+    for _ in range(5):
+        page.keyboard.press("+")
+    page.wait_for_timeout(100)
+    assert not [t for t in words() if t.endswith("…") and len(t) < 4]
+    assert errors == []
+
+
+def test_all_the_steps_fit_and_narrow_steps_are_drawn_as_bands(browser, tmp_path):
+    # 0: all 200 steps (and the faded pass) in the width; a number row a band with a tick at each change,
+    # no boxes and no words; - can go no further and says so, + can
+    page, errors = wave_page(browser, tmp_path, LONG)
+    page.keyboard.press("0")
+    page.wait_for_timeout(100)
+    sc = "document.querySelector('#wave .wv-scroll')"
+    assert page.evaluate(f"{sc}.scrollWidth <= {sc}.clientWidth + 1")
+    assert page.inner_text("#wave footer .wv-span").startswith("200 steps")
+    row = wave_row(page, "v0").locator("svg.wv-svg")
+    assert row.locator("path").count() <= 3 and row.locator("text").count() == 0
+    assert "off" in page.locator('#wave button[aria-label="Zoom out (-)"]').get_attribute("class")
+    assert "off" not in page.locator('#wave button[aria-label="Zoom in (+)"]').get_attribute("class")
+    px = page.evaluate("WAVE.px()")
+    page.keyboard.press("-")
+    assert page.evaluate("WAVE.px()") == px
+    assert errors == []
+
+
+def test_a_fitted_waveform_stays_fitted_as_the_window_changes(browser, tmp_path):
+    # all the steps in view at 1440: narrower, then wider, all of them still; after a zoom, the zoom stays
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    sc = "document.querySelector('#wave .wv-scroll')"
+    fits = lambda: page.evaluate(f"{sc}.scrollWidth <= {sc}.clientWidth + 1")
+    page.set_viewport_size({"width": 1440, "height": 800}); page.wait_for_timeout(150)
+    wide = page.evaluate("WAVE.px()")
+    assert fits()
+    page.set_viewport_size({"width": 1100, "height": 800}); page.wait_for_timeout(150)
+    assert fits() and page.evaluate("WAVE.px()") < wide
+    page.set_viewport_size({"width": 1440, "height": 800}); page.wait_for_timeout(150)
+    assert fits() and page.evaluate("WAVE.px()") == pytest.approx(wide, abs=0.5)
+    page.keyboard.press("+")
+    zoomed = page.evaluate("WAVE.px()")
+    page.set_viewport_size({"width": 1100, "height": 800}); page.wait_for_timeout(150)
+    assert page.evaluate("WAVE.px()") == zoomed
+    assert errors == []
+
+
+def test_the_selected_row_stays_in_view_and_is_tinted(browser, tmp_path):
+    # forty rows, the drawer shows some: down past the bottom, the drawer scrolls to keep the row in view
+    page, errors = wave_page(browser, tmp_path, LONG)
+    for _ in range(25):
+        page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(100)
+    sel = page.locator("#wave .wv-row.sel")
+    assert sel.count() == 1 and sel.locator(".wv-left.sel").count() == 1
+    r, box = sel.bounding_box(), page.locator("#wave .wv-scroll").bounding_box()
+    assert r["y"] >= box["y"] + 54 - 0.5 and r["y"] + r["height"] <= box["y"] + box["height"] + 0.5
+    assert page.evaluate("getComputedStyle(document.querySelector('#wave .wv-row.sel')).backgroundColor") != "rgba(0, 0, 0, 0)"
+    for _ in range(25):
+        page.keyboard.press("ArrowUp")
+    page.wait_for_timeout(100)
+    r, box = page.locator("#wave .wv-row.sel").bounding_box(), page.locator("#wave .wv-scroll").bounding_box()
+    assert r["y"] >= box["y"] + 54 - 0.5
+    assert errors == []
+
+
+def test_a_jump_brings_its_step_to_the_middle(browser, tmp_path):
+    # F, L and the buttons of the markers put a step from out of view in the middle; an arrow moves as
+    # little as it can
+    page, errors = wave_page(browser, tmp_path, LONG)
+    sl = "document.querySelector('#wave .wv-scroll').scrollLeft"
+    page.keyboard.press("+"); page.keyboard.press("Home")
+    page.keyboard.press("f")
+    page.wait_for_timeout(100)
+    assert abs(wave_middle(page, 120)) <= 1
+    s0 = page.evaluate(sl)
+    page.keyboard.press("ArrowRight")
+    assert page.evaluate(sl) == s0                         # 121 was in view: no scroll
+    page.keyboard.press("l")
+    page.wait_for_timeout(100)
+    assert abs(wave_middle(page, 150)) <= 1
+    page.keyboard.press("Home")
+    page.wait_for_timeout(100)
+    click(page, page.locator("#wave .wv-edge.r button", has_text="fails at 120"))
+    page.wait_for_timeout(100)
+    assert abs(wave_middle(page, 120)) <= 1
+    assert errors == []
+
+
+def test_the_waveform_edges_and_marks(browser, tmp_path):
+    # the first box of a row flat on its left (nothing changes before step 0); the header not selectable
+    # and its top edge 12 pixels to grab; "fails" kept in the part in view when its column is half out
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    d = wave_row(page, "n").locator("svg.wv-svg path").first.get_attribute("d")
+    assert d.startswith("M0.5 ") and "L0.5 4" in d
+    assert page.evaluate("getComputedStyle(document.querySelector('#wave header')).userSelect") == "none"
+    assert page.locator("#wave .wv-grip").bounding_box()["height"] == 12
+    page.close()
+    page, errors = wave_page(browser, tmp_path, LONG)
+    for _ in range(3):
+        page.keyboard.press("+")
+    px, L = page.evaluate("WAVE.px()"), page.evaluate("WAVE.left()")
+    page.evaluate(f"document.querySelector('#wave .wv-scroll').scrollLeft = {120 * px + 0.6 * px}")
+    page.wait_for_timeout(100)
+    word, sc = page.locator("#wave .wv-axis text.wv-fails").bounding_box(), page.locator("#wave .wv-scroll").bounding_box()
+    assert word["x"] >= sc["x"] + L - 0.5
     assert errors == []
