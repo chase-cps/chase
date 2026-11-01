@@ -1841,6 +1841,9 @@ _PAGE = r"""<!doctype html>
   .rp-t { grid-column:1; font-size:11.5px; }
   .rp-h.rp-hb { display:flex; align-items:center; justify-content:space-between; margin-top:-2px; }
   .rp-h.rp-hb .ib { text-transform:none; letter-spacing:0; }
+  .rp-tools { display:flex; align-items:center; gap:6px; }
+  .ib.wf-open { width:auto; padding:0 7px 0 5px; gap:4px; border:1px solid var(--line); border-radius:5px; color:var(--teal); }
+  .ib.wf-open .wf-word { font:600 11px Helvetica, Arial, sans-serif; text-transform:none; letter-spacing:0; }
   .rp-v { font:11.5px Menlo, Monaco, monospace; overflow-wrap:anywhere; }
   .rp-v s { color:var(--bad); } .rp-v em { font-style:normal; color:var(--ok); font-weight:600; }
   .rp-m { grid-column:1; color:var(--soft); font-size:11px; }
@@ -1853,7 +1856,8 @@ _PAGE = r"""<!doctype html>
              animation:turn 0.8s linear infinite; }
   /* the steps in view, and a page back or on: only when the table is wider than the panel */
   .rp-trace-top { display:none; align-items:center; justify-content:flex-end; gap:2px; margin-top:2px; color:var(--soft); font-size:11px; }
-  .rp-trace-top.on { display:flex; } .rp-span { margin-right:4px; }
+  .rp-h .rp-trace-top { margin:0; }
+  .rp-trace-top.on { display:flex; }
   /* a scroll bar of the page, always drawn: the one of the system shows only while scrolling (macOS) */
   .rp-tracebox .rp-tracewrap { scrollbar-width:none; } .rp-tracebox .rp-tracewrap::-webkit-scrollbar { display:none; }
   .rp-bar { display:none; position:relative; height:8px; margin:5px 0 2px; border-radius:4px; background:#edf1f1; cursor:pointer; }
@@ -1872,7 +1876,7 @@ _PAGE = r"""<!doctype html>
   #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
-  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px;
+  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px; white-space:nowrap;
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:center; color:var(--soft); }
@@ -3330,12 +3334,17 @@ function whySection(n, t, st) {
     const first = w.trace.vars.filter(v => named.has(v));
     const table = traceTable(w.trace, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
-    if (last > 0) {                     // the waveform: every step kept, in a window over the diagram
-      const head = sec.firstChild;
+    if (last > 0 || table.nav) {        // on the line of the heading: the waveform, and the page back and on
+      const head = sec.firstChild, tools = h("span", { class: "rp-tools" });
       head.classList.add("rp-hb");
       head.textContent = "";
-      head.append(h("span", {}, "Counterexample"),
-                  iconButton(GLYPH.wave, "Open the waveform", () => openWave(w.trace, first, checkTitle(n, t), go)));
+      if (last > 0) {                   // the waveform: every step kept, in a drawer under the diagram
+        const b = iconButton(GLYPH.wave, "Open the waveform of every step", () => openWave(w.trace, first, checkTitle(n, t), go), "wf-open");
+        b.appendChild(h("span", { class: "wf-word" }, "Waveform"));
+        tools.appendChild(b);
+      }
+      if (table.nav) tools.appendChild(table.nav);
+      head.append(h("span", {}, "Counterexample"), tools);
     }
     sec.appendChild(table);
   } else {
@@ -3400,15 +3409,15 @@ function traceTable(tr, first, req, step, onPick) {
   t.style.setProperty("--cw", widest + "ch");
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
-  // the table scrolls under its first column; above it, the steps in view and a page back or on
-  const span = h("span", { class: "rp-span" });
+  // the table scrolls under its first column; above it, a page back or on
   const turn = d => { const v = t.querySelector("th, td.v");
                       wrap.scrollLeft += d * Math.max(40, wrap.clientWidth - (v ? v.offsetWidth : 0) - 8); };
   const prev = iconButton(GLYPH.prev, "Earlier steps", () => turn(-1)), next = iconButton(GLYPH.next, "Later steps", () => turn(1));
-  const top = h("div", { class: "rp-trace-top" }, span, prev, next);
+  const top = h("div", { class: "rp-trace-top" }, prev, next);
   // the bar under the table: its thumb is the part in view; drag it, or click the bar to page
   const thumb = h("div", {}), bar = h("div", { class: "rp-bar" }, thumb);
   const out = h("div", { class: "rp-tracebox" }, top, wrap, bar);
+  out.nav = top;                        // the caller may put it on the line of its heading
   bar.addEventListener("mousedown", e => {
     if (e.target === thumb) return;
     turn(e.offsetX < thumb.offsetLeft ? -1 : 1);
@@ -3430,15 +3439,6 @@ function traceTable(tr, first, req, step, onPick) {
     const w = bar.clientWidth;
     thumb.style.width = Math.max(24, w * wrap.clientWidth / wrap.scrollWidth) + "px";
     thumb.style.left = (w - thumb.offsetWidth) * wrap.scrollLeft / Math.max(1, wrap.scrollWidth - wrap.clientWidth) + "px";
-    const v = t.querySelector("th, td.v"), from = wrap.scrollLeft + (v ? v.offsetWidth : 0), to = wrap.scrollLeft + wrap.clientWidth;
-    // a step is in view when the middle of its column is (not hidden under the first column, not cut at the edge)
-    const seen = [...t.querySelectorAll("th[data-k]")].filter(c => c.offsetLeft + c.offsetWidth / 2 >= from
-                                                                   && c.offsetLeft + c.offsetWidth / 2 <= to);
-    if (seen.length) {
-      const a = +seen[0].dataset.k, b = +seen[seen.length - 1].dataset.k;
-      span.textContent = DATA.period ? "t " + timeOf(a) + "–" + timeOf(b) + " of " + timeOf(0) + "–" + timeOf(last)
-                                     : "steps " + a + "–" + b + " of " + tr.steps.length;
-    }
     prev.style.visibility = wrap.scrollLeft > 1 ? "visible" : "hidden";
     next.style.visibility = wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 1 ? "visible" : "hidden";
   };

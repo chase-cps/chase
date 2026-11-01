@@ -719,25 +719,24 @@ CONTRACT Bound:
 
 @pytest.mark.skipif(not __import__("test_viz").HAS_MC, reason="nuXmv/NuSMV not installed")
 def test_the_table_scrolls_under_its_first_column(browser, tmp_path):
-    # a table wider than the panel: the names stay, the steps in view are said above it, with a page
-    # back and on; a table that fits has none of these
+    # a table wider than the panel: the names stay, with a page back and on above it; a table that
+    # fits has none of these
     (tmp_path / "w.ltl").write_text(WIDE)
     d = viz.from_spec(str(tmp_path / "w.ltl"), refines=[("Counter", "Bound")], check=True)
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|⪯"]'))
     page.wait_for_selector("#repair .rp-trace-top.on", timeout=5000)
-    span = lambda: page.inner_text("#repair .rp-span")
-    assert re.fullmatch(r"steps 0–\d+ of \d+", span())
+    left = lambda: page.evaluate("document.querySelector('#repair .rp-tracewrap').scrollLeft")
+    assert page.locator("#repair .rp-span").count() == 0                # no line of the steps in view
     prev, nxt = page.locator("#repair .rp-trace-top button.ib").nth(0), page.locator("#repair .rp-trace-top button.ib").nth(1)
     assert prev.get_attribute("aria-label") == "Earlier steps" and nxt.get_attribute("aria-label") == "Later steps"
     assert prev.evaluate("b => getComputedStyle(b).visibility") == "hidden"
     assert nxt.evaluate("b => getComputedStyle(b).visibility") == "visible"
     name = page.locator("#repair table.rp-trace td.v").first
     x0 = name.bounding_box()["x"]
-    before = span()
     click(page, nxt)
-    page.wait_for_function(f"document.querySelector('#repair .rp-span').textContent !== {before!r}", timeout=5000)
-    assert not span().startswith("steps 0–")
+    page.wait_for_function("document.querySelector('#repair .rp-tracewrap').scrollLeft > 0", timeout=5000)
+    assert left() > 0
     assert abs(name.bounding_box()["x"] - x0) < 1                    # the names stayed
     assert prev.evaluate("b => getComputedStyle(b).visibility") == "visible"
     for _ in range(10):                                              # on to the end: no page on
