@@ -85,6 +85,22 @@ def test_reserved_or_bad_names_are_rejected(name):
         Contract.from_strings(inputs=[name], name="Ok")
 
 
+@needs_native
+def test_the_algebra_takes_a_contract_named_in_python_as_the_language_would_not():
+    # a name given to Contract() itself (a hierarchical name, a space) is not checked there: the
+    # algebra writes it under a name the language takes, and the results keep the names given
+    top = Contract("u_core.alu ctl", {"x": "bool"}, {"y": "bool", "z": "bool"}, [],
+                   [ltl.parse("G (x -> y)"), ltl.parse("G z")])
+    part = Contract("u_core.alu", {"x": "bool"}, {"y": "bool"}, [], [ltl.parse("G (x -> y)")])
+    q = top.divide(part)
+    assert q.name == "u_core.alu ctl_div_u_core.alu" and set(q.outputs) == {"z"}
+    assert part.compose(q).name == "u_core.alu_u_core.alu ctl_div_u_core.alu"
+    assert top.simplify().name == "u_core.alu ctl" and top.invert().name == "u_core.alu ctl_inv"
+    bad = Contract("K", {"a.b": "bool"}, {"w": "bool"}, [], [ltl.parse("G w")])
+    with pytest.raises(ValueError, match="'a.b' cannot be used as a name.*variable of contract 'K'"):
+        bad.compose(part)
+
+
 def test_input_and_output_clash_is_rejected():
     with pytest.raises(ValueError, match="both input and output"):
         Contract.from_strings(inputs=["a"], outputs=["a"])

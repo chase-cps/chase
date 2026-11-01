@@ -44,6 +44,7 @@ import os
 import re
 import tempfile
 import time
+import warnings
 import webbrowser
 from typing import Iterable, Optional
 
@@ -395,20 +396,27 @@ class _Scene:
         its contract, or an input of a component that the contract does not
         give, driven by none (the logic of a module besides its instances),
         the quotient of the contract by the components, as from_spec draws
-        it: a dashed hole, in closed form (no check)."""
+        it: a dashed hole, in closed form (no check). When the algebra fails
+        (two parts drive a variable, a variable with two types), the hole
+        has the ports of the quotient and no terms."""
         if s.contract is None or not s.components:
             return None
         driven = set().union(*(k.contract.outputs for k in s.components))
         read = set().union(*(k.contract.inputs for k in s.components))
         if not (set(s.contract.outputs) - driven) | (read - set(s.contract.inputs) - driven):
             return None
+        note = f"{s.contract.name} / " + " ⊗ ".join(k.name for k in s.components)
         try:
             parts = functools.reduce(lambda a, b: a.compose(b), [k.contract for k in s.components])
             q = s.contract.divide(parts, name="?")
-        except Exception:                     # the drawing does without it
-            return None
-        return self.box(q, types=_types(q), kind="hole", title=q.name,
-                        note=f"{s.contract.name} / " + " ⊗ ".join(k.name for k in s.components),
+        except Exception as e:                # the ports only, as the quotient has them
+            outputs = (set(s.contract.outputs) - driven) | (read - driven - set(s.contract.inputs))
+            inputs = (set(s.contract.inputs) | driven) - outputs
+            warnings.warn(f"the hole of {s.name} is drawn with its ports only: {e}", stacklevel=2)
+            return self.box(object(), types=_types(*(k.contract for k in s.components), s.contract),
+                            kind="hole", title="?", note=note + " (ports only)", contract=None,
+                            inputs=sorted(inputs), outputs=sorted(outputs))
+        return self.box(q, types=_types(q), kind="hole", title=q.name, note=note,
                         contract=self.terms(q), inputs=sorted(q.inputs), outputs=sorted(q.outputs))
 
     def system(self, s: System) -> dict:
