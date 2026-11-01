@@ -1758,6 +1758,11 @@ _PAGE = r"""<!doctype html>
   .ib svg, .chev svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
                        stroke-linecap:round; stroke-linejoin:round; }
   button.ib:hover, button.back:hover .ib { background:var(--fill); color:var(--teal); }
+  button.ib.main { background:var(--teal); color:#fff; } button.ib.main:hover { background:var(--teal); color:#fff; opacity:.85; }
+  button.ib.on { background:#dfe9e9; color:var(--teal); }
+  button.ib.warn, button.ib.warn:hover { background:var(--warn); color:#fff; opacity:1; }
+  button.ib.off, button.ib.off:hover { opacity:.4; cursor:default; background:none; color:var(--soft); }
+  button.ib.main.off, button.ib.main.off:hover { background:var(--teal); color:#fff; }
   .rp-tag { flex:none; display:block; }
   .rp-chip { flex:none; font:600 10.5px 'Arial Unicode MS', 'Segoe UI', Helvetica, Arial, sans-serif; color:#fff; border-radius:4px;
              padding:1px 6px; background:var(--faint); }
@@ -1787,17 +1792,30 @@ _PAGE = r"""<!doctype html>
   .rp-opt { border:1px solid #e3e8e8; border-radius:8px; padding:7px 10px; margin:6px 0 0; display:grid;
             grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; align-items:center; }
   .rp-opt.repaired { border-color:#b9d6c4; } .rp-opt.repaired:hover, .rp-opt.shown { border-color:var(--ok); background:#f6faf7; }
-  .rp-opt.old { opacity:.6; }
+  .rp-opt.old, .rp-opt.faint { opacity:.6; } .rp-opt.faint:hover { opacity:1; }
+  .rp-l { grid-column:1; font-size:11px; color:var(--soft); } .rp-l b { color:var(--ink); font-weight:600; }
+  .rp-t { grid-column:1; font-size:11.5px; }
+  .rp-h.rp-hb { display:flex; align-items:center; justify-content:space-between; margin-top:-2px; }
+  .rp-h.rp-hb .ib { text-transform:none; letter-spacing:0; }
   .rp-v { font:11.5px Menlo, Monaco, monospace; overflow-wrap:anywhere; }
   .rp-v s { color:var(--bad); } .rp-v em { font-style:normal; color:var(--ok); font-weight:600; }
   .rp-m { grid-column:1; color:var(--soft); font-size:11px; }
-  .rp-b { grid-row:1 / span 2; grid-column:2; display:flex; gap:4px; align-items:center; }
+  .rp-b { grid-row:1 / span 3; grid-column:2; display:flex; gap:4px; align-items:center; }
   .rp-note { color:var(--soft); font-size:11px; margin-top:6px; }
   .rp-err { color:var(--bad); font-size:11px; margin-top:6px; white-space:pre-wrap; }
   .rp-cmd { font:10.5px/1.5 Menlo, Monaco, monospace; background:var(--fill); border:1px solid #e3e8e8; border-radius:6px;
             padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text; }
   .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
              animation:turn 0.8s linear infinite; }
+  /* the steps in view, and a page back or on: only when the table is wider than the panel */
+  .rp-trace-top { display:none; align-items:center; justify-content:flex-end; gap:2px; margin-top:2px; color:var(--soft); font-size:11px; }
+  .rp-trace-top.on { display:flex; } .rp-span { margin-right:4px; }
+  /* a scroll bar always drawn, wider than the one of the system (which shows only while scrolling) */
+  .rp-tracewrap::-webkit-scrollbar { height:9px; width:9px; }
+  .rp-tracewrap::-webkit-scrollbar-track { background:#edf1f1; border-radius:5px; }
+  .rp-tracewrap::-webkit-scrollbar-thumb { background:#a9b6b6; border-radius:5px; border:2px solid #edf1f1; }
+  .rp-tracewrap::-webkit-scrollbar-thumb:hover { background:#7c8e8e; }
+  @supports not selector(::-webkit-scrollbar) { .rp-tracewrap { scrollbar-color:#a9b6b6 #edf1f1; } }
   .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px;
     /* a shadow at a side where more columns are: the table scrolls */
     background: linear-gradient(to right, var(--paper, #fff) 30%, transparent) left / 24px 100% no-repeat local,
@@ -1814,6 +1832,10 @@ _PAGE = r"""<!doctype html>
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:center; color:var(--soft); }
+  table.rp-trace td[data-k] { min-width:var(--cw, 0); }
+  /* the first column, the names, stays when the table scrolls */
+  table.rp-trace th:first-child, table.rp-trace td.v { position:sticky; left:0; background:#fff; box-shadow:inset -1px 0 #e3e8e8; }
+  table.rp-trace td.v { z-index:1; } table.rp-trace th:first-child { z-index:3; } table.rp-trace th { z-index:2; }
   table.rp-trace th.fail { color:var(--bad); background:#fbeceb; }
   .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
   table.rp-trace td.fail { background:#fbeceb; }
@@ -3186,7 +3208,18 @@ function fillPanel() {
   if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
   // the constants
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", title: "Pick the parameters that may change, and their ranges" }, "Repair ", h("span", { style: "text-transform:none" }, "θ")));
+  const picked = r.constants.filter(c => s.picks[c.name]);
+  const act = s.running
+    ? iconButton(GLYPH.stop, "Stop the search", () => stopRepairs(r))
+    : iconButton(s.options.length ? GLYPH.again : GLYPH.find,
+                 !how ? "Repairs run in VS Code, or on a page of chase-cps view FILE --serve"
+                 : !picked.length ? "Pick a constant first"
+                 : s.options.length ? "Find again: the least change of the picked constants"
+                 : "Find the least change of the picked constants",
+                 () => findRepairs(n, t), "main", !how || !picked.length);
+  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h rp-hb" },
+    h("span", { title: "Pick the constants that may change, and their ranges" }, "Repair ", h("span", { style: "text-transform:none" }, "θ")),
+    act));
   r.constants.forEach(c => {
     const [lo, hi] = s.ranges[c.name];
     const num = (v, i) => h("input", { type: "number", value: v, step: c.type === "int" ? 1 : "any", "aria-label": (i ? "high" : "low") + " " + c.name,
@@ -3200,18 +3233,9 @@ function fillPanel() {
       h("span", { class: "rp-who" }, (c.type === "int" ? "int" : "real") + " · " + c.owners.map(o => o.contract).join(", "),
         c.role === "requirement" ? h("span", { class: "rp-role " + c.role, title: "Changed only with your consent" }, ROLE[c.role]) : null)));
   });
-  const picked = r.constants.filter(c => s.picks[c.name]);
-  const run = h("div", { class: "rp-run" });
-  if (s.running) {
-    run.appendChild(h("span", { class: "rp-spin" }));
-    run.appendChild(h("span", { class: "rp-says" }, "Searching… " + s.running.done + " / " + s.running.of));
-    run.appendChild(h("button", { class: "rp-btn", onclick: () => stopRepairs(r) }, "Stop"));
-  } else {
-    run.appendChild(h("button", { class: "rp-btn main", disabled: !how || !picked.length,
-                                  onclick: () => findRepairs(n, t) }, s.options.length ? "Find again" : "Find repairs"));
-    if (!picked.length) run.appendChild(h("span", { class: "rp-says" }, "Pick a parameter."));
-  }
-  sec.appendChild(h("div", { style: "margin-top:8px" }, run));
+  if (s.running) sec.appendChild(h("div", { class: "rp-run", style: "margin-top:8px" }, h("span", { class: "rp-spin" }),
+    h("span", { class: "rp-says" }, "Searching… " + s.running.done + " / " + s.running.of)));
+  else if (!picked.length) sec.appendChild(h("div", { class: "rp-says", style: "margin-top:8px" }, "Pick a constant."));
   box.appendChild(sec);
   // the repairs
   if (s.options.length || s.error) {
@@ -3308,20 +3332,48 @@ function traceTable(tr, first, req, step, onPick) {
     h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: (tr.at === k ? "fail" : "") + (picks ? " k" : ""),
                                                                            "data-k": String(k), title: show(k) }, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
+  // the columns of the steps all as wide as the widest value or step of the rows shown
+  const widest = Math.max(1, ...tr.steps.map((st, k) => Math.max(String(timeOf(k)).length,
+                                                                 ...order.slice(0, LIMIT).map(i => String(cell(st[i])).length))));
+  t.style.setProperty("--cw", widest + "ch");
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
+  // the table scrolls under its first column; above it, the steps in view and a page back or on
+  const span = h("span", { class: "rp-span" });
+  const turn = d => { const v = t.querySelector("th, td.v");
+                      wrap.scrollLeft += d * Math.max(40, wrap.clientWidth - (v ? v.offsetWidth : 0) - 8); };
+  const prev = iconButton(GLYPH.prev, "Earlier steps", () => turn(-1)), next = iconButton(GLYPH.next, "Later steps", () => turn(1));
+  const top = h("div", { class: "rp-trace-top" }, span, prev, next);
+  const out = h("div", { class: "rp-tracebox" }, top, wrap);
+  const last = tr.steps.length - 1;
+  const where = () => {
+    const over = wrap.scrollWidth > wrap.clientWidth + 1;
+    top.classList.toggle("on", over);
+    if (!over) return;
+    const v = t.querySelector("th, td.v"), from = wrap.scrollLeft + (v ? v.offsetWidth : 0), to = wrap.scrollLeft + wrap.clientWidth;
+    const seen = [...t.querySelectorAll("th[data-k]")].filter(c => c.offsetLeft + c.offsetWidth > from + 2 && c.offsetLeft < to - 2);
+    if (seen.length) {
+      const a = +seen[0].dataset.k, b = +seen[seen.length - 1].dataset.k;
+      span.textContent = DATA.period ? "t " + timeOf(a) + "–" + timeOf(b) + " of " + timeOf(0) + "–" + timeOf(last)
+                                     : "steps " + a + "–" + b + " of " + tr.steps.length;
+    }
+    prev.style.visibility = wrap.scrollLeft > 1 ? "visible" : "hidden";
+    next.style.visibility = wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 1 ? "visible" : "hidden";
+  };
+  wrap.addEventListener("scroll", where);
+  if (typeof ResizeObserver === "function") new ResizeObserver(where).observe(wrap);
+  requestAnimationFrame(where);
   if (rows.length > LIMIT) {
-    const more = h("button", { class: "rp-link", onclick: () => { rows.slice(LIMIT).forEach(r => t.appendChild(r)); more.remove(); } },
+    const more = h("button", { class: "rp-link", onclick: () => { rows.slice(LIMIT).forEach(r => t.appendChild(r)); more.remove(); where(); } },
                    (rows.length - LIMIT) + " more variables");
-    wrap.appendChild(more);
+    out.appendChild(more);
   }
   const notes = [tr.cut ? "The first " + tr.steps.length + " steps." : null,
                  tr.loop !== null && tr.loop !== undefined
                    ? "↺ " + timeOf(tr.loop) + ": from this step on, the steps repeat forever." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
-  if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
-  if (!picks) { wrap.setStep = () => {}; return wrap; }
-  const out = wrap;
+  if (notes.length) out.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
+  if (!picks) { out.setStep = () => {}; return out; }
   const column = k => t.querySelectorAll('[data-k="' + k + '"]');
   t.addEventListener("click", e => { const c = e.target.closest("[data-k]"); if (c) onPick(+c.dataset.k); });
   t.addEventListener("mouseover", e => { const c = e.target.closest("[data-k]");
@@ -3338,6 +3390,7 @@ function traceTable(tr, first, req, step, onPick) {
       if (left < wrap.scrollLeft) wrap.scrollLeft = left;
       else if (right > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = right - wrap.clientWidth;
     }
+    where();
   };
   requestAnimationFrame(() => out.setStep(step));       // once in the page: the scroll needs its width
   out.setStep(step);
@@ -3358,21 +3411,43 @@ function noRepairSection(n, t) {
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
+// which constants a repair changes, as the first line of its card: "Change r and vmax together"
+function changeLabel(names) {
+  const out = h("div", { class: "rp-l" }, "Change ");
+  names.forEach((k, i) => { if (i) out.append(i === names.length - 1 ? " and " : ", "); out.append(h("b", {}, k)); });
+  if (names.length > 1) out.append(" together");
+  return out;
+}
+// the time a repair was asked to take: its own, or the time limit of the page (in the editor, the
+// time it took when it stopped at the limit)
+const limitOf = o => o.limit || (backend() === "serve" ? TIME_LIMIT : Math.max(1, Math.round(o.res.seconds || 0)));
 function optionCard(n, t, r, s, o, sig) {
   const res = o.res, old = o.sig !== sig && !o.applied;
-  const names = o.names.join(", ");
+  if (o.running) return h("div", { class: "rp-opt" }, changeLabel(o.names),
+    h("div", { class: "rp-run" }, h("span", { class: "rp-spin" }), h("span", { class: "rp-says" }, "Searching for up to " + o.running + " s…")));
   if (res.status !== "repaired") {
+    const range = k => k + " in [" + o.ranges[k].join(", ") + "]";
+    const rs = o.names.map(range), list = rs.length > 1 ? rs.slice(0, -1).join(", ") + " and " + rs[rs.length - 1] : rs[0];
+    const timed = !res.reason || /time limit/.test(res.reason);
     const text = res.status === "holds" ? "Holds already."
-      : res.status === "impossible" ? "No value in " + o.names.map(k => "[" + o.ranges[k].join(", ") + "]").join(" × ") + " works."
-      : res.bound !== undefined && res.bound !== null ? "Stopped: the least change is ≥ " + res.bound + "."
-      : "Not decided.";
-    const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : ""), title: res.reason || "" },
-      h("div", { class: "rp-v", style: "font-family:inherit" }, text), h("div", { class: "rp-m" }, (old ? "Out of date · " : "") + names));
-    if (res.status === "impossible" && !old) card.appendChild(h("div", { class: "rp-b" },
-      h("button", { class: "rp-btn", onclick: () => { o.names.forEach(k => { const [a, b] = s.ranges[k], w = Math.max(b - a, 1);
-        s.ranges[k] = [a >= 0 ? Math.max(0, a - w / 2) : a - w / 2, b + w / 2]
-          .map(x => r.constants.find(c => c.name === k).type === "int" ? Math.round(x) : x); });
-        findRepairs(n, t); } }, "Widen")));
+      : res.status === "impossible" ? (o.names.length === 1 ? "No value of " + list + " works." : "No values of " + list + " work together.")
+          + " Edit the range" + (o.names.length > 1 ? "s" : "") + " above to search further."
+      : res.bound !== undefined && res.bound !== null ? "Stopped after " + limitOf(o) + " s: the least change is at least " + short(res.bound) + "."
+      : timed ? "No answer within " + limitOf(o) + " s."
+      : /optimization/.test(res.reason) ? "No answer: z3 did not finish the optimization."
+      : "No answer: " + res.reason.split(";")[0].replace(/\.$/, "") + ".";
+    // all together, undecided, when one alone has its least change already: shown faint
+    const faint = o.names.length > 1 && res.status === "unknown"
+      && s.options.some(p => p.names.length === 1 && p.res.status === "repaired" && p.res.optimal);
+    const card = h("div", { class: "rp-opt " + res.status + (old ? " old" : "") + (faint ? " faint" : ""), title: res.reason || "" },
+      changeLabel(o.names), h("div", { class: "rp-t" }, text), old ? h("div", { class: "rp-m" }, "Out of date") : null);
+    if (res.status === "unknown" && timed) {
+      const longer = 2 * limitOf(o);
+      card.appendChild(h("div", { class: "rp-b" }, iconButton(GLYPH.longer,
+        !backend() ? "Repairs run in VS Code, or on a page of chase-cps view FILE --serve"
+        : old ? "Out of date: find the repairs again" : "Try longer: search again for up to " + longer + " s",
+        () => retryOption(n, t, r, o, longer), "", !backend() || old || !!s.running)));
+    }
     return card;
   }
   const v = h("div", { class: "rp-v" });
@@ -3380,26 +3455,31 @@ function optionCard(n, t, r, s, o, sig) {
   (moved.length ? moved : o.names).forEach((k, i) => { if (i) v.appendChild(document.createTextNode("   "));
     v.append(k + " ", h("s", {}, o.from[k]), " → ", h("em", {}, res.text[k] === null ? "≈ " + short(res.values[k]) : res.text[k])); });
   const meta = [o.applied ? "Applied" : old ? "Out of date" : null, res.optimal ? "optimal" : "least found",
-                "change " + short(res.cost)].filter(Boolean).join(" · ");
+                "change " + short(res.cost), o.confirm ? "click ✓ again to change the requirement" : null].filter(Boolean).join(" · ");
   const how = res.method + (res.rounds ? ", " + res.rounds + (res.rounds === 1 ? " round" : " rounds") : "") + ", " + res.seconds + " s";
   const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
   const lines = o.names.every(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners.every(w => w.line));
   const exact = o.names.every(k => res.text[k] !== null);
   const can = backend() && !old && lines && exact && !o.applied;
   const shown = previewing && previewing.pinned && previewing.option === o;
-  const apply = h("button", { class: "rp-btn" + (can ? " main" : ""), disabled: !can,
-    title: !exact ? "This value has no finite decimal: write a nearby one by hand" : !lines ? "No declaration of the constant in the file"
-         : req ? "Changes a requirement" : "Write the value in the file",
-    onclick: e => applyOption(n, t, r, o, e.target) }, o.applied ? "Applied" : "Apply");
+  const apply = iconButton(GLYPH.apply,
+    o.applied ? "Applied: the value is in the file"
+    : !backend() ? "Repairs are written by VS Code, or on a page of chase-cps view FILE --serve"
+    : old ? "Out of date: find the repairs again"
+    : !exact ? "This value has no finite decimal: write a nearby one by hand"
+    : !lines ? "No declaration of the constant in the file"
+    : o.confirm ? "Click again to change the requirement"
+    : "Write the new value into the file and check again" + (req ? " (it changes a requirement)" : ""),
+    () => applyOption(n, t, r, o), (can ? "main" : "") + (o.confirm ? " warn" : ""), !can);
+  const preview = iconButton(GLYPH.eye, shown ? "Stop showing this change on the diagram"
+                                             : "Show this change on the diagram (the file is not changed)",
+    () => { if (shown) clearPreview(true); else { const p = previewOf(n, t, r, o); p.pinned = true; showPreview(p); }
+            renderPanel(); }, shown ? "on" : "", old);
   const card = h("div", { class: "rp-opt repaired" + (old ? " old" : "") + (shown ? " shown" : ""),
                           onmouseenter: () => { if (!old) hoverPreview(previewOf(n, t, r, o)); },
                           onmouseleave: () => clearPreview(false) },
-    v, h("div", { class: "rp-m", title: how }, meta),
-    h("div", { class: "rp-b" },
-      h("button", { class: "rp-btn" + (shown ? " on" : ""), disabled: old, title: "Keep it drawn on the diagram",
-                    onclick: () => { if (shown) clearPreview(true); else { const p = previewOf(n, t, r, o); p.pinned = true; showPreview(p); }
-                                     renderPanel(); } }, "Preview"),
-      apply));
+    changeLabel(o.names), v, h("div", { class: "rp-m", title: how }, meta),
+    h("div", { class: "rp-b" }, preview, apply));
   return card;
 }
 // a number in a few digits: 0.8095238095238095 is 0.8095
@@ -3461,6 +3541,27 @@ function stopRepairs(r) {
   const s = stateOf(r);
   if (s.cancel) s.cancel();
   s.running = null;
+  s.options.forEach(o => { o.running = null; });
+  renderPanel(); renderQueue();
+}
+// One repair asked again with a longer time: its card shows the new answer.
+async function retryOption(n, t, r, o, limit) {
+  const s = stateOf(r);
+  if (s.running) return;
+  const params = o.names.map(k => ({ name: k, low: o.ranges[k][0], high: o.ranges[k][1],
+                                     type: r.constants.find(c => c.name === k).type }));
+  const token = {};
+  s.error = null; s.running = { done: 0, of: 1, token }; o.running = limit;
+  renderPanel(); renderQueue();
+  try {
+    const res = await askRepair({ check: r.check, args: r.args, params, time_limit: limit }, s);
+    if (!s.running || s.running.token !== token) return;
+    o.res = res; o.limit = limit;
+  } catch (e) {
+    if (!s.running || s.running.token !== token) return;
+    s.error = String(e && e.message || e);
+  }
+  o.running = null; s.running = null;
   renderPanel(); renderQueue();
 }
 let repairSeq = 0;
@@ -3488,14 +3589,9 @@ function askRepair(req, s) {
   }
   return Promise.reject(new Error("This page cannot run repairs."));
 }
-function applyOption(n, t, r, o, button) {
+function applyOption(n, t, r, o) {
   const req = o.names.some(k => (r.constants.find(c => c.name === k) || {}).role === "requirement");
-  if (req && !button.getAttribute("data-sure")) {       // a requirement: asked twice
-    button.setAttribute("data-sure", "1");
-    button.textContent = "Change the requirement?";
-    button.className = "rp-btn warn";
-    return;
-  }
+  if (req && !o.confirm) { o.confirm = true; renderPanel(); return; }    // a requirement: asked twice
   const edits = [];
   o.names.forEach(k => (r.constants.find(c => c.name === k) || { owners: [] }).owners
     .forEach(w => edits.push({ line: w.line, name: k, value: o.res.text[k] })));
@@ -3611,6 +3707,25 @@ function svgSpan(cls, paths) {
   const sp = h("span", { class: cls });
   sp.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true">' + paths + "</svg>";
   return sp;
+}
+// the buttons of the panel: icons, as the cross and the back arrow; what each does is in its tip
+const GLYPH = {
+  find: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6"/>',
+  again: '<path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.6v3.2H9.8"/>',
+  stop: '<rect x="4.5" y="4.5" width="7" height="7" rx="1"/>',
+  eye: '<path d="M1.6 8S4 3.8 8 3.8 14.4 8 14.4 8 12 12.2 8 12.2 1.6 8 1.6 8z"/><circle cx="8" cy="8" r="1.9"/>',
+  apply: '<path d="M3.2 8.4l3 3 6.6-7"/>',
+  longer: '<circle cx="8" cy="8" r="5.6"/><path d="M8 4.8V8l2.2 1.6"/>',
+  prev: '<path d="M10 3.5L5.5 8l4.5 4.5"/>',
+  next: '<path d="M6 3.5L10.5 8 6 12.5"/>',
+};
+// an icon button; one that cannot act now stays in view, with its tip saying why (not disabled: a
+// disabled button has no tip)
+function iconButton(paths, tip, onclick, cls, off) {
+  const b = h("button", { class: "ib" + (cls ? " " + cls : "") + (off ? " off" : ""), "data-tip": tip, "aria-label": tip,
+                          "aria-disabled": off ? "true" : null, onclick: e => { if (!off) onclick(e); } });
+  b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true">' + paths + "</svg>";
+  return b;
 }
 // the box of the check picked, marked; brought into the view when it is out of it (once, when picked)
 function markPick() {
