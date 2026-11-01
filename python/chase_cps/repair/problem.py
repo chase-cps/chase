@@ -110,16 +110,35 @@ def instantiated(args: tuple, values: dict) -> tuple:
     return tuple(out)
 
 
-def questions(check: str, sym_args: tuple) -> list:
+def questions(check: str, sym_args: tuple, params: Optional[dict] = None) -> list:
     """(name, query) of the check on the contracts with the parameters as
-    variables (see chase_cps.export)."""
+    variables (see chase_cps.export). A state machine gets the parameters
+    as frozen variables (FROZENVAR), which its contract reads."""
     from ..cprograms import CFunction
     from ..queries import Implies
     if check == "impl" and isinstance(sym_args[0], CFunction):
         c = sym_args[1]
         return [("impl", Implies(c.assumption, c.guarantee, c.variables))]
+    if check in ("impl", "env") and params:
+        from ..models import as_model
+        m = as_model(sym_args[0], sym_args[1])
+        if m is not None:
+            sym_args = (with_parameters(m, params),) + tuple(sym_args[1:])
     from ..export import questions as export_questions
     return export_questions(check, *sym_args)[1]
+
+
+def with_parameters(model, params: dict):
+    """The model with the parameters it does not declare as frozen
+    variables."""
+    import dataclasses
+    from ..backends.nusmv import _smv_type
+    new = {p.name: p.type for p in params.values() if p.name not in model.variables}
+    if not new:
+        return model
+    decls = "".join(f"    {n} : {_smv_type(t)};\n" for n, t in new.items())
+    return dataclasses.replace(model, smv=model.smv.rstrip() + "\nFROZENVAR\n" + decls,
+                               variables={**model.variables, **new})
 
 
 @dataclass

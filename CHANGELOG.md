@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+Added:
+
+- Repair of constants inside invariants (`G` of one step, `F` of one step,
+  conditions on the first step): `method="copies"` writes the questions on
+  copies of the state, with the same answers and no temporal operator, and
+  finds the least cost with z3; chosen by `auto` for these terms (two real
+  constants inside `G`, which the counterexamples of nuXmv did not end on,
+  now take a fraction of a second, with the least cost shown).
+
+Fixed:
+
+- Repair of a state machine against a contract with constants: the
+  constants are declared in the model (FROZENVAR); the questions failed
+  with "the model does not declare" them.
+
 ## 0.6.3 (2026-11-01)
 
 0.6.2 was tagged and tested on TestPyPI, not published: its demos found

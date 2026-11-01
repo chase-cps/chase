@@ -24,7 +24,7 @@ The result is
 - ``unknown``: with the reason (a timeout, the rounds spent, a back end
   without an answer).
 
-Three methods, chosen by the formulas:
+The methods, chosen by the formulas:
 
 - ``projection`` (bounded formulas over the reals, z3): the values for which
   the check fails are computed at once, by eliminating the other variables;
@@ -39,6 +39,11 @@ Three methods, chosen by the formulas:
 - ``enumeration`` (a check of satisfiability on formulas that z3 does not
   take, with integer parameters): the values in the order of their cost,
   until one passes.
+- ``copies`` (contracts whose terms are invariants, G of one step, their
+  duals F, and conditions on the first step): the questions written on
+  copies of the state, with the same answers and no temporal operator,
+  answered by z3 (chase_cps.repair.copies). Exact, and chosen by ``auto``
+  for these terms.
 
 Every repaired value is checked by the check itself, with its usual back
 end: the optimization proposes, the check decides.
@@ -104,12 +109,13 @@ def _text(v):
     return ltl.to_str(ltl.Num(v)) if ltl._decimal(v) else None
 
 
-METHODS = ("auto", "projection", "counterexamples", "enumeration")
+METHODS = ("auto", "projection", "copies", "counterexamples", "enumeration")
 
 
 def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
            backend: str = "auto", method: str = "auto", rounds: int | None = None,
-           timeout: float = 300, time_limit: float | None = None, **options) -> Repair:
+           timeout: float = 300, time_limit: float | None = None,
+           **options) -> Repair:
     """The values of the parameters, within their ranges, at the least cost,
     that make the check on the arguments pass. ``method`` forces one of the
     methods (``auto`` chooses by the formulas). ``timeout`` bounds each check;
@@ -123,7 +129,7 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
         raise RepairError("give minimize or maximize, not both")
     params = parameters_of(check, args, parameters)
     sym = symbolic_args(check, args, params)
-    asked = questions(check, sym)
+    asked = questions(check, sym, params)
     cost, aux = _cost(params, minimize, maximize)
     opts = {"timeout": timeout, **options}
 
@@ -145,6 +151,13 @@ def repair(check: str, *args, parameters: dict, minimize=None, maximize=None,
         return done(Repair(UNKNOWN, reason="repair optimizes with z3, which is not installed: "
                                            "pip install chase-cps[z3]"))
     from .project import LIMIT, applicable, eliminated, regions
+    from .copies import reducible
+    if method == "copies" or (method == "auto" and applicable(asked) and not reducible(asked)):
+        why = reducible(asked)
+        if why:
+            return done(Repair(UNKNOWN, method="copies", reason=why))
+        return done(_by_copies(check, args, asked, params, cost, aux, backend, opts, rounds,
+                               timeout, deadline))
     if method in ("auto", "projection"):
         why = applicable(asked) or ("an integer parameter" if any(
             p.integer for p in params.values()) else "")
@@ -289,6 +302,87 @@ def _by_projection(check, args, params, cost, aux, hard, backend, opts, timeout)
     return Repair(UNKNOWN, values, method="projection", check=out.result, rounds=1,
                   reason="the check does not pass with the values of the projection "
                          f"({out.reason or 'it failed'}): the projection and the check disagree")
+
+
+def _by_copies(check, args, asked, params, cost, aux, backend, opts, rounds, timeout,
+               deadline) -> Repair:
+    """Invariants: the questions on copies of the state (chase_cps.repair.
+    copies), which have no temporal operator: their witnesses at once for a
+    check of satisfiability, else their counterexamples, found by z3."""
+    from .copies import on_copies
+    from .project import applicable
+    copies = on_copies(asked, params)
+    why = applicable(copies)
+    if why:
+        return Repair(UNKNOWN, method="copies", reason=why)
+    if check in EXISTENTIAL:
+        r = _by_witnesses(check, args, copies, params, cost, aux, backend, opts, timeout)
+    else:
+        r = _on_copies(check, args, copies, params, cost, aux, backend, opts, rounds,
+                       timeout, deadline)
+    r.method = "copies"
+    return r
+
+
+def _on_copies(check, args, copies, params, cost, aux, backend, opts, rounds, timeout,
+               deadline) -> Repair:
+    """The least cost avoiding the counterexamples on the copies, each made
+    a set of values by a model-based projection, until no question on the
+    copies has one; then the check itself. z3 decides the questions on the
+    copies exactly, and a model-based projection of linear arithmetic has
+    finitely many results, so the rounds end; the least cost of each round
+    is a lower bound, so the last one is the least. (The whole projection
+    of the copies would give the same set in one step, but takes much
+    longer on the examples.)"""
+    from ..backends import z3 as backend_z3
+    from .project import _project_at
+    z3 = backend_z3._z3
+    extra = []
+    for k in range(1, rounds + 1):
+        left = _left(deadline, timeout)
+        if left is None:
+            return _stopped("copies", k - 1, None)
+        o, values = _best(params, cost, aux, [], extra, left)
+        if o.status == "infeasible":
+            return Repair(IMPOSSIBLE, method="copies", rounds=k - 1,
+                          reason="no values in the ranges pass the questions on the copies")
+        if o.status not in ("optimal", "not_attained"):
+            return Repair(UNKNOWN, method="copies", rounds=k - 1,
+                          reason=f"the optimization: {o.status} {o.reason}".strip())
+        broken = False
+        for name, q in copies:
+            e = backend_z3.Encoding(q.variables, rigid=params)
+            body = z3.And(e.formula(q.phi), z3.Not(e.formula(q.psi)), *e.bounds())
+            point = []
+            for p, par in params.items():
+                v = e.var(p)
+                point.append(v == (z3.RealVal(str(values[p])) if z3.is_real(v)
+                                   else z3.IntVal(int(values[p]))))
+            others = [v for (n, _), v in e.vars.items() if n not in params]
+            piece = _project_at(z3, others, body, point, left)
+            if piece is None:
+                s = z3.Solver()
+                s.set("timeout", int(left * 1000))
+                s.add(body, *point)
+                verdict = s.check()
+                if verdict == z3.unsat:
+                    continue
+                if verdict != z3.sat:
+                    return Repair(UNKNOWN, values, method="copies", rounds=k,
+                                  reason=f"z3 gave no answer on {name}")
+                piece = z3.And(*point)
+            extra.append(z3.Not(piece))
+            broken = True
+        if not broken:
+            out = run(check, instantiated(args, values), backend, opts)
+            if out.passed:
+                return Repair(REPAIRED, values, _cost_of(cost, aux, values, params),
+                              o.status == "optimal", "copies", out.result, k)
+            return Repair(UNKNOWN, values, method="copies", check=out.result, rounds=k,
+                          reason="the check does not pass with the values that pass on the "
+                                 f"copies ({out.reason or 'it failed'})")
+    return Repair(UNKNOWN, method="copies", rounds=rounds,
+                  reason=f"no repair after {rounds} round{'' if rounds == 1 else 's'}")
 
 
 def _by_witnesses(check, args, asked, params, cost, aux, backend, opts, timeout) -> Repair:
