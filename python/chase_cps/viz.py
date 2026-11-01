@@ -4199,8 +4199,25 @@ function openWave(tr, first, title, pick, reqName) {
     if (S.all) { S.px = Math.max(WV.min, Math.min(WV.max, avail() / cols)); draw(); scroll.scrollLeft = 0; } else place();
   });
   WAVE.ro.observe(scroll);
-  WAVE.resize = () => { fitHeight(); place(); };
+  WAVE.bro = new ResizeObserver(() => { if (WAVE.open) viewAboveWave(true); });   // the drawer taller or shorter
+  WAVE.bro.observe(box);
+  WAVE.resize = () => { fitHeight(); place(); viewAboveWave(true); };
   addEventListener("resize", WAVE.resize);
+}
+// The diagram ends above the drawer, as it ends left of the details: what was in the middle stays in the
+// middle; a diagram seen whole that the drawer would cut is fitted to the room left, and again at the close.
+function viewAboveWave(on) {
+  const v = document.getElementById("view"), box = document.getElementById("wave");
+  const h0 = v.clientHeight;
+  const whole = H => cam && cam.y >= TOP - 1 && cam.y + size0.h * cam.k <= H + 1;
+  const was = whole(h0);
+  v.style.bottom = on ? Math.max(0, innerHeight - box.getBoundingClientRect().top + 8) + "px" : "";
+  const d = h0 - v.clientHeight;
+  if (!cam || !d) return;
+  cam.y -= d / 2;
+  if (on && was && !whole(v.clientHeight)) { fit(); WAVE.fitted = true; }
+  else if (!on && WAVE.fitted) { fit(); WAVE.fitted = false; }
+  else place();
 }
 function closeWave() {
   const box = document.getElementById("wave"), tip = document.getElementById("tip");
@@ -4212,6 +4229,8 @@ function closeWave() {
   if (WAVE.move) removeEventListener("pointermove", WAVE.move);
   if (WAVE.resize) removeEventListener("resize", WAVE.resize);
   if (WAVE.ro) WAVE.ro.disconnect();
+  if (WAVE.bro) WAVE.bro.disconnect();
+  viewAboveWave(false);
 }
 // The code of a C function in the details, folded: its title says whose it is.
 function codeSection(n) {

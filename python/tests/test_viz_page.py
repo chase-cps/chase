@@ -875,6 +875,22 @@ def test_the_waveform_opens_and_closes(browser, tmp_path):
     assert errors == []
 
 
+def test_the_diagram_ends_above_the_waveform(browser, tmp_path):
+    # the drawer open: the diagram area ends above it, the diagram fitted there; closed: the whole window again
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    top = page.locator("#wave").bounding_box()["y"]
+    view = page.locator("#view").bounding_box()
+    assert view["y"] + view["height"] <= top
+    click(page, page.locator('button[onclick="fit()"]'))
+    page.wait_for_timeout(100)
+    boxes = [b for b in (page.locator(f"[data-box] >> nth={i}").bounding_box() for i in range(page.locator("[data-box]").count())) if b]
+    assert max(b["y"] + b["height"] for b in boxes) <= top
+    page.keyboard.press("Escape")
+    view = page.locator("#view").bounding_box()
+    assert view["y"] + view["height"] == pytest.approx(800, abs=1)
+    assert errors == []
+
+
 def test_the_waveform_has_no_group_heading_for_one_group(browser, tmp_path):
     # every variable in the terms of the requirement: no heading at all
     page, errors = wave_page(browser, tmp_path, {"vars": ["n"], "more": 0, "cut": False, "loop": 1, "at": 1,
