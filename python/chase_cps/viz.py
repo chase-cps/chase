@@ -433,13 +433,10 @@ class _Scene:
             model.update(source="c", code=_c_source(k.implementation))
         else:
             model["source"] = (getattr(k.implementation, "source", None) or {}).get("kind")
-        # a C function with no contract: the check of the code alone
-        safe = isinstance(k.implementation, CFunction) and not k.contract.assumptions \
-            and not k.contract.guarantees
         node = self.box(k, types=_types(k.contract), kind="component", title=k.name,
                         contract=self.terms(k.contract),
                         model=model,
-                        badge={"text": "safe" if safe else "M ⊨ C", "status": _status(k.status),
+                        badge={"text": "M ⊨ C", "status": _status(k.status),
                                **({"reason": why_not} if (why_not := getattr(k, "reason", "") or
                                   (getattr(k.status, "reason", "") if _status(k.status) == "unknown" else "")) else {}),
                                **({"why": _why(k.status, k.contract)} if _why(k.status) else {})},
@@ -1095,7 +1092,7 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                                                           and scene.objs.get(n["id"]) == id(obj)]
         for n in boxes:
             tag = n.get("badge", {}).get("text", "")
-            if tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe"):
+            if tag.startswith(name):
                 # what it is checked against: given, else the contract of a system (its refinement)
                 high = against[0] if against else obj.contract if isinstance(obj, System) and name == "⪯" else None
                 n["badge"]["why"] = _why(result, high)
@@ -2375,7 +2372,6 @@ const WHAT = { "A": "compatible: the assumptions A are satisfiable",
                "WS": "well-separated: the component cannot win by making the environment break A",
                "¬V": "not vacuous: each liveness guarantee asks something of the component",
                "M ⊨ C": "the model implements the contract",
-               "safe": "safe code: no overflow, division by zero, access out of bounds, or failed assert",
                "E ⊨ A": "the environment satisfies the assumptions",
                "⪯": "what is inside refines this contract" };
 const checks = n => show.checks && n.checks ? n.checks : [];
@@ -3083,7 +3079,7 @@ function help() {
     tag(svg, 44 - w - 2, 2, t, "valid"); tag(svg, 46, 2, t, "invalid");
     d2.appendChild(document.createTextNode(d)); h.appendChild(d2); };
   [["A", "compatible"], ["G", "consistent"], ["A∧G", "feasible"], ["R", "realizable"],
-   ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"], ["safe", "safe code"],
+   ["WS", "well-separated"], ["¬V", "no vacuous output"], ["M ⊨ C", "implements"],
    ["E ⊨ A", "environment"], ["⪯", "refines"]].forEach(([t, d]) => pair(t, d));
   sample(s => el("rect", { x: 4, y: 4, width: 40, height: 12, rx: 3, fill: "#f6dcd9" }, s), "core (click a red tag)");
   sample(s => { tag(s, 4, 2, "⪯", "invalid"); }, "click a result: the check, and its repairs");
@@ -3346,7 +3342,6 @@ function claimOf(n, t) {
     return n.model.name === req && n.model.source !== "c" ? [B(req), v(" meets its contract", " does not meet its contract")]
                                                           : meets(model, model[1].b === req ? null : req);
   }
-  if (t === "safe" && n.model) return [B(n.model.name), v(" is safe code", " is not safe code")];
   if (t === "E ⊨ A") {                // whose environment: the contract its wires go to
     const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
     const of = to && ((to.contract && to.contract.name) || to.title);
@@ -3581,7 +3576,7 @@ function fillPanel() {
 function whySection(n, t, st) {
   if (st !== "invalid") return null;
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "Counterexample"));
-  if (t !== "⪯" && t !== "M ⊨ C" && t !== "safe" && t !== "E ⊨ A") {
+  if (t !== "⪯" && t !== "M ⊨ C" && t !== "E ⊨ A") {
     const c = (n.checks || []).find(x => x.name === t);
     if (!(c && c.core)) return null;
     sec.firstChild.textContent = "Why it fails";
@@ -3820,7 +3815,8 @@ function noRepairSection(n, t) {
   const holed = (n.children || []).some(c => c.kind === "hole") || n.kind === "hole";
   const of = t === "E ⊨ A" ? (() => { const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
                                       return to ? (to.contract && to.contract.name) || to.title : null; })() : null;
-  const points = t === "safe"
+  const bare = !((n.contract || {}).A || []).length && !((n.contract || {}).G || []).length;
+  const points = t === "M ⊨ C" && clauses && bare        // no clause: the contract (⊤, ⊤), the code alone fails
     ? ["Fix the code, or exclude such inputs with a requires clause."]
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]

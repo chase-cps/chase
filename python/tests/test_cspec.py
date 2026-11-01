@@ -111,7 +111,7 @@ def test_a_c_file_is_drawn(cfile):
     assert nodes["thermostat"]["badge"] == {"text": "M ⊨ C", "status": "valid"}
     assert nodes["clamp"]["model"]["code"]["parts"][0]["text"].count("__CPROVER_") == 5   # as written
     s = nodes["scale"]["badge"]
-    assert s["text"] == "safe" and s["status"] == "invalid"
+    assert s["text"] == "M ⊨ C" and s["status"] == "invalid"           # no clause: the contract (⊤, ⊤)
     assert s["why"]["trace"]["steps"] == [[3]] and "division by zero" in s["why"]["reason"]
     assert nodes["scale"]["types"]["a"]["label"] == "int"
 
