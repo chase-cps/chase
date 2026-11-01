@@ -215,11 +215,37 @@ def test_a_system_marks_its_components_and_open_inputs():
     assert s.connections() == [("a", "b", "y")]
     group = viz.diagram(s)["nodes"][0]
     kinds = [(k["kind"], k.get("badge", {}).get("status")) for k in group["children"]]
-    assert kinds == [("component", "valid"), ("contract", None), ("contract", None)]
+    # the input w of c, given by neither the contract nor a part: the part not written drives it
+    assert kinds == [("component", "valid"), ("contract", None), ("contract", None), ("hole", None)]
     assert group["children"][0]["model"]["fsm"]["count"] == 1
-    assert any(w.get("open", [None])[0] == group["children"][2]["id"] for w in group["edges"])
+    hole = group["children"][3]
+    assert "w" in hole["outputs"]
+    assert any(e.get("from") == [hole["id"], "out", "w"] and e.get("to") == [group["children"][2]["id"], "in", "w"]
+               for e in group["edges"])
     assert group["title"] == "S" and group["contract"]["name"] == "Top"   # the system, in its contract
     assert group["note"].startswith("Contract Top")
+
+
+def test_a_system_with_a_part_missing_draws_its_quotient():
+    # the outputs of the contract and the inputs of the parts that nobody drives (the logic of a
+    # module besides its instances): the quotient of the contract by the parts, as a hole
+    top = Contract.from_strings(name="Top", inputs={"x": "bool"}, outputs={"y": "bool", "z": "bool"},
+                                guarantees=["G (x -> X y)", "G (x -> X z)"])
+    a = Contract.from_strings(name="A", inputs={"x": "bool"}, outputs={"m": "bool"}, guarantees=["G (x -> X m)"])
+    b = Contract.from_strings(name="B", inputs={"m": "bool", "k": "bool"}, outputs={"y": "bool"},
+                              guarantees=["G (m -> y)"])
+    group = viz.diagram(System("Top", [Component("A", a), Component("B", b)], contract=top))["nodes"][0]
+    hole = group["children"][-1]
+    assert hole["kind"] == "hole" and hole["title"] == "?" and hole["note"] == "Top / A ⊗ B"
+    assert {"k", "z"} <= set(hole["outputs"])
+    ids = {c["title"]: c["id"] for c in group["children"]}
+    assert any(e.get("from") == [ids["?"], "out", "k"] and e.get("to") == [ids["B"], "in", "k"] for e in group["edges"])
+    assert group["note"].endswith("⊗ ?")
+    # every signal driven: no hole
+    full = viz.diagram(System("AB", [Component("A", a), Component("B", b)],
+                              contract=Contract.from_strings(name="AB", inputs={"x": "bool", "k": "bool"},
+                                                             outputs={"y": "bool"}, guarantees=["G (x -> X y)"])))
+    assert all(c["kind"] != "hole" for c in full["nodes"][0]["children"])
 
 
 def test_checks_and_cores_are_marked_on_the_box():

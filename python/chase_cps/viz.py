@@ -38,6 +38,7 @@ from a CDN).
 from __future__ import annotations
 
 import html as _html
+import functools
 import json
 import os
 import re
@@ -361,8 +362,32 @@ class _Scene:
         self.drawn.setdefault(id(k.contract), k.contract)
         return node
 
+    def missing(self, s: System) -> Optional[dict]:
+        """The part of s not written: when its components leave an output of
+        its contract, or an input of a component that the contract does not
+        give, driven by none (the logic of a module besides its instances),
+        the quotient of the contract by the components, as from_spec draws
+        it: a dashed hole, in closed form (no check)."""
+        if s.contract is None or not s.components:
+            return None
+        driven = set().union(*(k.contract.outputs for k in s.components))
+        read = set().union(*(k.contract.inputs for k in s.components))
+        if not (set(s.contract.outputs) - driven) | (read - set(s.contract.inputs) - driven):
+            return None
+        try:
+            parts = functools.reduce(lambda a, b: a.compose(b), [k.contract for k in s.components])
+            q = s.contract.divide(parts, name="?")
+        except Exception:                     # the drawing does without it
+            return None
+        return self.box(q, types=_types(q), kind="hole", title=q.name,
+                        note=f"{s.contract.name} / " + " ⊗ ".join(k.name for k in s.components),
+                        contract=self.terms(q), inputs=sorted(q.inputs), outputs=sorted(q.outputs))
+
     def system(self, s: System) -> dict:
         children = [self.component(k) for k in s.components]
+        hole = self.missing(s)
+        if hole is not None:
+            children.append(hole)
         if s.contract is not None:
             inputs = s.contract.inputs
         else:
@@ -372,7 +397,7 @@ class _Scene:
         return self.box(s, types=_types(*(k.contract for k in s.components),
                                          *([s.contract] if s.contract else [])),
                         kind="group", op="system", title=s.name,
-                        note=" ⊗ ".join(k.name for k in s.components), contract=None,
+                        note=" ⊗ ".join([k.name for k in s.components] + (["?"] if hole else [])), contract=None,
                         inputs=sorted(inputs), outputs=outputs, children=children,
                         edges=_wires(children, inputs) + _out(children, outputs))
 
@@ -1689,7 +1714,7 @@ _PAGE = r"""<!doctype html>
   #pop { position:fixed; left:50%; top:12%; transform:translateX(-50%); max-width:min(860px, 90vw); max-height:72vh;
          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 10px 36px rgba(0,0,0,.16);
          display:none; flex-direction:column; z-index:10; }
-  #pop header { padding:9px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
+  #pop header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
   table.fsm { border-collapse:collapse; font:11.5px Menlo, Monaco, monospace; }
@@ -1705,12 +1730,14 @@ _PAGE = r"""<!doctype html>
           font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   body.insp #insp { display:flex; }
   body.insp #view { right:424px; }
-  #insp-bar { display:flex; align-items:center; gap:6px; min-height:34px; padding:0 10px 0 14px; border-bottom:1px solid #e3e8e8; flex:none;
+  #insp-bar { display:flex; align-items:center; gap:6px; min-height:40px; padding:0 10px 0 14px; border-bottom:1px solid #e3e8e8; flex:none;
               font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--teal); }
   #insp-bar .count { padding:0 5px; border-radius:7px; background:var(--bad); color:#fff; font-size:10.5px; }
-  #insp-bar button.back { border:0; background:none; cursor:pointer; color:var(--teal); padding:3px 6px; margin-left:-6px;
-                          border-radius:5px; font:inherit; }
-  #insp-bar button.back:hover { background:var(--fill); }
+  /* the back arrow as far from the left, the top, the bottom, and its word */
+  #insp-bar button.back { display:flex; align-items:center; gap:8px; border:0; background:none; cursor:pointer; color:var(--teal);
+                          padding:0; margin-left:-6px; font:inherit; }
+  #insp-bar button.back .ib { color:var(--teal); }
+  #insp:focus { outline:none; }
   #repair { flex:1; overflow:auto; }
   @media (max-width: 820px) {
     #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
@@ -1724,8 +1751,12 @@ _PAGE = r"""<!doctype html>
   .rp-head { display:grid; grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
              padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1; }
   .rp-head b { flex:1; font-size:12.5px; font-weight:600; min-width:0; overflow-wrap:anywhere; }
-  .rp-x { border:0; background:none; cursor:pointer; color:var(--soft); font-size:16px; line-height:1; padding:2px 6px; border-radius:5px; }
-  .rp-x:hover { background:var(--fill); color:var(--teal); }
+  /* the small icons of the page: one size, one stroke, as the icons of the tools */
+  .ib { display:inline-flex; align-items:center; justify-content:center; flex:none; width:24px; height:24px; padding:0;
+        border:0; border-radius:5px; background:none; color:var(--soft); cursor:pointer; }
+  .ib svg, .chev svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
+                       stroke-linecap:round; stroke-linejoin:round; }
+  button.ib:hover, button.back:hover .ib { background:var(--fill); color:var(--teal); }
   .rp-tag { flex:none; display:block; }
   .rp-chip { flex:none; font:600 10.5px 'Arial Unicode MS', 'Segoe UI', Helvetica, Arial, sans-serif; color:#fff; border-radius:4px;
              padding:1px 6px; background:var(--faint); }
@@ -1788,13 +1819,17 @@ _PAGE = r"""<!doctype html>
   table.rp-trace th.cur { color:#2f6fb5; box-shadow:inset 0 -2px #2f6fb5; }
   table.rp-trace th.cur.fail { color:var(--bad); }
   table.rp-trace td.cur { box-shadow:inset 2px 0 #2f6fb5, inset -2px 0 #2f6fb5; }
-  table.rp-trace th.k { cursor:pointer; } table.rp-trace th.k:hover { color:#2f6fb5; }
+  table.rp-trace .k { cursor:pointer; } table.rp-trace th.hov { color:#2f6fb5; } table.rp-trace td.hov { background:#eef4fb; }
+  table.rp-trace td.fail.hov { background:#f6dedc; }
   .rp-at { color:var(--soft); margin-top:4px; } .rp-at .b { color:#2f6fb5; font-weight:600; } .rp-at .r { color:var(--bad); font-weight:600; }
   table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
   .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
              font:11px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; padding:4px 0 0; }
   pre.code { margin:0 0 12px; font:11.5px/1.55 Menlo, Monaco, monospace; color:var(--ink); overflow-x:auto; }
-  details.rp-code > summary { cursor:pointer; margin:2px 0; }
+  details.rp-code > summary { cursor:pointer; margin:2px 0 2px -4px; list-style:none; display:flex; align-items:center; gap:2px; }
+  details.rp-code > summary::-webkit-details-marker { display:none; }
+  .chev { display:inline-flex; color:var(--soft); transition:transform .12s; }
+  details[open] > summary .chev { transform:rotate(90deg); }
   details.rp-code[open] > summary { margin-bottom:6px; }
   details.rp-code pre.code { margin-bottom:4px; }
   pre.code span.l { display:block; } pre.code span.l.hit { background:#fbeceb; }
@@ -1834,8 +1869,8 @@ _PAGE = r"""<!doctype html>
 <div id="stale"></div>
 <div id="busy">checking…</div>
 <div id="tip"></div>
-<div id="pop"><header><b id="poptitle"></b><button class="rp-x" title="Close" aria-label="Close" onclick="closePop()">×</button></header><div id="popview"></div></div>
-<div id="insp" role="complementary" aria-label="The checks"><div id="insp-bar"></div><div id="repair"></div></div>
+<div id="pop"><header><b id="poptitle"></b><button class="ib" title="Close" aria-label="Close" onclick="closePop()"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></header><div id="popview"></div></div>
+<div id="insp" role="complementary" aria-label="The checks" tabindex="-1"><div id="insp-bar"></div><div id="repair"></div></div>
 __ELK__
 <script>
 let DATA = __DATA__;
@@ -2486,6 +2521,9 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
       else hideInspector();
       return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && inspector.open && panel && panel.goStep
+        && document.getElementById("insp").contains(document.activeElement)) {   // the step of the counterexample
+      panel.goStep(e.key === "ArrowLeft" ? -1 : 1); e.preventDefault(); return; }
       if (!cam) return;
     if (e.key === "+" || e.key === "=") zoomBy(1.25);
     else if (e.key === "-") zoomBy(1 / 1.25);
@@ -3021,6 +3059,7 @@ async function openRepair(n, t) {
                       (b.children || []).forEach(walk); })(n);
   await render();
   renderInspector();
+  document.getElementById("insp").focus({ preventScroll: true });    // the arrow keys: the steps of its counterexample
   bringInto(n);
   if (r0 && backend() && statusOf(n, t) === "invalid") {   // found at once: the constants that may change already
     const s = stateOf(r0);
@@ -3051,7 +3090,8 @@ function renderInspector() {
   const bar = document.getElementById("insp-bar");
   bar.innerHTML = "";
   if (inspector.tab === "details")
-    bar.append(h("button", { class: "back", title: "Back to the checks that fail (Esc)", onclick: closeRepair }, "← Problems"));
+    bar.append(h("button", { class: "back", title: "Back to the checks that fail (Esc)", onclick: closeRepair },
+      svgSpan("ib", '<path d="M13 8H3M7 4L3 8l4 4"/>'), "Problems"));
   else bar.append("Problems", list.length ? h("span", { class: "count" }, String(list.length)) : "");
   if (inspector.tab === "problems") fillProblems(list);
   else fillPanel();
@@ -3137,31 +3177,20 @@ function whySection(n, t, st) {
   const code = n.model && n.model.source === "c";
   // said only when the table does not: which side fails
   const lead = w && w.failed === "assumptions"
-    ? "The environment of this trace meets the assumptions of " + req + " and breaks an assumption of the "
-      + "parts: " + req + " allows an input that the parts do not accept." : null;
+    ? req + " allows this input, and the parts do not accept it." : null;
   if (w && w.trace) {
     if (lead) sec.appendChild(h("div", {}, lead));
     if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
-      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, "The assumptions it breaks (in red):"),
+      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, "The assumptions of the parts it breaks (red):"),
         w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     const last = w.trace.steps.length - 1;
-    let slider = null, say = () => {};
-    const go = k => {                      // a step of the counterexample, on the diagram, in the table, on the slider
-      panel.step = k; say(k); replay(n, w.trace, k); table.setStep(k);
-      if (slider) slider.value = k;
-    };
+    // the table picks the step on the diagram: a click on a column, or the arrow keys
+    const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k); };
     const table = traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req, last > 0 ? panel.step || 0 : null, go);
+    panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
     sec.appendChild(table);
-    if (last > 0) {
-      const label = h("span", {}, "");
-      say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) : "step " + k) + (w.trace.loop === k ? " ↺" : ""); };
-      slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
-        oninput: e => go(+e.target.value) });
-      say(panel.step || 0);
-      sec.appendChild(h("div", { class: "rp-step", title: "The values of this step are on the diagram" }, slider, label));
-    }
   } else {
     sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
                       "Not kept: " + (inEditor() ? "press ▶ to check again." : "run the check again.")));
@@ -3189,7 +3218,7 @@ function reasonOf(r) {
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
 // With a step (the one on the diagram): its column marked blue, the column of the step that fails
-// first red, a line above that says which is which; a click on the head of a column picks its step.
+// first red; a click on a column picks its step, and the arrow keys the next one.
 function traceTable(tr, first, req, step, onPick) {
   const fmt = v => v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
@@ -3204,15 +3233,15 @@ function traceTable(tr, first, req, step, onPick) {
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
   const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
   const picks = step !== null && step !== undefined && onPick;
+  const show = k => picks ? "Show " + (DATA.period ? "t = " + timeOf(k) : "step " + k) + " on the diagram" : "";
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
     tr.steps.map((_, i) => h("th", { class: (tr.at === i ? "fail" : "") + (picks ? " k" : ""), "data-k": String(i),
-                                     title: (tr.at === i ? "a term fails first at this step. " : "")
-                                            + (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
-                                            + (DATA.period ? "step " + i + ". " : "") + (picks ? "Click: this step on the diagram." : ""),
-                                     onclick: picks ? () => onPick(i) : null },
+                                     title: (tr.at === i ? "A term fails first at this step. " : "")
+                                            + (tr.loop === i ? "The loop starts here. " : "") + show(i) },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
-    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: tr.at === k ? "fail" : "", "data-k": String(k) }, cell(st[i])))));
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: (tr.at === k ? "fail" : "") + (picks ? " k" : ""),
+                                                                           "data-k": String(k), title: show(k) }, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
@@ -3227,18 +3256,15 @@ function traceTable(tr, first, req, step, onPick) {
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
   if (!picks) { wrap.setStep = () => {}; return wrap; }
-  const at = h("div", { class: "rp-at" });
-  const name = k => DATA.period ? "t = " + timeOf(k) : "step " + k;
-  const out = h("div", {}, at, wrap);
+  const out = wrap;
+  const column = k => t.querySelectorAll('[data-k="' + k + '"]');
+  t.addEventListener("click", e => { const c = e.target.closest("[data-k]"); if (c) onPick(+c.dataset.k); });
+  t.addEventListener("mouseover", e => { const c = e.target.closest("[data-k]");
+    t.querySelectorAll(".hov").forEach(x => x.classList.remove("hov")); if (c) column(c.dataset.k).forEach(x => x.classList.add("hov")); });
+  t.addEventListener("mouseleave", () => t.querySelectorAll(".hov").forEach(x => x.classList.remove("hov")));
   out.setStep = k => {
     t.querySelectorAll(".cur").forEach(x => x.classList.remove("cur"));
-    t.querySelectorAll('[data-k="' + k + '"]').forEach(x => x.classList.add("cur"));
-    at.innerHTML = "";
-    const fails = tr.at !== null && tr.at !== undefined;
-    if (fails && tr.at === k) at.append("The diagram shows ", h("span", { class: "b" }, name(k) + " (blue)"),
-                                        ", where a term fails first ", h("span", { class: "r" }, "(red)"), ".");
-    else at.append("The diagram shows ", h("span", { class: "b" }, name(k) + " (blue)"),
-                   fails ? h("span", {}, "; a term fails first at ", h("span", { class: "r" }, name(tr.at) + " (red)"), ".") : ".");
+    column(k).forEach(x => x.classList.add("cur"));
     const th = t.querySelector('th[data-k="' + k + '"]'), v = t.querySelector("th");   // the column in view
     if (th) {
       const left = th.offsetLeft - (v ? v.offsetWidth : 0), right = th.offsetLeft + th.offsetWidth;
@@ -3259,10 +3285,9 @@ function noRepairSection(n, t) {
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
-    ? ["Repair the named constants in VS Code, or with chase-cps view FILE --serve."]
-    : ["No named constant to repair: change a term of a part or of the requirement. To repair a number, "
-       + "declare it as a named constant in the file, as in: integer constant k 2;"]
-       .concat(t === "⪯" ? ["What a part must guarantee: divide the requirement by the other parts (divide)."] : []);
+    ? ["Repair its constants in VS Code, or with chase-cps view FILE --serve."]
+    : ["Change a term of a part or of the requirement. A number can be repaired once it is named: integer constant k 2;"]
+       .concat(t === "⪯" ? ["What a part must guarantee: the requirement divided by the other parts."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
@@ -3489,7 +3514,7 @@ function codeSection(n) {
   const c = n.model && n.model.code;
   if (!c) return null;
   const d = h("details", { class: "rp-sec rp-code" },
-    h("summary", { class: "rp-h" }, "Code of ",
+    h("summary", { class: "rp-h" }, svgSpan("chev", '<path d="M6 4l4 4-4 4"/>'), "Code of ",
       h("span", { style: "text-transform:none;letter-spacing:0" }, c.file + ": " + n.model.name)));
   d.open = !!panel.code;
   d.addEventListener("toggle", () => { panel.code = d.open; });
@@ -3511,8 +3536,16 @@ function renderQueue() {
 }
 // the wrench opens and closes the panel
 function toggleQueue() {
+  const list = failing();
   if (inspector.open) hideInspector();
+  else if (list.length === 1) openRepair(list[0][0], list[0][1]);    // one check that fails: its details at once
   else showInspector("problems");
+}
+// an icon of the page, as a span: one size and one stroke for all (class ib or chev)
+function svgSpan(cls, paths) {
+  const sp = h("span", { class: cls });
+  sp.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true">' + paths + "</svg>";
+  return sp;
 }
 // the box of the check picked, marked; brought into the view when it is out of it (once, when picked)
 function markPick() {

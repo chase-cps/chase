@@ -372,7 +372,7 @@ CONTRACT Bound:
     assert "Does not hold" not in text         # the red tag says it
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "No named constant to repair" in text
+    assert "A number can be repaired once it is named" in text
     # the panel is docked: the view moves under it, the panel stays
     before = page.locator("#insp").bounding_box()
     page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
@@ -380,10 +380,7 @@ CONTRACT Bound:
     # the box of the check is marked, the term the counterexample breaks is red, its values on the ports
     assert page.locator("#view [data-box].pick").count() == 1
     assert page.locator("#view [data-box].pick rect[fill='#f6dcd9']").count() >= 1
-    slider = page.locator("#repair .rp-step input")
-    slider.scroll_into_view_if_needed()
-    b = slider.bounding_box()
-    page.mouse.click(b["x"] + b["width"] - 3, b["y"] + b["height"] / 2)
+    click(page, page.locator("#repair table.rp-trace td.k").last)    # a column of the table: its step on the diagram
     assert any(v.startswith("n = ") for v in page.locator("#view .pv-val").all_text_contents())
     # the list of the problems: this one, though it has no constant
     back = page.locator("#insp-bar button.back", has_text="Problems").bounding_box()
@@ -421,13 +418,11 @@ CONTRACT Bound:
     head = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert head[:4] == ["t", "0", "0.25", "0.5"]
     assert page.get_attribute("#repair table.rp-trace th", "title") == "time: a step every 0.25 s"
-    s = page.locator("#repair .rp-step input").bounding_box()
-    page.mouse.move(s["x"] + 3, s["y"] + s["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(s["x"] + s["width"] - 3, s["y"] + s["height"] / 2, steps=6)
-    page.mouse.up()
-    last = page.locator("#repair table.rp-trace tr").first.locator("th").count() - 2
-    assert page.inner_text("#repair .rp-step").startswith(f"t = {last * 0.25:g}")
+    # a column says its time, and a click on it puts that time on the diagram
+    cell = page.locator('#repair table.rp-trace td[data-k="2"]').first
+    assert cell.get_attribute("title") == "Show t = 0.5 on the diagram"
+    click(page, cell)
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "2"
     assert errors == []
 
 
@@ -448,7 +443,10 @@ def test_the_code_of_a_c_function(browser, tmp_path):
     assert codes[1].startswith("1") and "return x + 1" in codes[1]
     # closed by a small cross, as the panel, or by Esc
     x = page.locator("#pop header button")
-    assert x.inner_text() == "×" and x.get_attribute("aria-label") == "Close" and "rp-x" in x.get_attribute("class")
+    assert x.get_attribute("aria-label") == "Close" and "ib" in x.get_attribute("class").split()
+    assert x.locator("svg").count() == 1                    # the cross of the page, as an icon
+    head, b = page.locator("#pop header").bounding_box(), x.bounding_box()
+    assert abs((head["x"] + head["width"] - (b["x"] + b["width"])) - (b["y"] - head["y"])) <= 1.5   # right as top
     b = x.bounding_box()
     page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
     assert not page.is_visible("#pop")
@@ -476,11 +474,14 @@ def test_the_button_of_the_transition_labels(browser, tmp_path):
 
 
 def test_an_input_that_nothing_drives(browser, tmp_path):
-    # its name in the color of the warning, a dashed stub before it, and no words over the names
-    from chase_cps import Component, Contract, System
+    # in a decomposition drawn in the contract it refines: its name in the color of the warning,
+    # a dashed stub before it, and no words over the names (a System draws the part not written instead)
+    from chase_cps import Contract
     a = Contract.from_strings(name="A", inputs=["x", "q"], outputs=["y"], guarantees=["G ((x & q) -> y)"])
-    top = Contract.from_strings(name="Top", inputs=["x"], outputs=["y"], guarantees=["G (x -> y)"])
-    page, errors = open_page(browser, tmp_path, viz.diagram(System("S", [Component("A", a)], contract=top)))
+    b = Contract.from_strings(name="B", inputs=["y"], outputs=["z"], guarantees=["G (y -> z)"])
+    top = Contract.from_strings(name="Top", inputs=["x"], outputs=["y", "z"], guarantees=["G (x -> z)"])
+    ab = a.compose(b)
+    page, errors = open_page(browser, tmp_path, viz.diagram(refines=[(ab, top, "valid")]))
     assert not errors
     q = page.locator('#view text[data-var="q"][data-side="left"]')
     assert q.count() == 1 and "warn" in (q.get_attribute("style") or "")
@@ -562,7 +563,8 @@ def test_the_panel_goes_from_the_list_to_the_details_and_back(browser, tmp_path)
     assert page.locator("#insp-bar button").count() == 0
     click(page, page.locator("#repair .q-item", has_text="implement"))
     page.wait_for_selector("#repair .rp-head", timeout=5000)
-    assert page.inner_text("#insp-bar").strip() == "← Problems"
+    assert page.inner_text("#insp-bar").strip() == "Problems"
+    assert page.locator("#insp-bar button.back .ib svg").count() == 1   # the arrow of the page, as an icon
     # the code of the function: in the details, folded, after the counterexample
     code = page.locator("#repair details.rp-code")
     assert code.count() == 1 and not code.evaluate("d => d.open")
@@ -610,26 +612,54 @@ def test_the_list_of_the_problems_is_aligned(browser, tmp_path):
 
 
 def test_the_step_on_the_diagram_in_the_table(browser, tmp_path):
-    # the column of the step on the diagram is marked, and follows the slider; the column of the step
-    # that fails first stays red; a line says which is which; a click on the head of a column picks it
+    # the table picks the step on the diagram: a click on any cell of a column, or the arrow keys;
+    # its column is blue, the column of the step that fails first stays red; no slider, no line about it
     page, errors = two_problems(browser, tmp_path)
     click(page, page.locator("#repair .q-item", has_text="refine"))
     page.wait_for_selector("#repair table.rp-trace", timeout=5000)
     fail = page.get_attribute("#repair table.rp-trace th.fail", "data-k")
     assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == fail       # it opens there
-    assert page.inner_text("#repair .rp-at") == f"The diagram shows step {fail} (blue), where a term fails first (red)."
-    slider = page.locator("#repair .rp-step input")
-    slider.scroll_into_view_if_needed()
-    s = slider.bounding_box()
-    page.mouse.move(s["x"] + s["width"] / 2, s["y"] + s["height"] / 2)
-    page.mouse.down(); page.mouse.move(s["x"] + 2, s["y"] + s["height"] / 2, steps=6); page.mouse.up()
+    assert page.locator("#repair .rp-step, #repair .rp-at, #repair input[type=range]").count() == 0
+    cell = page.locator('#repair table.rp-trace td[data-k="0"]').first
+    assert cell.get_attribute("title") == "Show step 0 on the diagram"
+    click(page, cell)
     assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "0"
-    assert page.locator("#repair table.rp-trace td.cur").count() >= 1
+    assert page.locator('#repair table.rp-trace td.cur[data-k="0"]').count() >= 1
     assert page.get_attribute("#repair table.rp-trace th.fail", "data-k") == fail          # red stays
-    assert page.inner_text("#repair .rp-at") == f"The diagram shows step 0 (blue); a term fails first at step {fail} (red)."
-    # a click on the head of the column of step 1
-    click(page, page.locator('#repair table.rp-trace th[data-k="1"]'))
+    assert "n = 0" in page.locator("#view .pv-val").all_text_contents()
+    # the arrow keys, the panel focused: the next step and back
+    page.keyboard.press("ArrowRight")
     assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "1"
-    assert slider.evaluate("e => e.value") == "1" and page.inner_text("#repair .rp-step").startswith("step 1")
     assert "n = 1" in page.locator("#view .pv-val").all_text_contents()
+    page.keyboard.press("ArrowLeft"); page.keyboard.press("ArrowLeft")      # not before the first step
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "0"
+    assert errors == []
+
+
+def test_one_check_that_fails_opens_its_details(browser, tmp_path):
+    # the wrench, with one check that fails: its details at once; back to the list of one
+    (tmp_path / "w.ltl").write_text(TWO_PROBLEMS)
+    d = viz.from_spec(str(tmp_path / "w.ltl"), refines=[("Counter", "Bound")], check=True)
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator("#repairs"))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert "does not refine" in page.inner_text("#repair .rp-head")
+    click(page, page.locator("#insp-bar button.back"))
+    assert page.locator("#repair .q-item").count() == 1
+    assert errors == []
+
+
+def test_the_icons_keep_their_distances(browser, tmp_path):
+    # the cross of the model window as far from the right as from the top; the back arrow as far
+    # from the left, the top, the bottom, and its word
+    page, errors = two_problems(browser, tmp_path)
+    click(page, page.locator("#repair .q-item", has_text="refine"))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    bar = page.locator("#insp-bar").bounding_box()
+    icon = page.locator("#insp-bar .back .ib").bounding_box()
+    word = page.evaluate("""() => { const r = document.createRange(), b = document.querySelector('#insp-bar .back');
+      r.selectNodeContents(b.lastChild); return r.getBoundingClientRect().left; }""")
+    left, top = icon["x"] - bar["x"], icon["y"] - bar["y"]
+    bottom = bar["y"] + bar["height"] - 1 - (icon["y"] + icon["height"])       # less the line below the bar
+    assert abs(left - top) <= 1.5 and abs(top - bottom) <= 1.5 and abs(word - (icon["x"] + icon["width"]) - left) <= 1.5
     assert errors == []
