@@ -1720,11 +1720,10 @@ _PAGE = r"""<!doctype html>
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
   /* the waveform: a drawer under the diagram, beside the details; the names and values on the left, the steps scrolled and zoomed */
-  #wave { position:fixed; left:16px; right:16px; bottom:16px; max-height:45vh; box-sizing:border-box;
+  #wave { position:fixed; left:16px; right:16px; bottom:16px; box-sizing:border-box;
           background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 6px 28px rgba(0,0,0,.14);
           display:none; flex-direction:column; z-index:11; outline:none; overflow:hidden; }
   body.insp #wave { right:calc(12px + min(402px, 100vw - 22px) + 16px); }   /* the details: 400 pixels and their border */
-  #wave.sized { max-height:none; } #wave.sized .wv-scroll { flex:1 1 auto; }
   .wv-grip { position:absolute; top:0; left:0; right:0; height:8px; cursor:ns-resize; z-index:4; }
   .wv-grip::after { content:""; position:absolute; left:50%; top:3px; width:36px; height:3px; margin-left:-18px; border-radius:2px; background:#dfe5e5; }
   .wv-grip:hover::after, .wv-grip.drag::after { background:var(--line); }
@@ -1746,7 +1745,9 @@ _PAGE = r"""<!doctype html>
   .wv-scroll::-webkit-scrollbar { display:none; }
   .wv-scroll.pan { cursor:grabbing; }
   .wv-grid { position:relative; min-width:100%; }
-  .wv-hov { display:none; position:absolute; top:0; bottom:0; background:rgba(47,111,181,.07); pointer-events:none; }
+  .wv-hov { display:none; position:absolute; top:0; bottom:0; background:rgba(23,57,59,.05); pointer-events:none; }
+  .wv-fade { display:none; position:absolute; left:1px; right:1px; height:12px; z-index:3; pointer-events:none;
+             background:linear-gradient(rgba(255,255,255,0), rgba(255,255,255,.95)); box-shadow:inset 0 -1px #e3e8e8; }
   .wv-row { display:flex; align-items:stretch; border-bottom:1px solid #f1f4f4; }
   .wv-row.nb { border-bottom-color:transparent; }
   .wv-row.odd .wv-left { background:#fafbfb; }
@@ -1778,7 +1779,8 @@ _PAGE = r"""<!doctype html>
   .wv-loop { font:600 10px Helvetica, Arial, sans-serif; fill:var(--teal); }
   .wv-fails { font:bold 10px Helvetica, Arial, sans-serif; fill:#b03a2e; }
   .wv-v { font:11px Menlo, Monaco, monospace; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:#f7f9f9; stroke-width:4px; }
-  #wave .wv-bar { margin:4px 16px 0 0; }
+  #wave .wv-bar { display:block; visibility:hidden; flex:none; margin:4px 16px 0 0; }   /* its room kept: the drawer does not jump */
+  #wave .wv-bar.on { visibility:visible; }
   #wave footer { display:flex; gap:16px; padding:6px 16px 8px; font-size:11.5px; color:var(--soft); border-top:1px solid #f1f4f4; }
   #wave footer .wv-note { flex:1; } #wave footer .wv-hint { color:var(--faint); white-space:nowrap; }
   table.fsm { border-collapse:collapse; font:11.5px Menlo, Monaco, monospace; }
@@ -3839,7 +3841,8 @@ function openWave(tr, first, title, pick) {
     + (ghost === 1 ? "column is its" : "columns are their") + " next pass. ";
   const foot = h("footer", {}, h("span", { class: "wv-span" }),
     h("span", { class: "wv-note" }, again + (tr.cut ? "The first " + n + " steps are kept. " : "")),
-    h("span", { class: "wv-hint" }, "Click a step · drag to pan · Ctrl/⌘ + wheel to zoom · ? for the keys"));
+    h("span", { class: "wv-hint" }));
+  const fade = h("div", { class: "wv-fade" });     // over the last row in view, when there are more rows under it
   [["← →", "The step before or after"], ["Alt + ← →  or  [ ]", "The previous or next change of the selected row"],
    ["Home  End", "The first or the last step"], fails ? ["F", "The step that fails"] : null,
    loop !== null ? ["L", "The first step of the loop"] : null, ["↑ ↓", "The row above or below"],
@@ -3847,11 +3850,8 @@ function openWave(tr, first, title, pick) {
    ["Ctrl or ⌘ + wheel", "Zoom where the pointer is"], ["Drag, Shift + wheel", "Pan along the steps"], ["Esc", "Close"]]
     .filter(Boolean).forEach(([k, d]) => keys.append(h("kbd", {}, k), h("span", {}, d)));
   box.innerHTML = "";
-  box.append(grip, bar, keys, scroll, sbar, foot);
+  box.append(grip, bar, keys, scroll, sbar, foot, fade);
   box.style.display = "flex";
-  if (WAVE.height) WAVE.height = Math.min(WAVE.height, innerHeight - 70);
-  const size = () => { box.classList.toggle("sized", !!WAVE.height); box.style.height = WAVE.height ? WAVE.height + "px" : ""; };
-  size();
   WAVE.open = true;
   WAVE.setStep = k => { S.cur = k; draw(); show(k); };
   WAVE.px = () => S.px;                  // for the tests: the width of a step, the left part, the step at a point
@@ -3867,24 +3867,37 @@ function openWave(tr, first, title, pick) {
     keys.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
     keys.style.top = (r.bottom + 6 + hk > innerHeight - 8 ? Math.max(8, r.top - 6 - hk) : r.bottom + 6) + "px";
   }
-  // the top edge: drag it for a taller or shorter drawer (kept for the next one)
+  // the height: at most 45% of the window (or what the top edge was dragged to, kept for the next
+  // drawer), never more than the rows, and cut between two rows, not through one
+  function fitHeight() {
+    const chrome = box.offsetHeight - scroll.offsetHeight;
+    const room = Math.min(WAVE.height || 0.45 * innerHeight, innerHeight - 70) - chrome;
+    const rows = grid.querySelectorAll(".wv-row");
+    if (grid.offsetHeight <= room) { scroll.style.maxHeight = ""; return; }
+    let fit = 0;
+    rows.forEach((r, j) => { const b = r.offsetTop + r.offsetHeight; if (b <= room || j < 2) fit = Math.max(fit, b); });
+    scroll.style.maxHeight = fit + "px";
+  }
+  // the top edge: drag it for a taller or shorter drawer, up to all its rows; a double-click for the height it had
   grip.addEventListener("pointerdown", e => {
     e.preventDefault();
-    const y0 = e.clientY, h0 = box.offsetHeight;
+    const y0 = e.clientY, h0 = box.offsetHeight, most = box.offsetHeight - scroll.offsetHeight + grid.offsetHeight;
     grip.classList.add("drag");
-    const move = m => { WAVE.height = Math.max(140, Math.min(innerHeight - 70, h0 + y0 - m.clientY)); size(); place(); };
+    const move = m => { WAVE.height = Math.max(Math.min(140, most), Math.min(innerHeight - 70, most, h0 + y0 - m.clientY)); fitHeight(); place(); };
     const up = () => { grip.classList.remove("drag"); removeEventListener("pointermove", move); removeEventListener("pointerup", up); };
     addEventListener("pointermove", move); addEventListener("pointerup", up);
   });
+  grip.addEventListener("dblclick", () => { WAVE.height = null; fitHeight(); place(); });
 
   const avail = () => Math.max(120, scroll.clientWidth - L - 16);
   function fitAll() { S.px = Math.max(WV.min, Math.min(WV.max, avail() / cols)); draw(); scroll.scrollLeft = 0; }
-  function zoom(f, atX) {                // around a point of the view (the middle of the steps in view, by default)
-    const x = atX === undefined ? avail() / 2 : atX;
+  function zoom(f, atX) {                // around a point of the view (the pointer), or around the cursor
+    const x = atX === undefined ? (S.cur + .5) * S.px - scroll.scrollLeft : atX;
     const a = (scroll.scrollLeft + x) / S.px;
     S.px = Math.max(WV.min, Math.min(WV.max, S.px * f));
     draw();
     scroll.scrollLeft = a * S.px - x;
+    if (atX === undefined) show(S.cur);
   }
   function show(k) {                     // the step k in view
     const x0 = k * S.px, x1 = x0 + S.px, a = scroll.scrollLeft, b = a + avail();
@@ -3905,14 +3918,15 @@ function openWave(tr, first, title, pick) {
     const left = (cls, ...kids) => h("div", { class: "wv-left" + (cls ? " " + cls : ""), style: "width:" + L + "px" }, ...kids);
     // behind the values: the loop, the cursor, the step that fails, the start of the loop, the faded pass
     const marks = (svg, H, y0, dash) => {
-      if (loop) sv("rect", { x: loop * px, y: y0, width: (n - loop) * px, height: H - y0, fill: "#e6efee" }, svg);
+      if (loop !== null) sv("rect", { x: loop * px, y: y0, width: (n - loop) * px, height: H - y0, fill: "#edf3f2" }, svg);
       if (S.cur !== tr.at) sv("rect", { x: S.cur * px, y: y0, width: px, height: H - y0, fill: "#e6effa" }, svg);
       if (fails) sv("rect", { x: tr.at * px, y: y0, width: px, height: H - y0, fill: "#fbeceb" }, svg);
-      if (loop) sv("line", { x1: loop * px + .5, y1: dash === undefined ? y0 : dash, x2: loop * px + .5, y2: H,
+      if (loop !== null) sv("line", { x1: loop * px + .5, y1: dash === undefined ? y0 : dash, x2: loop * px + .5, y2: H,
                              stroke: "#8a9b9c", "stroke-dasharray": "3 3" }, svg);
       if (ghost) sv("line", { x1: n * px + .5, y1: y0, x2: n * px + .5, y2: H, stroke: "#c3cdcd" }, svg);
     };
-    const cursor = (svg, y0, H) => sv("line", { x1: S.cur * px + 1, y1: y0, x2: S.cur * px + 1, y2: H, stroke: "#2f6fb5", "stroke-width": 2 }, svg);
+    // the cursor: under the waves, just right of the edge of its step, so a change there stays in view
+    const cursor = (svg, y0, H) => sv("line", { x1: S.cur * px + 2, y1: y0, x2: S.cur * px + 2, y2: H, stroke: "#2f6fb5", "stroke-width": 2 }, svg);
     const backed = (svg, t, font) => {   // a word with white behind it, over the lines it crosses
       const w = textWidth(t.textContent, font), x = +t.getAttribute("x"), a = t.getAttribute("text-anchor");
       const x0 = a === "middle" ? x - w / 2 : a === "end" ? x - w : x;
@@ -3925,6 +3939,7 @@ function openWave(tr, first, title, pick) {
     const asvg = sv("svg", { width: W + 16, height: WV.axis, class: "wv-svg" }, ax);
     const B = WV.band;
     marks(asvg, WV.axis, B, 13);
+    cursor(asvg, B, WV.axis);
     if (loop !== null) {                  // the loop: a bracket over its steps
       const x0 = loop * px, x1 = n * px;
       sv("path", { d: `M${x0 + .5} 13V7H${x1 - .5}V13`, fill: "none", stroke: "#17393b", "stroke-width": 1.2 }, asvg);
@@ -3939,7 +3954,6 @@ function openWave(tr, first, title, pick) {
       backed(asvg, t, "bold 10px Helvetica, Arial, sans-serif");
       sv("path", { d: `M${m - 4} 26h8l-4 5z`, fill: "#b03a2e" }, asvg);
     }
-    cursor(asvg, B, WV.axis);
     for (let c = 0; c < cols; c++) {
       const k = real(c), x = c * px, g = c >= n;
       sv("line", { x1: x, y1: (g ? c - n : c) % every ? WV.axis - 4 : WV.axis - 8, x2: x, y2: WV.axis, stroke: "#b6c1c1" }, asvg);
@@ -3982,6 +3996,7 @@ function openWave(tr, first, title, pick) {
       const row = h("div", { class: "wv-row" + (r++ % 2 ? " odd" : "") + (flat ? " nb" : ""), "data-i": i, style: "height:" + H + "px" }, lf);
       const svg = sv("svg", { width: W + 16, height: H, class: "wv-svg" }, row);
       marks(svg, H, 0);
+      cursor(svg, 0, H);
       if (plot) [6, H - 6].forEach(y => sv("line", { x1: 0, y1: y, x2: W, y2: y, stroke: "#dfe5e5", "stroke-dasharray": "2 3" }, svg));
       const draw1 = (from, to, g, wg) => {
         if (kd === "bool") {
@@ -3991,7 +4006,7 @@ function openWave(tr, first, title, pick) {
             const v = valueAt(c, i), x = c * px;
             if (v === null || v === undefined) { sv("rect", { x, y: hiY, width: px, height: loY - hiY, fill: "url(#wvhatch)" }, g); continue; }
             const y = v ? hiY : loY;
-            if (v) sv("rect", { x, y: hiY, width: px, height: loY - hiY, fill: "#d5e6e3" }, g);
+            if (v) sv("rect", { x, y: hiY, width: px, height: loY - hiY, fill: "#c4d9d5" }, g);
             d += (d && c > from ? "L" : "M") + x + " " + y + "H" + (x + px);
           }
           sv("path", { d, fill: "none", stroke: "#17393b", "stroke-width": 1.5 }, g);
@@ -4012,7 +4027,7 @@ function openWave(tr, first, title, pick) {
           let c = from;
           while (c < to) {
             const v = valueAt(c, i); let e = c + 1;
-            while (e < to && fmt(valueAt(e, i)) === fmt(v)) e++;
+            while (e < to && e !== loop && fmt(valueAt(e, i)) === fmt(v)) e++;   // a box ends where the loop starts
             const x0 = c * px + .5, x1 = e * px - .5, s = Math.min(4, (x1 - x0) / 4), top = 4, bot = H - 4, mid = H / 2;
             sv("path", { d: `M${x0} ${mid}L${x0 + s} ${top}H${x1 - s}L${x1} ${mid}L${x1 - s} ${bot}H${x0 + s}Z`,
               fill: v === null || v === undefined ? "url(#wvhatch)" : "#f7f9f9", stroke: "#7d8c8d", "stroke-width": 1 }, g);
@@ -4026,7 +4041,6 @@ function openWave(tr, first, title, pick) {
       const wg = sv("g", {});             // the words over the cursor, their halo hiding it
       draw1(0, n, svg, wg);
       if (ghost) { const gg = sv("g", { opacity: ".35" }, svg); draw1(n, cols, gg, gg); }
-      cursor(svg, 0, H);
       svg.appendChild(wg);
       grid.appendChild(row);
     });
@@ -4038,7 +4052,8 @@ function openWave(tr, first, title, pick) {
     grid.appendChild(hov);
     where.innerHTML = "";
     if (DATA.period) where.append("t = ", h("span", { class: "wv-k" }, label(S.cur)), " s");
-    else where.append("Step ", h("span", { class: "wv-k" }, label(S.cur)), " of " + n);
+    else where.append("Step ", h("span", { class: "wv-k" }, label(S.cur)));
+    fitHeight();
     place();
   }
   function place() {                     // the words of the boxes, the bar under the steps and the steps in view
@@ -4051,10 +4066,18 @@ function openWave(tr, first, title, pick) {
       if (txt) w.t.setAttribute("x", (a + b) / 2);
     });
     const over = scroll.scrollWidth > scroll.clientWidth + 1;
+    S.all = !over;
     sbar.classList.toggle("on", over);
     const a = Math.max(0, Math.floor(scroll.scrollLeft / S.px)), b = Math.min(cols, Math.ceil((scroll.scrollLeft + avail()) / S.px)) - 1;
-    foot.firstChild.textContent = over ? (DATA.period ? "t " + label(a) + " to " + label(Math.min(b, n - 1)) : "steps " + a + " to " + Math.min(b, n - 1))
-      + " of " + n + " in view" : n + " steps";
+    const end = scroll.scrollTop + scroll.clientHeight;
+    const below = [...grid.querySelectorAll(".wv-row[data-i]")].filter(r => r.offsetTop + r.offsetHeight / 2 > end).length;
+    foot.firstChild.textContent = (over ? (DATA.period ? "t " + label(a) + " to " + label(Math.min(b, n - 1)) : "steps " + a + " to " + Math.min(b, n - 1))
+      + " of " + n + " in view" : n + " steps") + (below ? " · " + below + (below === 1 ? " more row" : " more rows") + " below" : "");
+    fade.style.display = below ? "block" : "none";
+    if (below) fade.style.top = (scroll.offsetTop + scroll.clientHeight - 12) + "px";
+    const hint = foot.lastChild;            // the ways to move, when the drawer has room for them
+    hint.textContent = "Click a step · " + (over ? "drag to pan · " : "") + "Ctrl/⌘ + wheel to zoom · ? for the keys";
+    hint.hidden = box.clientWidth < 800;
     if (!over) return;
     const w = sbar.clientWidth, vis = avail() / (scroll.scrollWidth - L);
     thumb.style.width = Math.max(24, w * Math.min(1, vis)) + "px";
@@ -4094,7 +4117,8 @@ function openWave(tr, first, title, pick) {
   let down = null;
   scroll.addEventListener("pointerdown", e => {
     if (e.button !== 0 || e.target.closest(".wv-left")) return;
-    down = { x: e.clientX, s: scroll.scrollLeft, moved: false };
+    const rw = e.target.closest(".wv-row[data-i]");
+    down = { x: e.clientX, s: scroll.scrollLeft, moved: false, row: rw ? +rw.dataset.i : null };
   });
   WAVE.move = e => {
     if (!down) return;
@@ -4105,12 +4129,22 @@ function openWave(tr, first, title, pick) {
   WAVE.up = e => {
     if (!down) return;
     const was = down; down = null; scroll.classList.remove("pan");
-    if (!was.moved) { const k = WAVE.stepAt(e.clientX); if (k !== null) pick(k); }
+    if (was.moved) return;
+    const k = WAVE.stepAt(e.clientX);      // a click on a row: that row selected, for [ ] and Enter
+    if (was.row !== null && was.row !== S.sel) { S.sel = was.row; if (k === null || k === S.cur) draw(); }
+    if (k !== null) pick(k);
   };
   addEventListener("pointerup", WAVE.up);
-  // Ctrl or Cmd and the wheel (a pinch too) zoom where they point; the wheel alone scrolls
+  // Ctrl or Cmd and the wheel (a pinch too) zoom where they point; Shift and the wheel pan along the
+  // steps, and so does the wheel alone when all the rows are in view
   scroll.addEventListener("wheel", e => {
-    if (!(e.ctrlKey || e.metaKey)) return;
+    if (!(e.ctrlKey || e.metaKey)) {
+      const tall = scroll.scrollHeight > scroll.clientHeight + 1;
+      if (e.deltaX || !e.deltaY || (tall && !e.shiftKey)) return;
+      e.preventDefault();
+      scroll.scrollLeft += e.deltaY;
+      return;
+    }
     e.preventDefault();
     const r = scroll.getBoundingClientRect();
     zoom(Math.exp(-e.deltaY * 0.01), Math.max(0, e.clientX - r.left - L));
@@ -4152,6 +4186,17 @@ function openWave(tr, first, title, pick) {
   draw();
   show(fails ? tr.at : S.cur);
   box.focus();
+  // a wider or narrower drawer (the window, the details opened or closed): all the steps stay in the
+  // width if they all were; else the zoom stays. A taller or shorter window: the height again
+  let width = scroll.clientWidth;
+  WAVE.ro = new ResizeObserver(() => {
+    if (!WAVE.open || scroll.clientWidth === width) return;
+    width = scroll.clientWidth;
+    if (S.all) { S.px = Math.max(WV.min, Math.min(WV.max, avail() / cols)); draw(); scroll.scrollLeft = 0; } else place();
+  });
+  WAVE.ro.observe(scroll);
+  WAVE.resize = () => { fitHeight(); place(); };
+  addEventListener("resize", WAVE.resize);
 }
 function closeWave() {
   const box = document.getElementById("wave"), tip = document.getElementById("tip");
@@ -4161,6 +4206,8 @@ function closeWave() {
   WAVE.open = false;
   if (WAVE.up) removeEventListener("pointerup", WAVE.up);
   if (WAVE.move) removeEventListener("pointermove", WAVE.move);
+  if (WAVE.resize) removeEventListener("resize", WAVE.resize);
+  if (WAVE.ro) WAVE.ro.disconnect();
 }
 // The code of a C function in the details, folded: its title says whose it is.
 function codeSection(n) {
