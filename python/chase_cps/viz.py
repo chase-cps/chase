@@ -202,6 +202,32 @@ def _broken_assumptions(node: dict, res, scene) -> dict:
     return out
 
 
+def _environment_breaks(why: dict, node: dict, target, result) -> None:
+    """An environment that breaks the assumptions of what it drives: those
+    assumptions (red on the box of target, listed in the panel) and the
+    step where one fails first; with no such step, the whole run breaks
+    them (an F p that never holds)."""
+    c = target.contract if isinstance(target, Component) else target
+    trace = getattr(result, "trace", None)
+    if trace is None or not isinstance(c, Contract) or "trace" not in why:
+        return
+    from .robustness import holds
+    try:
+        bad = [i for i, t in enumerate(c.assumptions) if not holds(t, trace, c.variables)]
+        steps = [_first_failure(c.assumptions[i], trace, c.variables, len(why["trace"]["steps"])) for i in bad]
+    except Exception:                    # a term it cannot read on the trace: none marked
+        return
+    if not bad:
+        return
+    why["parts"] = {node["id"]: bad}
+    why["broken"] = [f"{node['title']}: {ltl.to_str(c.assumptions[i])}" for i in bad]
+    steps = [k for k in steps if k is not None]
+    if steps:
+        why["at"] = why["trace"]["at"] = min(steps)
+    else:
+        why["whole"] = True
+
+
 def _name_holes(nodes: list) -> None:
     """A quotient whose hole holds a candidate says which one: "ModeLogic ⊗ ?"
     becomes "ModeLogic ⊗ ? · candidate: Pilot", so that boxes of the same requirement with
@@ -925,13 +951,14 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
                 mark["core"] = where
             node.setdefault("checks", []).append(mark)
 
-    wires = []
+    wires, breaks = [], []
     for e in environments:
         env, target = e[0], e[1]
         status = _status(e[2]) if len(e) > 2 else None
+        node = box_of(target)
         if len(e) > 2 and _why(e[2]):
             why.append((env, "E ⊨ A", e[2], None))
-        node = box_of(target)
+            breaks.append((env, node, target, e[2]))
         env_node = scene.environment(env, node, status)
         outer = next(n for n in nodes if n is node or _find([n], node["id"]) is not None)
         nodes.insert(nodes.index(outer), env_node)
@@ -963,6 +990,12 @@ def diagram(*items, refines: Iterable = (), checks: Iterable = (), environments:
             tag = n.get("badge", {}).get("text", "")
             if tag.startswith(name) or (name, tag) == ("M ⊨ C", "safe"):
                 n["badge"]["why"] = _why(result, against[0] if against else None)
+                break
+    for env, node, target, result in breaks:     # the assumptions an environment breaks
+        for n in _boxes(nodes):
+            w = n.get("badge", {}).get("why")
+            if w and scene.objs.get(n["id"]) == id(env) and n["badge"].get("text", "").startswith("E ⊨ A"):
+                _environment_breaks(w, node, target, result)
                 break
     for obj, name, about in repairs:     # on the box that shows the result of the check
         n = _find(nodes, scene.ids[id(obj)]) if id(obj) in scene.ids else None
@@ -1692,6 +1725,9 @@ _PAGE = r"""<!doctype html>
   #run, #runsep { display:none; } #run .turn { display:none; } #run.busy .idle { display:none; }
   #run.busy .turn { display:inline; transform-origin:8px 8px; animation:turn 0.9s linear infinite; }
   @keyframes turn { to { transform:rotate(360deg); } }
+  /* a term picked in the panel, on the diagram */
+  @keyframes flash { 0%, 50%, 100% { opacity:0; } 25%, 75% { opacity:1; } }
+  rect.flash { fill:none; stroke:var(--bad); stroke-width:2; animation:flash 1.6s ease-in-out; pointer-events:none; }
   .pending circle { fill:var(--soft); animation:dot 1.2s ease-in-out infinite; }
   .pending circle:nth-of-type(2) { animation-delay:0.2s; } .pending circle:nth-of-type(3) { animation-delay:0.4s; }
   @keyframes dot { 0%, 80%, 100% { opacity:0.2; } 40% { opacity:1; } }
@@ -1828,6 +1864,15 @@ _PAGE = r"""<!doctype html>
   .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
   .rp-step input { flex:1; accent-color:var(--teal); }
   ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
+  /* the terms of a core: a click shows one on the diagram */
+  .rp-terms { display:flex; flex-direction:column; gap:3px; margin-top:6px; }
+  .rp-term { display:flex; gap:6px; align-items:flex-start; text-align:left; border:0; border-radius:4px; padding:3px 5px;
+             background:#fbeceb; color:var(--ink); cursor:pointer; font:inherit; }
+  .rp-term:hover { background:#f6dcd9; }
+  .rp-term .st { flex:none; width:13px; height:13px; margin-top:1px; border-radius:3px; background:var(--teal); color:#fff;
+                 font:700 9.5px/13px Helvetica, Arial, sans-serif; text-align:center; }
+  .rp-term .f { font:11px/1.4 Menlo, Monaco, monospace; min-width:0; overflow-wrap:anywhere;
+                display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .rp-head { display:grid; grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
              padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1; }
   .rp-head .t { flex:1; font-size:12.5px; min-width:0; overflow-wrap:anywhere; }
@@ -1887,7 +1932,10 @@ _PAGE = r"""<!doctype html>
   .rp-note { color:var(--soft); font-size:11px; margin-top:6px; }
   .rp-err { color:var(--bad); font-size:11px; margin-top:6px; white-space:pre-wrap; }
   .rp-cmd { font:10.5px/1.5 Menlo, Monaco, monospace; background:var(--fill); border:1px solid #e3e8e8; border-radius:6px;
-            padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text; }
+            padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-x:auto; user-select:text; -webkit-user-select:text; }
+  /* a command breaks between its words only, never inside a flag (--serve) */
+  .rp-cmd > span, code.cmd { white-space:nowrap; }
+  code.cmd { font:10.5px Menlo, Monaco, monospace; background:var(--fill); border-radius:3px; padding:0 3px; }
   .rp-spin { width:10px; height:10px; border:1.6px solid #d5dddd; border-top-color:var(--teal); border-radius:50%;
              animation:turn 0.8s linear infinite; }
   /* the steps in view, and a page back or on: only when the table is wider than the panel */
@@ -1909,6 +1957,9 @@ _PAGE = r"""<!doctype html>
   .rp-values { display:flex; flex-wrap:wrap; gap:2px 18px;
                font:11px Menlo, Monaco, monospace; color:var(--soft); }
   .rp-values span { white-space:nowrap; }
+  .rp-h .rp-file { margin-left:8px; font:400 10.5px Menlo, Monaco, monospace; text-transform:none; letter-spacing:0; color:var(--ink); }
+  .rp-io { display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 10px; align-items:baseline; }
+  .rp-io .w { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); }
   #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
@@ -2058,9 +2109,9 @@ function wrap(f) {
 // Each part opens with a tag: θ (parameters: named constants), A (assumes), G (guarantees), E (an environment).
 // With a core in focus, its terms are on a red ground: [kind, tag, text, in the core].
 // src: the lines of the terms in the file, [first, last], when known.
-function terms(c, out, core, src) {
+function terms(c, out, core, src, which) {
   const part = (tag, fs, hit, at) => fs.forEach((f, j) => wrap(f).forEach((l, i) =>
-    out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j]])));
+    out.push(["f", i || j ? "" : tag, l, hit.includes(j), at && at[j], which ? which + ":" + tag + j : null])));
   if (c.K) part("θ", c.K, []);           // the parameters (named constants) and their values
   if (c.E) { part("A", c.A, core ? core.A : [], src && src.A); part("E", c.E, []); return; }
   // no assumption is A = ⊤ (true), as no guarantee is G = ⊤: both written
@@ -2091,7 +2142,7 @@ function lines(n) {
   const out = [], core = focused(n);
   const part = (c, which) => {
     const ts = [];
-    terms(c, ts, core && core.part === which ? core : null, which === "contract" ? n.source : null);
+    terms(c, ts, core && core.part === which ? core : null, which === "contract" ? n.source : null, which);
     if (ts.length <= LONG) { out.push(...ts); return; }
     const parts = [];                  // A and G cut apart: the first lines of each
     ts.forEach(t => (t[1] || !parts.length) ? parts.push([t]) : parts[parts.length - 1].push(t));
@@ -2101,7 +2152,7 @@ function lines(n) {
       const keep = Math.max(1, i === parts.length - 1 ? left : Math.max(Math.floor(SHORT / parts.length), SHORT - rest));
       let room = keep - p.filter(t => t[3]).length;   // the lines of a core in focus are kept first
       const shown = p.filter(t => t[3] || room-- > 0);
-      if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3], shown[0][4]];
+      if (shown[0] !== p[0]) shown[0] = [shown[0][0], p[0][1], shown[0][2], shown[0][3], shown[0][4], shown[0][5]];
       out.push(...shown);
       if (p.length > shown.length)   // with the lines of the terms it hides, for the cursor
         out.push(["more", "", "⋯ " + (p.length - shown.length) + " more lines", c,
@@ -2424,10 +2475,10 @@ function drawNode(g, e, ox, oy) {
     tip(b, (WHAT[n.badge.text.split(" of ")[0]] || n.badge.text) + ": " + (SAYS[n.badge.status] || "not checked")
            + ". Click: the check" + ((n.repair || {})[tagOf(n.badge.text)] ? ", and its repairs" : ""));
     b.onclick = () => openRepair(n, tagOf(n.badge.text)); }
-  sz.ls.forEach(([k, label, s, core, at], i) => {
+  sz.ls.forEach(([k, label, s, core, at, term], i) => {
     const frame = r => el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3,
                                      fill: "none", stroke: "var(--teal)", "stroke-width": 1.5 }, r);
-    const ty = y + HEAD + 12 + i * LINE, row = el("g", {}, box);
+    const ty = y + HEAD + 12 + i * LINE, row = el("g", term ? { "data-term": term } : {}, box);
     if (k === "f") {
       if (core) el("rect", { x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3, fill: "#f6dcd9", class: "core-row" }, row);
       if (at) {             // its lines in the file: the editor goes there, and marks it from there
@@ -3190,6 +3241,7 @@ function factsOf(n, t, r, w) {
 }
 // A term that asks for something to happen (F, U) fails on the whole run, its loop included, not at a step.
 function wholeRun(n, w) {
+  if (w && w.whole) return true;
   const terms = ((w && w.violated) || []).map(i => ((n.contract || {}).G || [])[i]).filter(Boolean);
   return terms.length > 0 && terms.every(x => /^\s*(G\s*)?F\b|^\s*F\[|\bU\b/.test(x));
 }
@@ -3228,6 +3280,7 @@ function showInspector(tab) {
 }
 function hideInspector() {
   closeWave();
+  inspector.waved = false;
   const how = inspector.open ? shiftView(1) : null;
   inspector.open = false;
   document.body.classList.remove("insp");
@@ -3237,13 +3290,17 @@ function hideInspector() {
   closeRepair();
 }
 async function openRepair(n, t) {
-  const waved = WAVE.open;             // the waveform is of one check: that of the new one, if it has one
+  // the waveform is of one check: that of the new one, if it has one (also when it was open before Problems)
+  const waved = WAVE.open || inspector.waved;
+  inspector.waved = false;
   closeWave(waved);
   const keys = keysOf(DATA.nodes);
   // the counterexample opens at the step where a term fails first, when it has one
   const w0 = n.badge && tagOf(n.badge.text) === t ? n.badge.why : ((n.checks || []).find(c => c.name === t) || {}).why;
   panel = { id: n.id, tag: t, nkey: keys[n.id], step: (w0 && w0.at) || 0 };
   if (w0 && w0.parts) Object.keys(w0.parts).forEach(id => open.add("c:" + id));   // the parts whose assumptions break
+  const ci = (n.checks || []).findIndex(c => c.name === t && c.core);               // a core: shown, its lines unfolded
+  if (ci >= 0) { focus[n.id] = ci; open.add((n.checks[ci].core.part === "composed" ? "k:" : "c:") + n.id); }
   inspector.tab = "details";
   showInspector();
   const r0 = (n.repair || {})[t];      // the boxes that declare the constants, and the box of the check, open
@@ -3263,6 +3320,7 @@ async function openRepair(n, t) {
   }
 }
 function closeRepair() {
+  inspector.waved = inspector.open && WAVE.open;   // back to Problems: the next problem opens with its waveform
   closeWave();
   panel = null;
   clearPreview(true);
@@ -3364,7 +3422,7 @@ function fillPanel() {
   }
   if (!how) box.appendChild(h("div", { class: "rp-sec" },
     h("div", { class: "rp-note", style: "margin-top:0", title: "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve" }, "Repairs run in VS Code, or:"),
-    h("div", { class: "rp-cmd" }, commandOf(r, s))));
+    h("div", { class: "rp-cmd" }, words(commandOf(r, s)))));
 }
 // Why the check fails: in one line, then the counterexample (and its steps on the diagram).
 function whySection(n, t, st) {
@@ -3374,7 +3432,21 @@ function whySection(n, t, st) {
     const c = (n.checks || []).find(x => x.name === t);
     if (!(c && c.core)) return null;
     sec.firstChild.textContent = "Why it fails";
-    sec.appendChild(h("div", {}, "The terms in conflict are red."));
+    const src = n[c.core.part] || {};
+    const list = [].concat((c.core.A || []).map(i => ["A", i, (src.A || [])[i]]), (c.core.G || []).map(i => ["G", i, (src.G || [])[i]]))
+                   .filter(x => x[2]);
+    const nA = list.filter(x => x[0] === "A").length, nG = list.length - nA;
+    const these = (k, one, many) => k === 1 ? "This " + one : "These " + k + " " + many;
+    const all = these(list.length, nA && nG ? "term" : nA ? "assumption" : "guarantee", nA && nG ? "terms" : nA ? "assumptions" : "guarantees");
+    const say = t === "R" ? all + (list.length === 1 ? " cannot be met." : " cannot all be met.")
+      : t === "¬V" ? (nA ? these(nA, "assumption makes ", "assumptions make ") + (nG === 1 ? "a guarantee" : nG + " guarantees") + " vacuous."
+                         : these(nG, "guarantee is", "guarantees are") + " vacuous.")
+      : t === "WS" ? "With " + all.toLowerCase() + ", the component can win by breaking an assumption."
+      : all + (list.length === 1 ? " cannot hold." : " cannot all hold together.");
+    sec.appendChild(h("div", {}, say));
+    sec.appendChild(h("div", { class: "rp-terms" }, list.map(([p, i, f]) =>
+      h("button", { class: "rp-term", title: "Show it on the diagram", onclick: () => showTerm(n, c.core.part + ":" + p + i) },
+        h("span", { class: "st" }, p), h("span", { class: "f" }, f)))));
     return sec;
   }
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
@@ -3389,7 +3461,8 @@ function whySection(n, t, st) {
     const trace = whole ? { ...w.trace, at: null, whole: true } : w.trace;
     if (lead) sec.appendChild(h("div", {}, lead));
     if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
-      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, "The assumptions of the parts it breaks (red):"),
+      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, t === "E ⊨ A" ? "The assumptions it breaks (red):"
+                                                                              : "The assumptions of the parts it breaks (red):"),
         w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
@@ -3400,7 +3473,7 @@ function whySection(n, t, st) {
     const first = trace.vars.filter(v => named.has(v));
     // one call of a C function: its inputs and outputs, not a state repeated forever
     const shown = code && last === 0 ? { ...trace, loop: null } : trace;
-    const table = traceTable(shown, first, req, last > 0 ? panel.step || 0 : null, go);
+    const table = traceTable(shown, first, req, last > 0 ? panel.step || 0 : null, go, n);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
     // the waveform: every step kept, in a drawer under the diagram; its button on the line of the panel
     if (last > 0) panel.wave = () => openWave(trace, first, checkTitle(n, t), go, req);
@@ -3435,25 +3508,28 @@ function reasonOf(r) {
   return m ? { text: m[1].charAt(0).toUpperCase() + m[1].slice(1), line: +m[2] } : { text: r, line: null };
 }
 // A step as the page shows it: its number, or its time i·Δτ when the diagram has a period.
-const TABLE_STEPS = 12;          // the steps of a counterexample in the table (all of them in the waveform)
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
 // With a step (the one on the diagram): its column marked blue, the column of the step that fails
 // first red; a click on a column picks its step, and the arrow keys the next one.
-function traceTable(tr, first, req, step, onPick) {
+function traceTable(tr, first, req, step, onPick, io) {
   const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
   // one call of a function: name = value; one state repeated forever is a table, with its ↺
   const one = tr.steps.length === 1 && (tr.loop === null || tr.loop === undefined);
-  if (one) {                            // one call: name = value, in rows that wrap
-    const grid = h("div", { class: "rp-values" }, order.map(i => h("span", { class: first.includes(tr.vars[i]) ? "port" : "" },
-      tr.vars[i] + " = " + fmt(tr.steps[0][i]))));
+  if (one) {                            // one call: name = value, in rows that wrap, its inputs and its outputs apart
+    const val = i => h("span", { class: first.includes(tr.vars[i]) ? "port" : "" }, tr.vars[i] + " = " + fmt(tr.steps[0][i]));
+    const ins = new Set((io && io.inputs) || []), outs = new Set((io && io.outputs) || []);
+    const groups = [["In", order.filter(i => ins.has(tr.vars[i]))], ["Out", order.filter(i => outs.has(tr.vars[i]))],
+                    ["", order.filter(i => !ins.has(tr.vars[i]) && !outs.has(tr.vars[i]))]].filter(g => g[1].length);
+    const grid = groups.length > 1 || (groups[0] && groups[0][0])
+      ? h("div", { class: "rp-io" }, groups.flatMap(([w, is]) => [h("span", { class: "w" }, w), h("div", { class: "rp-values" }, is.map(val))]))
+      : h("div", { class: "rp-values" }, order.map(val));
     const notes = [tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
     return h("div", { class: "rp-tracewrap" }, grid, notes.length ? h("div", { class: "rp-note" }, notes.join(" ")) : null);
   }
-  // the table shows the first steps; the waveform all those kept
+  // every step kept, as the waveform: the columns scroll under the names, a page at a time
   const kept = tr.steps.length, keptCut = tr.cut;
-  if (kept > TABLE_STEPS) tr = Object.assign({}, tr, { steps: tr.steps.slice(0, TABLE_STEPS) });
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
   const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
   const picks = step !== null && step !== undefined && onPick;
@@ -3475,8 +3551,13 @@ function traceTable(tr, first, req, step, onPick) {
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
   // the table scrolls under its first column; above it, a page back or on
-  const turn = d => { const v = t.querySelector("th, td.v");
-                      wrap.scrollLeft += d * Math.max(40, wrap.clientWidth - (v ? v.offsetWidth : 0) - 8); };
+  // a column under the names is never cut in two: the scroll stops at the edges of the columns
+  const snap = x => { const ks = t.querySelectorAll("th[data-k]"), n = ks.length - 1;    // the width of a column, exact
+                      const w = n > 0 ? (ks[n].getBoundingClientRect().left - ks[0].getBoundingClientRect().left) / n : 0;
+                      return w > 0 ? Math.round(x / w) * w : x; };
+  const turn = d => { const v = t.querySelector("th, td.v"), c = t.querySelector('th[data-k="0"]');
+                      const w = c ? c.offsetWidth : 40, room = wrap.clientWidth - (v ? v.offsetWidth : 0);
+                      wrap.scrollLeft = snap(wrap.scrollLeft + d * Math.max(1, Math.floor(room / w)) * w); };
   const prev = iconButton(GLYPH.prev, "Earlier steps", () => turn(-1)), next = iconButton(GLYPH.next, "Later steps", () => turn(1));
   const top = h("div", { class: "rp-trace-top" }, prev, next);
   // the bar under the table: its thumb is the part in view; drag it, or click the bar to page
@@ -3515,8 +3596,7 @@ function traceTable(tr, first, req, step, onPick) {
                    (rows.length - LIMIT) + " more variables");
     out.appendChild(more);
   }
-  const notes = [kept > TABLE_STEPS ? "The first " + TABLE_STEPS + " of " + kept + (keptCut ? " steps kept" : " steps")
-                   + "; the waveform shows them all." : keptCut ? "The first " + kept + " steps." : null,
+  const notes = [keptCut ? "The first " + kept + " steps are kept." : null,
                  tr.loop !== null && tr.loop !== undefined
                    ? "↺ " + timeOf(tr.loop) + ": from this step on, the steps repeat forever." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
@@ -3533,9 +3613,11 @@ function traceTable(tr, first, req, step, onPick) {
     t.querySelectorAll(".cur").forEach(x => x.classList.remove("cur"));
     if (k !== base) column(k).forEach(x => x.classList.add("cur"));
     const th = t.querySelector('th[data-k="' + k + '"]'), v = t.querySelector("th");   // the column in view
-    if (th) {
-      const left = th.offsetLeft - (v ? v.offsetWidth : 0), right = th.offsetLeft + th.offsetWidth;
-      if (left < wrap.scrollLeft) wrap.scrollLeft = left;
+    if (th) {                           // the next column: just enough; one further away: in the middle
+      const names = v ? v.offsetWidth : 0, left = th.offsetLeft - names, right = th.offsetLeft + th.offsetWidth;
+      const far = left < wrap.scrollLeft - th.offsetWidth || right > wrap.scrollLeft + wrap.clientWidth + th.offsetWidth;
+      if (far) wrap.scrollLeft = snap(left - (wrap.clientWidth - names - th.offsetWidth) / 2);
+      else if (left < wrap.scrollLeft) wrap.scrollLeft = left;
       else if (right > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = right - wrap.clientWidth;
     }
     where();
@@ -3548,14 +3630,26 @@ function traceTable(tr, first, req, step, onPick) {
 function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
   const clauses = n.model && n.model.source === "c" && n.model.name === ((n.contract || {}).name);
+  const code = x => h("code", { class: "cmd" }, x);
+  const named = ["A number can be repaired once it is named: ", code("integer constant k 2;")];
+  const of = t === "E ⊨ A" ? (() => { const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
+                                      return to ? (to.contract && to.contract.name) || to.title : null; })() : null;
   const points = t === "safe"
     ? ["Fix the code, or exclude such inputs with a requires clause."]
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
-    ? ["Repair its constants in VS Code, or with chase-cps view FILE --serve."]
-    : ["Change a term of a part or of the requirement. A number can be repaired once it is named: integer constant k 2;"]
-       .concat(t === "⪯" ? ["What a part must guarantee: the requirement divided by the other parts."] : []);
+    ? [["Repair its constants in VS Code, or with ", code("chase-cps view FILE --serve"), "."]]
+    : [{ "⪯": "Change a term of a part or of the requirement.",
+         "E ⊨ A": "Change the environment, or weaken the assumptions" + (of ? " of " + of : "") + ".",
+         "M ⊨ C": "Change the model, or its contract.",
+         "A": "Weaken or drop one of the red assumptions.",
+         "G": "Weaken or drop one of the red terms.",
+         "A∧G": "Weaken or drop one of the red terms.",
+         "R": "Weaken a red guarantee, or assume more of the environment.",
+         "WS": "Change the red terms so that breaking an assumption is no way to win.",
+         "¬V": "Ask something of the component in the red guarantees." }[t] || "Change one of the red terms.", named]
+       .concat(t === "⪯" ? ["Or compute the quotient: what the missing part must guarantee."] : []);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
@@ -3646,6 +3740,8 @@ function previewOf(n, t, r, o) {
   o.names.forEach(k => { values[k] = o.res.text[k] === null ? String(o.res.values[k]) : o.res.text[k]; });
   return { id: n.id, tag: t, values, from: o.from, owners, option: o, pinned: false };
 }
+// a command as its words, each kept whole on a line (with the spaces between them to copy)
+const words = c => c.split(" ").flatMap((w, i) => i ? [" ", h("span", {}, w)] : [h("span", {}, w)]);
 function commandOf(r, s) {
   const flag = { refines: "--refines", impl: "--impl", env: "--env", verify: "--verify", compat: "--compat", consist: "--consist" }[r.check];
   const q = a => { a = a.replace(/^.*\//, ""); return /^[\w.+:-]+$/.test(a) ? a : JSON.stringify(a); };   // run next to the file
@@ -4359,8 +4455,8 @@ function codeSection(n) {
   const c = n.model && n.model.code;
   if (!c) return null;
   const d = h("details", { class: "rp-sec rp-code" },
-    h("summary", { class: "rp-h" }, svgSpan("chev", '<path d="M6 4l4 4-4 4"/>'), "Code of ",
-      h("span", { style: "text-transform:none;letter-spacing:0" }, c.file + ": " + n.model.name)));
+    h("summary", { class: "rp-h" }, svgSpan("chev", '<path d="M6 4l4 4-4 4"/>'), "Code",
+      h("span", { class: "rp-file" }, c.file + " · " + n.model.name)));
   d.open = !!panel.code;
   d.addEventListener("toggle", () => { panel.code = d.open; });
   c.parts.forEach((q, i) => {
@@ -4434,6 +4530,21 @@ function bringInto(n) {
   cam.x += V.left + V.width / 2 - (r2.left + r2.width / 2);
   cam.y += V.top + 40 + (V.height - 40) / 2 - (r2.top + r2.height / 2);
   place();
+}
+// A term listed in the panel, on the diagram: its box open, the term in view, its lines flashed.
+async function showTerm(n, id) {
+  const key = (id.startsWith("composed") ? "k:" : "c:") + n.id;
+  if (!open.has(key)) { open.add(key); await render(); }
+  const rows = [...document.querySelectorAll('#view [data-box="' + n.id + '"] > g[data-term="' + id + '"]')];
+  if (!rows.length || !cam) return;
+  bringInto(n);
+  const v = document.getElementById("view").getBoundingClientRect();
+  const r = rows.map(x => x.getBoundingClientRect()), top = Math.min(...r.map(q => q.top)), bottom = Math.max(...r.map(q => q.bottom));
+  const W = document.getElementById("wave"), low = W && W.offsetParent ? W.getBoundingClientRect().top - 8 : v.bottom;
+  if (top < v.top + 48 || bottom > low) { cam.y += (v.top + 48 + low) / 2 - (top + bottom) / 2; place(); }
+  rows.forEach(x => { const b = x.getBBox();
+    const f = el("rect", { class: "flash", x: b.x - 2, y: b.y - 1, width: b.width + 4, height: b.height + 2, rx: 3 }, x);
+    setTimeout(() => f.remove(), 1700); });
 }
 // A counterexample on the diagram: the values of a step on the ports of the box of the check and inside it.
 function replay(n, tr, k) {
