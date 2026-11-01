@@ -995,8 +995,8 @@ def test_the_waveform_has_no_group_heading_for_one_group(browser, tmp_path):
 
 
 def test_the_waveform_fits_its_columns(browser, tmp_path):
-    # the names as wide as the longest (and the plot button), the values as the widest (four digits),
-    # the steps the rest of the width
+    # the names as wide as the longest (and the plot button), the values as the widest (as the table
+    # writes them), the steps the rest of the width
     long = "a_rather_long_variable_name"
     trace = {"vars": [long, "h"], "more": 0, "cut": False, "loop": None, "at": 2,
              "steps": [[True, 1], [False, 17.96875], [True, 2.5]]}
@@ -1005,7 +1005,7 @@ def test_the_waveform_fits_its_columns(browser, tmp_path):
     assert page.evaluate("e => e.scrollWidth <= e.clientWidth", name.element_handle())   # not cut
     left = page.locator("#wave .wv-row[data-i] .wv-left").first.bounding_box()["width"]
     assert left == page.evaluate("WAVE.left()") and left < 12 + 220 + 120
-    assert set(wave_row(page, "h").locator("text.wv-v").all_text_contents()) == {"1", "17.97", "2.5"}
+    assert set(wave_row(page, "h").locator("text.wv-v").all_text_contents()) == {"1", "17.96875", "2.5"}
     sc = page.locator("#wave .wv-scroll").bounding_box()
     assert page.evaluate("WAVE.px()") * 3 == pytest.approx(sc["width"] - left - 16, abs=1)   # all the steps in the width
     assert errors == []
@@ -1063,7 +1063,7 @@ def test_the_waveform_tells_the_value_under_the_pointer(browser, tmp_path):
     page, errors = wave_page(browser, tmp_path, trace)
     page.mouse.move(*wave_step_x(page, 1, "h"))
     assert page.is_visible("#wave .wv-hov") and page.inner_text("#tip") == "h = 17.96875 · step 1"
-    assert "17.97" in wave_row(page, "h").locator("text.wv-v").all_text_contents()
+    assert "17.96875" in wave_row(page, "h").locator("text.wv-v").all_text_contents()
     page.mouse.move(5, 5)
     assert not page.is_visible("#tip") and not page.is_visible("#wave .wv-hov")
     assert errors == []
@@ -1320,4 +1320,66 @@ def test_the_waveform_of_a_long_trace_is_quick(browser, tmp_path):
         for (let i = 0; i < 5; i++) document.getElementById('wave').dispatchEvent(new KeyboardEvent('keydown', { key: '+' }));
         return (performance.now() - t) / 6; })()""")
     assert ms < 250, ms
+    assert errors == []
+
+
+def test_a_value_reads_in_the_waveform_as_in_the_table(browser, tmp_path):
+    # the readout and the box write a number as the table does (17.875, not 17.88)
+    trace = {"vars": ["h"], "more": 0, "cut": False, "loop": None, "at": 1, "steps": [[1], [17.875], [2]]}
+    page, errors = wave_page(browser, tmp_path, trace)
+    cell = page.locator('#repair table.rp-trace td[data-k="1"]').inner_text()
+    assert cell == "17.875" and wave_row(page, "h").locator(".wv-val").inner_text() == cell
+    assert "17.875" in wave_row(page, "h").locator("text.wv-v").all_text_contents()
+    assert errors == []
+
+
+def test_an_unknown_value_reads_the_same_in_the_table_and_the_waveform(browser, tmp_path):
+    # "?" in the table cell (muted) as in the readout of the waveform, where the band is hatched
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    td = page.locator("#repair table.rp-trace tr", has=page.locator("td.v", has_text="go")).locator('td[data-k="3"]')
+    assert td.inner_text() == "?" and "unk" in td.get_attribute("class")
+    click(page, page.locator('#repair table.rp-trace th[data-k="3"]'))
+    assert wave_row(page, "go").locator(".wv-val").inner_text() == "?"
+    assert wave_row(page, "go").locator("[fill='url(#wvhatch)']").count() >= 1
+    assert errors == []
+
+
+def test_a_requirement_broken_by_the_whole_run_marks_no_step(browser, tmp_path):
+    # F n = 9 fails on the whole run, its loop included: no column red, no "fails" in the drawer, and
+    # the details and the footer say so in words
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT)
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["contract"]["G"] = ["F n = 9"]
+    trace = {"vars": ["n"], "more": 0, "cut": False, "loop": 3, "at": 0, "steps": [[0], [1], [2], [3]]}
+    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": 0, "trace": trace})
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    assert page.locator("#repair table.rp-trace .fail").count() == 0
+    assert "No single step breaks Bound: the whole run does, its loop repeated forever." in page.inner_text("#repair")
+    click(page, page.locator(OPEN_WAVE))
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    assert page.locator("#wave .wv-failat").count() == 0 and "fails" not in page.inner_text("#wave").lower()
+    assert page.locator("#wave rect[fill='#fbeceb']").count() == 0
+    assert "No single step breaks Bound: the whole run does." in page.inner_text("#wave footer")
+    assert errors == []
+
+
+def test_a_value_label_sits_beside_the_cursor(browser, tmp_path):
+    # the cursor inside a long run of one value, at its middle: the word in the larger part beside the
+    # line, not on it
+    trace = {"vars": ["x"], "more": 0, "cut": False, "loop": None, "at": 4,
+             "steps": [[7], [7], [7], [7], [7], [7], [7], [7], [2]]}
+    page, errors = wave_page(browser, tmp_path, trace)
+    row = wave_row(page, "x")
+    line = row.locator("line[stroke='#2f6fb5']").bounding_box()
+    word = row.locator("text.wv-v", has_text="7").bounding_box()
+    assert word["x"] + word["width"] < line["x"]                       # left of the line, the larger part
+    for _ in range(3):
+        page.keyboard.press("ArrowLeft")
+    line = row.locator("line[stroke='#2f6fb5']").bounding_box()          # at step 1: the larger part is right
+    word = row.locator("text.wv-v", has_text="7").bounding_box()
+    assert word["x"] > line["x"] + line["width"]
     assert errors == []

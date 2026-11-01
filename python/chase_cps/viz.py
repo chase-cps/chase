@@ -1916,6 +1916,7 @@ _PAGE = r"""<!doctype html>
   table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:center; color:var(--soft); }
   table.rp-trace td[data-k] { min-width:var(--cw, 0); }
+  table.rp-trace td.unk { color:var(--soft); }
   /* the first column, the names, stays when the table scrolls */
   table.rp-trace th:first-child, table.rp-trace td.v { position:sticky; left:0; background:#fff; box-shadow:inset -1px 0 #e3e8e8; }
   table.rp-trace td.v { z-index:1; } table.rp-trace th:first-child { z-index:3; } table.rp-trace th { z-index:2; }
@@ -3175,8 +3176,7 @@ function factsOf(n, t, r, w) {
                         .map(([x, i]) => x + " = " + fmt(tr.steps[k][i])).join(", ");
     const call = n.model && n.model.source === "c" && t === "M ⊨ C";       // one call of a C function
     const still = tr.steps.length === 1 && tr.loop === 0;                    // one state, forever
-    // a term that asks for something to happen (F, U) fails on the whole trace, not at a step
-    const ever = terms.length && terms.every(x => /^\s*(G\s*)?F\b|^\s*F\[|\bU\b/.test(x));
+    const ever = wholeRun(n, w);
     const k = w.at;
     if (call) out.push(vals(0) ? "Fails for " + vals(0) : "");
     else if (still) out.push(vals(0) ? vals(0) + " at every step" : "");
@@ -3186,6 +3186,11 @@ function factsOf(n, t, r, w) {
   if (r && r.constants.length) out.push("Repairable: " + r.constants.map(x => x.name).join(", "));
   if (!out.filter(Boolean).length && w && w.reason) out.push(reasonOf(w.reason).text);
   return out.filter(Boolean).join(". ");
+}
+// A term that asks for something to happen (F, U) fails on the whole run, its loop included, not at a step.
+function wholeRun(n, w) {
+  const terms = ((w && w.violated) || []).map(i => ((n.contract || {}).G || [])[i]).filter(Boolean);
+  return terms.length > 0 && terms.every(x => /^\s*(G\s*)?F\b|^\s*F\[|\bU\b/.test(x));
 }
 // the tag of a check as the diagram draws it, for a panel
 function tagSvg(t, status) {
@@ -3374,26 +3379,30 @@ function whySection(n, t, st) {
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
   const code = n.model && n.model.source === "c";
   // said only when the table does not: which side fails
+  const whole = w && w.trace && wholeRun(n, w);
+  const looped = w && w.trace && w.trace.loop !== null && w.trace.loop !== undefined;
   const lead = w && w.failed === "assumptions"
-    ? req + " allows this input, and the parts do not accept it." : null;
+    ? req + " allows this input, and the parts do not accept it."
+    : whole ? "No single step breaks " + req + ": the whole run does" + (looped ? ", its loop repeated forever." : ".") : null;
   if (w && w.trace) {
+    const trace = whole ? { ...w.trace, at: null, whole: true } : w.trace;
     if (lead) sec.appendChild(h("div", {}, lead));
     if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
       sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, "The assumptions of the parts it breaks (red):"),
         w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
-    const last = w.trace.steps.length - 1;
+    const last = trace.steps.length - 1;
     // the table picks the step on the diagram: a click on a column, or the arrow keys
-    const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, w.trace, k); table.setStep(k);
+    const go = k => { k = Math.max(0, Math.min(last, k)); panel.step = k; replay(n, trace, k); table.setStep(k);
                       if (WAVE.open) WAVE.setStep(k); };
-    const first = w.trace.vars.filter(v => named.has(v));
+    const first = trace.vars.filter(v => named.has(v));
     // one call of a C function: its inputs and outputs, not a state repeated forever
-    const shown = code && last === 0 ? { ...w.trace, loop: null } : w.trace;
+    const shown = code && last === 0 ? { ...trace, loop: null } : trace;
     const table = traceTable(shown, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
     // the waveform: every step kept, in a drawer under the diagram; its button on the line of the panel
-    if (last > 0) panel.wave = () => openWave(w.trace, first, checkTitle(n, t), go, req);
+    if (last > 0) panel.wave = () => openWave(trace, first, checkTitle(n, t), go, req);
     if (table.nav) {                    // on the line of the heading: the page back and on
       const head = sec.firstChild;
       head.classList.add("rp-hb");
@@ -3431,7 +3440,7 @@ const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) 
 // With a step (the one on the diagram): its column marked blue, the column of the step that fails
 // first red; a click on a column picks its step, and the arrow keys the next one.
 function traceTable(tr, first, req, step, onPick) {
-  const fmt = v => v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
   // one call of a function: name = value; one state repeated forever is a table, with its ↺
   const one = tr.steps.length === 1 && (tr.loop === null || tr.loop === undefined);
@@ -3454,7 +3463,8 @@ function traceTable(tr, first, req, step, onPick) {
                                             + (tr.loop === i ? "The loop starts here. " : "") + show(i) },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
-    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: (tr.at === k ? "fail" : "") + (picks ? " k" : ""),
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: (tr.at === k ? "fail" : "") + (picks ? " k" : "")
+                                                                                    + (st[i] === null || st[i] === undefined ? " unk" : ""),
                                                                            "data-k": String(k), title: show(k) }, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   // the columns of the steps all as wide as the widest value or step of the rows shown
@@ -3841,7 +3851,7 @@ function openWave(tr, first, title, pick, reqName) {
   // the widths on the left: the longest name (and room for the plot button), the widest value
   const MONO = "11px Menlo, Monaco, monospace";
   const nameW = Math.max(72, Math.min(220, Math.ceil(Math.max(0, ...order.map(i => textWidth(tr.vars[i], (req(i) ? "600 " : "") + MONO)))) + 24));
-  const seen = new Set([].concat(...tr.steps.map(st => order.map(i => short(st[i])))));
+  const seen = new Set([].concat(...tr.steps.map(st => order.map(i => fmt(st[i])))));
   const corner = k => DATA.period ? label(k) + " s" : label(k);
   const valW = Math.max(48, Math.min(120, Math.ceil(Math.max(textWidth("value at " + corner(n - 1), "10.5px Helvetica, Arial, sans-serif"),
                                                               ...[...seen].map(v => textWidth(v, MONO)))) + 16));
@@ -3872,7 +3882,8 @@ function openWave(tr, first, title, pick, reqName) {
     : loop === n - 1 ? step1(loop) + " repeats" : steps2(loop, n - 1) + " repeat") + " forever; the faded "
     + (ghost === 1 ? "column is its" : "columns are their") + " next pass. ";
   const foot = h("footer", {}, h("span", { class: "wv-span" }),
-    h("span", { class: "wv-note" }, again + (tr.cut ? "The first " + n + " steps are kept. " : "")),
+    h("span", { class: "wv-note" }, (tr.whole ? "No single step breaks " + reqName + ": the whole run does. " : "")
+                                    + again + (tr.cut ? "The first " + n + " steps are kept. " : "")),
     h("span", { class: "wv-hint" }));
   const fade = h("div", { class: "wv-fade" });     // over the last row in view, when there are more rows under it
   // the keys, as keycaps ("~" a word between them), those of a Mac on a Mac
@@ -4020,7 +4031,7 @@ function openWave(tr, first, title, pick, reqName) {
       const nums = tr.steps.map(st => st[i]).filter(v => typeof v === "number");
       const lo = Math.min(...nums), hi = Math.max(...nums);
       const nm = h("span", { class: "wv-name" + (req(i) ? " port" : ""), title: tr.vars[i], style: "width:" + (nameW - 24) + "px" }, tr.vars[i]);
-      const valv = h("span", { class: "wv-val", style: "width:" + valW + "px" }, short(tr.steps[S.cur][i]));
+      const valv = h("span", { class: "wv-val", style: "width:" + valW + "px" }, fmt(tr.steps[S.cur][i]));
       if (plot) valv.append(h("small", {}, "max " + short(hi)), h("small", {}, "min " + short(lo)));
       let tg = h("span", { class: "wv-plot" });
       if (kd === "num") {
@@ -4073,7 +4084,7 @@ function openWave(tr, first, title, pick, reqName) {
               fill: v === null || v === undefined ? "url(#wvhatch)" : "#f7f9f9", stroke: "#7d8c8d", "stroke-width": 1 }, g);
             if (x1 - x0 - 2 * s >= 17)
               words.push({ t: sv("text", { y: mid, "text-anchor": "middle", "dominant-baseline": "central", class: "wv-v" }, wg),
-                           a: x0 + s, b: x1 - s, txt: short(v), shown: null });
+                           a: x0 + s, b: x1 - s, txt: fmt(v), alt: short(v), shown: null });
             c = e;
           }
         }
@@ -4098,10 +4109,17 @@ function openWave(tr, first, title, pick, reqName) {
   }
   function place() {                     // the words of the boxes, the bar under the steps and the steps in view
     const v0 = scroll.scrollLeft, v1 = v0 + scroll.clientWidth - L;
-    words.forEach(w => {                 // in the middle of the part in view, cut to fit it
-      const a = Math.max(w.a, v0), b = Math.min(w.b, v1);
-      const room = Math.floor((b - a - 4) / 6.6);
-      const txt = room < 2 ? "" : w.txt.length <= room ? w.txt : w.txt.slice(0, room - 1) + "…";
+    const cx = S.cur * S.px + 2;           // the cursor line
+    const roomOf = (a, b) => Math.floor((b - a - 4) / 6.6);
+    words.forEach(w => {                 // in the middle of the part in view, cut to fit it; beside the cursor, not under it
+      let a = Math.max(w.a, v0), b = Math.min(w.b, v1);
+      if (cx > a + 2 && cx < b - 2) {
+        const [l, r] = [[a, cx - 3], [cx + 4, b]];
+        const side = roomOf(...l) >= roomOf(...r) ? l : r;
+        if (roomOf(...side) >= Math.min(2, w.txt.length)) [a, b] = side;
+      }
+      const room = roomOf(a, b);
+      const txt = room < 2 ? "" : w.txt.length <= room ? w.txt : w.alt.length <= room ? w.alt : w.alt.slice(0, room - 1) + "…";
       if (txt !== w.shown) { w.t.textContent = txt; w.shown = txt; }
       if (txt) w.t.setAttribute("x", (a + b) / 2);
     });
