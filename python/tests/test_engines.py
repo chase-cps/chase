@@ -173,3 +173,31 @@ def test_a_loop_closed_by_a_copy_of_its_first_state_with_inputs():
     d = t.to_dict()
     assert [s["c"] for s in d["prefix"]] == [0] and [s["c"] for s in d["loop"]] == [1, 2]
     assert [s["k"] for s in d["loop"]] == [False, True]
+
+
+def test_the_loop_starts_where_the_trace_breaks_the_specification():
+    # nuXmv marks every state equal to the last one (inputs aside) as a start
+    # of the loop; from the last mark, i1 stays true in the loop and the
+    # assumption G F !i1 does not hold: the loop is the one from an earlier mark
+    from chase_cps import ltl
+    from chase_cps.backends.nusmv import parse_trace
+    out = """Trace Type: Counterexample
+  -- Loop starts here
+  -> State: 1.1 <-
+    o = FALSE
+  -> Input: 1.2 <-
+    i1 = TRUE
+  -- Loop starts here
+  -> State: 1.2 <-
+  -> Input: 1.3 <-
+    i1 = FALSE
+  -- Loop starts here
+  -> State: 1.3 <-
+  -> Input: 1.4 <-
+    i1 = TRUE
+  -> State: 1.4 <-
+"""
+    v = {"o": "bool", "i1": "bool"}
+    assert parse_trace(out, v).to_dict()["loop"] == [{"o": False, "i1": True}]
+    t = parse_trace(out, v, ltl.parse("G F !i1 -> X o")).to_dict()
+    assert [s["i1"] for s in t["prefix"]] == [True] and [s["i1"] for s in t["loop"]] == [False, True]

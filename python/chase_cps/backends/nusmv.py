@@ -257,12 +257,21 @@ class NuSMVAdapter(Adapter):
             return Result(UNKNOWN, backend, reason=reason or "no verdict in the output",
                           seconds=seconds, details={"model": self.emit(query)})
         holds = verdict.group(1) == "true"
-        trace = None if holds else parse_trace(stdout, query.variables)
+        trace = None if holds else parse_trace(stdout, query.variables, _broken(query))
         if isinstance(query, (Implies, Holds)):
             status = VALID if holds else INVALID
         else:   # Satisfiable: !phi valid means phi unsatisfiable
             status = UNSAT if holds else SAT
         return Result(status, backend, trace=trace, seconds=seconds)
+
+
+def _broken(query):
+    """The formula that a counterexample of the query breaks."""
+    if isinstance(query, Implies):
+        return ltl.Binary("->", query.phi, query.psi)
+    if isinstance(query, Satisfiable):
+        return ltl.Unary("!", query.phi)
+    return query.phi
 
 
 def _error(output: str) -> str:
@@ -394,20 +403,24 @@ def _value(text: str):
         return text
 
 
-def parse_trace(output: str, variables: dict) -> Trace | None:
-    """Parse the first counterexample printed by NuSMV or nuXmv."""
+def parse_trace(output: str, variables: dict, spec=None) -> Trace | None:
+    """Parse the first counterexample printed by NuSMV or nuXmv. Every state
+    equal to the last one (inputs aside) is marked as a start of the loop;
+    the loop is from the last mark, or, given the specification the trace
+    breaks, from the last mark where the trace does break it (the loop the
+    model checker found is one of them, and the others are behaviors too)."""
     start = output.find("Trace Type: Counterexample")
     if start < 0:
         return None
     states: list[dict] = []
-    loop_at = None
+    marks: list[int] = []
     current: dict = {}
     inputs: set = set()                 # the input variables (IVAR): on the step they leave
     reading_input = False
     for line in output[start:].splitlines()[1:]:
         line = line.strip()
         if line.startswith("-- Loop starts here"):
-            loop_at = len(states)
+            marks.append(len(states))
         elif line.startswith("-> State:"):
             current = dict(states[-1]) if states else {}
             states.append(current)
@@ -427,14 +440,28 @@ def parse_trace(output: str, variables: dict) -> Trace | None:
                 break
     if not states:
         return None
-    if loop_at is None:
+    if not marks:
         return Trace(prefix=states, loop=[])
-    # The last state closes the loop: it equals the state where the loop starts.
-    # Its inputs are not compared: they are carried from the step before (the
-    # input that leaves the last state, back to the loop, is not printed).
-    loop = states[loop_at:]
-    same = lambda a, b: {k: v for k, v in a.items() if k not in inputs} == \
-        {k: v for k, v in b.items() if k not in inputs}
-    if len(loop) > 1 and same(loop[-1], loop[0]):
-        loop = loop[:-1]
-    return Trace(prefix=states[:loop_at], loop=loop)
+
+    def lasso(loop_at):
+        # The last state closes the loop: it equals the state where the loop
+        # starts. Its inputs are not compared: they are carried from the step
+        # before (the input that leaves the last state, back to the loop, is
+        # not printed).
+        loop = states[loop_at:]
+        same = lambda a, b: {k: v for k, v in a.items() if k not in inputs} == \
+            {k: v for k, v in b.items() if k not in inputs}
+        if len(loop) > 1 and same(loop[-1], loop[0]):
+            loop = loop[:-1]
+        return Trace(prefix=states[:loop_at], loop=loop)
+
+    if spec is not None and len(marks) > 1:
+        from ..repair.instantiate import on_trace
+        for at in reversed(marks):
+            t = lasso(at)
+            try:
+                if on_trace(spec, t, ()) == ltl.Const(False):
+                    return t
+            except Exception:       # a term the evaluation does not read
+                break
+    return lasso(marks[-1])
