@@ -1691,8 +1691,6 @@ _PAGE = r"""<!doctype html>
          display:none; flex-direction:column; z-index:10; }
   #pop header { padding:9px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
   #pop header b { font-size:13px; font-weight:600; flex:1; }
-  #pop button { font:12px -apple-system, Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
-                border-radius:6px; padding:2px 10px; cursor:pointer; color:var(--soft); }
   #popview { overflow:auto; padding:6px 18px 16px; }
   table.fsm { border-collapse:collapse; font:11.5px Menlo, Monaco, monospace; }
   table.fsm th { font:600 11.5px -apple-system, Helvetica, Arial, sans-serif; text-align:left; color:var(--soft);
@@ -1707,11 +1705,12 @@ _PAGE = r"""<!doctype html>
           font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   body.insp #insp { display:flex; }
   body.insp #view { right:424px; }
-  #insp-tabs { display:flex; align-items:flex-end; gap:2px; padding:4px 6px 0 8px; border-bottom:1px solid #e3e8e8; flex:none; }
-  #insp-tabs button.tab { border:0; background:none; padding:7px 10px 6px; cursor:pointer; color:var(--soft);
-                          font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; border-bottom:2px solid transparent; }
-  #insp-tabs button.tab.on { color:var(--teal); border-bottom-color:var(--teal); }
-  #insp-tabs .count { margin-left:5px; padding:0 5px; border-radius:7px; background:var(--bad); color:#fff; font-size:10.5px; }
+  #insp-bar { display:flex; align-items:center; gap:6px; min-height:34px; padding:0 10px 0 14px; border-bottom:1px solid #e3e8e8; flex:none;
+              font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--teal); }
+  #insp-bar .count { padding:0 5px; border-radius:7px; background:var(--bad); color:#fff; font-size:10.5px; }
+  #insp-bar button.back { border:0; background:none; cursor:pointer; color:var(--teal); padding:3px 6px; margin-left:-6px;
+                          border-radius:5px; font:inherit; }
+  #insp-bar button.back:hover { background:var(--fill); }
   #repair { flex:1; overflow:auto; }
   @media (max-width: 820px) {
     #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
@@ -1722,8 +1721,8 @@ _PAGE = r"""<!doctype html>
   .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
   .rp-step input { flex:1; accent-color:var(--teal); }
   ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
-  .rp-head { display:flex; gap:8px; align-items:center; padding:9px 10px 8px 14px; border-bottom:1px solid #e3e8e8;
-             position:sticky; top:0; background:#fff; }
+  .rp-head { display:grid; grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
+             padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1; }
   .rp-head b { flex:1; font-size:12.5px; font-weight:600; min-width:0; overflow-wrap:anywhere; }
   .rp-x { border:0; background:none; cursor:pointer; color:var(--soft); font-size:16px; line-height:1; padding:2px 6px; border-radius:5px; }
   .rp-x:hover { background:var(--fill); color:var(--teal); }
@@ -1786,18 +1785,30 @@ _PAGE = r"""<!doctype html>
   table.rp-trace th.fail { color:var(--bad); }
   .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
   table.rp-trace td.fail { background:#fbeceb; }
+  table.rp-trace th.cur { color:#2f6fb5; box-shadow:inset 0 -2px #2f6fb5; }
+  table.rp-trace th.cur.fail { color:var(--bad); }
+  table.rp-trace td.cur { box-shadow:inset 2px 0 #2f6fb5, inset -2px 0 #2f6fb5; }
+  table.rp-trace th.k { cursor:pointer; } table.rp-trace th.k:hover { color:#2f6fb5; }
+  .rp-at { color:var(--soft); margin-top:4px; } .rp-at .b { color:#2f6fb5; font-weight:600; } .rp-at .r { color:var(--bad); font-weight:600; }
   table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
   .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
              font:11px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; padding:4px 0 0; }
   pre.code { margin:0 0 12px; font:11.5px/1.55 Menlo, Monaco, monospace; color:var(--ink); overflow-x:auto; }
+  details.rp-code > summary { cursor:pointer; margin:2px 0; }
+  details.rp-code[open] > summary { margin-bottom:6px; }
+  details.rp-code pre.code { margin-bottom:4px; }
+  pre.code span.l { display:block; } pre.code span.l.hit { background:#fbeceb; }
   pre.code span.n { display:inline-block; width:2.4em; color:var(--faint); text-align:right; margin-right:12px;
                     user-select:none; -webkit-user-select:none; }
   #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
-  .q-item { padding:9px 10px 8px 14px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid; gap:3px; }
+  .q-item { padding:9px 10px 8px 8px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid;
+            grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center; }
+  .q-tag { display:flex; justify-content:center; align-items:center; }
+  .q-main { display:grid; gap:3px; min-width:0; }
   .q-item.on { background:#eef3f9; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
   /* the title of an item as the title of its details: no jump from one to the other */
-  .q-item .t { display:flex; gap:8px; align-items:center; font-weight:600; font-size:12.5px; }
+  .q-item .t { font-weight:600; font-size:12.5px; overflow-wrap:anywhere; }
   .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
   .q-item .v { font:11px Menlo, Monaco, monospace; color:var(--ink); }
   .tools #repairs { width:auto; padding:0 7px; gap:4px; display:none; color:var(--bad); font:600 11.5px Helvetica, Arial, sans-serif; }
@@ -1823,8 +1834,8 @@ _PAGE = r"""<!doctype html>
 <div id="stale"></div>
 <div id="busy">checking…</div>
 <div id="tip"></div>
-<div id="pop"><header><b id="poptitle"></b><button onclick="closePop()">close</button></header><div id="popview"></div></div>
-<div id="insp" role="complementary" aria-label="The checks"><div id="insp-tabs"></div><div id="repair"></div></div>
+<div id="pop"><header><b id="poptitle"></b><button class="rp-x" title="Close" aria-label="Close" onclick="closePop()">×</button></header><div id="popview"></div></div>
+<div id="insp" role="complementary" aria-label="The checks"><div id="insp-bar"></div><div id="repair"></div></div>
 __ELK__
 <script>
 let DATA = __DATA__;
@@ -2467,9 +2478,12 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
     zoomAt(e.clientX, e.clientY, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)));          // a pinch comes with ctrl
   }, { passive: false });
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {                     // the help first, then the panel
-      const help = document.getElementById("help");
-      if (help.style.display === "block") help.style.display = "none"; else hideInspector();
+    if (e.key === "Escape") {      // the help first, the model window, the details (back to the list), the panel
+      const help = document.getElementById("help"), pop = document.getElementById("pop");
+      if (help.style.display === "block") help.style.display = "none";
+      else if (pop.style.display === "flex") closePop();
+      else if (inspector.open && inspector.tab === "details" && panel) closeRepair();
+      else hideInspector();
       return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
       if (!cam) return;
@@ -2965,9 +2979,10 @@ function tagSvg(t, status) {
   tag(svg, 1, 1, t, status || null);
   return svg;
 }
-// The panel of the checks: docked on the right of the diagram, with its
-// tabs: the checks that fail, the check picked (why it fails, how to fix it),
-// and the code of a C function. A click on the tag of a check picks it.
+// The panel of the checks: docked on the right of the diagram. It shows the
+// list of the checks that fail, or the details of the one picked (why it
+// fails, the code of a C function, how to fix it), with a way back to the
+// list. A click on the tag of a check picks it.
 let inspector = { open: false, tab: "problems" };
 // the view keeps its middle when the panel takes the right of the window, or gives it back
 function shiftView(sign) {
@@ -3031,16 +3046,14 @@ function rebindPanel() {
 }
 function renderInspector() {
   if (!inspector.open) return;
-  const list = failing(), n = panel && byId[panel.id], code = n && n.model && n.model.code;
+  const list = failing(), n = panel && byId[panel.id];
   if (inspector.tab === "details" && !n) inspector.tab = "problems";
-  if (inspector.tab === "code" && !code) inspector.tab = n ? "details" : "problems";
-  const tabs = document.getElementById("insp-tabs");
-  tabs.innerHTML = "";
-  const tab = (key, label, count) => h("button", { class: "tab" + (inspector.tab === key ? " on" : ""),
-    onclick: () => { inspector.tab = key; renderInspector(); } }, label, count ? h("span", { class: "count" }, String(count)) : null);
-  tabs.append(tab("problems", "Problems", list.length), n ? tab("details", "Details") : "", code ? tab("code", "Code") : "");
+  const bar = document.getElementById("insp-bar");
+  bar.innerHTML = "";
+  if (inspector.tab === "details")
+    bar.append(h("button", { class: "back", title: "Back to the checks that fail (Esc)", onclick: closeRepair }, "← Problems"));
+  else bar.append("Problems", list.length ? h("span", { class: "count" }, String(list.length)) : "");
   if (inspector.tab === "problems") fillProblems(list);
-  else if (inspector.tab === "code") fillCode(n);
   else fillPanel();
 }
 const ROLE = { part: "part", requirement: "requirement", contract: "contract" };
@@ -3053,8 +3066,7 @@ function fillPanel() {
   if (!n) return;
   const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
   box.appendChild(h("div", { class: "rp-head" },
-    tagSvg(t, st), h("b", {}, checkTitle(n, t)),
-    h("button", { class: "rp-x", title: "Back to the list", onclick: closeRepair }, "×")));
+    h("span", { class: "q-tag" }, tagSvg(t, st)), h("b", {}, checkTitle(n, t))));
   const unsure = st === "unknown" ? ((n.badge && tagOf(n.badge.text) === t ? n.badge.reason
                                      : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
   const says = st === "valid" ? "Holds." : st === "invalid" ? null
@@ -3063,6 +3075,8 @@ function fillPanel() {
   if (says) box.appendChild(h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says)));
   const why = whySection(n, t, st);
   if (why) box.appendChild(why);
+  const code = codeSection(n);
+  if (code) box.appendChild(code);
   if (st !== "invalid") return;          // nothing to fix
   if (!r) { box.appendChild(noRepairSection(n, t)); return; }
   const s = stateOf(r), sig = repairSig(r);
@@ -3132,13 +3146,19 @@ function whySection(n, t, st) {
         w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
-    sec.appendChild(traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req));
     const last = w.trace.steps.length - 1;
-    if (last > 0) {                        // a step of the counterexample, on the diagram
+    let slider = null, say = () => {};
+    const go = k => {                      // a step of the counterexample, on the diagram, in the table, on the slider
+      panel.step = k; say(k); replay(n, w.trace, k); table.setStep(k);
+      if (slider) slider.value = k;
+    };
+    const table = traceTable(w.trace, w.trace.vars.filter(v => named.has(v)), req, last > 0 ? panel.step || 0 : null, go);
+    sec.appendChild(table);
+    if (last > 0) {
       const label = h("span", {}, "");
-      const say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) : "step " + k) + (w.trace.loop === k ? " ↺" : ""); };
-      const slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
-        oninput: e => { panel.step = +e.target.value; say(panel.step); replay(n, w.trace, panel.step); } });
+      say = k => { label.textContent = (DATA.period ? "t = " + timeOf(k) : "step " + k) + (w.trace.loop === k ? " ↺" : ""); };
+      slider = h("input", { type: "range", min: 0, max: last, value: panel.step || 0, "aria-label": "step",
+        oninput: e => go(+e.target.value) });
       say(panel.step || 0);
       sec.appendChild(h("div", { class: "rp-step", title: "The values of this step are on the diagram" }, slider, label));
     }
@@ -3146,7 +3166,14 @@ function whySection(n, t, st) {
     sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
                       "Not kept: " + (inEditor() ? "press ▶ to check again." : "run the check again.")));
   }
-  const toCode = () => { inspector.tab = "code"; renderInspector(); };
+  const toCode = () => {                 // the code, unfolded, at the line
+    const d = document.querySelector("#repair details.rp-code"), at = d && d.querySelector('[data-line="' + why.line + '"]');
+    if (!d) return;
+    d.open = true; panel.code = true;
+    d.querySelectorAll(".hit").forEach(x => x.classList.remove("hit"));
+    if (at) at.classList.add("hit");
+    (at || d).scrollIntoView({ block: "center" });
+  };
   const why = w && w.reason ? reasonOf(w.reason) : null;
   if (why) sec.appendChild(h("div", { class: "rp-note", title: w.reason }, why.text,
     why.line && code && n.model.code ? [", ", h("button", { class: "rp-link", onclick: toCode }, "line " + why.line)]
@@ -3161,7 +3188,9 @@ function reasonOf(r) {
 // A step as the page shows it: its number, or its time i·Δτ when the diagram has a period.
 const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) : String(i);
 // A counterexample: one column per step (one only for a check of one call), the ports of the box first.
-function traceTable(tr, first, req) {
+// With a step (the one on the diagram): its column marked blue, the column of the step that fails
+// first red, a line above that says which is which; a click on the head of a column picks its step.
+function traceTable(tr, first, req, step, onPick) {
   const fmt = v => v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
   // one call of a function: name = value; one state repeated forever is a table, with its ↺
@@ -3174,14 +3203,16 @@ function traceTable(tr, first, req) {
   }
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
   const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
+  const picks = step !== null && step !== undefined && onPick;
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
-    tr.steps.map((_, i) => h("th", { class: tr.at === i ? "fail" : "",
+    tr.steps.map((_, i) => h("th", { class: (tr.at === i ? "fail" : "") + (picks ? " k" : ""), "data-k": String(i),
                                      title: (tr.at === i ? "a term fails first at this step. " : "")
                                             + (tr.loop === i ? "the loop starts here, and repeats forever. " : "")
-                                            + (DATA.period ? "step " + i : "") },
+                                            + (DATA.period ? "step " + i + ". " : "") + (picks ? "Click: this step on the diagram." : ""),
+                                     onclick: picks ? () => onPick(i) : null },
                              (tr.loop === i ? "↺ " : "") + timeOf(i)))));
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
-    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: tr.at === k ? "fail" : "" }, cell(st[i])))));
+    h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: tr.at === k ? "fail" : "", "data-k": String(k) }, cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   rows.slice(0, LIMIT).forEach(r => t.appendChild(r));
   const wrap = h("div", { class: "rp-tracewrap" }, t);
@@ -3195,7 +3226,29 @@ function traceTable(tr, first, req) {
                    ? "↺ " + timeOf(tr.loop) + ": from this step on, the steps repeat forever." : null,
                  tr.more ? tr.more + " more variables not kept." : null].filter(Boolean);
   if (notes.length) wrap.appendChild(h("div", { class: "rp-note" }, notes.join(" ")));
-  return wrap;
+  if (!picks) { wrap.setStep = () => {}; return wrap; }
+  const at = h("div", { class: "rp-at" });
+  const name = k => DATA.period ? "t = " + timeOf(k) : "step " + k;
+  const out = h("div", {}, at, wrap);
+  out.setStep = k => {
+    t.querySelectorAll(".cur").forEach(x => x.classList.remove("cur"));
+    t.querySelectorAll('[data-k="' + k + '"]').forEach(x => x.classList.add("cur"));
+    at.innerHTML = "";
+    const fails = tr.at !== null && tr.at !== undefined;
+    if (fails && tr.at === k) at.append("The diagram shows ", h("span", { class: "b" }, name(k) + " (blue)"),
+                                        ", where a term fails first ", h("span", { class: "r" }, "(red)"), ".");
+    else at.append("The diagram shows ", h("span", { class: "b" }, name(k) + " (blue)"),
+                   fails ? h("span", {}, "; a term fails first at ", h("span", { class: "r" }, name(tr.at) + " (red)"), ".") : ".");
+    const th = t.querySelector('th[data-k="' + k + '"]'), v = t.querySelector("th");   // the column in view
+    if (th) {
+      const left = th.offsetLeft - (v ? v.offsetWidth : 0), right = th.offsetLeft + th.offsetWidth;
+      if (left < wrap.scrollLeft) wrap.scrollLeft = left;
+      else if (right > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = right - wrap.clientWidth;
+    }
+  };
+  requestAnimationFrame(() => out.setStep(step));       // once in the page: the scroll needs its width
+  out.setStep(step);
+  return out;
 }
 // A check that fails with no constant to repair, or a page that cannot run repairs: in a few points.
 function noRepairSection(n, t) {
@@ -3426,22 +3479,28 @@ function fillProblems(list) {
       : "no constant to repair";
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
                                onclick: () => openRepair(n, t) },
-      h("div", { class: "t" }, tagSvg(t, "invalid"), checkTitle(n, t)),
-      h("div", { class: best ? "v" : "s" }, what)));
+      h("div", { class: "q-tag" }, tagSvg(t, "invalid")),
+      h("div", { class: "q-main" }, h("div", { class: "t" }, checkTitle(n, t)),
+        h("div", { class: best ? "v" : "s" }, what))));
   });
 }
-function fillCode(n) {
-  const box = document.getElementById("repair"), c = n.model.code;
-  box.innerHTML = "";
-  const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h", style: "text-transform:none;letter-spacing:0" }, c.file));
+// The code of a C function in the details, folded: its title says whose it is.
+function codeSection(n) {
+  const c = n.model && n.model.code;
+  if (!c) return null;
+  const d = h("details", { class: "rp-sec rp-code" },
+    h("summary", { class: "rp-h" }, "Code of ",
+      h("span", { style: "text-transform:none;letter-spacing:0" }, c.file + ": " + n.model.name)));
+  d.open = !!panel.code;
+  d.addEventListener("toggle", () => { panel.code = d.open; });
   c.parts.forEach((q, i) => {
-    if (c.parts.length > 1) sec.appendChild(h("div", { class: "rp-note", style: "margin:" + (i ? 8 : 4) + "px 0 2px" }, q.name));
+    if (c.parts.length > 1) d.appendChild(h("div", { class: "rp-note", style: "margin:" + (i ? 8 : 4) + "px 0 2px" }, q.name));
     const pre = h("pre", { class: "code" });
-    q.text.split("\n").forEach((l, i) => { pre.appendChild(h("span", { class: "n" }, String(q.line + i)));
-                                         pre.appendChild(document.createTextNode(l + "\n")); });
-    sec.appendChild(pre);
+    q.text.split("\n").forEach((l, i) => pre.appendChild(h("span", { class: "l", "data-line": String(q.line + i) },
+      h("span", { class: "n" }, String(q.line + i)), l + "\n")));
+    d.appendChild(pre);
   });
-  box.appendChild(sec);
+  return d;
 }
 // The checks that fail, on the tools: the button opens the list.
 function renderQueue() {

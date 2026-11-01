@@ -335,7 +335,9 @@ def test_a_red_tag_opens_its_repairs(browser, tmp_path):
         {"line": 12, "name": "k", "value": "3"}]
     none = page.inner_text("#repair .rp-opt.impossible")
     assert none.startswith("No value in") and "\ntop, k\n" in none
-    page.keyboard.press("Escape")
+    page.keyboard.press("Escape")            # the details, back to the list
+    assert page.is_visible("#repair .q-item") and "← Problems" not in page.inner_text("#insp-bar")
+    page.keyboard.press("Escape")            # then the panel
     assert not page.is_visible("#repair")
     assert errors == []
 
@@ -384,9 +386,10 @@ CONTRACT Bound:
     page.mouse.click(b["x"] + b["width"] - 3, b["y"] + b["height"] / 2)
     assert any(v.startswith("n = ") for v in page.locator("#view .pv-val").all_text_contents())
     # the list of the problems: this one, though it has no constant
-    tab = page.locator("#insp-tabs .tab", has_text="Problems").bounding_box()
-    page.mouse.click(tab["x"] + tab["width"] / 2, tab["y"] + tab["height"] / 2)
+    back = page.locator("#insp-bar button.back", has_text="Problems").bounding_box()
+    page.mouse.click(back["x"] + back["width"] / 2, back["y"] + back["height"] / 2)
     assert "Counter does not refine Bound" in page.inner_text("#repair .q-item")
+    assert page.locator("#insp-bar button").count() == 0       # nothing of the details left
     page.keyboard.press("Escape")
     assert not page.is_visible("#insp")
     assert errors == []
@@ -443,6 +446,16 @@ def test_the_code_of_a_c_function(browser, tmp_path):
     codes = page.locator("#pop pre.code").all_inner_texts()
     assert codes[0].startswith("5") and "helper(a)" in codes[0]
     assert codes[1].startswith("1") and "return x + 1" in codes[1]
+    # closed by a small cross, as the panel, or by Esc
+    x = page.locator("#pop header button")
+    assert x.inner_text() == "×" and x.get_attribute("aria-label") == "Close" and "rp-x" in x.get_attribute("class")
+    b = x.bounding_box()
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+    assert not page.is_visible("#pop")
+    page.mouse.click(icon["x"] + icon["width"] / 2, icon["y"] + icon["height"] / 2)
+    page.wait_for_selector("#pop pre.code", timeout=5000)
+    page.keyboard.press("Escape")
+    assert not page.is_visible("#pop")
     assert errors == []
 
 
@@ -487,3 +500,136 @@ def test_a_counterexample_of_one_state_repeated_forever(browser, tmp_path):
     assert "rp-values" in call and "x = 1" in call
     assert not errors
     page.close()
+
+
+TWO_PROBLEMS = """NAME: w;
+CONTRACT Counter:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        n = 0;
+        G ((n < 3 -> n' = n + 1) & (n >= 3 -> n' = n));
+CONTRACT Bound:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        G (n <= 1);
+CONTRACT Inc:
+    input integer (0:3) variable a;
+    output integer (0:9) variable b;
+    Assumptions:
+        true;
+    Guarantees:
+        G (b = a + 1);
+"""
+
+
+def two_problems(browser, tmp_path):
+    """A refinement that fails and a C function that does not implement its contract."""
+    import shutil
+    if not (__import__("test_viz").HAS_MC and (shutil.which("esbmc") or shutil.which("cbmc"))):
+        pytest.skip("nuXmv and ESBMC or CBMC are needed")
+    (tmp_path / "w.ltl").write_text(TWO_PROBLEMS)
+    (tmp_path / "f.c").write_text("int inc(int a) {\n    return a + 2;\n}\n")
+    d = viz.from_spec(str(tmp_path / "w.ltl"), refines=[("Counter", "Bound")],
+                      implementations=[(str(tmp_path / "f.c") + ":inc", "Inc")], check=True)
+    page, errors = open_page(browser, tmp_path, d)
+    b = page.locator("#repairs").bounding_box()
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+    page.wait_for_selector("#repair .q-item", timeout=5000)
+    return page, errors
+
+
+def click(page, locator):
+    # the list is drawn again after the diagram (a few ms): the element is looked up again then
+    for attempt in range(5):
+        try:
+            locator.scroll_into_view_if_needed(timeout=2000)
+            b = locator.bounding_box()
+            if b:
+                break
+        except pw.Error:
+            page.wait_for_timeout(100)
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+
+
+def test_the_panel_goes_from_the_list_to_the_details_and_back(browser, tmp_path):
+    # no tabs: the list, the details of one check with "← Problems", and back, with nothing left of the details
+    page, errors = two_problems(browser, tmp_path)
+    assert page.inner_text("#insp-bar").split() == ["Problems", "2"]
+    assert page.locator("#insp-bar button").count() == 0
+    click(page, page.locator("#repair .q-item", has_text="implement"))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert page.inner_text("#insp-bar").strip() == "← Problems"
+    # the code of the function: in the details, folded, after the counterexample
+    code = page.locator("#repair details.rp-code")
+    assert code.count() == 1 and not code.evaluate("d => d.open")
+    assert page.inner_text("#repair details.rp-code summary").endswith("f.c: inc")
+    order = page.evaluate("[...document.querySelectorAll('#repair > *')].map(e => e.className)")
+    assert order.index("rp-sec rp-code") > [i for i, c in enumerate(order) if c == "rp-sec"][0]
+    click(page, page.locator("#repair details.rp-code summary"))
+    assert code.evaluate("d => d.open") and "return a + 2" in page.inner_text("#repair details.rp-code")
+    # back to the list: the bar and the list as before
+    click(page, page.locator("#insp-bar button.back"))
+    assert page.inner_text("#insp-bar").split() == ["Problems", "2"]
+    assert page.locator("#repair details.rp-code").count() == 0 and page.locator("#repair .q-item").count() == 2
+    # Esc: the details, back to the list; then the panel
+    click(page, page.locator("#repair .q-item", has_text="refine"))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    page.keyboard.press("Escape")
+    assert page.locator("#repair .q-item").count() == 2 and page.locator("#insp-bar button").count() == 0
+    page.keyboard.press("Escape")
+    assert not page.is_visible("#insp")
+    # a red tag on the diagram opens the details too, and goes back to the list
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    click(page, page.locator("#insp-bar button.back"))
+    assert page.locator("#repair .q-item").count() == 2
+    assert errors == []
+
+
+def test_the_list_of_the_problems_is_aligned(browser, tmp_path):
+    # the tags, of different widths, centered in a column of one width; the texts start at one place
+    page, errors = two_problems(browser, tmp_path)
+    tags = [page.locator("#repair .q-item .q-tag").nth(i).bounding_box() for i in range(2)]
+    svgs = [page.locator("#repair .q-item .q-tag svg").nth(i).bounding_box() for i in range(2)]
+    texts = [page.locator("#repair .q-item .q-main").nth(i).bounding_box() for i in range(2)]
+    assert abs(tags[0]["width"] - tags[1]["width"]) < 0.5 and abs(tags[0]["x"] - tags[1]["x"]) < 0.5
+    assert svgs[0]["width"] != svgs[1]["width"]             # the tags are not as wide
+    for t, g in zip(tags, svgs):                             # each in the middle of the column
+        assert abs((g["x"] + g["width"] / 2) - (t["x"] + t["width"] / 2)) < 1
+    assert abs(texts[0]["x"] - texts[1]["x"]) < 0.5
+    # the details keep the column: the title does not jump
+    title = page.locator("#repair .q-item .t").first.bounding_box()
+    click(page, page.locator("#repair .q-item").first)
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert abs(page.locator("#repair .rp-head b").bounding_box()["x"] - title["x"]) < 1
+    assert errors == []
+
+
+def test_the_step_on_the_diagram_in_the_table(browser, tmp_path):
+    # the column of the step on the diagram is marked, and follows the slider; the column of the step
+    # that fails first stays red; a line says which is which; a click on the head of a column picks it
+    page, errors = two_problems(browser, tmp_path)
+    click(page, page.locator("#repair .q-item", has_text="refine"))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    fail = page.get_attribute("#repair table.rp-trace th.fail", "data-k")
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == fail       # it opens there
+    assert page.inner_text("#repair .rp-at") == f"The diagram shows step {fail} (blue), where a term fails first (red)."
+    slider = page.locator("#repair .rp-step input")
+    slider.scroll_into_view_if_needed()
+    s = slider.bounding_box()
+    page.mouse.move(s["x"] + s["width"] / 2, s["y"] + s["height"] / 2)
+    page.mouse.down(); page.mouse.move(s["x"] + 2, s["y"] + s["height"] / 2, steps=6); page.mouse.up()
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "0"
+    assert page.locator("#repair table.rp-trace td.cur").count() >= 1
+    assert page.get_attribute("#repair table.rp-trace th.fail", "data-k") == fail          # red stays
+    assert page.inner_text("#repair .rp-at") == f"The diagram shows step 0 (blue); a term fails first at step {fail} (red)."
+    # a click on the head of the column of step 1
+    click(page, page.locator('#repair table.rp-trace th[data-k="1"]'))
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "1"
+    assert slider.evaluate("e => e.value") == "1" and page.inner_text("#repair .rp-step").startswith("step 1")
+    assert "n = 1" in page.locator("#view .pv-val").all_text_contents()
+    assert errors == []
