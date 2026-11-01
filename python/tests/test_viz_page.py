@@ -817,7 +817,7 @@ def test_a_repair_with_no_answer_can_try_longer(browser, tmp_path):
     assert errors == []
 
 
-# The waveform of a counterexample: a window over the diagram, a row for each variable
+# The waveform of a counterexample: a drawer under the diagram, a row for each variable
 def wave_page(browser, tmp_path, trace):
     """Bound fails with the given trace; the waveform opened with the mouse."""
     from test_viz import COUNT
@@ -828,88 +828,161 @@ def wave_page(browser, tmp_path, trace):
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|⪯"]'))
     page.wait_for_selector("#repair table.rp-trace", timeout=5000)
-    click(page, page.locator('#repair button.ib[aria-label="Open the waveform"]'))
+    click(page, page.locator(OPEN_WAVE))
     page.wait_for_selector("#wave .wv-row", timeout=5000)
     return page, errors
 
 
+OPEN_WAVE = '#repair button.ib[aria-label^="Open the waveform"]'
 MIXED = {"vars": ["go", "x", "n", "mode"], "more": 0, "cut": False, "loop": 3, "at": 2,
          "steps": [[True, 0.5, 0, "idle"], [False, 0.5, 1, "run"], [True, 1.25, 2, "run"], [None, 2, 3, "stop"], [True, 2, 3, "stop"]]}
 
 
-def wave_step_x(page, k):
-    """The middle of the column of step k in the first row of the waveform, on the screen."""
-    svg = page.locator("#wave .wv-row:not(.wv-axis) svg.wv-svg").first.bounding_box()
+def wave_row(page, v):
+    return page.locator("#wave .wv-row[data-i]", has=page.locator(f'.wv-name[title="{v}"]'))
+
+
+def wave_step_x(page, k, v=None):
+    """The middle of the column of step k in the first row of the waveform (or the row of v), on the screen."""
+    svg = (wave_row(page, v) if v else page.locator("#wave .wv-row[data-i]").first).locator("svg.wv-svg").bounding_box()
     px = page.evaluate("WAVE.px()")
     return svg["x"] + (k + .5) * px, svg["y"] + svg["height"] / 2
 
 
 def test_the_waveform_opens_and_closes(browser, tmp_path):
-    # the button on the right of COUNTEREXAMPLE; a large window with the check, a row for each variable
-    # (those of the requirement first), the cross and Esc to close
+    # the button on the line of COUNTEREXAMPLE; a drawer under the diagram that leaves the details in
+    # view, with the check, a row for each variable (those of the requirement first, under their
+    # group), the cross and Esc to close
     page, errors = wave_page(browser, tmp_path, MIXED)
-    head = page.locator("#repair .rp-hb", has=page.locator('button[aria-label="Open the waveform"]'))
-    assert head.inner_text().strip().lower() == "counterexample"
-    box = page.locator("#wave").bounding_box()
-    assert box["width"] > 0.85 * 1200 and box["height"] < 0.8 * 800 + 1
+    head = page.locator("#repair .rp-hb", has=page.locator(OPEN_WAVE[8:]))
+    assert head.inner_text().lower().startswith("counterexample")
+    box, insp = page.locator("#wave").bounding_box(), page.locator("#insp").bounding_box()
+    assert box["x"] == pytest.approx(16, abs=1) and box["y"] + box["height"] == pytest.approx(800 - 16, abs=1)
+    assert box["x"] + box["width"] == pytest.approx(insp["x"] - 16, abs=1)       # beside the details, not over them
+    assert box["height"] <= 0.45 * 800 + 1
     assert "do not refine" in page.inner_text("#wave header b") or "does not refine" in page.inner_text("#wave header b")
-    names = page.locator("#wave .wv-row:not(.wv-axis) .wv-name").all_text_contents()
+    names = page.locator("#wave .wv-row[data-i] .wv-name").all_text_contents()
     assert names == ["n", "go", "x", "mode"]
-    assert "fails at step 2" in page.inner_text("#wave .wv-where")
+    assert page.locator("#wave .wv-gname").all_inner_texts() == ["REQUIREMENT", "OTHERS"]
     page.keyboard.press("Escape")
     assert not page.is_visible("#wave")
     assert page.is_visible("#repair table.rp-trace")              # the details stay
-    click(page, page.locator('#repair button.ib[aria-label="Open the waveform"]'))
+    click(page, page.locator(OPEN_WAVE))
     click(page, page.locator('#wave button[aria-label="Close (Esc)"]'))
     assert not page.is_visible("#wave")
     assert errors == []
 
 
+def test_the_waveform_fits_its_columns(browser, tmp_path):
+    # the names as wide as the longest (and the plot button), the values as the widest (four digits),
+    # the steps the rest of the width
+    long = "a_rather_long_variable_name"
+    trace = {"vars": [long, "h"], "more": 0, "cut": False, "loop": None, "at": 2,
+             "steps": [[True, 1], [False, 17.96875], [True, 2.5]]}
+    page, errors = wave_page(browser, tmp_path, trace)
+    name = page.locator(f'#wave .wv-name[title="{long}"]')
+    assert page.evaluate("e => e.scrollWidth <= e.clientWidth", name.element_handle())   # not cut
+    left = page.locator("#wave .wv-row[data-i] .wv-left").first.bounding_box()["width"]
+    assert left == page.evaluate("WAVE.left()") and left < 12 + 220 + 120
+    assert set(wave_row(page, "h").locator("text.wv-v").all_text_contents()) == {"1", "17.97", "2.5"}
+    sc = page.locator("#wave .wv-scroll").bounding_box()
+    assert page.evaluate("WAVE.px()") * 3 == pytest.approx(sc["width"] - left - 16, abs=1)   # all the steps in the width
+    assert errors == []
+
+
 def test_the_waveform_draws_each_kind_of_variable(browser, tmp_path):
     # a Boolean: a line high and low, filled under high; a number or a word: a box for each run of one
-    # value, its value in it and in its hover; no value: hatched; the loop drawn once more, faded;
-    # the step that fails red with "fails"; a row of numbers as a plot
+    # value, its value in it; no value: hatched; the loop drawn once more, faded; the step that fails
+    # red with "fails"; a row of numbers as a line
     page, errors = wave_page(browser, tmp_path, MIXED)
-    row = lambda v: page.locator("#wave .wv-row", has=page.locator(f'.wv-name[title="{v}"]'))
+    row = lambda v: wave_row(page, v)
     go = row("go")
     assert go.locator("path[stroke='#17393b']").count() == 2           # the steps, the faded pass
     assert go.locator("rect[fill='#d5e6e3']").count() >= 3
     assert go.locator("rect[fill='url(#wvhatch)']").count() == 2     # step 3: no value (and in the faded pass)
     x = row("x")
-    hovers = x.locator("title").all_text_contents()
-    assert "x = 0.5 (steps 0 to 1)" in hovers and "x = 2 (steps 3 to 4)" in hovers
     assert {"0.5", "1.25", "2"} <= set(x.locator("text.wv-v").all_text_contents())
     assert x.locator("g[opacity='.35'] text").all_text_contents() == ["2"]    # the loop once more: step 3
     assert "stop" in row("mode").locator("text.wv-v").all_text_contents()
-    assert page.locator("#wave .wv-axis .wv-fails").text_content() == "fails"
-    assert "loop" in page.locator("#wave .wv-axis .wv-loop").text_content()
-    assert page.locator("#wave .wv-axis text.wv-tick.fail").text_content() == "2"
     assert row("go").locator("button.wv-plot").count() == 0
     click(page, row("n").locator("button.wv-plot"))
     n = row("n")
     assert n.locator("text.wv-v").count() == 0 and "max 3" in n.inner_text() and "min 0" in n.inner_text()
+    assert n.locator("button.wv-plot.on").count() == 1
     assert n.bounding_box()["height"] > row("x").bounding_box()["height"]
+    assert errors == []
+
+
+def test_the_waveform_marks_the_loop_and_the_failure_on_their_lanes(browser, tmp_path):
+    # the loop bracket on the top lane, "fails" under it: they never meet; the start of the loop a
+    # dashed line down the rows; the faded pass labeled with the steps it repeats
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    lp = page.locator("#wave .wv-axis text.wv-loop").bounding_box()
+    fl = page.locator("#wave .wv-axis text.wv-fails").bounding_box()
+    assert lp["y"] + lp["height"] <= fl["y"] + 1
+    assert page.locator("#wave .wv-axis text.wv-tick.fail").text_content() == "2"
+    assert page.locator("#wave .wv-axis text.wv-tick.ghost").all_text_contents() == ["3", "4", "…"]
+    assert page.locator("#wave .wv-row[data-i] line[stroke-dasharray='3 3']").count() == 4
+    assert "Steps 3 to 4 repeat forever; the faded columns are their next pass." in page.inner_text("#wave footer")
+    assert errors == []
+
+
+def test_the_waveform_tells_the_value_under_the_pointer(browser, tmp_path):
+    # the column under the pointer tinted, the value in full in the tip
+    trace = {"vars": ["h"], "more": 0, "cut": False, "loop": None, "at": 1, "steps": [[1], [17.96875]]}
+    page, errors = wave_page(browser, tmp_path, trace)
+    page.mouse.move(*wave_step_x(page, 1, "h"))
+    assert page.is_visible("#wave .wv-hov") and page.inner_text("#tip") == "h = 17.96875 · step 1"
+    assert "17.97" in wave_row(page, "h").locator("text.wv-v").all_text_contents()
+    page.mouse.move(5, 5)
+    assert not page.is_visible("#tip") and not page.is_visible("#wave .wv-hov")
     assert errors == []
 
 
 def test_the_waveform_cursor_follows_the_table_and_the_diagram(browser, tmp_path):
     # a click on a step in the waveform: the cursor there, the table and the diagram on it; the arrows,
-    # Home, End, F, L too; a step picked in the table moves the cursor
+    # Home, End, F, L, the button Fails at, Alt and the arrows (the changes of the row) too; a step
+    # picked in the table moves the cursor
     page, errors = wave_page(browser, tmp_path, MIXED)
-    assert "cursor at step 2" in page.inner_text("#wave .wv-where")     # it opens on the step that fails
+    where = lambda: page.inner_text("#wave .wv-where")
+    assert where() == "Step 2 of 5"                    # it opens on the step that fails
     page.mouse.click(*wave_step_x(page, 1))
-    assert "cursor at step 1" in page.inner_text("#wave .wv-where")
+    assert where() == "Step 1 of 5"
     assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "1"
     assert "n = 1" in page.locator("#view .pv-val").all_text_contents()
-    assert page.locator("#wave .wv-row:not(.wv-axis) .wv-val").first.inner_text() == "1"
+    assert page.locator("#wave .wv-row[data-i] .wv-val").first.inner_text() == "1"
     for key, k in [("ArrowRight", 2), ("End", 4), ("Home", 0), ("l", 3), ("f", 2), ("ArrowLeft", 1)]:
         page.keyboard.press(key)
-        assert f"cursor at step {k}" in page.inner_text("#wave .wv-where"), key
+        assert where() == f"Step {k} of 5", key
         assert page.evaluate("(document.querySelector('#repair table.rp-trace th.cur') || {}).dataset?.k ?? null") in (str(k), None)
+    page.keyboard.press("Home")
+    click(page, page.locator("#wave .wv-failat"))
+    assert page.inner_text("#wave .wv-failat") == "Fails at 2" and where() == "Step 2 of 5"
+    click(page, wave_row(page, "x").locator(".wv-name"))     # the row of x: 0.5 0.5 1.25 2 2
+    page.keyboard.press("Home")
+    for key, k in [("Alt+ArrowRight", 2), ("]", 3), ("]", 3), ("[", 2), ("Alt+ArrowLeft", 0)]:
+        page.keyboard.press(key)
+        assert where() == f"Step {k} of 5", key
     page.evaluate("panel.goStep(2)")                  # the table moves: the cursor goes with it
-    assert "cursor at step 3" in page.inner_text("#wave .wv-where")
+    assert where() == "Step 2 of 5"
     page.mouse.click(*wave_step_x(page, 6))           # the faded pass: step 4 again is step 4 of the loop
-    assert "cursor at step 4" in page.inner_text("#wave .wv-where")
+    assert where() == "Step 4 of 5"
+    assert errors == []
+
+
+def test_the_waveform_keys_open_under_their_button(browser, tmp_path):
+    # the keys: a box under the keyboard button (or over it), the drawer keeps its height
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    h0 = page.locator("#wave").bounding_box()["height"]
+    click(page, page.locator('#wave button[aria-label="Keys (?)"]'))
+    keys, kb = page.locator("#wave .wv-keys").bounding_box(), page.locator('#wave button[aria-label="Keys (?)"]').bounding_box()
+    assert page.is_visible("#wave .wv-keys") and page.locator("#wave").bounding_box()["height"] == h0
+    assert keys["y"] >= kb["y"] + kb["height"] or keys["y"] + keys["height"] <= kb["y"]
+    assert keys["x"] + keys["width"] == pytest.approx(kb["x"] + kb["width"], abs=1)
+    assert 0 <= keys["y"] and keys["y"] + keys["height"] <= 800
+    assert "The previous or next change of the selected row" in page.inner_text("#wave .wv-keys")
+    page.keyboard.press("Escape")                     # Esc: the keys first, then the drawer
+    assert not page.is_visible("#wave .wv-keys") and page.is_visible("#wave")
     assert errors == []
 
 
@@ -919,10 +992,10 @@ LONG = {"vars": ["n"] + [f"v{i}" for i in range(39)], "more": 0, "cut": False, "
 
 
 def test_the_waveform_zooms_and_moves(browser, tmp_path):
-    # + and -, Ctrl and the wheel where the pointer is (the step under it stays), 0 for all; a drag moves
+    # + and -, Ctrl and the wheel where the pointer is (the step under it stays), 0 for all; a drag pans
     page, errors = wave_page(browser, tmp_path, LONG)
     sl = "document.querySelector('#wave .wv-scroll').scrollLeft"
-    px = page.evaluate("WAVE.px()")
+    px, L = page.evaluate("WAVE.px()"), page.evaluate("WAVE.left()")
     assert px == 32 and page.evaluate(sl) > 0            # too many steps to fit: the step that fails in view
     assert "steps " in page.inner_text("#wave footer .wv-span") and "of 200 in view" in page.inner_text("#wave footer .wv-span")
     click(page, page.locator('#wave button[aria-label="Zoom in (+)"]'))
@@ -930,22 +1003,34 @@ def test_the_waveform_zooms_and_moves(browser, tmp_path):
     page.keyboard.press("-")
     assert page.evaluate("WAVE.px()") == pytest.approx(px)
     sc = page.locator("#wave .wv-scroll").bounding_box()
-    x, y = sc["x"] + 260 + 300, sc["y"] + 60                # a step in the middle of the view
+    x, y = sc["x"] + L + 200, sc["y"] + 80                # a step in the middle of the view
     under = lambda: page.evaluate(f"WAVE.stepAt({x})")
     k = under()
     assert k is not None
     page.mouse.move(x, y); page.keyboard.down("Control"); page.mouse.wheel(0, -100); page.keyboard.up("Control")
     page.wait_for_timeout(100)
     assert page.evaluate("WAVE.px()") > px and under() == k
-    page.keyboard.press("0")
+    click(page, page.locator('#wave button[aria-label="Show all steps (0)"]'))
     assert page.evaluate("WAVE.px()") == 6 and page.evaluate(sl) == 0   # all the steps, as small as they go
     page.keyboard.press("+"); page.keyboard.press("+"); page.keyboard.press("+")
     s0 = page.evaluate(sl)
-    sc = page.locator("#wave .wv-scroll").bounding_box()
-    x, y = sc["x"] + 260, sc["y"] + 60
+    x, y = sc["x"] + L, sc["y"] + 80
     page.mouse.move(x + 300, y); page.mouse.down(); page.mouse.move(x + 100, y, steps=5); page.mouse.up()
     assert page.evaluate(sl) == pytest.approx(s0 + 200, abs=2)
-    assert "cursor at step 120" in page.inner_text("#wave .wv-where")     # a drag picks no step
+    assert page.inner_text("#wave .wv-where") == "Step 120 of 200"     # a drag picks no step
+    assert errors == []
+
+
+def test_the_waveform_resizes_from_its_top_edge(browser, tmp_path):
+    page, errors = wave_page(browser, tmp_path, LONG)
+    box = page.locator("#wave").bounding_box()
+    assert box["height"] == pytest.approx(0.45 * 800, abs=1)        # many rows: as tall as it goes
+    g = page.locator("#wave .wv-grip").bounding_box()
+    page.mouse.move(g["x"] + g["width"] / 2, g["y"] + 3); page.mouse.down()
+    page.mouse.move(g["x"] + g["width"] / 2, g["y"] - 150, steps=5); page.mouse.up()
+    tall = page.locator("#wave").bounding_box()
+    assert tall["height"] == pytest.approx(box["height"] + 153, abs=4)
+    assert tall["y"] + tall["height"] == pytest.approx(800 - 16, abs=1)
     assert errors == []
 
 
@@ -954,10 +1039,10 @@ def test_the_waveform_of_a_long_trace_is_quick(browser, tmp_path):
     page, errors = wave_page(browser, tmp_path, LONG)
     assert page.locator("#repair table.rp-trace th[data-k]").count() == 12
     assert "The first 12 of 200 steps" in page.inner_text("#repair")
-    assert page.locator("#wave .wv-row:not(.wv-axis)").count() == 40
+    assert page.locator("#wave .wv-row[data-i]").count() == 40
     page.keyboard.press("Escape")
     ms = page.evaluate("""(() => { const t = performance.now();
-        document.querySelector('#repair button.ib[aria-label="Open the waveform"]').click();
+        document.querySelector('#repair button.ib[aria-label^="Open the waveform"]').click();
         for (let i = 0; i < 5; i++) document.getElementById('wave').dispatchEvent(new KeyboardEvent('keydown', { key: '+' }));
         return (performance.now() - t) / 6; })()""")
     assert ms < 250, ms

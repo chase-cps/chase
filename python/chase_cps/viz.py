@@ -1719,46 +1719,66 @@ _PAGE = r"""<!doctype html>
   #pop header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
-  /* the waveform: a window over the diagram, the names and values on the left, the steps scrolled and zoomed */
-  #wave { position:fixed; left:50%; top:9vh; transform:translateX(-50%); width:min(92vw, 1400px); max-height:min(80vh, 900px);
-          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 10px 36px rgba(0,0,0,.16);
+  /* the waveform: a drawer under the diagram, beside the details; the names and values on the left, the steps scrolled and zoomed */
+  #wave { position:fixed; left:16px; right:16px; bottom:16px; max-height:45vh; box-sizing:border-box;
+          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 6px 28px rgba(0,0,0,.14);
           display:none; flex-direction:column; z-index:11; outline:none; overflow:hidden; }
-  #wave header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:16px; align-items:center; }
+  body.insp #wave { right:calc(12px + min(402px, 100vw - 22px) + 16px); }   /* the details: 400 pixels and their border */
+  #wave.sized { max-height:none; } #wave.sized .wv-scroll { flex:1 1 auto; }
+  .wv-grip { position:absolute; top:0; left:0; right:0; height:8px; cursor:ns-resize; z-index:4; }
+  .wv-grip::after { content:""; position:absolute; left:50%; top:3px; width:36px; height:3px; margin-left:-18px; border-radius:2px; background:#dfe5e5; }
+  .wv-grip:hover::after, .wv-grip.drag::after { background:var(--line); }
+  #wave header { padding:9px 8px 7px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:14px; align-items:center; }
   #wave header b { font-size:13px; font-weight:400; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #wave header b b { font-weight:600; }
-  .wv-where { font:12px Menlo, Monaco, monospace; color:var(--soft); white-space:nowrap; }
+  .wv-where { font:12px Helvetica, Arial, sans-serif; color:var(--soft); white-space:nowrap; }
+  .wv-where .wv-k { color:#2f6fb5; font-weight:700; }
+  .wv-failat { font:600 12px Helvetica, Arial, sans-serif; color:#b03a2e; background:none; border:0; padding:3px 7px; margin:0 -7px;
+               border-radius:5px; cursor:pointer; white-space:nowrap; }
+  .wv-failat:hover { background:#fbeceb; }
   .wv-tools { display:flex; gap:2px; align-items:center; }
-  .wv-keys { display:none; position:absolute; right:12px; top:46px; z-index:3; background:#fff; border:1px solid #d5dddd;
-             border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.12); padding:8px 12px; font-size:12px; color:var(--ink); }
-  .wv-keys.on { display:block; } #wave.keys { min-height:min(80vh, 340px); }
-  .wv-keys div { display:flex; gap:12px; padding:2px 0; } .wv-keys kbd { font:11px Menlo, Monaco, monospace; min-width:150px; color:var(--teal); }
+  .wv-keys { display:none; position:fixed; z-index:21; background:#fff; border:1px solid #d5dddd; border-radius:8px;
+             box-shadow:0 6px 20px rgba(0,0,0,.12); padding:9px 14px; font-size:12px; color:var(--ink);
+             grid-template-columns:auto auto; column-gap:18px; row-gap:4px; white-space:nowrap; }
+  .wv-keys.on { display:grid; }
+  .wv-keys kbd { font:11px Menlo, Monaco, monospace; color:var(--teal); white-space:pre; }
   .wv-scroll { flex:0 1 auto; overflow:auto; position:relative; cursor:default; scrollbar-width:none; }
   .wv-scroll::-webkit-scrollbar { display:none; }
   .wv-scroll.pan { cursor:grabbing; }
   .wv-grid { position:relative; min-width:100%; }
+  .wv-hov { display:none; position:absolute; top:0; bottom:0; background:rgba(47,111,181,.07); pointer-events:none; }
   .wv-row { display:flex; align-items:stretch; border-bottom:1px solid #f1f4f4; }
+  .wv-row.nb { border-bottom-color:transparent; }
   .wv-row.odd .wv-left { background:#fafbfb; }
-  .wv-left { position:sticky; left:0; z-index:1; flex:none; display:flex; align-items:center; width:260px; background:#fff;
+  .wv-left { position:sticky; left:0; z-index:1; flex:none; display:flex; align-items:center; background:#fff;
              border-right:1px solid #e3e8e8; box-sizing:border-box; padding-left:12px; cursor:pointer; }
   .wv-left.sel { box-shadow:inset 3px 0 #17393b; }
-  .wv-name { width:156px; flex:none; font:11px Menlo, Monaco, monospace; color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wv-name { flex:none; font:11px Menlo, Monaco, monospace; color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .wv-name.port { color:var(--ink); font-weight:600; }
-  .wv-val { flex:1; min-width:0; font:11px Menlo, Monaco, monospace; color:#2f6fb5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wv-val { flex:none; box-sizing:border-box; padding-right:8px; font:11px Menlo, Monaco, monospace; color:#2f6fb5;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .wv-val small { display:block; color:var(--faint); font-size:9.5px; }
-  .wv-plot { flex:none; width:22px; height:22px; margin-right:4px; padding:0; border:0; background:none; color:var(--faint); border-radius:5px; cursor:pointer; }
-  .wv-plot svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.4; }
-  .wv-plot:hover, .wv-plot.on { color:var(--teal); background:var(--fill); }
+  .wv-plot { flex:none; width:20px; height:20px; margin:0 2px; padding:0; border:0; background:none; color:var(--faint); border-radius:4px;
+             cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .wv-plot svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linejoin:round; }
+  .wv-plot:hover { color:var(--teal); background:var(--fill); }
+  .wv-plot.on { color:#fff; background:var(--teal); }
+  span.wv-plot { cursor:inherit; }
+  .wv-group .wv-left { cursor:default; }
+  .wv-gname { font:600 10px Helvetica, Arial, sans-serif; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); }
   .wv-axis { position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid #d5dddd; }
-  .wv-axis .wv-left { z-index:3; cursor:default; }
-  .wv-axis .wv-name { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; }
-  .wv-at { font-weight:600; }
+  .wv-axis .wv-left { z-index:3; cursor:default; align-items:flex-end; padding-bottom:10px; }
+  .wv-axis .wv-name { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+  .wv-corner { font:10.5px Helvetica, Arial, sans-serif; color:var(--soft); white-space:nowrap; }
+  .wv-at { color:#2f6fb5; font-weight:600; }
   .wv-svg { display:block; flex:none; }
   .wv-tick { font:10.5px Menlo, Monaco, monospace; fill:var(--soft); }
-  .wv-tick.cur { fill:#2f6fb5; font-weight:700; } .wv-tick.fail { fill:#b03a2e; font-weight:700; } .wv-tick.ghost { fill:var(--faint); }
-  .wv-loop { font:10px Helvetica, Arial, sans-serif; fill:var(--soft); }
+  .wv-tick.cur { fill:#2f6fb5; font-weight:700; } .wv-tick.fail { fill:#b03a2e; font-weight:700; }
+  .wv-tick.ghost { fill:var(--faint); font-style:italic; }
+  .wv-loop { font:600 10px Helvetica, Arial, sans-serif; fill:var(--teal); }
   .wv-fails { font:bold 10px Helvetica, Arial, sans-serif; fill:#b03a2e; }
   .wv-v { font:11px Menlo, Monaco, monospace; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:#f7f9f9; stroke-width:4px; }
-  #wave .wv-bar { margin:4px 16px 0 276px; }
+  #wave .wv-bar { margin:4px 16px 0 0; }
   #wave footer { display:flex; gap:16px; padding:6px 16px 8px; font-size:11.5px; color:var(--soft); border-top:1px solid #f1f4f4; }
   #wave footer .wv-note { flex:1; } #wave footer .wv-hint { color:var(--faint); white-space:nowrap; }
   table.fsm { border-collapse:collapse; font:11.5px Menlo, Monaco, monospace; }
@@ -1786,6 +1806,7 @@ _PAGE = r"""<!doctype html>
   @media (max-width: 820px) {
     #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
     body.insp #view { right:0; bottom:calc(45vh + 12px); }
+    body.insp #wave { right:16px; bottom:calc(45vh + 24px); max-height:calc(55vh - 86px); }
   }
   [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
   .pv-val { fill:#2f6fb5 !important; font-weight:600; }
@@ -3753,213 +3774,277 @@ function fillProblems(list) {
         what ? h("div", { class: best ? "v" : "s" }, what) : null)));
   });
 }
-// The waveform of a counterexample: a window over the diagram, a row per variable and the steps as
-// columns, as the waveform viewers draw a simulation. The names and the values at the cursor stay on
-// the left; the steps scroll and zoom. The step that fails first is a red column, the loop a shaded
-// span with one more pass drawn faded, the current step a blue cursor that the table and the diagram
-// follow (and the other way round).
-const WAVE = { open: false };
-const WV = { name: 168, value: 92, axis: 44, row: 24, bool: 22, plot: 56, min: 6, max: 160 };
+// The waveform of a counterexample: a drawer under the diagram, beside the details, a row per variable
+// and the steps as columns, as the waveform viewers draw a simulation. The names and the values at the
+// cursor stay on the left; the steps scroll and zoom. The step that fails first is a red column, the
+// loop a shaded span with one more pass drawn faded, the current step a blue cursor that the table and
+// the diagram follow (and the other way round).
+const WAVE = { open: false, height: null };
+const WV = { axis: 54, band: 33, row: 24, bool: 24, plot: 56, group: 18, min: 6, max: 240 };
 function openWave(tr, first, title, pick) {
   closeWave();
   const box = document.getElementById("wave"), n = tr.steps.length;
   const loop = tr.loop === null || tr.loop === undefined ? null : tr.loop;
   const ghost = loop === null ? 0 : n - loop;           // one more pass of the loop, faded
   const cols = n + ghost;
-  const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
+  const fails = tr.at !== undefined && tr.at !== null;
+  const req = i => first.includes(tr.vars[i]);
+  const order = tr.vars.map((_, i) => i).sort((a, b) => (req(b) - req(a)) || a - b);
+  const groups = order.some(req) && !order.every(req);  // the variables of the requirement, then the others
   const kind = i => tr.steps.every(st => st[i] === null || st[i] === undefined || typeof st[i] === "boolean") ? "bool"
     : tr.steps.every(st => st[i] === null || st[i] === undefined || typeof st[i] === "number") ? "num" : "text";
   const S = { cur: panel && panel.step !== undefined && panel.step !== null ? panel.step : (tr.at || 0), px: 32,
               plots: new Set(), sel: order.length ? order[0] : null };
-  const valueAt = (c, i) => tr.steps[c < n ? c : loop + (c - n)][i];
+  const real = c => c < n ? c : loop + (c - n);         // the step of a column (the faded pass: the loop again)
+  const valueAt = (c, i) => tr.steps[real(c)][i];
   const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const short = v => typeof v === "number" && !Number.isInteger(v) ? String(+v.toPrecision(4)) : fmt(v);
   const label = k => DATA.period ? timeOf(k) : String(k);
+  const at = k => DATA.period ? "t = " + label(k) + " s" : "step " + label(k);
   const NS = "http://www.w3.org/2000/svg";
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag);
     Object.entries(attrs || {}).forEach(([a, v]) => e.setAttribute(a, v)); if (parent) parent.appendChild(e); return e; };
 
-  // the bar: the check, the step at the cursor, the zoom, the keys, the cross
+  // the widths on the left: the longest name (and room for the plot button), the widest value
+  const MONO = "11px Menlo, Monaco, monospace";
+  const nameW = Math.max(72, Math.min(220, Math.ceil(Math.max(0, ...order.map(i => textWidth(tr.vars[i], (req(i) ? "600 " : "") + MONO)))) + 24));
+  const seen = new Set([].concat(...tr.steps.map(st => order.map(i => short(st[i])))));
+  const corner = k => DATA.period ? label(k) + " s" : label(k);
+  const valW = Math.max(48, Math.min(120, Math.ceil(Math.max(textWidth("value at " + corner(n - 1), "10.5px Helvetica, Arial, sans-serif"),
+                                                              ...[...seen].map(v => textWidth(v, MONO)))) + 16));
+  const L = 12 + nameW + valW;
+
+  // the bar: the check, the step at the cursor, the step that fails, the zoom, the keys, the cross
   const where = h("span", { class: "wv-where" });
+  const failAt = fails ? h("button", { class: "wv-failat", "data-tip": "Go to the step that fails (F)", onclick: () => pick(tr.at) },
+                           "Fails at " + (DATA.period ? "t = " + label(tr.at) + " s" : label(tr.at))) : null;
   const keys = h("div", { class: "wv-keys" });
-  const bar = h("header", {}, h("b", {}, richOf(title)), where,
+  const kb = iconButton(GLYPH.keys, "Keys (?)", () => toggleKeys());
+  const bar = h("header", {}, h("b", {}, richOf(title)), where, failAt,
     h("span", { class: "wv-tools" },
       iconButton(GLYPH.zout, "Zoom out (-)", () => zoom(1 / 1.5)),
       iconButton(GLYPH.zin, "Zoom in (+)", () => zoom(1.5)),
-      iconButton(GLYPH.fit, "All the steps (0)", fitAll),
-      iconButton(GLYPH.keys, "Keys (?)", () => box.classList.toggle("keys", keys.classList.toggle("on"))),
+      iconButton(GLYPH.fit, "Show all steps (0)", fitAll),
+      kb,
       iconButton('<path d="M4 4l8 8M12 4l-8 8"/>', "Close (Esc)", closeWave)));
+  const grip = h("div", { class: "wv-grip" });
   const scroll = h("div", { class: "wv-scroll" });
   const grid = h("div", { class: "wv-grid" });
   scroll.appendChild(grid);
-  const thumb = h("div", {}), sbar = h("div", { class: "rp-bar wv-bar" }, thumb);
+  const thumb = h("div", {}), sbar = h("div", { class: "rp-bar wv-bar", style: "margin-left:" + L + "px" }, thumb);
+  const step1 = k => DATA.period ? "The step at t = " + label(k) + " s" : "Step " + label(k);
+  const steps2 = (a, b) => DATA.period ? "The steps at t = " + label(a) + " to " + label(b) + " s" : "Steps " + label(a) + " to " + label(b);
+  const again = loop === null ? "" : "↺ " + (loop === 0 ? (n === 1 ? "The step repeats" : "All " + n + " steps repeat")
+    : loop === n - 1 ? step1(loop) + " repeats" : steps2(loop, n - 1) + " repeat") + " forever; the faded "
+    + (ghost === 1 ? "column is its" : "columns are their") + " next pass. ";
   const foot = h("footer", {}, h("span", { class: "wv-span" }),
-    h("span", { class: "wv-note" }, (loop !== null ? "↺ From step " + label(loop) + " on, the steps repeat forever (one more pass faded). " : "")
-      + (tr.cut ? "The first " + n + " steps are kept. " : "")),
-    h("span", { class: "wv-hint" }, "Click a step · drag to move · Ctrl/⌘ + wheel to zoom · ? for the keys"));
-  keys.innerHTML = [["← →", "step"], ["Home End", "first, last step"], ["F", "the step that fails"], ["L", "the start of the loop"],
-    ["↑ ↓", "row"], ["Enter", "a row of numbers as a plot"], ["+ − 0", "zoom in, out, all"],
-    ["Ctrl or ⌘ + wheel", "zoom where it points"], ["drag, Shift + wheel", "move along the steps"], ["Esc", "close"]]
-    .map(([k, d]) => "<div><kbd>" + k + "</kbd><span>" + d + "</span></div>").join("");
+    h("span", { class: "wv-note" }, again + (tr.cut ? "The first " + n + " steps are kept. " : "")),
+    h("span", { class: "wv-hint" }, "Click a step · drag to pan · Ctrl/⌘ + wheel to zoom · ? for the keys"));
+  [["← →", "The step before or after"], ["Alt + ← →  or  [ ]", "The previous or next change of the selected row"],
+   ["Home  End", "The first or the last step"], fails ? ["F", "The step that fails"] : null,
+   loop !== null ? ["L", "The first step of the loop"] : null, ["↑ ↓", "The row above or below"],
+   ["Enter", "Draw the selected row of numbers as a line, or as values"], ["+  −  0", "Zoom in, zoom out, show all steps"],
+   ["Ctrl or ⌘ + wheel", "Zoom where the pointer is"], ["Drag, Shift + wheel", "Pan along the steps"], ["Esc", "Close"]]
+    .filter(Boolean).forEach(([k, d]) => keys.append(h("kbd", {}, k), h("span", {}, d)));
   box.innerHTML = "";
-  box.append(bar, keys, scroll, sbar, foot);
+  box.append(grip, bar, keys, scroll, sbar, foot);
   box.style.display = "flex";
+  if (WAVE.height) WAVE.height = Math.min(WAVE.height, innerHeight - 70);
+  const size = () => { box.classList.toggle("sized", !!WAVE.height); box.style.height = WAVE.height ? WAVE.height + "px" : ""; };
+  size();
   WAVE.open = true;
   WAVE.setStep = k => { S.cur = k; draw(); show(k); };
-  WAVE.px = () => S.px;                  // for the tests: the width of a step, the step at a point
-  WAVE.stepAt = x => stepAt(x);
+  WAVE.px = () => S.px;                  // for the tests: the width of a step, the left part, the step at a point
+  WAVE.left = () => L;
+  WAVE.stepAt = x => { const c = colAt(x); return c === null ? null : real(c); };
 
-  const avail = () => Math.max(120, scroll.clientWidth - WV.name - WV.value - 16);
+  // the keys: under their button, or above it when there is no room under
+  function toggleKeys(on) {
+    on = on === undefined ? !keys.classList.contains("on") : on;
+    keys.classList.toggle("on", on);
+    if (!on) return;
+    const r = kb.getBoundingClientRect(), w = keys.offsetWidth, hk = keys.offsetHeight;
+    keys.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
+    keys.style.top = (r.bottom + 6 + hk > innerHeight - 8 ? Math.max(8, r.top - 6 - hk) : r.bottom + 6) + "px";
+  }
+  // the top edge: drag it for a taller or shorter drawer (kept for the next one)
+  grip.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const y0 = e.clientY, h0 = box.offsetHeight;
+    grip.classList.add("drag");
+    const move = m => { WAVE.height = Math.max(140, Math.min(innerHeight - 70, h0 + y0 - m.clientY)); size(); place(); };
+    const up = () => { grip.classList.remove("drag"); removeEventListener("pointermove", move); removeEventListener("pointerup", up); };
+    addEventListener("pointermove", move); addEventListener("pointerup", up);
+  });
+
+  const avail = () => Math.max(120, scroll.clientWidth - L - 16);
   function fitAll() { S.px = Math.max(WV.min, Math.min(WV.max, avail() / cols)); draw(); scroll.scrollLeft = 0; }
   function zoom(f, atX) {                // around a point of the view (the middle of the steps in view, by default)
     const x = atX === undefined ? avail() / 2 : atX;
-    const at = (scroll.scrollLeft + x) / S.px;
+    const a = (scroll.scrollLeft + x) / S.px;
     S.px = Math.max(WV.min, Math.min(WV.max, S.px * f));
     draw();
-    scroll.scrollLeft = at * S.px - x;
+    scroll.scrollLeft = a * S.px - x;
   }
   function show(k) {                     // the step k in view
     const x0 = k * S.px, x1 = x0 + S.px, a = scroll.scrollLeft, b = a + avail();
     if (x0 < a) scroll.scrollLeft = x0 - S.px; else if (x1 > b) scroll.scrollLeft = x1 - avail() + S.px;
   }
-  const stepAt = clientX => {
+  const colAt = clientX => {
     const r = scroll.getBoundingClientRect();
-    const c = Math.floor((scroll.scrollLeft + clientX - r.left - WV.name - WV.value) / S.px);
-    return c < 0 || c >= cols ? null : c < n ? c : loop + (c - n);
+    const c = Math.floor((scroll.scrollLeft + clientX - r.left - L) / S.px);
+    return c < 0 || c >= cols ? null : c;
   };
 
+  let words = [], hov = null;            // the words of the boxes: {t, a, b, txt}; the column under the pointer
   function draw() {
-    const W = cols * S.px, every = [1, 2, 5, 10, 20, 50, 100].find(e => e * S.px >= 30) || 200;
-    grid.style.width = (WV.name + WV.value + W + 16) + "px";
+    const px = S.px, W = cols * px, every = [1, 2, 5, 10, 20, 50, 100].find(e => e * px >= 30) || 200;
+    grid.style.width = (L + W + 16) + "px";
     grid.innerHTML = "";
     words = [];
-    // the axis: the steps (or the times), the step that fails, the loop, the cursor
-    const ax = h("div", { class: "wv-row wv-axis" },
-      h("div", { class: "wv-left" }, h("span", { class: "wv-name" }, DATA.period ? "t (s)" : "step"),
-        h("span", { class: "wv-val wv-at" }, (DATA.period ? "t = " : "step ") + label(S.cur))));
-    const asvg = sv("svg", { width: W + 16, height: WV.axis, class: "wv-svg" });
-    ax.appendChild(asvg);
+    const left = (cls, ...kids) => h("div", { class: "wv-left" + (cls ? " " + cls : ""), style: "width:" + L + "px" }, ...kids);
+    // behind the values: the loop, the cursor, the step that fails, the start of the loop, the faded pass
+    const marks = (svg, H, y0, dash) => {
+      if (loop) sv("rect", { x: loop * px, y: y0, width: (n - loop) * px, height: H - y0, fill: "#e6efee" }, svg);
+      if (S.cur !== tr.at) sv("rect", { x: S.cur * px, y: y0, width: px, height: H - y0, fill: "#e6effa" }, svg);
+      if (fails) sv("rect", { x: tr.at * px, y: y0, width: px, height: H - y0, fill: "#fbeceb" }, svg);
+      if (loop) sv("line", { x1: loop * px + .5, y1: dash === undefined ? y0 : dash, x2: loop * px + .5, y2: H,
+                             stroke: "#8a9b9c", "stroke-dasharray": "3 3" }, svg);
+      if (ghost) sv("line", { x1: n * px + .5, y1: y0, x2: n * px + .5, y2: H, stroke: "#c3cdcd" }, svg);
+    };
+    const cursor = (svg, y0, H) => sv("line", { x1: S.cur * px + 1, y1: y0, x2: S.cur * px + 1, y2: H, stroke: "#2f6fb5", "stroke-width": 2 }, svg);
+    const backed = (svg, t, font) => {   // a word with white behind it, over the lines it crosses
+      const w = textWidth(t.textContent, font), x = +t.getAttribute("x"), a = t.getAttribute("text-anchor");
+      const x0 = a === "middle" ? x - w / 2 : a === "end" ? x - w : x;
+      svg.insertBefore(sv("rect", { x: x0 - 3, y: +t.getAttribute("y") - 1, width: w + 6, height: 13, fill: "#fff" }), t);
+    };
+    // the axis: the lane of the loop, the lane of the step that fails, then the steps (or the times)
+    const ax = h("div", { class: "wv-row wv-axis", style: "height:" + WV.axis + "px" },
+      left("", h("span", { class: "wv-name", style: "width:" + nameW + "px" }, DATA.period ? "t (s)" : "step"),
+        h("span", { class: "wv-corner" }, "value at ", h("span", { class: "wv-at" }, corner(S.cur)))));
+    const asvg = sv("svg", { width: W + 16, height: WV.axis, class: "wv-svg" }, ax);
+    const B = WV.band;
+    marks(asvg, WV.axis, B, 13);
     if (loop !== null) {                  // the loop: a bracket over its steps
-      const x0 = loop * S.px, x1 = n * S.px;
-      const atLeft = tr.at !== null && tr.at !== undefined && tr.at * S.px < x0 + 70 && tr.at * S.px + S.px > x0 - 30;
-      sv("rect", { x: x0, y: 19, width: x1 - x0, height: WV.axis - 19, fill: "#f2f6f6" }, asvg);
-      sv("path", { d: `M${x0 + 1} 15V9H${x1 - 1}V15`, fill: "none", stroke: "#7d8c8d", "stroke-width": 1 }, asvg);
-      const t = sv("text", { x: atLeft ? x1 - 6 : x0 + 6, y: 3, "text-anchor": atLeft ? "end" : "start",
-                             "dominant-baseline": "hanging", class: "wv-loop" }, asvg);
+      const x0 = loop * px, x1 = n * px;
+      sv("path", { d: `M${x0 + .5} 13V7H${x1 - .5}V13`, fill: "none", stroke: "#17393b", "stroke-width": 1.2 }, asvg);
+      const t = sv("text", { x: x0 + 6, y: 2, "dominant-baseline": "hanging", class: "wv-loop" }, asvg);
       t.textContent = "↺ loop";
-      const bg = sv("rect", { fill: "#fff" }, asvg);
-      asvg.insertBefore(bg, t);
-      requestAnimationFrame(() => { const b = t.getBBox(); bg.setAttribute("x", b.x - 3); bg.setAttribute("y", b.y);
-                                    bg.setAttribute("width", b.width + 6); bg.setAttribute("height", b.height); });
+      backed(asvg, t, "600 10px Helvetica, Arial, sans-serif");
     }
-    if (S.cur !== tr.at) sv("rect", { x: S.cur * S.px, y: 19, width: S.px, height: WV.axis - 19, fill: "#e6effa" }, asvg);
-    if (tr.at !== undefined && tr.at !== null) {   // the step that fails: a red column under "fails ▾"
-      const x = tr.at * S.px, m = x + S.px / 2;
-      sv("rect", { x, y: 19, width: S.px, height: WV.axis - 19, fill: "#fbeceb" }, asvg);
-      const t = sv("text", { x: m, y: 3, "text-anchor": "middle", "dominant-baseline": "hanging", class: "wv-fails" }, asvg);
+    if (fails) {                          // the step that fails: "fails ▾" over a red column
+      const m = tr.at * px + px / 2;
+      const t = sv("text", { x: m, y: 15, "text-anchor": "middle", "dominant-baseline": "hanging", class: "wv-fails" }, asvg);
       t.textContent = "fails";
-      const bg = sv("rect", { fill: "#fff" }, asvg);
-      asvg.insertBefore(bg, t);
-      requestAnimationFrame(() => { const b = t.getBBox(); bg.setAttribute("x", b.x - 3); bg.setAttribute("y", b.y);
-                                    bg.setAttribute("width", b.width + 6); bg.setAttribute("height", b.height); });
-      sv("path", { d: `M${m - 4} 14h8l-4 5z`, fill: "#b03a2e" }, asvg);
+      backed(asvg, t, "bold 10px Helvetica, Arial, sans-serif");
+      sv("path", { d: `M${m - 4} 26h8l-4 5z`, fill: "#b03a2e" }, asvg);
     }
-    sv("line", { x1: S.cur * S.px + 1, y1: 19, x2: S.cur * S.px + 1, y2: WV.axis, stroke: "#2f6fb5", "stroke-width": 2 }, asvg);
+    cursor(asvg, B, WV.axis);
     for (let c = 0; c < cols; c++) {
-      const k = c < n ? c : loop + (c - n), x = c * S.px;
-      sv("line", { x1: x, y1: c % every ? WV.axis - 4 : WV.axis - 8, x2: x, y2: WV.axis, stroke: "#b6c1c1" }, asvg);
-      if (c % every === 0 || (c < n && (k === tr.at || k === S.cur))) {
-        const t = sv("text", { x: x + S.px / 2, y: WV.axis - 11, "text-anchor": "middle",
-          class: "wv-tick" + (c >= n ? " ghost" : k === tr.at ? " fail" : k === S.cur ? " cur" : "") }, asvg);
-        t.textContent = c >= n ? label(c) : label(k);
+      const k = real(c), x = c * px, g = c >= n;
+      sv("line", { x1: x, y1: (g ? c - n : c) % every ? WV.axis - 4 : WV.axis - 8, x2: x, y2: WV.axis, stroke: "#b6c1c1" }, asvg);
+      if ((g ? c - n : c) % every === 0 || (!g && (k === tr.at || k === S.cur))) {
+        const t = sv("text", { x: x + px / 2, y: WV.axis - 11, "text-anchor": "middle",
+          class: "wv-tick" + (g ? " ghost" : k === tr.at ? " fail" : k === S.cur ? " cur" : "") }, asvg);
+        t.textContent = label(k);
       }
     }
-    if (ghost) sv("text", { x: cols * S.px + 4, y: WV.axis - 11, class: "wv-tick ghost" }, asvg).textContent = "…";
+    if (ghost) sv("text", { x: cols * px + 4, y: WV.axis - 11, class: "wv-tick ghost" }, asvg).textContent = "…";
     grid.appendChild(ax);
-    // the rows
-    order.forEach((i, r) => {
+    // the rows, under the name of their group
+    let r = 0;
+    order.forEach((i, j) => {
+      if (groups && (j === 0 || req(order[j - 1]) !== req(i))) {
+        const gr = h("div", { class: "wv-row wv-group", style: "height:" + WV.group + "px" },
+          left("", h("span", { class: "wv-gname" }, req(i) ? "Requirement" : "Others")));
+        const gs = sv("svg", { width: W + 16, height: WV.group, class: "wv-svg" }, gr);
+        marks(gs, WV.group, 0); cursor(gs, 0, WV.group);
+        grid.appendChild(gr);
+      }
       const kd = kind(i), plot = kd === "num" && S.plots.has(i);
       const H = plot ? WV.plot : kd === "bool" ? WV.bool : WV.row;
       const nums = tr.steps.map(st => st[i]).filter(v => typeof v === "number");
       const lo = Math.min(...nums), hi = Math.max(...nums);
-      const nm = h("span", { class: "wv-name" + (first.includes(tr.vars[i]) ? " port" : ""), title: tr.vars[i] }, tr.vars[i]);
-      const valv = h("span", { class: "wv-val" }, fmt(tr.steps[S.cur][i]));
-      const short = v => Number.isInteger(v) ? String(v) : String(+v.toPrecision(4));
+      const nm = h("span", { class: "wv-name" + (req(i) ? " port" : ""), title: tr.vars[i], style: "width:" + (nameW - 24) + "px" }, tr.vars[i]);
+      const valv = h("span", { class: "wv-val", style: "width:" + valW + "px" }, short(tr.steps[S.cur][i]));
       if (plot) valv.append(h("small", {}, "max " + short(hi)), h("small", {}, "min " + short(lo)));
-      const left = h("div", { class: "wv-left" + (S.sel === i ? " sel" : "") }, nm, valv);
+      let tg = h("span", { class: "wv-plot" });
       if (kd === "num") {
-        const tg = h("button", { class: "wv-plot" + (plot ? " on" : ""), "data-tip": plot ? "Show as values" : "Show as a plot",
-                                 "aria-label": plot ? "Show as values" : "Show as a plot",
-                                 onclick: e => { e.stopPropagation(); S.plots.has(i) ? S.plots.delete(i) : S.plots.add(i); draw(); } });
-        tg.innerHTML = '<svg viewBox="0 0 16 16"><path d="' + (plot ? "M2 6h12M2 10h12" : "M1.5 12h3V8h3V4h3v5h4") + '"/></svg>';
-        left.appendChild(tg);
+        const tip = plot ? "Show as values" : "Draw as a line";
+        tg = h("button", { class: "wv-plot" + (plot ? " on" : ""), "data-tip": tip, "aria-label": tip,
+                           onclick: e => { e.stopPropagation(); S.plots.has(i) ? S.plots.delete(i) : S.plots.add(i); draw(); } });
+        tg.innerHTML = '<svg viewBox="0 0 16 16"><path d="M2 13.5h12"/><path d="M2.5 10.5l3-4 3 2.5 5-6"/></svg>';
       }
-      left.addEventListener("click", () => { S.sel = i; draw(); });
-      const row = h("div", { class: "wv-row" + (r % 2 ? " odd" : ""), style: "height:" + H + "px" }, left);
-      const svg = sv("svg", { width: W + 16, height: H, class: "wv-svg" });
-      row.appendChild(svg);
-      // the marks behind: the loop, the step that fails, the cursor
-      if (loop !== null) sv("rect", { x: loop * S.px, y: 0, width: (n - loop) * S.px, height: H, fill: "#f2f6f6" }, svg);
-      if (S.cur !== tr.at) sv("rect", { x: S.cur * S.px, y: 0, width: S.px, height: H, fill: "#e6effa" }, svg);
-      if (tr.at !== undefined && tr.at !== null) sv("rect", { x: tr.at * S.px, y: 0, width: S.px, height: H, fill: "#fbeceb" }, svg);
-      const draw1 = (from, to, g) => {
+      const lf = left(S.sel === i ? "sel" : "", nm, tg, valv);
+      lf.addEventListener("click", () => { S.sel = i; draw(); });
+      const next = order[j + 1];
+      const flat = kd === "bool" && next !== undefined && kind(next) === "bool" && req(next) === req(i);  // no line between two Booleans
+      const row = h("div", { class: "wv-row" + (r++ % 2 ? " odd" : "") + (flat ? " nb" : ""), "data-i": i, style: "height:" + H + "px" }, lf);
+      const svg = sv("svg", { width: W + 16, height: H, class: "wv-svg" }, row);
+      marks(svg, H, 0);
+      if (plot) [6, H - 6].forEach(y => sv("line", { x1: 0, y1: y, x2: W, y2: y, stroke: "#dfe5e5", "stroke-dasharray": "2 3" }, svg));
+      const draw1 = (from, to, g, wg) => {
         if (kd === "bool") {
-          const hiY = 5, loY = H - 5;
+          const hiY = 6, loY = H - 6;
           let d = "";
           for (let c = from; c < to; c++) {
-            const v = valueAt(c, i), x = c * S.px;
-            if (v === null || v === undefined) { sv("rect", { x, y: hiY, width: S.px, height: loY - hiY, fill: "url(#wvhatch)" }, g); continue; }
+            const v = valueAt(c, i), x = c * px;
+            if (v === null || v === undefined) { sv("rect", { x, y: hiY, width: px, height: loY - hiY, fill: "url(#wvhatch)" }, g); continue; }
             const y = v ? hiY : loY;
-            if (v) sv("rect", { x, y: hiY, width: S.px, height: loY - hiY, fill: "#d5e6e3" }, g);
-            d += (d && c > from ? "L" : "M") + x + " " + y + "H" + (x + S.px);
+            if (v) sv("rect", { x, y: hiY, width: px, height: loY - hiY, fill: "#d5e6e3" }, g);
+            d += (d && c > from ? "L" : "M") + x + " " + y + "H" + (x + px);
           }
           sv("path", { d, fill: "none", stroke: "#17393b", "stroke-width": 1.5 }, g);
-        } else if (plot) {
+        } else if (plot) {                // a step line, filled faintly under it, between the least and the greatest value
           const y = v => lo === hi ? H / 2 : H - 6 - (v - lo) / (hi - lo) * (H - 12);
-          let d = "";
-          for (let c = from; c < to; c++) {
-            const v = valueAt(c, i); if (typeof v !== "number") continue;
-            d += (d ? "L" : "M") + c * S.px + " " + y(v) + "H" + (c + 1) * S.px;
+          let d = "", f = "", x0 = null;
+          for (let c = from; c <= to; c++) {
+            const v = c < to ? valueAt(c, i) : null;
+            if (typeof v !== "number") { if (x0 !== null) f += "V" + (H - 6) + "H" + x0 + "Z"; x0 = null; continue; }
+            const yv = y(v);
+            if (x0 === null) { x0 = c * px; d += "M" + x0 + " " + yv; f += "M" + x0 + " " + (H - 6) + "V" + yv; }
+            else { d += "V" + yv; f += "V" + yv; }
+            d += "H" + (c + 1) * px; f += "H" + (c + 1) * px;
           }
+          sv("path", { d: f, fill: "rgba(23,57,59,.08)" }, g);
           sv("path", { d, fill: "none", stroke: "#17393b", "stroke-width": 1.5 }, g);
         } else {                          // a box for each run of one value
           let c = from;
           while (c < to) {
             const v = valueAt(c, i); let e = c + 1;
             while (e < to && fmt(valueAt(e, i)) === fmt(v)) e++;
-            const x0 = c * S.px + .5, x1 = e * S.px - .5, s = Math.min(4, (x1 - x0) / 4), top = 4, bot = H - 4, mid = H / 2;
-            const p = sv("path", { d: `M${x0} ${mid}L${x0 + s} ${top}H${x1 - s}L${x1} ${mid}L${x1 - s} ${bot}H${x0 + s}Z`,
+            const x0 = c * px + .5, x1 = e * px - .5, s = Math.min(4, (x1 - x0) / 4), top = 4, bot = H - 4, mid = H / 2;
+            sv("path", { d: `M${x0} ${mid}L${x0 + s} ${top}H${x1 - s}L${x1} ${mid}L${x1 - s} ${bot}H${x0 + s}Z`,
               fill: v === null || v === undefined ? "url(#wvhatch)" : "#f7f9f9", stroke: "#7d8c8d", "stroke-width": 1 }, g);
-            const steps = c === e - 1 ? "step " + label(c < n ? c : loop + c - n) : "steps " + label(c < n ? c : loop + c - n) + " to " + label(e - 1 < n ? e - 1 : loop + e - 1 - n);
-            sv("title", {}, p).textContent = tr.vars[i] + " = " + fmt(v) + " (" + steps + ")";
             if (x1 - x0 - 2 * s >= 17)
-              words.push({ t: sv("text", { y: mid, "text-anchor": "middle", "dominant-baseline": "central", class: "wv-v" }, g),
-                           a: x0 + s, b: x1 - s, txt: fmt(v), shown: null });
+              words.push({ t: sv("text", { y: mid, "text-anchor": "middle", "dominant-baseline": "central", class: "wv-v" }, wg),
+                           a: x0 + s, b: x1 - s, txt: short(v), shown: null });
             c = e;
           }
         }
       };
-      draw1(0, n, svg);
-      if (ghost) draw1(n, cols, sv("g", { opacity: ".35" }, svg));
-      // the cursor on top
-      sv("line", { x1: S.cur * S.px + 1, y1: 0, x2: S.cur * S.px + 1, y2: H, stroke: "#2f6fb5", "stroke-width": 2 }, svg);
+      const wg = sv("g", {});             // the words over the cursor, their halo hiding it
+      draw1(0, n, svg, wg);
+      if (ghost) { const gg = sv("g", { opacity: ".35" }, svg); draw1(n, cols, gg, gg); }
+      cursor(svg, 0, H);
+      svg.appendChild(wg);
       grid.appendChild(row);
     });
     const defs = sv("svg", { width: 0, height: 0, style: "position:absolute" });
     defs.innerHTML = '<defs><pattern id="wvhatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
       + '<rect width="6" height="6" fill="#f2f4f4"/><line x1="0" y1="0" x2="0" y2="6" stroke="#d3dbdb" stroke-width="2"/></pattern></defs>';
     grid.appendChild(defs);
-    const at = k => DATA.period ? "t = " + label(k) + " s" : "step " + label(k);
-    where.textContent = "cursor at " + at(S.cur) + (tr.at !== undefined && tr.at !== null ? " · fails at " + at(tr.at) : "");
+    hov = h("div", { class: "wv-hov" });
+    grid.appendChild(hov);
+    where.innerHTML = "";
+    if (DATA.period) where.append("t = ", h("span", { class: "wv-k" }, label(S.cur)), " s");
+    else where.append("Step ", h("span", { class: "wv-k" }, label(S.cur)), " of " + n);
     place();
   }
-  let words = [];                        // the words of the boxes: {t, a, b, txt}
   function place() {                     // the words of the boxes, the bar under the steps and the steps in view
-    const v0 = scroll.scrollLeft, v1 = v0 + scroll.clientWidth - WV.name - WV.value;
-    const cx = S.cur * S.px + 1;
-    words.forEach(w => {                 // in the middle of the part in view, cut to fit it, beside the cursor
-      let a = Math.max(w.a, v0), b = Math.min(w.b, v1);
-      if (Math.abs((a + b) / 2 - cx) < w.txt.length * 3.3 + 6 && a < cx && cx < b)
-        if (cx - a > b - cx) b = cx - 2; else a = cx + 2;
+    const v0 = scroll.scrollLeft, v1 = v0 + scroll.clientWidth - L;
+    words.forEach(w => {                 // in the middle of the part in view, cut to fit it
+      const a = Math.max(w.a, v0), b = Math.min(w.b, v1);
       const room = Math.floor((b - a - 4) / 6.6);
       const txt = room < 2 ? "" : w.txt.length <= room ? w.txt : w.txt.slice(0, room - 1) + "…";
       if (txt !== w.shown) { w.t.textContent = txt; w.shown = txt; }
@@ -3971,7 +4056,7 @@ function openWave(tr, first, title, pick) {
     foot.firstChild.textContent = over ? (DATA.period ? "t " + label(a) + " to " + label(Math.min(b, n - 1)) : "steps " + a + " to " + Math.min(b, n - 1))
       + " of " + n + " in view" : n + " steps";
     if (!over) return;
-    const w = sbar.clientWidth, vis = avail() / (scroll.scrollWidth - WV.name - WV.value);
+    const w = sbar.clientWidth, vis = avail() / (scroll.scrollWidth - L);
     thumb.style.width = Math.max(24, w * Math.min(1, vis)) + "px";
     thumb.style.left = (w - thumb.offsetWidth) * scroll.scrollLeft / Math.max(1, scroll.scrollWidth - scroll.clientWidth) + "px";
   }
@@ -3987,7 +4072,25 @@ function openWave(tr, first, title, pick) {
     const up = () => { thumb.classList.remove("drag"); removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
     addEventListener("mousemove", move); addEventListener("mouseup", up);
   });
-  // a click on the steps picks one; a drag moves along them
+  // the pointer on the steps: its column tinted, the value under it in full in the tip
+  const tip = document.getElementById("tip");
+  let tipped = false;
+  const untip = () => { if (tipped) { tip.style.display = "none"; tipped = false; } };
+  const unhover = () => { if (hov) hov.style.display = "none"; untip(); };
+  scroll.addEventListener("mousemove", e => {
+    const c = colAt(e.clientX), rw = e.target.closest(".wv-row");
+    if ((down && down.moved) || c === null || !rw || e.target.closest(".wv-left")) return unhover();
+    hov.style.display = "block"; hov.style.left = (L + c * S.px) + "px"; hov.style.width = S.px + "px";
+    if (rw.dataset.i === undefined) return untip();
+    const i = +rw.dataset.i, v = valueAt(c, i);
+    tip.textContent = tr.vars[i] + (v === null || v === undefined ? ": no value" : " = " + fmt(v)) + " · " + at(real(c)) + (c >= n ? ", next pass" : "");
+    tip.style.display = "block"; tipped = true;
+    const w = tip.offsetWidth, ht = tip.offsetHeight;
+    tip.style.left = Math.max(4, Math.min(e.clientX + 12, innerWidth - w - 8)) + "px";
+    tip.style.top = (e.clientY + 18 + ht > innerHeight ? e.clientY - ht - 10 : e.clientY + 18) + "px";
+  });
+  scroll.addEventListener("mouseleave", unhover);
+  // a click on the steps picks one; a drag pans along them
   let down = null;
   scroll.addEventListener("pointerdown", e => {
     if (e.button !== 0 || e.target.closest(".wv-left")) return;
@@ -4002,7 +4105,7 @@ function openWave(tr, first, title, pick) {
   WAVE.up = e => {
     if (!down) return;
     const was = down; down = null; scroll.classList.remove("pan");
-    if (!was.moved) { const k = stepAt(e.clientX); if (k !== null) pick(k); }
+    if (!was.moved) { const k = WAVE.stepAt(e.clientX); if (k !== null) pick(k); }
   };
   addEventListener("pointerup", WAVE.up);
   // Ctrl or Cmd and the wheel (a pinch too) zoom where they point; the wheel alone scrolls
@@ -4010,23 +4113,33 @@ function openWave(tr, first, title, pick) {
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
     const r = scroll.getBoundingClientRect();
-    zoom(Math.exp(-e.deltaY * 0.01), Math.max(0, e.clientX - r.left - WV.name - WV.value));
+    zoom(Math.exp(-e.deltaY * 0.01), Math.max(0, e.clientX - r.left - L));
   }, { passive: false });
   box.onkeydown = e => {
     const k = e.key;
     const go = s => { e.preventDefault(); pick(Math.max(0, Math.min(n - 1, s))); };
-    if (k === "Escape") { closeWave(); e.preventDefault(); }
+    const changed = s => fmt(tr.steps[s][S.sel]) !== fmt(tr.steps[s - 1][S.sel]);
+    if (k === "Escape") { if (keys.classList.contains("on")) toggleKeys(false); else closeWave(); e.preventDefault(); }
+    else if (S.sel !== null && (k === "]" || (k === "ArrowRight" && e.altKey))) {   // the next change of the row
+      let s = S.cur + 1;
+      while (s < n && !changed(s)) s++;
+      if (s < n) go(s); else e.preventDefault();
+    } else if (S.sel !== null && (k === "[" || (k === "ArrowLeft" && e.altKey))) {  // the change before
+      let s = S.cur - 1;
+      while (s > 0 && !changed(s)) s--;
+      go(s);
+    }
     else if (k === "ArrowLeft" || k === "ArrowRight") go(S.cur + (k === "ArrowLeft" ? -1 : 1));
     else if (k === "Home") go(0);
     else if (k === "End") go(n - 1);
-    else if ((k === "f" || k === "F") && tr.at !== undefined && tr.at !== null) go(tr.at);
+    else if ((k === "f" || k === "F") && fails) go(tr.at);
     else if ((k === "l" || k === "L") && loop !== null) go(loop);
     else if (k === "+" || k === "=") zoom(1.5);
     else if (k === "-") zoom(1 / 1.5);
     else if (k === "0") fitAll();
-    else if (k === "?") box.classList.toggle("keys", keys.classList.toggle("on"));
+    else if (k === "?") toggleKeys();
     else if (k === "ArrowUp" || k === "ArrowDown") {
-      const at = order.indexOf(S.sel), to = order[Math.max(0, Math.min(order.length - 1, at + (k === "ArrowUp" ? -1 : 1)))];
+      const a = order.indexOf(S.sel), to = order[Math.max(0, Math.min(order.length - 1, a + (k === "ArrowUp" ? -1 : 1)))];
       S.sel = to; draw(); e.preventDefault();
     } else if (k === "Enter" && S.sel !== null && kind(S.sel) === "num") {
       S.plots.has(S.sel) ? S.plots.delete(S.sel) : S.plots.add(S.sel); draw();
@@ -4034,16 +4147,17 @@ function openWave(tr, first, title, pick) {
     e.stopPropagation();
   };
   // at first: every step in view, if each has room; else 32 pixels a step, the step that fails in view
-  S.px = Math.min(120, avail() / cols);  // all the steps in the width; a long trace opens readable, to move along
+  S.px = Math.min(WV.max, avail() / cols);  // all the steps in the width; a long trace opens readable, to pan along
   if (S.px < 24) S.px = 32;
   draw();
-  show(tr.at !== undefined && tr.at !== null ? tr.at : S.cur);
+  show(fails ? tr.at : S.cur);
   box.focus();
 }
 function closeWave() {
-  const box = document.getElementById("wave");
+  const box = document.getElementById("wave"), tip = document.getElementById("tip");
   if (!box || !WAVE.open) return;
-  box.style.display = "none"; box.innerHTML = ""; box.classList.remove("keys");
+  box.style.display = "none"; box.innerHTML = "";
+  if (tip) tip.style.display = "none";
   WAVE.open = false;
   if (WAVE.up) removeEventListener("pointerup", WAVE.up);
   if (WAVE.move) removeEventListener("pointermove", WAVE.move);
@@ -4098,7 +4212,7 @@ const GLYPH = {
   wave: '<path d="M1.5 11h2.5V5h3v6h2.5V5h3v6h2"/>',
   zin: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4M7 5v4"/>',
   zout: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6M5 7h4"/>',
-  fit: '<path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3"/>',
+  fit: '<path d="M1.5 8h13M4.5 5l-3 3 3 3M11.5 5l3 3-3 3"/>',
   keys: '<rect x="1.5" y="4" width="13" height="8" rx="1.5"/><path d="M4 6.6h.5M6.5 6.6h.5M9 6.6h.5M11.5 6.6h.5M5 9.4h6"/>',
   next: '<path d="M6 3.5L10.5 8 6 12.5"/>',
 };
