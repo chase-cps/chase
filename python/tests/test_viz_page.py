@@ -865,13 +865,22 @@ def test_the_waveform_opens_and_closes(browser, tmp_path):
     assert "do not refine" in page.inner_text("#wave header b") or "does not refine" in page.inner_text("#wave header b")
     names = page.locator("#wave .wv-row[data-i] .wv-name").all_text_contents()
     assert names == ["n", "go", "x", "mode"]
-    assert page.locator("#wave .wv-gname").all_inner_texts() == ["REQUIREMENT", "OTHERS"]
+    assert page.locator("#wave .wv-gname").all_inner_texts() == ["Variables of Bound", "Other variables"]
     page.keyboard.press("Escape")
     assert not page.is_visible("#wave")
     assert page.is_visible("#repair table.rp-trace")              # the details stay
     click(page, page.locator(OPEN_WAVE))
     click(page, page.locator('#wave button[aria-label="Close (Esc)"]'))
     assert not page.is_visible("#wave")
+    assert errors == []
+
+
+def test_the_waveform_has_no_group_heading_for_one_group(browser, tmp_path):
+    # every variable in the terms of the requirement: no heading at all
+    page, errors = wave_page(browser, tmp_path, {"vars": ["n"], "more": 0, "cut": False, "loop": 1, "at": 1,
+                                                 "steps": [[0], [1]]})
+    assert page.locator("#wave .wv-gname").count() == 0
+    assert page.locator("#wave .wv-row[data-i]").count() == 1
     assert errors == []
 
 

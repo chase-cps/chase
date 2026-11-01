@@ -1766,7 +1766,8 @@ _PAGE = r"""<!doctype html>
   .wv-plot.on { color:#fff; background:var(--teal); }
   span.wv-plot { cursor:inherit; }
   .wv-group .wv-left { cursor:default; }
-  .wv-gname { font:600 10px Helvetica, Arial, sans-serif; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); }
+  .wv-gname { font:10.5px Helvetica, Arial, sans-serif; color:var(--faint); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wv-gname b { font-weight:600; color:var(--ink); }
   .wv-axis { position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid #d5dddd; }
   .wv-axis .wv-left { z-index:3; cursor:default; align-items:flex-end; padding-bottom:10px; }
   .wv-axis .wv-name { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
@@ -3364,7 +3365,7 @@ function whySection(n, t, st) {
     const table = traceTable(w.trace, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
     // the waveform: every step kept, in a drawer under the diagram; its button on the line of the panel
-    if (last > 0) panel.wave = () => openWave(w.trace, first, checkTitle(n, t), go);
+    if (last > 0) panel.wave = () => openWave(w.trace, first, checkTitle(n, t), go, req);
     if (table.nav) {                    // on the line of the heading: the page back and on
       const head = sec.firstChild;
       head.classList.add("rp-hb");
@@ -3785,7 +3786,7 @@ function fillProblems(list) {
 // the diagram follow (and the other way round).
 const WAVE = { open: false, height: null };
 const WV = { axis: 54, band: 33, row: 24, bool: 24, plot: 56, group: 18, min: 6, max: 240 };
-function openWave(tr, first, title, pick) {
+function openWave(tr, first, title, pick, reqName) {
   closeWave();
   const box = document.getElementById("wave"), n = tr.steps.length;
   const loop = tr.loop === null || tr.loop === undefined ? null : tr.loop;
@@ -3972,7 +3973,8 @@ function openWave(tr, first, title, pick) {
     order.forEach((i, j) => {
       if (groups && (j === 0 || req(order[j - 1]) !== req(i))) {
         const gr = h("div", { class: "wv-row wv-group", style: "height:" + WV.group + "px" },
-          left("", h("span", { class: "wv-gname" }, req(i) ? "Requirement" : "Others")));
+          left("", h("span", { class: "wv-gname", title: req(i) ? "The variables in the terms of " + reqName : "" },
+            req(i) ? ["Variables of ", h("b", {}, reqName)] : "Other variables")));
         const gs = sv("svg", { width: W + 16, height: WV.group, class: "wv-svg" }, gr);
         marks(gs, WV.group, 0); cursor(gs, 0, WV.group);
         grid.appendChild(gr);
