@@ -1810,10 +1810,10 @@ _PAGE = r"""<!doctype html>
   #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
   table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
-  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:right; padding:2px 8px;
+  table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px;
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
-  table.rp-trace td { padding:2px 8px; text-align:right; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
-  table.rp-trace td.v { text-align:left; color:var(--soft); }
+  table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
+  table.rp-trace td.v { text-align:center; color:var(--soft); }
   table.rp-trace th.fail { color:var(--bad); background:#fbeceb; }
   .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
   table.rp-trace td.fail { background:#fbeceb; }
