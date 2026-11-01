@@ -1404,6 +1404,37 @@ def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path)
     assert errors == []
 
 
+def test_the_terms_of_a_core_say_their_lines(browser, tmp_path):
+    # terms cut short alike (a long computed contract) still tell apart: each says its line in the file
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT)
+    d = viz.from_spec(str(tmp_path / "count.ltl"))
+    n = next(n for n in d["nodes"] if n.get("source") and len((n["source"].get("G") or [])) >= 1)
+    n["checks"] = [{"name": "R", "status": "invalid", "reason": "", "core": {"part": "contract", "A": [], "G": [0]}}]
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator(f'[data-check="{n["id"]}|R"]'))
+    page.wait_for_selector("#repair .rp-terms", timeout=5000)
+    assert page.inner_text("#repair .rp-term .ln") == "line " + str(n["source"]["G"][0][0])
+    assert errors == []
+
+
+def test_terms_that_begin_alike_show_where_they_differ(browser, tmp_path):
+    # three long guarantees alike for their first 100 characters: each also shows the end that sets it apart
+    from chase_cps import Contract
+    head = "G ((" + " & ".join(f"state_{i}" for i in range(12)) + ") -> X counter = "
+    c = Contract.from_strings(name="Long", inputs=["state_" + str(i) for i in range(12)], outputs=["counter"],
+                              guarantees=[head + "0)", head + "1)", head + "2)"])
+    d = viz.diagram(c)
+    d["nodes"][0]["checks"] = [{"name": "R", "status": "invalid", "reason": "", "core": {"part": "contract", "A": [], "G": [0, 1, 2]}}]
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|R"]'))
+    page.wait_for_selector("#repair .rp-terms", timeout=5000)
+    ends = page.locator("#repair .rp-term .d").all_inner_texts()
+    assert len(ends) == 3 and len(set(ends)) == 3 and all(e.startswith("… ") for e in ends)
+    assert [e.rstrip(")").endswith(k) for e, k in zip(ends, "012")] == [True] * 3
+    assert errors == []
+
+
 def test_a_command_breaks_only_between_its_words(browser, tmp_path):
     # the repair command of a page that cannot run repairs, in a narrow panel: no flag cut at "--"
     from test_viz import COUNT

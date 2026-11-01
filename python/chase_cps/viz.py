@@ -1869,6 +1869,10 @@ _PAGE = r"""<!doctype html>
   .rp-term { display:flex; gap:6px; align-items:flex-start; text-align:left; border:0; border-radius:4px; padding:3px 5px;
              background:#fbeceb; color:var(--ink); cursor:pointer; font:inherit; }
   .rp-term:hover { background:#f6dcd9; }
+  .rp-term .fs { display:flex; flex-direction:column; min-width:0; }
+  .rp-term .f.cut { -webkit-line-clamp:2; }
+  .rp-term .d { font:11px/1.4 Menlo, Monaco, monospace; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rp-term .ln { flex:none; margin-left:auto; padding-left:6px; color:#7a8a8a; font-size:10.5px; white-space:nowrap; }
   .rp-term .st { flex:none; width:13px; height:13px; margin-top:1px; border-radius:3px; background:var(--teal); color:#fff;
                  font:700 9.5px/13px Helvetica, Arial, sans-serif; text-align:center; }
   .rp-term .f { font:11px/1.4 Menlo, Monaco, monospace; min-width:0; overflow-wrap:anywhere;
@@ -3435,6 +3439,17 @@ function whySection(n, t, st) {
     const src = n[c.core.part] || {};
     const list = [].concat((c.core.A || []).map(i => ["A", i, (src.A || [])[i]]), (c.core.G || []).map(i => ["G", i, (src.G || [])[i]]))
                    .filter(x => x[2]);
+    // the line of each term in the file: terms cut short alike still tell apart
+    const lineAt = (p, i) => { const at = c.core.part === "contract" && n.source && (n.source[p] || [])[i];
+                               return at ? at[0] : null; };
+    // terms that begin alike (a long computed contract): each also shows where it differs from the others
+    const apart = f => {
+      const same = Math.max(0, ...list.map(x => x[2]).filter(g => g !== f).map(g => { let k = 0;
+                     while (k < f.length && f[k] === g[k]) k++; return k; }));
+      if (same < 60) return null;
+      const at = f.lastIndexOf(" ", Math.max(0, same - 12));
+      return f.slice(at < 0 ? same : at + 1);
+    };
     const nA = list.filter(x => x[0] === "A").length, nG = list.length - nA;
     const these = (k, one, many) => k === 1 ? "This " + one : "These " + k + " " + many;
     const all = these(list.length, nA && nG ? "term" : nA ? "assumption" : "guarantee", nA && nG ? "terms" : nA ? "assumptions" : "guarantees");
@@ -3446,7 +3461,10 @@ function whySection(n, t, st) {
     sec.appendChild(h("div", {}, say));
     sec.appendChild(h("div", { class: "rp-terms" }, list.map(([p, i, f]) =>
       h("button", { class: "rp-term", title: "Show it on the diagram", onclick: () => showTerm(n, c.core.part + ":" + p + i) },
-        h("span", { class: "st" }, p), h("span", { class: "f" }, f)))));
+        h("span", { class: "st" }, p),
+        h("span", { class: "fs" }, h("span", { class: "f" + (apart(f) ? " cut" : "") }, f),
+          apart(f) ? h("span", { class: "d" }, "… " + apart(f)) : null),
+        lineAt(p, i) ? h("span", { class: "ln" }, "line " + lineAt(p, i)) : null))));
     return sec;
   }
   const w = n.badge && n.badge.why, req = (n.contract && n.contract.name) || n.title;
