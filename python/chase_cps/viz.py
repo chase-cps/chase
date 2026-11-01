@@ -1810,12 +1810,12 @@ _PAGE = r"""<!doctype html>
   /* the steps in view, and a page back or on: only when the table is wider than the panel */
   .rp-trace-top { display:none; align-items:center; justify-content:flex-end; gap:2px; margin-top:2px; color:var(--soft); font-size:11px; }
   .rp-trace-top.on { display:flex; } .rp-span { margin-right:4px; }
-  /* a scroll bar always drawn, wider than the one of the system (which shows only while scrolling) */
-  .rp-tracewrap::-webkit-scrollbar { height:9px; width:9px; }
-  .rp-tracewrap::-webkit-scrollbar-track { background:#edf1f1; border-radius:5px; }
-  .rp-tracewrap::-webkit-scrollbar-thumb { background:#a9b6b6; border-radius:5px; border:2px solid #edf1f1; }
-  .rp-tracewrap::-webkit-scrollbar-thumb:hover { background:#7c8e8e; }
-  @supports not selector(::-webkit-scrollbar) { .rp-tracewrap { scrollbar-color:#a9b6b6 #edf1f1; } }
+  /* a scroll bar of the page, always drawn: the one of the system shows only while scrolling (macOS) */
+  .rp-tracebox .rp-tracewrap { scrollbar-width:none; } .rp-tracebox .rp-tracewrap::-webkit-scrollbar { display:none; }
+  .rp-bar { display:none; position:relative; height:8px; margin:5px 0 2px; border-radius:4px; background:#edf1f1; cursor:pointer; }
+  .rp-bar.on { display:block; }
+  .rp-bar > div { position:absolute; top:0; bottom:0; border-radius:4px; background:#a9b6b6; cursor:grab; }
+  .rp-bar > div:hover, .rp-bar > div.drag { background:#7c8e8e; } .rp-bar > div.drag { cursor:grabbing; }
   .rp-tracewrap { overflow:auto; max-height:260px; margin-top:6px;
     /* a shadow at a side where more columns are: the table scrolls */
     background: linear-gradient(to right, var(--paper, #fff) 30%, transparent) left / 24px 100% no-repeat local,
@@ -3344,14 +3344,34 @@ function traceTable(tr, first, req, step, onPick) {
                       wrap.scrollLeft += d * Math.max(40, wrap.clientWidth - (v ? v.offsetWidth : 0) - 8); };
   const prev = iconButton(GLYPH.prev, "Earlier steps", () => turn(-1)), next = iconButton(GLYPH.next, "Later steps", () => turn(1));
   const top = h("div", { class: "rp-trace-top" }, span, prev, next);
-  const out = h("div", { class: "rp-tracebox" }, top, wrap);
+  // the bar under the table: its thumb is the part in view; drag it, or click the bar to page
+  const thumb = h("div", {}), bar = h("div", { class: "rp-bar" }, thumb);
+  const out = h("div", { class: "rp-tracebox" }, top, wrap, bar);
+  bar.addEventListener("mousedown", e => {
+    if (e.target === thumb) return;
+    turn(e.offsetX < thumb.offsetLeft ? -1 : 1);
+  });
+  thumb.addEventListener("mousedown", e => {
+    e.preventDefault(); e.stopPropagation();
+    const x0 = e.clientX, s0 = wrap.scrollLeft, k = wrap.scrollWidth / bar.clientWidth;
+    thumb.classList.add("drag");
+    const move = m => { wrap.scrollLeft = s0 + (m.clientX - x0) * k; };
+    const up = () => { thumb.classList.remove("drag"); removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", move); addEventListener("mouseup", up);
+  });
   const last = tr.steps.length - 1;
   const where = () => {
     const over = wrap.scrollWidth > wrap.clientWidth + 1;
     top.classList.toggle("on", over);
+    bar.classList.toggle("on", over);
     if (!over) return;
+    const w = bar.clientWidth;
+    thumb.style.width = Math.max(24, w * wrap.clientWidth / wrap.scrollWidth) + "px";
+    thumb.style.left = (w - thumb.offsetWidth) * wrap.scrollLeft / Math.max(1, wrap.scrollWidth - wrap.clientWidth) + "px";
     const v = t.querySelector("th, td.v"), from = wrap.scrollLeft + (v ? v.offsetWidth : 0), to = wrap.scrollLeft + wrap.clientWidth;
-    const seen = [...t.querySelectorAll("th[data-k]")].filter(c => c.offsetLeft + c.offsetWidth > from + 2 && c.offsetLeft < to - 2);
+    // a step is in view when the middle of its column is (not hidden under the first column, not cut at the edge)
+    const seen = [...t.querySelectorAll("th[data-k]")].filter(c => c.offsetLeft + c.offsetWidth / 2 >= from
+                                                                   && c.offsetLeft + c.offsetWidth / 2 <= to);
     if (seen.length) {
       const a = +seen[0].dataset.k, b = +seen[seen.length - 1].dataset.k;
       span.textContent = DATA.period ? "t " + timeOf(a) + "–" + timeOf(b) + " of " + timeOf(0) + "–" + timeOf(last)

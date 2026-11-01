@@ -748,6 +748,27 @@ def test_the_table_scrolls_under_its_first_column(browser, tmp_path):
     assert errors == []
 
 
+def test_the_table_has_a_scroll_bar_always_drawn(browser, tmp_path):
+    # the bar of the system shows only while scrolling (macOS): the page draws one; its thumb drags the
+    # table, a click on the bar pages it
+    (tmp_path / "w.ltl").write_text(WIDE)
+    d = viz.from_spec(str(tmp_path / "w.ltl"), refines=[("Counter", "Bound")], check=True)
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair .rp-bar.on", timeout=5000)
+    wrap = "document.querySelector('#repair .rp-tracewrap').scrollLeft"
+    thumb = page.locator("#repair .rp-bar > div").bounding_box()
+    bar = page.locator("#repair .rp-bar").bounding_box()
+    assert thumb["width"] < bar["width"]
+    page.mouse.move(thumb["x"] + 4, thumb["y"] + 4); page.mouse.down()
+    page.mouse.move(thumb["x"] + 64, thumb["y"] + 4, steps=4); page.mouse.up()
+    assert page.evaluate(wrap) > 0
+    assert page.locator("#repair .rp-bar > div").bounding_box()["x"] > thumb["x"]
+    page.mouse.click(bar["x"] + 2, bar["y"] + 4)                     # left of the thumb: a page back
+    page.wait_for_function(f"{wrap} === 0", timeout=5000)
+    assert errors == []
+
+
 def test_a_table_that_fits_has_no_scroll(browser, tmp_path):
     from test_viz import COUNT
     (tmp_path / "count.ltl").write_text(COUNT)
@@ -761,6 +782,7 @@ def test_a_table_that_fits_has_no_scroll(browser, tmp_path):
     page.wait_for_timeout(100)
     assert page.locator("#repair .rp-trace-top.on").count() == 0
     assert not page.is_visible("#repair .rp-trace-top")
+    assert not page.is_visible("#repair .rp-bar")
     assert errors == []
 
 
