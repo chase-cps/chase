@@ -430,12 +430,18 @@ class _Scene:
             driven = {v for k in s.components for v in k.contract.outputs}
             inputs = {v for k in s.components for v in k.contract.inputs if v not in driven}
         outputs = sorted(s.contract.outputs) if s.contract else _outside(children)
+        edges = _wires(children, inputs) + _out(children, outputs)
+        # what the parts do not agree on: its wires red, and said
+        clash = _clashes(s, children)
+        _mark_clash(edges, clash)
+        for said in clash.values():
+            warnings.warn(f"{s.name}: {said}", stacklevel=3)
         return self.box(s, types=_types(*(k.contract for k in s.components),
                                          *([s.contract] if s.contract else [])),
                         kind="group", op="system", title=s.name,
                         note=" ⊗ ".join([k.name for k in s.components] + (["?"] if hole else [])), contract=None,
-                        inputs=sorted(inputs), outputs=outputs, children=children,
-                        edges=_wires(children, inputs) + _out(children, outputs))
+                        inputs=sorted(inputs), outputs=outputs, children=children, edges=edges,
+                        **({"clash": clash} if clash else {}))
 
     def environment(self, env, target: dict, status) -> dict:
         """An environment of the box target: it drives the inputs of target."""
@@ -493,7 +499,7 @@ class _Scene:
                          badge={"text": "⪯", "status": status},
                          inputs=sorted(set(high.inputs) - {v for ch in inner["children"]
                                                            for v in ch.get("outputs", [])}),
-                         outputs=outputs, edges=edges + _out(inner["children"], outputs))
+                         outputs=outputs, edges=_mark_clash(edges + _out(inner["children"], outputs), inner.get("clash", {})))
             self.ids.setdefault(id(high), inner["id"])
             return inner
         return self.box(high, types=_types(high), kind="contract", title=high.name,
@@ -517,6 +523,42 @@ def _wires(children: list, inputs) -> list:
             else:
                 wires.append({"open": [ch["id"], "in", v], "var": v})
     return wires
+
+
+def _clashes(s: System, children: list) -> dict:
+    """The signals the parts of a system do not agree on, as a model would not
+    compile: one driven by two parts, one of two types (in two parts, or in a
+    part and the contract of the system). What to say of each."""
+    out, drive, types = {}, {}, {}
+    for ch in children:
+        for v in ch.get("outputs", []):
+            drive.setdefault(v, []).append(ch["title"])
+    for v, who in drive.items():
+        if len(who) > 1:
+            out[v] = f"{v} is driven by {' and by '.join(who)}"
+    named = [(k.name, k.contract) for k in s.components] + ([(s.contract.name, s.contract)] if s.contract else [])
+    for who, c in named:
+        for v, t in c.variables.items():
+            types.setdefault(v, {}).setdefault(_type_text(t), []).append(who)
+    for v, by in types.items():
+        if len(by) > 1:
+            said = "; ".join(f"{t} in {', '.join(who)}" for t, who in by.items())
+            out[v] = (out[v] + "; " if v in out else "") + f"{v} has two types: {said}"
+    return out
+
+
+def _mark_clash(edges: list, clash: dict) -> list:
+    """The wires of the signals in clash, with what to say of them."""
+    for w in edges:
+        if w["var"] in clash:
+            w["error"] = clash[w["var"]]
+    return edges
+
+
+def _type_text(t) -> str:
+    if isinstance(t, tuple):
+        return f"{t[0]}..{t[1]}"
+    return str(t)
 
 
 def _outside(children: list, outputs=None) -> list:
@@ -1764,14 +1806,17 @@ _PAGE = r"""<!doctype html>
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
   /* the waveform: a drawer under the diagram, beside the details; the names and values on the left, the steps scrolled and zoomed */
-  #wave { position:fixed; left:16px; right:16px; bottom:16px; box-sizing:border-box;
+  #wave { position:fixed; left:12px; right:12px; bottom:12px; box-sizing:border-box;
           background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 6px 28px rgba(0,0,0,.14);
           display:none; flex-direction:column; z-index:11; outline:none; overflow:hidden; }
-  body.insp #wave { right:calc(12px + min(402px, 100vw - 22px) + 16px); }   /* the details: 400 pixels and their border */
+  body.insp #wave { right:calc(12px + min(402px, 100vw - 22px) + 12px); }   /* the details: 400 pixels and their border; the bottoms on one line */
   .wv-grip { position:absolute; top:0; left:0; right:0; height:12px; cursor:ns-resize; z-index:4; }
   .wv-grip::after { content:""; position:absolute; left:50%; top:3px; width:36px; height:3px; margin-left:-18px; border-radius:2px; background:#dfe5e5; }
   .wv-grip:hover::after, .wv-grip.drag::after { background:var(--line); }
   #wave header { padding:9px 8px 7px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:14px; align-items:center; user-select:none; }
+  #wave .wv-back { display:none; align-items:center; gap:8px; border:0; background:none; cursor:pointer; padding:0; margin-left:-6px;
+                   color:var(--teal); font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; flex:none; }
+  #wave .wv-back .ib { color:var(--teal); }
   #wave header b { font-size:13px; font-weight:400; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #wave header b b { font-weight:600; }
   .wv-where { font:12px Helvetica, Arial, sans-serif; color:var(--soft); white-space:nowrap; }
@@ -1865,7 +1910,9 @@ _PAGE = r"""<!doctype html>
   @media (max-width: 820px) {
     #insp { top:auto; left:12px; right:12px; width:auto; height:45vh; max-width:none; }
     body.insp #view { right:0; bottom:calc(45vh + 12px); }
-    body.insp #wave { right:16px; bottom:calc(45vh + 24px); max-height:calc(55vh - 86px); }
+    body.insp.wave #insp { display:none; }        /* the drawer in the place of the details; its arrow goes back */
+    body.insp #wave { right:12px; }
+    #wave .wv-back { display:flex; }
   }
   [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
   .pv-val { fill:#2f6fb5 !important; font-weight:600; }
@@ -1886,7 +1933,8 @@ _PAGE = r"""<!doctype html>
   .rp-term .f { font:11px/1.4 Menlo, Monaco, monospace; min-width:0; overflow-wrap:anywhere;
                 display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .rp-head { display:grid; grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
-             padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1; }
+             padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1;
+             min-height:54px; box-sizing:border-box; }   /* room for a title of two lines: what is under it does not move */
   .rp-head .t { flex:1; font-size:12.5px; min-width:0; overflow-wrap:anywhere; }
   .rp-head .t b, .q-item .t b { font-weight:600; }
   /* the small icons of the page: one size, one stroke, as the icons of the tools */
@@ -1907,7 +1955,8 @@ _PAGE = r"""<!doctype html>
   .rp-sec { padding:8px 14px 10px; border-bottom:1px solid #f1f4f4; }
   .rp-sec:last-child { border-bottom:0; }
   .rp-says { color:var(--soft); }
-  .rp-h { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--soft); margin:2px 0 6px; }
+  .rp-h { font:600 10.5px Helvetica, Arial, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--soft); margin:2px 0 6px;
+          height:24px; display:flex; align-items:center; }   /* as high with the page buttons as without */
   .rp-row { display:grid; grid-template-columns:16px minmax(0,1fr) auto; gap:2px 6px; align-items:center; padding:4px 0; }
   .rp-row + .rp-row { border-top:1px dashed #edf1f1; }
   .rp-row input[type=checkbox] { margin:0; accent-color:var(--teal); }
@@ -1932,7 +1981,7 @@ _PAGE = r"""<!doctype html>
   .rp-opt.old, .rp-opt.faint { opacity:.6; } .rp-opt.faint:hover { opacity:1; }
   .rp-l { grid-column:1; font-size:11px; color:var(--soft); } .rp-l b { color:var(--ink); font-weight:600; }
   .rp-t { grid-column:1; font-size:11.5px; }
-  .rp-h.rp-hb { display:flex; align-items:center; justify-content:space-between; margin-top:-2px; }
+  .rp-h.rp-hb { justify-content:space-between; }
   .rp-h.rp-hb .ib { text-transform:none; letter-spacing:0; }
   #insp-bar .ib.wf-open { margin-left:auto; }
   .ib.wf-open { width:auto; padding:0 7px 0 5px; gap:4px; border:1px solid var(--line); border-radius:5px; color:var(--teal); }
@@ -1974,18 +2023,20 @@ _PAGE = r"""<!doctype html>
   .rp-io .w { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); }
   #view.previewing rect.core-row { fill:#e6efe6; }
   .rp-values .port { color:var(--ink); font-weight:600; }
-  table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; }
+  table.rp-trace { border-collapse:collapse; font:11px Menlo, Monaco, monospace; width:100%; }   /* the width of the panel, as every table */
   table.rp-trace th { font:600 10.5px Helvetica, Arial, sans-serif; color:var(--soft); text-align:center; padding:2px 8px; white-space:nowrap;
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:center; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
-  table.rp-trace td.v { text-align:center; color:var(--soft); }
+  table.rp-trace td.v { text-align:left; color:var(--soft); width:1%; }
+  table.rp-trace th:first-child { text-align:left; width:1%; }
   table.rp-trace td[data-k] { min-width:var(--cw, 0); }
   table.rp-trace td.unk { color:var(--soft); }
   /* the first column, the names, stays when the table scrolls */
   table.rp-trace th:first-child, table.rp-trace td.v { position:sticky; left:0; background:#fff; box-shadow:inset -1px 0 #e3e8e8; }
   table.rp-trace td.v { z-index:1; } table.rp-trace th:first-child { z-index:3; } table.rp-trace th { z-index:2; }
   table.rp-trace th.fail { color:var(--bad); background:#fbeceb; }
-  .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
+  .rp-lead { margin-top:6px; }
+  .rp-broken { margin:6px 0 2px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
   table.rp-trace td.fail { background:#fbeceb; }
   table.rp-trace .k { cursor:pointer; } table.rp-trace th.hov { color:#2f6fb5; } table.rp-trace td.hov { background:#eef4fb; }
   table.rp-trace td.fail.hov { background:#f6dedc; }
@@ -2008,13 +2059,15 @@ _PAGE = r"""<!doctype html>
                     user-select:none; -webkit-user-select:none; }
   #popview h4 { font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--soft); margin:12px 0 4px; }
   .q-item { padding:9px 10px 8px 8px; border-bottom:1px solid #f1f4f4; cursor:pointer; display:grid;
-            grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center; }
+            grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
+            min-height:58px; box-sizing:border-box; }   /* a row of one line as high as one of two */
   .q-tag { display:flex; justify-content:center; align-items:center; }
   .q-main { display:grid; gap:3px; min-width:0; }
   .q-item.on { background:#eef3f9; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
   /* the title of an item as the title of its details: no jump from one to the other */
-  .q-item .t { font-size:12.5px; overflow-wrap:anywhere; }
+  .q-item .t, .q-item .s, .q-item .v { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* one line each: rows of one height */
+  .q-item .t { font-size:12.5px; }
   .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
   .q-item .v { font:11px Menlo, Monaco, monospace; color:var(--ink); }
   .tools #repairs { width:auto; padding:0 7px; gap:4px; display:none; color:var(--bad); font:600 11.5px Helvetica, Arial, sans-serif; }
@@ -2051,6 +2104,8 @@ let progressed = {};            // the results known while they run: contract na
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
+// a Boolean value of a counterexample: ⊤ or ⊥ (the formulas keep the words true and false)
+const truth = b => b ? "⊤" : "⊥";
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
       FONT_S = "11px 'Arial Unicode MS', Helvetica, Arial, sans-serif", FONT_W = "10px Menlo, Monaco, monospace";
 const show = { names: true, types: true, conditions: true, checks: true };
@@ -2299,6 +2354,7 @@ const FLOW = { "elk.layered.spacing.nodeNodeBetweenLayers": "72", "elk.spacing.n
                "elk.layered.layering.strategy": "INTERACTIVE" };
 let widen = {};
 const KIND = {};
+const ERR = {};          // the wires of a signal the parts do not agree on: what to say
 // The column of each box inside n, by the flow of its wires: the longest
 // path from the inputs of n, a wire back to an earlier box (a loop) left out.
 // Viewpoints stacked in one box share a column.
@@ -2356,7 +2412,7 @@ function toElk(n, column, row) {
   if (!inside(n) || folded.has(n.id)) { base.width = sz.w; base.height = sz.h; return base; }
   const col = columns(n);
   const edges = (n.edges || []).filter(w => !w.open).map((w, i) => {
-    const id = n.id + ":e" + i; KIND[id] = typeOf(n, w.var);
+    const id = n.id + ":e" + i; KIND[id] = typeOf(n, w.var); ERR[id] = w.error;
     return { id, w, sources: [(w.from[0] || n.id) + ":" + w.from[1] + ":" + w.from[2]],
              targets: [(w.to[0] || n.id) + ":" + w.to[1] + ":" + w.to[2]] }; });
   const strip = es => es.map(({ w, ...ed }) => ed);
@@ -2520,6 +2576,12 @@ function drawNode(g, e, ox, oy) {
       if (l.x < 0) t.setAttribute("data-side", "left"); }); });
   (e.children || []).forEach(c => drawNode(g, c, x, y));
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
+  // a signal the parts do not agree on (two drivers, two types): its names on the ports red, and said
+  Object.entries(n.clash || {}).forEach(([v, says]) => {
+    const here = new Set([n.id, ...(n.children || []).map(c => c.id)]);
+    g.querySelectorAll('text[data-var="' + v + '"]').forEach(t => {
+      if (!here.has(t.getAttribute("data-pbox"))) return;
+      t.setAttribute("style", "fill:var(--bad)"); tip(t, says); }); });
   if (folded.has(n.id)) return;
   (n.edges || []).filter(w => w.open).forEach(w => {
     let c = null, dx = 0, dy = 0;              // the box, directly inside or in a row
@@ -2550,12 +2612,13 @@ function drawNode(g, e, ox, oy) {
 }
 
 function drawEdge(g, ed, ox, oy) {
-  const k = KIND[ed.id];
+  const k = KIND[ed.id], bad = ERR[ed.id];
   (ed.sections || []).forEach(s => {
     const pts = [s.startPoint, ...(s.bendPoints || []), s.endPoint];
-    el("polyline", { points: pts.map(p => (ox + p.x) + "," + (oy + p.y)).join(" "), fill: "none",
-                     stroke: "var(--wire)", "stroke-width": k && k.bus ? 2.6 : k ? 1.8 : 1.1,
-                     "stroke-linejoin": "round", "marker-end": "url(#arrow)" }, g);
+    const line = el("polyline", { points: pts.map(p => (ox + p.x) + "," + (oy + p.y)).join(" "), fill: "none",
+                     stroke: bad ? "var(--bad)" : "var(--wire)", "stroke-width": k && k.bus ? 2.6 : k || bad ? 1.8 : 1.1,
+                     "stroke-linejoin": "round", "marker-end": bad ? "url(#arrow-bad)" : "url(#arrow)" }, g);
+    if (bad) tip(line, bad);
     if (k && k.bus) {         // a bus: a slash and its width, on its longest segment
       let a = pts[0], b = pts[1] || pts[0];
       for (let i = 0; i + 1 < pts.length; i++)
@@ -2716,6 +2779,9 @@ function svgIn(container, width, height) {
   const m = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7,
                            markerHeight: 7, markerUnits: "userSpaceOnUse", orient: "auto" }, defs);
   el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--wire)" }, m);
+  const mb = el("marker", { id: "arrow-bad", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7,
+                            markerHeight: 7, markerUnits: "userSpaceOnUse", orient: "auto" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--bad)" }, mb);
   const h = el("pattern", { id: "hatch", width: 7, height: 7, patternUnits: "userSpaceOnUse",
                             patternTransform: "rotate(45)" }, defs);
   el("rect", { width: 7, height: 7, fill: "#fff" }, h);
@@ -2740,7 +2806,7 @@ function narrow(e, todo) {
 }
 const ROOT = { id: "root", types: {}, children: DATA.nodes };
 function rootEdges() {      // from an environment to the box it drives
-  return (DATA.edges || []).map((w, i) => { const id = "root:e" + i; KIND[id] = typeOf(ROOT, w.var);
+  return (DATA.edges || []).map((w, i) => { const id = "root:e" + i; KIND[id] = typeOf(ROOT, w.var); ERR[id] = w.error;
     return { id, sources: [w.from.join(":")], targets: [w.to.join(":")] }; });
 }
 // The items of the diagram in rows, when one row would be much wider than
@@ -3235,7 +3301,7 @@ function factsOf(n, t, r, w) {
     const terms = (w.violated || []).map(i => ((n.contract || {}).G || [])[i]).filter(Boolean);
     const text = (terms.length ? terms : [].concat((n.contract || {}).A || [], (n.contract || {}).G || [])).join(" ");
     const named = new Set((text.match(/[A-Za-z_]\w*/g) || []));
-    const fmt = x => typeof x === "boolean" ? (x ? "true" : "false") : String(x);
+    const fmt = x => typeof x === "boolean" ? truth(x) : String(x);
     const vals = k => tr.vars.map((x, i) => [x, i]).filter(([x]) => named.has(x)).slice(0, 2)
                         .map(([x, i]) => x + " = " + fmt(tr.steps[k][i])).join(", ");
     const call = n.model && n.model.source === "c" && t === "M ⊨ C";       // one call of a C function
@@ -3485,11 +3551,6 @@ function whySection(n, t, st) {
     : whole ? "No single step breaks " + req + ": the whole run does" + (looped ? ", its loop repeated forever." : ".") : null;
   if (w && w.trace) {
     const trace = whole ? { ...w.trace, at: null, whole: true } : w.trace;
-    if (lead) sec.appendChild(h("div", {}, lead));
-    if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
-      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, t === "E ⊨ A" ? "The assumptions it breaks (red):"
-                                                                              : "The assumptions of the parts it breaks (red):"),
-        w.broken.map(b => h("div", { class: "code" }, b))));
     const terms = n.contract ? [].concat(n.contract.A || [], n.contract.G || [], n.contract.E || []).join(" ") : "";
     const named = new Set((terms.match(/[A-Za-z_]\w*/g) || []).filter(x => !/^(G|F|X|U|R|W|true|false)$/.test(x)));
     const last = trace.steps.length - 1;
@@ -3510,6 +3571,12 @@ function whySection(n, t, st) {
       head.append(h("span", {}, "Counterexample"), table.nav);
     }
     sec.appendChild(table);
+    // what the table does not say, under it: the table stays right under its heading in every problem
+    if (lead) sec.appendChild(h("div", { class: "rp-lead" }, lead));
+    if (w.broken && w.broken.length)  // the core of a refinement that fails on the assumptions
+      sec.appendChild(h("div", { class: "rp-broken" }, h("div", {}, t === "E ⊨ A" ? "The assumptions it breaks (red):"
+                                                                              : "The assumptions of the parts it breaks (red):"),
+        w.broken.map(b => h("div", { class: "code" }, b))));
   } else {
     sec.appendChild(h("div", { class: "rp-note", title: inEditor() ? "" : "chase-cps view FILE --check --no-results" },
                       "Not kept: " + (inEditor() ? "press ▶ to check again." : "run the check again.")));
@@ -3539,7 +3606,7 @@ const timeOf = i => DATA.period ? String(+(i * Number(DATA.period)).toFixed(9)) 
 // With a step (the one on the diagram): its column marked blue, the column of the step that fails
 // first red; a click on a column picks its step, and the arrow keys the next one.
 function traceTable(tr, first, req, step, onPick, io) {
-  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? truth(v) : String(v);
   const order = tr.vars.map((_, i) => i).sort((a, b) => (first.includes(tr.vars[b]) - first.includes(tr.vars[a])) || a - b);
   // one call of a function: name = value; one state repeated forever is a table, with its ↺
   const one = tr.steps.length === 1 && (tr.loop === null || tr.loop === undefined);
@@ -3556,8 +3623,8 @@ function traceTable(tr, first, req, step, onPick, io) {
   }
   // every step kept, as the waveform: the columns scroll under the names, a page at a time
   const kept = tr.steps.length, keptCut = tr.cut;
-  const t = h("table", { class: "rp-trace", title: tr.vars.length ? "T: true, F: false" : "" });
-  const cell = v => typeof v === "boolean" ? (v ? "T" : "F") : fmt(v);       // a column per step: short
+  const t = h("table", { class: "rp-trace", title: tr.vars.length ? "⊤ true, ⊥ false" : "" });
+  const cell = fmt;       // a column per step: short
   const picks = step !== null && step !== undefined && onPick;
   const show = k => picks ? "Show " + (DATA.period ? "t = " + timeOf(k) : "step " + k) + " on the diagram" : "";
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
@@ -3934,7 +4001,7 @@ function fillProblems(list) {
       : factsOf(n, t, r, w);
     const title = checkTitle(n, t);
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
-                               title: plainOf(title), onclick: () => openRepair(n, t) },
+                               title: plainOf(title) + (what ? "\n" + what : ""), onclick: () => openRepair(n, t) },
       h("div", { class: "q-tag" }, tagSvg(t, "invalid")),
       h("div", { class: "q-main" }, h("div", { class: "t" }, richOf(title)),
         what ? h("div", { class: best ? "v" : "s" }, what) : null)));
@@ -3964,7 +4031,7 @@ function openWave(tr, first, title, pick, reqName) {
   const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   const real = c => c < n ? c : loop + (c - n);         // the step of a column (the faded pass: the loop again)
   const valueAt = (c, i) => tr.steps[real(c)][i];
-  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? truth(v) : String(v);
   const short = v => typeof v === "number" && !Number.isInteger(v) ? String(+v.toPrecision(4)) : fmt(v);
   const label = k => DATA.period ? timeOf(k) : String(k);
   const at = k => DATA.period ? "t = " + label(k) + " s" : "step " + label(k);
@@ -3988,7 +4055,10 @@ function openWave(tr, first, title, pick, reqName) {
   const keys = h("div", { class: "wv-keys" });
   const kb = iconButton(GLYPH.keys, "Keys (?)", () => toggleKeys());
   const zout = iconButton(GLYPH.zout, "Zoom out (-)", () => zoom(1 / 1.5)), zin = iconButton(GLYPH.zin, "Zoom in (+)", () => zoom(1.5));
-  const bar = h("header", {}, h("b", {}, richOf(title)), where, failAt,
+  // in a narrow window the drawer takes the place of the details: its arrow goes back to the problems, as theirs
+  const back = h("button", { class: "back wv-back", title: "Back to the checks that fail", onclick: () => closeRepair() },
+                 svgSpan("ib", '<path d="M13 8H3M7 4L3 8l4 4"/>'), "Problems");
+  const bar = h("header", {}, back, h("b", {}, richOf(title)), where, failAt,
     h("span", { class: "wv-tools" },
       zout, zin,
       iconButton(GLYPH.fit, "Show all steps (0)", fitAll),
@@ -4025,6 +4095,7 @@ function openWave(tr, first, title, pick, reqName) {
   box.innerHTML = "";
   box.append(grip, bar, keys, scroll, sbar, foot, fade, edgeL, edgeR);
   box.style.display = "flex";
+  document.body.classList.add("wave");
   WAVE.open = true;
   WAVE.setStep = k => { S.cur = k; draw(); show(k, S.center); };
   // a jump (the step that fails, the loop, a marker at the edge, the view at first): the step brought
@@ -4467,6 +4538,7 @@ function closeWave(keepView) {
   const box = document.getElementById("wave"), tip = document.getElementById("tip");
   if (!box || !WAVE.open) return;
   box.style.display = "none"; box.innerHTML = "";
+  document.body.classList.remove("wave");
   if (tip) tip.style.display = "none";
   WAVE.open = false;
   if (WAVE.up) removeEventListener("pointerup", WAVE.up);
@@ -4543,18 +4615,24 @@ function markPick() {
   document.querySelectorAll("#view .pick").forEach(e => e.classList.remove("pick"));
   if (panel) { const b = document.querySelector('#view [data-box="' + panel.id + '"]'); if (b) b.classList.add("pick"); }
 }
+const READ = 0.75;     // below this scale the words of a box are hard to read
 function bringInto(n) {
   const b = document.querySelector('#view [data-box="' + n.id + '"] > rect'), v = document.getElementById("view");
   if (!b || !cam) return;
   const r = b.getBoundingClientRect(), all = v.getBoundingClientRect(), P = document.getElementById("insp");
   const right = inspector.open && P && P.offsetParent ? Math.min(all.right, P.getBoundingClientRect().left - 8) : all.right;
   const V = { left: all.left, top: all.top, bottom: all.bottom, right, width: right - all.left, height: all.height };
-  if (r.left >= V.left && r.right <= V.right && r.top >= V.top + 40 && r.bottom <= V.bottom) return;
-  const k = Math.min(cam.k, 0.9 * V.width / r.width * cam.k, 0.85 * (V.height - 40) / r.height * cam.k);
-  if (k < cam.k) { const cx = r.left + r.width / 2, cy = r.top + r.height / 2; zoomAt(cx, cy, k / cam.k); }
+  const seen = r.left >= V.left && r.right <= V.right && r.top >= V.top + 40 && r.bottom <= V.bottom;
+  if (seen && cam.k >= READ) return;
+  // the scale that shows it whole; one too small to read (a large diagram fitted to the window) made
+  // larger, up to the size of its words, and then, if it is still too large, its top left (its title
+  // and its tag) in view
+  const whole = Math.min(0.9 * V.width / r.width * cam.k, 0.85 * (V.height - 40) / r.height * cam.k);
+  const k = cam.k >= READ ? Math.min(cam.k, whole) : Math.max(cam.k, Math.min(1, Math.max(whole, READ)));
+  if (k !== cam.k) zoomAt(r.left + r.width / 2, r.top + r.height / 2, k / cam.k);
   const r2 = b.getBoundingClientRect();
-  cam.x += V.left + V.width / 2 - (r2.left + r2.width / 2);
-  cam.y += V.top + 40 + (V.height - 40) / 2 - (r2.top + r2.height / 2);
+  cam.x += r2.width <= 0.95 * V.width ? V.left + V.width / 2 - (r2.left + r2.width / 2) : V.left + 16 - r2.left;
+  cam.y += r2.height <= 0.9 * (V.height - 40) ? V.top + 40 + (V.height - 40) / 2 - (r2.top + r2.height / 2) : V.top + 52 - r2.top;
   place();
 }
 // A term listed in the panel, on the diagram: its box open, the term in view, its lines flashed.
@@ -4578,7 +4656,7 @@ function replay(n, tr, k) {
   const inside = new Set();             // the box of the check and the boxes inside it
   (function walk(b) { inside.add(String(b.id)); (b.children || []).forEach(walk); })(n);
   const at = {}; tr.vars.forEach((v, i) => { at[v] = tr.steps[k][i]; });
-  const fmt = v => typeof v === "boolean" ? (v ? "true" : "false") : String(v);
+  const fmt = v => typeof v === "boolean" ? truth(v) : String(v);
   document.querySelectorAll("#view text[data-var]").forEach(x => {
     const v = x.getAttribute("data-var");
     if (!(v in at) || !inside.has(x.getAttribute("data-pbox"))) return;

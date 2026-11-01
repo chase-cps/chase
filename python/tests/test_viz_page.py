@@ -702,7 +702,9 @@ def test_the_titles_of_the_problems_name_the_parts_in_bold(browser, tmp_path):
     lines = page.locator("#repair .q-item .s").all_inner_texts()
     assert any(x.startswith("Fails at step 2 (n = 2)") for x in lines), lines
     assert not any("θ" in x or "no constant" in x or "f.c" in x for x in lines + texts)
-    assert items.nth(0).get_attribute("title") == texts[0]          # the tooltip: the plain text
+    # the tooltip: the plain text, and what is found under it (a row shows one line of each)
+    assert items.nth(0).get_attribute("title").split("\n")[0] == texts[0]
+    assert items.nth(0).get_attribute("title").split("\n")[1].startswith("Fails at step 2")
     # the details: the same title, the names in bold
     click(page, items.filter(has_text="refine"))
     page.wait_for_selector("#repair .rp-head", timeout=5000)
@@ -905,6 +907,65 @@ MIXED = {"vars": ["go", "x", "n", "mode"], "more": 0, "cut": False, "loop": 3, "
          "steps": [[True, 0.5, 0, "idle"], [False, 0.5, 1, "run"], [True, 1.25, 2, "run"], [None, 2, 3, "stop"], [True, 2, 3, "stop"]]}
 
 
+def test_the_counterexample_is_at_the_same_place_in_every_problem(browser, tmp_path):
+    # the heading and the table at the same height whatever is said besides: page buttons on the
+    # line of the heading (a long trace), a sentence (the parts do not accept the input) under the table
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT)
+    tops = {}
+    for name, trace, failed in [("short", MIXED, "guarantees"), ("long", LONG, "guarantees"), ("said", MIXED, "assumptions")]:
+        d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")])
+        bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+        bound["badge"].update(status="invalid", why={"failed": failed, "violated": [0], "at": trace["at"], "trace": trace})
+        page, errors = open_page(browser, tmp_path, d)
+        click(page, page.locator('[data-check$="|⪯"]'))
+        page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+        tops[name] = page.evaluate("""() => { const P = document.getElementById('repair').getBoundingClientRect().top;
+            const top = s => Math.round(document.querySelector(s).getBoundingClientRect().top - P);
+            const t = document.querySelector('#repair table.rp-trace'), lead = document.querySelector('#repair .rp-lead');
+            return [top('#repair .rp-sec .rp-h'), top('#repair table.rp-trace'), lead ? lead.getBoundingClientRect().top >= t.getBoundingClientRect().bottom : null,
+                    Math.round(t.getBoundingClientRect().width) >= Math.round(t.parentNode.clientWidth) - 1]; }""")
+        assert not errors
+        page.close()
+    assert tops["short"][:2] == tops["long"][:2] == tops["said"][:2]
+    assert tops["said"][2] is True                       # the sentence under the table
+    assert all(v[3] for v in tops.values())              # the table as wide as the panel
+
+
+def test_in_a_narrow_window_the_waveform_takes_the_place_of_the_details(browser, tmp_path):
+    # 800 pixels wide: the drawer where the details were, its arrow back to the problems; the table
+    # writes the Booleans as the formulas do, ⊤ and ⊥
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT)
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")])
+    bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
+    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": 2, "trace": MIXED})
+    page, errors = open_page(browser, tmp_path, d)
+    page.set_viewport_size({"width": 800, "height": 800})
+    click(page, page.locator('[data-check$="|⪯"]'))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    assert "⊤" in page.inner_text("#repair table.rp-trace") and "⊥" in page.inner_text("#repair table.rp-trace")
+    cells = page.eval_on_selector_all("#repair table.rp-trace td", "ts => ts.map(t => t.textContent)")
+    assert "T" not in cells and "F" not in cells
+    assert page.locator("#wave .wv-back").count() == 0
+    click(page, page.locator(OPEN_WAVE))
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    assert not page.is_visible("#insp") and page.is_visible("#wave .wv-back")
+    box = page.locator("#wave").bounding_box()
+    assert box["x"] == pytest.approx(12, abs=1) and box["x"] + box["width"] == pytest.approx(800 - 12, abs=1)
+    assert box["y"] + box["height"] == pytest.approx(800 - 12, abs=1)
+    click(page, page.locator("#wave .wv-back"))
+    page.wait_for_selector("#repair .q-item", timeout=5000)
+    assert not page.is_visible("#wave") and page.is_visible("#insp")
+    # wide again: the arrow of the drawer is not there, the details are beside it
+    page.set_viewport_size({"width": 1200, "height": 800})
+    click(page, page.locator("#repair .q-item").first)
+    click(page, page.locator(OPEN_WAVE))
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    assert page.is_visible("#insp") and not page.is_visible("#wave .wv-back")
+    assert not errors
+
+
 def wave_row(page, v):
     return page.locator("#wave .wv-row[data-i]", has=page.locator(f'.wv-name[title="{v}"]'))
 
@@ -926,8 +987,9 @@ def test_the_waveform_opens_and_closes(browser, tmp_path):
     assert b["x"] + b["width"] == pytest.approx(bar["x"] + bar["width"] - 10, abs=2)
     assert not page.locator("#repair .wf-open").count()
     box, insp = page.locator("#wave").bounding_box(), page.locator("#insp").bounding_box()
-    assert box["x"] == pytest.approx(16, abs=1) and box["y"] + box["height"] == pytest.approx(800 - 16, abs=1)
-    assert box["x"] + box["width"] == pytest.approx(insp["x"] - 16, abs=1)       # beside the details, not over them
+    assert box["x"] == pytest.approx(12, abs=1) and box["y"] + box["height"] == pytest.approx(800 - 12, abs=1)
+    assert box["y"] + box["height"] == pytest.approx(insp["y"] + insp["height"], abs=1)   # the bottoms on one line
+    assert box["x"] + box["width"] == pytest.approx(insp["x"] - 12, abs=1)       # beside the details, not over them
     assert box["height"] <= 0.45 * 800 + 1
     assert "do not refine" in page.inner_text("#wave header b") or "does not refine" in page.inner_text("#wave header b")
     names = page.locator("#wave .wv-row[data-i] .wv-name").all_text_contents()
@@ -1232,7 +1294,7 @@ def test_the_waveform_resizes_from_its_top_edge(browser, tmp_path):
     drag_grip(page, -150)
     tall = page.locator("#wave").bounding_box()
     assert tall["height"] == pytest.approx(box["height"] + 150, abs=26)
-    assert tall["y"] + tall["height"] == pytest.approx(800 - 16, abs=1)
+    assert tall["y"] + tall["height"] == pytest.approx(800 - 12, abs=1)
     assert page.evaluate(CUT_ROW) is None
     page.locator("#wave .wv-grip").dblclick()
     assert page.locator("#wave").bounding_box()["height"] == pytest.approx(box["height"], abs=1)

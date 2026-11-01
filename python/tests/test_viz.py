@@ -263,6 +263,22 @@ def test_a_quotient_the_algebra_cannot_compute_is_a_hole_with_its_ports():
     assert any(e.get("from") == [ids["?"], "out", "k"] and e.get("to") == [ids["B"], "in", "k"] for e in group["edges"])
 
 
+def test_signals_the_parts_do_not_agree_on_are_red_wires():
+    # two parts drive y; m is a word in one part and a Boolean in the other: their wires carry what
+    # is wrong (drawn red, said in their tips), and a warning says it; the other wires do not
+    top = Contract.from_strings(name="Top", inputs={"x": "bool"}, outputs={"y": "bool", "z": "bool"},
+                                guarantees=["G (x -> X y)", "G (x -> X z)"])
+    a = Contract.from_strings(name="A", inputs={"x": "bool"}, outputs={"y": "bool", "m": "word[4]"}, guarantees=["G (x -> y)"])
+    b = Contract.from_strings(name="B", inputs={"m": "bool"}, outputs={"y": "bool", "z": "bool"}, guarantees=["G (m -> y)"])
+    with pytest.warns(UserWarning) as said:
+        group = viz.diagram(System("Top", [Component("A", a), Component("B", b)], contract=top))["nodes"][0]
+    assert group["clash"] == {"y": "y is driven by A and by B", "m": "m has two types: word[4] in A; bool in B"}
+    assert {str(w.message) for w in said} >= {"Top: y is driven by A and by B", "Top: m has two types: word[4] in A; bool in B"}
+    red = {(w["var"], w["error"]) for w in group["edges"] if "error" in w}
+    assert ("y", "y is driven by A and by B") in red and ("m", "m has two types: word[4] in A; bool in B") in red
+    assert all("error" not in w for w in group["edges"] if w["var"] in ("x", "z"))
+
+
 def test_checks_and_cores_are_marked_on_the_box():
     c = Contract.from_strings(name="C", inputs=["x"], outputs=["y", "z"], assumptions=["G F x"],
                               guarantees=["G (x -> y)", "G z", "G (x -> !y)"])
