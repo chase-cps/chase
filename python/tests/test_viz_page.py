@@ -807,7 +807,8 @@ def test_the_table_scrolls_under_its_first_column(browser, tmp_path):
     page.wait_for_function("document.querySelector('#repair .rp-tracewrap').scrollLeft > 0", timeout=5000)
     assert left() > 0
     assert abs(name.bounding_box()["x"] - x0) < 1                    # the names stayed
-    assert prev.evaluate("b => getComputedStyle(b).visibility") == "visible"
+    page.wait_for_function("getComputedStyle(document.querySelector('#repair .rp-trace-top button.ib'))"
+                           ".visibility === 'visible'", timeout=5000)   # the scroll event comes a frame later
     for _ in range(10):                                              # on to the end: no page on
         if nxt.evaluate("b => getComputedStyle(b).visibility") == "hidden":
             break
@@ -864,6 +865,7 @@ def test_a_repair_with_no_answer_can_try_longer(browser, tmp_path):
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|⪯"]'))
     page.wait_for_selector("#repair .rp-head", timeout=5000)
+    page.wait_for_function("posted.some(m => m.type === 'chase-repair')", timeout=5000)   # asked after the layout
     asked = page.evaluate("posted.filter(m => m.type === 'chase-repair')")
     page.evaluate("""id => window.postMessage({ type: 'chase-repair-result', id, result: { status: 'unknown',
         method: 'counterexamples', rounds: 50, seconds: 60.2,
