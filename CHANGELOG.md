@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased (branch g-repair)
+
+Added:
+
+- Repair of constants inside invariants (`G` of one step, `F` of one step,
+  conditions on the first step): `method="copies"` writes the questions on
+  copies of the state, with the same answers and no temporal operator, and
+  finds the least cost with z3; chosen by `auto` for these terms (two real
+  constants inside `G`, which the counterexamples of nuXmv did not end on,
+  now take a fraction of a second, with the least cost shown).
+- `method="bisection"`: for a check monotone in each parameter (read from
+  the formulas), the boundary of the values that pass by halving, with any
+  back end; within `tolerance` for one real parameter, the best of a few
+  directions for several.
+- `method="synthesis"`: the parameter synthesis of nuXmv (IC3) for a state
+  machine and a contract of invariants with real parameters; tried by
+  `auto` on these checks before the counterexamples.
+
+Fixed:
+
+- Repair of a state machine against a contract with constants: the
+  constants are declared in the model (FROZENVAR); the questions failed
+  with "the model does not declare" them.
+
 ## 0.6.2 (2026-11-01)
 
 Fixed:
