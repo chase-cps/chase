@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.6.5 (2026-11-02)
+
+The viewer, after a try of the editor extension.
+
+Changed:
+
+- The panel goes from the list of the checks that fail to the details of
+  one, and back (← Problems, or Esc); one check that fails opens its
+  details at once. The code of a C function is folded in its details.
+- A check that fails is said in plain words, with the names of the parts,
+  models, and contracts in bold ("Room and Thermostat do not refine
+  Comfort", "The C function thermostat does not implement Thermostat",
+  "The terms of X conflict"), and a second line says where its
+  counterexample fails and with which values, the terms in conflict, or
+  the constants that can be repaired.
+- The table of a counterexample picks the step shown on the diagram (a
+  click on a column, or the arrow keys); the step that fails first is a red
+  column, another step picked a blue one. The cells are centered and the
+  steps of one width. A table wider than the panel keeps the names of the
+  variables in place, with a scroll bar always drawn, the steps in view,
+  and a page back and on.
+- Each repair says which constants it changes; a search with no answer
+  says why and can be tried again with twice the time; one with no value
+  says to edit the range.
+- The buttons of the panel are icons of one style, with their tips.
+
+Fixed:
+
+- A System with a contract whose components leave signals that no one
+  drives: the part not written is drawn as the quotient of the contract by
+  the components, as `from_spec` does.
+
 ## 0.6.4 (2026-11-01)
 
 Added:
