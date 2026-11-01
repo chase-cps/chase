@@ -248,6 +248,21 @@ def test_a_system_with_a_part_missing_draws_its_quotient():
     assert all(c["kind"] != "hole" for c in full["nodes"][0]["children"])
 
 
+def test_a_quotient_the_algebra_cannot_compute_is_a_hole_with_its_ports():
+    # two parts drive y: no composition, so no terms, but the ports of the quotient and a warning
+    top = Contract.from_strings(name="Top", inputs={"x": "bool"}, outputs={"y": "bool", "z": "bool"},
+                                guarantees=["G (x -> X y)", "G (x -> X z)"])
+    a = Contract.from_strings(name="A", inputs={"x": "bool"}, outputs={"y": "bool"}, guarantees=["G (x -> y)"])
+    b = Contract.from_strings(name="B", inputs={"k": "bool"}, outputs={"y": "bool"}, guarantees=["G (k -> y)"])
+    with pytest.warns(UserWarning, match="hole of Top is drawn with its ports only.*outputs of both"):
+        group = viz.diagram(System("Top", [Component("A", a), Component("B", b)], contract=top))["nodes"][0]
+    hole = group["children"][-1]
+    assert hole["kind"] == "hole" and hole["note"] == "Top / A ⊗ B (ports only)" and hole.get("contract") is None
+    assert hole["outputs"] == ["k", "z"] and hole["inputs"] == ["x", "y"]
+    ids = {c["title"]: c["id"] for c in group["children"]}
+    assert any(e.get("from") == [ids["?"], "out", "k"] and e.get("to") == [ids["B"], "in", "k"] for e in group["edges"])
+
+
 def test_checks_and_cores_are_marked_on_the_box():
     c = Contract.from_strings(name="C", inputs=["x"], outputs=["y", "z"], assumptions=["G F x"],
                               guarantees=["G (x -> y)", "G z", "G (x -> !y)"])

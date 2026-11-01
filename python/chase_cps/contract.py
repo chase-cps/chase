@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
+import copy
 import json
 import os
 import re
@@ -20,6 +21,17 @@ RESERVED = frozenset({
     "G", "F", "X", "U", "R", "W", "P", "true", "false", "TRUE", "FALSE", "NAME",
     "CONTRACT", "Assumptions", "Guarantees", "integer", "boolean", "real",
     "variable", "input", "output", "constant", "proposition", "is", "mod", "xor"})
+
+
+
+def _is_name(n: str) -> bool:
+    return bool(n) and n not in RESERVED and n.replace("_", "a").isalnum() and n[0].isalpha()
+
+
+def _bad_name(n: str) -> str:
+    return (f"{n!r} cannot be used as a name: names start with a letter, contain "
+            f"letters, digits and _, and are not keywords of CHASE ({', '.join(sorted(RESERVED))})")
+
 
 # A variable type: "bool", "real", an integer range (low, high), bounds
 # included, or a word: "word[8]" (unsigned), "signed word[8]" (chase_cps.words).
@@ -297,10 +309,8 @@ class Contract:
         if clash:
             raise ValueError(f"names both constants and variables: {clash} (contract {self.name})")
         for n in [self.name] + list(self.variables) + list(self.constants):
-            if n in RESERVED or not n.replace("_", "a").isalnum() or not n[0].isalpha():
-                raise ValueError(f"{n!r} cannot be used as a name: names start with a "
-                                 "letter, contain letters, digits and _, and are not "
-                                 f"keywords of CHASE ({', '.join(sorted(RESERVED))})")
+            if not _is_name(n):
+                raise ValueError(_bad_name(n))
         both = set(self.inputs) & set(self.outputs)
         if both:
             raise ValueError(f"variables both input and output: {sorted(both)}")
@@ -803,8 +813,29 @@ def _no_info():
 
 
 def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
+    """The contracts parsed by the core library, found by their names. A
+    contract whose name the language does not take (a dot or a space, given
+    in Python) is written under one it takes; a variable it does not take
+    is said here, before the parser fails on the text."""
     from ._native import pychase_logicsLang
-    text = to_spec(contracts)
+    contracts = list(contracts)
+    taken = {c.name for c in contracts} | {v for c in contracts for v in c.variables}
+    written, own = [], {}
+    for c in contracts:
+        bad = sorted(v for v in c.variables if not _is_name(v))
+        if bad:
+            raise ValueError(f"{_bad_name(bad[0])} (a variable of contract {c.name!r})")
+        if not _is_name(c.name):
+            n = re.sub(r"\W", "_", c.name)
+            n = n if n[:1].isalpha() and n not in RESERVED else "C_" + n
+            while n in taken:
+                n += "_"
+            taken.add(n)
+            own[n] = c.name
+            c = copy.copy(c)
+            c.name = n
+        written.append(c)
+    text = to_spec(written)
     fd, path = tempfile.mkstemp(suffix=".ltl", prefix="chase_cps_")
     try:
         with os.fdopen(fd, "w") as f:
@@ -814,7 +845,10 @@ def _parse_contracts(contracts: Iterable[Contract]) -> _Holder:
             system = builder.parseSpecificationFile(path)
     finally:
         os.unlink(path)
-    found = {c.getName().getString(): c for c in system.getContractsSet()}
+    found = {}
+    for c in system.getContractsSet():
+        n = c.getName().getString()
+        found[own.get(n, n)] = c
     return _Holder(system, found)
 
 
