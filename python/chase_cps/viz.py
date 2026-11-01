@@ -3262,9 +3262,11 @@ function traceTable(tr, first, req, step, onPick) {
   t.addEventListener("mouseover", e => { const c = e.target.closest("[data-k]");
     t.querySelectorAll(".hov").forEach(x => x.classList.remove("hov")); if (c) column(c.dataset.k).forEach(x => x.classList.add("hov")); });
   t.addEventListener("mouseleave", () => t.querySelectorAll(".hov").forEach(x => x.classList.remove("hov")));
+  // the step on the diagram is marked only when it is not the one shown at first (the step that fails)
+  const base = tr.at !== null && tr.at !== undefined ? tr.at : step;
   out.setStep = k => {
     t.querySelectorAll(".cur").forEach(x => x.classList.remove("cur"));
-    column(k).forEach(x => x.classList.add("cur"));
+    if (k !== base) column(k).forEach(x => x.classList.add("cur"));
     const th = t.querySelector('th[data-k="' + k + '"]'), v = t.querySelector("th");   // the column in view
     if (th) {
       const left = th.offsetLeft - (v ? v.offsetWidth : 0), right = th.offsetLeft + th.offsetWidth;

@@ -419,10 +419,10 @@ CONTRACT Bound:
     assert head[:4] == ["t", "0", "0.25", "0.5"]
     assert page.get_attribute("#repair table.rp-trace th", "title") == "time: a step every 0.25 s"
     # a column says its time, and a click on it puts that time on the diagram
-    cell = page.locator('#repair table.rp-trace td[data-k="2"]').first
-    assert cell.get_attribute("title") == "Show t = 0.5 on the diagram"
+    cell = page.locator('#repair table.rp-trace td[data-k="1"]').first
+    assert cell.get_attribute("title") == "Show t = 0.25 on the diagram"
     click(page, cell)
-    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "2"
+    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "1"
     assert errors == []
 
 
@@ -613,12 +613,13 @@ def test_the_list_of_the_problems_is_aligned(browser, tmp_path):
 
 def test_the_step_on_the_diagram_in_the_table(browser, tmp_path):
     # the table picks the step on the diagram: a click on any cell of a column, or the arrow keys;
-    # its column is blue, the column of the step that fails first stays red; no slider, no line about it
+    # it opens on the step that fails first (red), with no other mark; another step picked is blue;
+    # no slider, no line about it
     page, errors = two_problems(browser, tmp_path)
     click(page, page.locator("#repair .q-item", has_text="refine"))
     page.wait_for_selector("#repair table.rp-trace", timeout=5000)
     fail = page.get_attribute("#repair table.rp-trace th.fail", "data-k")
-    assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == fail       # it opens there
+    assert page.locator("#repair table.rp-trace .cur").count() == 0                     # it opens there
     assert page.locator("#repair .rp-step, #repair .rp-at, #repair input[type=range]").count() == 0
     cell = page.locator('#repair table.rp-trace td[data-k="0"]').first
     assert cell.get_attribute("title") == "Show step 0 on the diagram"
@@ -633,6 +634,8 @@ def test_the_step_on_the_diagram_in_the_table(browser, tmp_path):
     assert "n = 1" in page.locator("#view .pv-val").all_text_contents()
     page.keyboard.press("ArrowLeft"); page.keyboard.press("ArrowLeft")      # not before the first step
     assert page.get_attribute("#repair table.rp-trace th.cur", "data-k") == "0"
+    click(page, page.locator(f'#repair table.rp-trace td[data-k="{fail}"]').first)   # back on the red: no blue
+    assert page.locator("#repair table.rp-trace .cur").count() == 0
     assert errors == []
 
 
