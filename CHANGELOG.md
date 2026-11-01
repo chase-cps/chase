@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.7.0 (2026-11-02)
+
+The waveform of a counterexample, and the panel of a diagram after a try
+by three users (a CPS engineer, a hardware verification engineer, a
+formal methods researcher).
+
+Added:
+
+- The waveform: the Waveform button of the panel opens the counterexample
+  in a drawer under the diagram, as a waveform viewer shows a simulation.
+  A row for each variable (those of the requirement first), a column for
+  each step; Booleans high and low, numbers as boxes with their values, or
+  as a line (Enter). The step that fails is red, the loop is marked ↺ and
+  drawn once more, faded. The cursor is the step on the diagram and in the
+  table. Zoom (+, −, 0, Ctrl or ⌘ with the wheel), pan (drag, Shift with
+  the wheel), the arrows, Alt with an arrow for the next change of a row,
+  Home, End, F (the step that fails), L (the loop), Esc; the top edge sets
+  its height. In a narrow window it takes the place of the panel.
+- A system whose parts do not agree on a signal (driven by two parts, or of
+  two types) draws the wires of that signal red, with what is wrong in
+  their tip, and warns; its refinement is said not checked, with the
+  reason.
+
+Changed:
+
+- Booleans of a counterexample are written ⊤ and ⊥, as in the terms.
+- The counterexample is marked at the step where its term is seen to fail:
+  `G (p -> X X q)` at the step of `X X q`, `F[0,6] p` at 6, an environment
+  at the step where the assumption breaks. A term broken by the whole run
+  (`F p` that never holds) marks no step, and the panel says so.
+- A number is never shown rounder than it is (17.996, not 18); the table
+  writes short values, with the whole value in its tip.
+- The panel: the counterexample at the same place in every problem (titles
+  of two lines, headings of one height, the table as wide as the panel, the
+  sentences under it); rows of the problems of one height; a check found by
+  a core lists its terms (a click shows one on the diagram), with the end
+  that sets apart terms that begin alike; "How to fix" names the constants
+  that can change, and is worded for each kind of check.
+- A problem opened in a large diagram brings its box into view at a size
+  that can be read.
+- The values of a step stay on the ports inside a box, and read over wires.
+
+Fixed:
+
+- A contract named in Python with a dot or a space (`Contract("u_core.alu",
+  ...)`) works in the algebra: it is written under a name the language
+  takes. A variable with such a name is said before the parser fails.
+- A System whose quotient cannot be computed draws the hole with its ports.
+
 ## 0.6.5 (2026-11-02)
 
 The viewer, after a try of the editor extension.
