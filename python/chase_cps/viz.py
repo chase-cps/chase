@@ -243,10 +243,15 @@ def _name_holes(nodes: list) -> None:
 
 
 def _first_failure(term, trace, variables, length: int) -> Optional[int]:
-    """The first step of the trace at which the term fails, when it says one:
-    X^n p at n, G p (and G[a,b] p, a conjunction of X^k p) at the first step
-    where p fails; None for a term that fails as a whole (F p never holds)."""
-    from .robustness import holds
+    """The first step of the trace at which the term is seen to fail, when it
+    says one: X^n p at n, G p (and G[a,b] p, a conjunction of X^k p) at the
+    first step where p fails, F[a,b] p (a disjunction of X^k p) at b; and a
+    step whose X looks ahead (G (p -> X X q)) at the step that settles it,
+    as a waveform viewer marks it. None for a term that fails as a whole
+    (F p never holds)."""
+    from .robustness import _Lasso, holds
+    lasso = _Lasso(trace, variables) if not ltl.pasts(term) else None
+    last = len(lasso.states) if lasso else 0
     n = 0
     while isinstance(term, ltl.Unary) and term.op == "X":
         n, term = n + 1, term.arg
@@ -254,14 +259,66 @@ def _first_failure(term, trace, variables, length: int) -> Optional[int]:
         found = [k for k in (_first_failure(t, trace, variables, length) for t in (term.left, term.right))
                  if k is not None]
         return n + min(found) if found else None
+
+    def settled(f, k: int) -> int:     # where f, false at k, is seen false (k when it looks past the trace)
+        r = _seen(f, k, k, lasso) if lasso else None
+        return r[1] if r and not r[0] and r[1] < last else k
     if isinstance(term, ltl.Unary) and term.op == "G":
         for k in range(n, max(length, n + 1)):
             if not holds(term.arg, trace, variables, at=k):
-                return k
+                return settled(term.arg, k)
         return None
     if isinstance(term, ltl.Unary) and term.op == "F":
         return None
-    return n if not holds(term, trace, variables, at=n) else None
+    if holds(term, trace, variables, at=n):
+        return None
+    r = _seen(term, n, n, lasso) if lasso else None
+    if r is None:                    # it needs the whole run (a G, F or U inside)
+        return None if _unbounded(term) else n
+    return r[1] if r[1] < last else n
+
+
+def _unbounded(f) -> bool:
+    if isinstance(f, ltl.Unary):
+        return f.op in ("G", "F") or _unbounded(f.arg)
+    if isinstance(f, ltl.Binary):
+        return f.op in ltl.TEMPORAL_BINARY or _unbounded(f.left) or _unbounded(f.right)
+    return False
+
+
+def _seen(f, i: int, col: int, lasso) -> Optional[tuple]:
+    """(the value of f at the state i, the column from which it is known) for
+    a formula whose X look a few steps ahead; col counts the steps without
+    going back into the loop. None when f needs the whole run."""
+    if not _unbounded(f) and not _nexts(f):
+        return (lasso.holds(f, i), col)
+    if isinstance(f, ltl.Unary):
+        if f.op == "X":
+            return _seen(f.arg, lasso.next(i), col + 1, lasso)
+        if f.op == "!":
+            r = _seen(f.arg, i, col, lasso)
+            return (not r[0], r[1]) if r else None
+        return None
+    if not isinstance(f, ltl.Binary) or f.op not in ("&", "|", "->", "<->"):
+        return None
+    a, b = _seen(f.left, i, col, lasso), _seen(f.right, i, col, lasso)
+    if f.op == "->":
+        a = (not a[0], a[1]) if a else None
+    if f.op == "<->":
+        return (a[0] == b[0], max(a[1], b[1])) if a and b else None
+    want = f.op == "&"                # & is decided by a false side, | and -> by a true one
+    early = [r[1] for r in (a, b) if r and r[0] != want]
+    if early:
+        return (not want, min(early))
+    return (want, max(a[1], b[1])) if a and b else None
+
+
+def _nexts(f) -> bool:
+    if isinstance(f, ltl.Unary):
+        return f.op == "X" or _nexts(f.arg)
+    if isinstance(f, ltl.Binary):
+        return _nexts(f.left) or _nexts(f.right)
+    return False
 
 
 class _Scene:
@@ -1915,7 +1972,7 @@ _PAGE = r"""<!doctype html>
     #wave .wv-back { display:flex; }
   }
   [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
-  .pv-val { fill:#2f6fb5 !important; font-weight:600; }
+  .pv-val { fill:#2f6fb5 !important; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }   /* read over a wire */
   .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
   .rp-step input { flex:1; accent-color:var(--teal); }
   ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
@@ -2104,6 +2161,16 @@ let progressed = {};            // the results known while they run: contract na
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
+// a number in a few digits, never rounder than it is: 0.8095238095238095 is 0.8095, but 17.996 is
+// 17.996, not 18 (the value a term compares it with), and 12345.6 keeps its units
+function digits(x) {
+  if (typeof x !== "number" || Number.isInteger(x) || !isFinite(x) || String(x).length <= 7) return String(x);   // 17.875 whole
+  for (let p = Math.max(4, Math.floor(Math.log10(Math.abs(x))) + 2); p < 17; p++) {
+    const t = x.toPrecision(p);
+    if (+t === x || !/0$/.test(t.replace(/e.*$/, ""))) return String(+t);
+  }
+  return String(x);
+}
 // a Boolean value of a counterexample: ⊤ or ⊥ (the formulas keep the words true and false)
 const truth = b => b ? "⊤" : "⊥";
 const FONT_F = "11.5px Menlo, Monaco, monospace", FONT_H = "600 12.5px Helvetica, Arial, sans-serif",
@@ -2761,6 +2828,7 @@ function zoomBy(f) { if (!cam) return; const v = document.getElementById("view")
       else hideInspector();
       return; }
     if (e.target.closest && e.target.closest("input, textarea")) return;
+    if (WAVE.open && WAVE.key && !(e.target.closest && e.target.closest("#wave, button, a, select, summary")) && WAVE.key(e)) return;
     if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && inspector.open && panel && panel.goStep
         && document.getElementById("insp").contains(document.activeElement)) {   // the step of the counterexample
       panel.goStep(e.key === "ArrowLeft" ? -1 : 1); e.preventDefault(); return; }
@@ -3236,7 +3304,8 @@ const andOf = names => names.length < 2 ? [B(names[0])]
 const plainOf = parts => parts.map(x => typeof x === "string" ? x : x.b).join("");
 const richOf = parts => parts.map(x => typeof x === "string" ? x : h("b", {}, x.b));
 function checkTitle(n, t) {
-  return (statusOf(n, t) === "unknown" ? ["Not decided: "] : []).concat(claimOf(n, t));
+  const st = statusOf(n, t);         // a check not run is not said as if it held
+  return (st === "unknown" ? ["Not decided: "] : st === "valid" || st === "invalid" ? [] : ["Not checked: "]).concat(claimOf(n, t));
 }
 // the model of a check of an implementation, said as the reader knows it: the C function f, the state
 // machine of X, the RTL of X; from the argument of a repair ("heater.c:thermostat", "path/arb.smv") or the box
@@ -3320,6 +3389,7 @@ function factsOf(n, t, r, w) {
 // A term that asks for something to happen (F, U) fails on the whole run, its loop included, not at a step.
 function wholeRun(n, w) {
   if (w && w.whole) return true;
+  if (w && w.at !== undefined && w.at !== null) return false;     // a step settles it (F[0,6] p at 6)
   const terms = ((w && w.violated) || []).map(i => ((n.contract || {}).G || [])[i]).filter(Boolean);
   return terms.length > 0 && terms.every(x => /^\s*(G\s*)?F\b|^\s*F\[|\bU\b/.test(x));
 }
@@ -3449,7 +3519,8 @@ function fillPanel() {
                                      : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
   const says = st === "valid" ? "Holds." : st === "invalid" ? null
              : st === "unknown" ? "Not decided" + (unsure ? ": " + reasonOf(unsure).text + (reasonOf(unsure).line ? ", line " + reasonOf(unsure).line : "") : ".")
-             : "Not checked yet.";
+             : "Not checked yet." + (n.clash ? " The parts do not agree: " + Object.values(n.clash).join("; ")
+                                                + ". Their composition is not defined until this is fixed." : "");
   if (says) box.appendChild(h("div", { class: "rp-sec" }, h("div", { class: "rp-says" }, says)));
   const why = whySection(n, t, st);
   if (why) box.appendChild(why);
@@ -3527,11 +3598,15 @@ function whySection(n, t, st) {
     const nA = list.filter(x => x[0] === "A").length, nG = list.length - nA;
     const these = (k, one, many) => k === 1 ? "This " + one : "These " + k + " " + many;
     const all = these(list.length, nA && nG ? "term" : nA ? "assumption" : "guarantee", nA && nG ? "terms" : nA ? "assumptions" : "guarantees");
-    const say = t === "R" ? all + (list.length === 1 ? " cannot be met." : " cannot all be met.")
+    // what the core says, for the kind of check: no strategy (R), terms false together (consistency),
+    // assumptions the component's outputs can make false (WS)
+    const together = list.length === 1 ? "" : list.length === 2 ? " both" : " all";
+    const say = t === "R" ? "No component can meet " + all.toLowerCase().replace(/^these \d+ /, list.length === 2 ? "both " : "these " + list.length + " ")
+                            + " for every input that the assumptions allow: the environment can always make one fail."
       : t === "¬V" ? (nA ? these(nA, "assumption makes ", "assumptions make ") + (nG === 1 ? "a guarantee" : nG + " guarantees") + " vacuous."
                          : these(nG, "guarantee is", "guarantees are") + " vacuous.")
-      : t === "WS" ? "With " + all.toLowerCase() + ", the component can win by breaking an assumption."
-      : all + (list.length === 1 ? " cannot hold." : " cannot all hold together.");
+      : t === "WS" ? "With " + all.toLowerCase() + ", the component can make an assumption false by its outputs, and so meet the contract without its guarantees."
+      : all + (list.length === 1 ? " cannot hold." : " cannot" + together + " hold together.");
     sec.appendChild(h("div", {}, say));
     sec.appendChild(h("div", { class: "rp-terms" }, list.map(([p, i, f]) =>
       h("button", { class: "rp-term", title: "Show it on the diagram", onclick: () => showTerm(n, c.core.part + ":" + p + i) },
@@ -3624,7 +3699,7 @@ function traceTable(tr, first, req, step, onPick, io) {
   // every step kept, as the waveform: the columns scroll under the names, a page at a time
   const kept = tr.steps.length, keptCut = tr.cut;
   const t = h("table", { class: "rp-trace", title: tr.vars.length ? "⊤ true, ⊥ false" : "" });
-  const cell = fmt;       // a column per step: short
+  const cell = v => typeof v === "number" ? digits(v) : fmt(v);       // a column per step: short, the whole value in its tip
   const picks = step !== null && step !== undefined && onPick;
   const show = k => picks ? "Show " + (DATA.period ? "t = " + timeOf(k) : "step " + k) + " on the diagram" : "";
   if (!one) t.appendChild(h("tr", {}, h("th", { title: DATA.period ? "time: a step every " + DATA.period + " s" : "" }, DATA.period ? "t" : "step"),
@@ -3635,7 +3710,9 @@ function traceTable(tr, first, req, step, onPick, io) {
   const rows = order.map(i => h("tr", { class: first.includes(tr.vars[i]) ? "port" : "" },
     h("td", { class: "v" }, tr.vars[i]), tr.steps.map((st, k) => h("td", { class: (tr.at === k ? "fail" : "") + (picks ? " k" : "")
                                                                                     + (st[i] === null || st[i] === undefined ? " unk" : ""),
-                                                                           "data-k": String(k), title: show(k) }, cell(st[i])))));
+                                                                           "data-k": String(k),
+                                                                           title: [cell(st[i]) !== fmt(st[i]) ? tr.vars[i] + " = " + fmt(st[i]) : "", show(k)].filter(Boolean).join(" · ") },
+                                                                     cell(st[i])))));
   const LIMIT = one ? 24 : 12;
   // the columns of the steps all as wide as the widest value or step of the rows shown
   const widest = Math.max(1, ...tr.steps.map((st, k) => Math.max(String(timeOf(k)).length,
@@ -3724,7 +3801,16 @@ function noRepairSection(n, t) {
   const sec = h("div", { class: "rp-sec" }, h("div", { class: "rp-h" }, "How to fix"));
   const clauses = n.model && n.model.source === "c" && n.model.name === ((n.contract || {}).name);
   const code = x => h("code", { class: "cmd" }, x);
-  const named = ["A number can be repaired once it is named: ", code("integer constant k 2;")];
+  // a number of the terms (not a step of an interval, F[0,6]) can be repaired once it is named
+  const terms = [].concat((n.contract || {}).A || [], (n.contract || {}).G || []).join(" ").replace(/\[[^\]]*\]/g, "");
+  const named = /(^|[^\w'])\d+(\.\d+)?\b/.test(terms)
+    ? ["To repair a number of the terms, give it a name in the file, as ", code("integer constant k 2;"), ", and write k in the term."] : null;
+  // the constants that can change, and whose they are: "theta (Thermostat), tmax (Comfort)"
+  const r0 = (n.repair || {})[t];
+  const owned = r0 && r0.constants && r0.constants.length
+    ? r0.constants.map(c => c.name + " (" + [...new Set(c.owners.map(o => o.contract))].join(", ") + ")").join(", ")
+    : ((n.contract || {}).K || []).map(x => x.split(" = ")[0]).join(", ");
+  const holed = (n.children || []).some(c => c.kind === "hole") || n.kind === "hole";
   const of = t === "E ⊨ A" ? (() => { const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
                                       return to ? (to.contract && to.contract.name) || to.title : null; })() : null;
   const points = t === "safe"
@@ -3732,7 +3818,7 @@ function noRepairSection(n, t) {
     : t === "M ⊨ C" && clauses && !(n.contract || {}).K
     ? ["Fix the code, or change its requires / ensures clauses."]
     : n.contract && n.contract.K
-    ? [["Repair its constants in VS Code, or with ", code("chase-cps view FILE --serve"), "."]]
+    ? [["Repair " + owned + " in VS Code, or with ", code("chase-cps view FILE --serve"), "."]]
     : [{ "⪯": "Change a term of a part or of the requirement.",
          "E ⊨ A": "Change the environment, or weaken the assumptions" + (of ? " of " + of : "") + ".",
          "M ⊨ C": "Change the model, or its contract.",
@@ -3740,9 +3826,10 @@ function noRepairSection(n, t) {
          "G": "Weaken or drop one of the red terms.",
          "A∧G": "Weaken or drop one of the red terms.",
          "R": "Weaken a red guarantee, or assume more of the environment.",
-         "WS": "Change the red terms so that breaking an assumption is no way to win.",
+         "WS": "Change the red terms so that the outputs of the component cannot make an assumption false.",
          "¬V": "Ask something of the component in the red guarantees." }[t] || "Change one of the red terms.", named]
-       .concat(t === "⪯" ? ["Or compute the quotient: what the missing part must guarantee."] : []);
+       .concat(t === "⪯" && holed ? ["Or put in the hole a part that refines the quotient: what the missing part must guarantee."] : [])
+       .filter(Boolean);
   sec.appendChild(h("ul", { class: "rp-why" }, points.map(x => h("li", {}, x))));
   return sec;
 }
@@ -3817,8 +3904,7 @@ function optionCard(n, t, r, s, o, sig) {
     h("div", { class: "rp-b" }, preview, apply));
   return card;
 }
-// a number in a few digits: 0.8095238095238095 is 0.8095
-const short = x => typeof x === "number" && !Number.isInteger(x) ? String(+x.toPrecision(4)) : String(x);
+const short = digits;
 // the value of a repair is the one it had
 const same = (o, k) => o.res.text[k] !== null && Number(o.res.text[k]) === Number(o.from[k]);
 // what a repair changes, as a key: the same changes from two runs are one repair
@@ -4032,7 +4118,7 @@ function openWave(tr, first, title, pick, reqName) {
   const real = c => c < n ? c : loop + (c - n);         // the step of a column (the faded pass: the loop again)
   const valueAt = (c, i) => tr.steps[real(c)][i];
   const fmt = v => v === null || v === undefined ? "?" : typeof v === "boolean" ? truth(v) : String(v);
-  const short = v => typeof v === "number" && !Number.isInteger(v) ? String(+v.toPrecision(4)) : fmt(v);
+  const short = v => typeof v === "number" ? digits(v) : fmt(v);
   const label = k => DATA.period ? timeOf(k) : String(k);
   const at = k => DATA.period ? "t = " + label(k) + " s" : "step " + label(k);
   const NS = "http://www.w3.org/2000/svg";
@@ -4482,9 +4568,13 @@ function openWave(tr, first, title, pick, reqName) {
       S.sel = to; draw(); selRow(); e.preventDefault();
     } else if (k === "Enter" && S.sel !== null && kind(S.sel) === "num") {
       S.plots.has(S.sel) ? S.plots.delete(S.sel) : S.plots.add(S.sel); draw();
-    } else return;
+    } else return false;
     e.stopPropagation();
+    return true;
   };
+  // the keys are the drawer's while it is open, wherever the focus went (a button of the drawer drawn
+  // again, a click on the diagram): those of a field or a button of the page stay theirs
+  WAVE.key = e => box.onkeydown(e);
   // at first: every step in view, if each has room; else a width where most values are written whole
   // (four in five of the runs one step long), the step that fails in the middle
   S.px = Math.min(WV.max, avail() / cols);
@@ -4656,7 +4746,7 @@ function replay(n, tr, k) {
   const inside = new Set();             // the box of the check and the boxes inside it
   (function walk(b) { inside.add(String(b.id)); (b.children || []).forEach(walk); })(n);
   const at = {}; tr.vars.forEach((v, i) => { at[v] = tr.steps[k][i]; });
-  const fmt = v => typeof v === "boolean" ? truth(v) : String(v);
+  const fmt = v => typeof v === "boolean" ? truth(v) : typeof v === "number" ? digits(v) : String(v);
   document.querySelectorAll("#view text[data-var]").forEach(x => {
     const v = x.getAttribute("data-var");
     if (!(v in at) || !inside.has(x.getAttribute("data-pbox"))) return;
@@ -4665,6 +4755,8 @@ function replay(n, tr, k) {
     x.setAttribute("data-orig", x.textContent);
     x.textContent = v + " = " + fmt(at[v]);
     x.classList.add("pv-val");
+    if (typeof at[v] === "number" && fmt(at[v]) !== String(at[v])) { x.setAttribute("data-otip", x.getAttribute("data-tip") || "");
+      x.setAttribute("data-tip", v + " = " + at[v]); }     // the whole value in its tip
     if (x.getAttribute("data-side") === "left") { x.setAttribute("data-ox", x.getAttribute("x"));
       x.setAttribute("x", +x.getAttribute("x") + w0 - x.getComputedTextLength()); }
   });
@@ -4675,15 +4767,17 @@ function replay(n, tr, k) {
         && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
       x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
   });
-  // a variable on a box and on the box around it, with the same value: the box around says it
+  // a variable on a box and on the box around it, with the same value, the two near: the box around
+  // says it (a wire across the box, between two parts, keeps its own)
   const rectOf = id => { const b = document.querySelector('#view [data-box="' + id + '"]'); return b && b.getBoundingClientRect(); };
   const around = (q, r) => q.left <= r.left && q.right >= r.right && q.top <= r.top && q.bottom >= r.bottom
     && (q.width > r.width || q.height > r.height);
   shown.forEach(([x]) => {
     const r = rectOf(x.getAttribute("data-pbox"));
     if (!r || x.hasAttribute("data-hid")) return;
-    if (shown.some(([y]) => y !== x && !y.hasAttribute("data-hid") && y.textContent === x.textContent
-        && (q => q && around(q, r))(rectOf(y.getAttribute("data-pbox"))))) {
+    const near = (a, b) => Math.abs(a.left - b.left) < 140 && Math.abs(a.top - b.top) < 40;
+    if (shown.some(([y, q]) => y !== x && !y.hasAttribute("data-hid") && y.textContent === x.textContent
+        && near(q, x.getBoundingClientRect()) && (o => o && around(o, r))(rectOf(y.getAttribute("data-pbox"))))) {
       x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
   });
 }
@@ -4691,7 +4785,9 @@ function clearReplay() {
   document.querySelectorAll("#view text[data-orig]").forEach(x => { x.textContent = x.getAttribute("data-orig");
     x.removeAttribute("data-orig"); x.classList.remove("pv-val");
     if (x.hasAttribute("data-hid")) { x.removeAttribute("data-hid"); x.style.visibility = ""; }
-    if (x.hasAttribute("data-ox")) { x.setAttribute("x", x.getAttribute("data-ox")); x.removeAttribute("data-ox"); } });
+    if (x.hasAttribute("data-ox")) { x.setAttribute("x", x.getAttribute("data-ox")); x.removeAttribute("data-ox"); }
+    if (x.hasAttribute("data-otip")) { const o = x.getAttribute("data-otip"); o ? x.setAttribute("data-tip", o) : x.removeAttribute("data-tip");
+                                       x.removeAttribute("data-otip"); } });
 }
 function afterRender() {
   if (previewing) { const p = previewing; previewing = null; showPreview(p); }

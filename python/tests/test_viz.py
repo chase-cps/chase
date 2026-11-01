@@ -279,6 +279,26 @@ def test_signals_the_parts_do_not_agree_on_are_red_wires():
     assert all("error" not in w for w in group["edges"] if w["var"] in ("x", "z"))
 
 
+@pytest.mark.parametrize("term, prefix, loop, at", [
+    # where the failure is seen, as a waveform viewer marks it: the step of the X X, the end of F[0,3]
+    ("G (p -> X X q)", [(1, 1), (0, 1), (0, 0)], [(0, 1)], 2),
+    ("F[0,3] (m = 2)", [(0, 0)] * 5, [(0, 0)], 3),
+    ("X X p", [(1, 0), (1, 0), (0, 0)], [(1, 0)], 2),
+    ("G[0,4] p", [(1, 0)] * 3 + [(0, 0)], [(1, 0)], 3),
+    ("G p", [(1, 0), (0, 0)], [(1, 0)], 1),
+    # seen only in the next pass of the loop: the step where it starts; F p: the whole run
+    ("G (p -> X q)", [(0, 1)], [(0, 0), (1, 1)], 2),
+    ("F q", [(0, 0)], [(0, 0)], None),
+])
+def test_a_counterexample_is_marked_where_its_term_is_seen_to_fail(term, prefix, loop, at):
+    from chase_cps import ltl
+    from chase_cps.robustness import Trace
+    from chase_cps.viz import _first_failure
+    st = lambda pq: {"p": bool(pq[0]), "q": bool(pq[1]), "m": 0}
+    t = Trace([st(x) for x in prefix], [st(x) for x in loop])
+    assert _first_failure(ltl.parse(term), t, {"p": "bool", "q": "bool", "m": (0, 3)}, len(prefix) + len(loop)) == at
+
+
 def test_checks_and_cores_are_marked_on_the_box():
     c = Contract.from_strings(name="C", inputs=["x"], outputs=["y", "z"], assumptions=["G F x"],
                               guarantees=["G (x -> y)", "G z", "G (x -> !y)"])

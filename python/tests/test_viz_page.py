@@ -391,7 +391,7 @@ CONTRACT Bound:
     assert "Does not hold" not in text         # the red tag says it
     steps = page.locator("#repair table.rp-trace tr").first.inner_text().split()
     assert steps[:2] == ["step", "0"] and any(s.startswith("↺") or s == "↺" for s in steps)
-    assert "A number can be repaired once it is named" in text
+    assert "To repair a number of the terms, give it a name" in text      # G (n <= 1) has a number
     # the panel is docked: the view moves under it, the panel stays
     before = page.locator("#insp").bounding_box()
     page.mouse.move(200, 400); page.mouse.down(); page.mouse.move(320, 470, steps=6); page.mouse.up()
@@ -966,6 +966,26 @@ def test_in_a_narrow_window_the_waveform_takes_the_place_of_the_details(browser,
     assert not errors
 
 
+def test_the_keys_stay_with_the_open_waveform(browser, tmp_path):
+    # after a click on a button of the drawer that draws it again, or a click on the diagram, the keys
+    # still move the cursor and zoom the drawer
+    page, errors = wave_page(browser, tmp_path, MIXED)
+    where = lambda: page.inner_text("#wave .wv-where")
+    click(page, page.locator("#wave button.wv-plot").first)
+    page.keyboard.press("ArrowLeft")
+    assert where() == "Step 1"
+    v = page.locator("#view").bounding_box()
+    page.mouse.click(v["x"] + 30, v["y"] + 60)       # the background of the diagram
+    page.keyboard.press("End")
+    assert where() == "Step 4"
+    page.keyboard.press("f")
+    assert where() == "Step 2"
+    px = page.evaluate("WAVE.px()")
+    page.keyboard.press("-")
+    assert page.evaluate("WAVE.px()") < px
+    assert not errors
+
+
 def wave_row(page, v):
     return page.locator("#wave .wv-row[data-i]", has=page.locator(f'.wv-name[title="{v}"]'))
 
@@ -1405,21 +1425,21 @@ def test_the_table_pages_through_every_step(browser, tmp_path):
 
 
 def test_an_environment_shows_the_step_and_the_assumption_it_breaks(browser, tmp_path):
-    # the panel of E ⊨ A: the step where an assumption of the box it drives fails first (red), and that
-    # assumption red on the box and listed in the panel
+    # the panel of E ⊨ A: the step where an assumption of the box it drives is seen to fail (red: req
+    # drops at step 1 while grant is ⊥), and that assumption red on the box and listed in the panel
     page, errors = open_page(browser, tmp_path, environment_breaking()[0])
     click(page, page.locator('[data-check$="|E ⊨ A"]'))
     page.wait_for_selector("#repair table.rp-trace", timeout=5000)
-    assert page.locator("#repair table.rp-trace th.fail").inner_text() == "0"
+    assert page.locator("#repair table.rp-trace th.fail").inner_text() == "1"
     assert "The assumptions it breaks (red):" in page.inner_text("#repair")
     arb = page.evaluate("Object.values(byId).find(n => n.title === 'Arb').id")
     assert page.locator(f'[data-box="{arb}"] > g rect.core-row').count() >= 1
-    assert "Fails at step 0" in page.evaluate("factsOf(byId[panel.id], 'E ⊨ A', null, byId[panel.id].badge.why)")
+    assert "Fails at step 1" in page.evaluate("factsOf(byId[panel.id], 'E ⊨ A', null, byId[panel.id].badge.why)")
     assert errors == []
 
 
 def environment_breaking(whole=False):
-    """A contract Arb whose assumption an environment breaks at step 0 (or, whole, over the whole run)."""
+    """A contract Arb whose assumption an environment breaks, seen at step 1 (or, whole, over the whole run)."""
     from chase_cps import Contract, Model
     from chase_cps.queries import Result, Trace
     c = Contract.from_strings(name="Arb", inputs=["req"], outputs=["grant"],
@@ -1438,7 +1458,7 @@ def test_an_environment_breaks_an_assumption_at_a_step_or_over_the_whole_run():
         env, arb = d["nodes"]
         w = env["badge"]["why"]
         assert w["parts"] == {arb["id"]: [0]} and w["broken"][0].startswith("Arb: ")
-        assert (w.get("at"), w["trace"].get("at"), w.get("whole")) == ((None, None, True) if whole else (0, 0, None))
+        assert (w.get("at"), w["trace"].get("at"), w.get("whole")) == ((None, None, True) if whole else (1, 1, None))
 
 
 def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path):
@@ -1452,7 +1472,8 @@ def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path)
     click(page, page.locator('[data-check$="|R"]'))
     page.wait_for_selector("#repair .rp-terms", timeout=5000)
     text = page.inner_text("#repair")
-    assert "These 2 guarantees cannot all be met." in text and "The terms in conflict" not in text
+    assert "No component can meet both guarantees for every input that the assumptions allow" in text
+    assert "The terms in conflict" not in text and "give it a name" not in text   # no number in the terms
     terms = page.locator("#repair .rp-term")
     assert terms.count() == 2 and "x -> !y" in terms.nth(1).inner_text()
     assert page.locator("#repair .rp-term .f").first.evaluate("e => getComputedStyle(e).fontFamily").startswith("Menlo")
@@ -1461,7 +1482,7 @@ def test_a_core_lists_its_terms_and_shows_each_on_the_diagram(browser, tmp_path)
     box = d["nodes"][0]["id"]
     assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G1"] rect.flash').count() >= 1
     assert page.locator(f'[data-box="{box}"] > g[data-term="contract:G0"] rect.flash').count() == 0
-    assert "Weaken a red guarantee" in text and "integer constant k 2;" in page.inner_text("#repair code.cmd")
+    assert "Weaken a red guarantee" in text and "give it a name" not in text     # no number in its terms
     assert "requirement" not in text.split("How to fix".upper())[-1].lower().replace("requires", "")
     assert errors == []
 
@@ -1580,8 +1601,8 @@ def test_a_requirement_broken_by_the_whole_run_marks_no_step(browser, tmp_path):
     d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound")])
     bound, = [n for n in d["nodes"] if n["title"] == "Bound"]
     bound["contract"]["G"] = ["F n = 9"]
-    trace = {"vars": ["n"], "more": 0, "cut": False, "loop": 3, "at": 0, "steps": [[0], [1], [2], [3]]}
-    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": 0, "trace": trace})
+    trace = {"vars": ["n"], "more": 0, "cut": False, "loop": 3, "steps": [[0], [1], [2], [3]]}   # no step, as _why gives it
+    bound["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "trace": trace})
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|⪯"]'))
     page.wait_for_selector("#repair table.rp-trace", timeout=5000)
