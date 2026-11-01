@@ -1814,14 +1814,14 @@ _PAGE = r"""<!doctype html>
                       border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; }
   table.rp-trace td { padding:2px 8px; text-align:right; border-bottom:1px solid #f1f4f4; white-space:nowrap; }
   table.rp-trace td.v { text-align:left; color:var(--soft); }
-  table.rp-trace th.fail { color:var(--bad); }
+  table.rp-trace th.fail { color:var(--bad); background:#fbeceb; }
   .rp-broken { margin:4px 0 6px; } .rp-broken .code { font:11px Menlo, Monaco, monospace; color:var(--bad); margin:2px 0 0 8px; }
   table.rp-trace td.fail { background:#fbeceb; }
-  table.rp-trace th.cur { color:#2f6fb5; box-shadow:inset 0 -2px #2f6fb5; }
-  table.rp-trace th.cur.fail { color:var(--bad); }
-  table.rp-trace td.cur { box-shadow:inset 2px 0 #2f6fb5, inset -2px 0 #2f6fb5; }
   table.rp-trace .k { cursor:pointer; } table.rp-trace th.hov { color:#2f6fb5; } table.rp-trace td.hov { background:#eef4fb; }
   table.rp-trace td.fail.hov { background:#f6dedc; }
+  /* the step on the diagram, when another than the one that fails: the column shaded, as the red one */
+  table.rp-trace th.cur { color:#2f6fb5; background:#dce9f7; }
+  table.rp-trace td.cur, table.rp-trace td.cur.hov { background:#dce9f7; }
   .rp-at { color:var(--soft); margin-top:4px; } .rp-at .b { color:#2f6fb5; font-weight:600; } .rp-at .r { color:var(--bad); font-weight:600; }
   table.rp-trace tr.port td.v { color:var(--ink); font-weight:600; }
   .rp-link { border:0; background:none; color:var(--teal); text-decoration:underline; cursor:pointer;
