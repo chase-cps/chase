@@ -607,7 +607,29 @@ def test_the_list_of_the_problems_is_aligned(browser, tmp_path):
     title = page.locator("#repair .q-item .t").first.bounding_box()
     click(page, page.locator("#repair .q-item").first)
     page.wait_for_selector("#repair .rp-head", timeout=5000)
-    assert abs(page.locator("#repair .rp-head b").bounding_box()["x"] - title["x"]) < 1
+    assert abs(page.locator("#repair .rp-head .t").bounding_box()["x"] - title["x"]) < 1
+    assert errors == []
+
+
+def test_the_titles_of_the_problems_name_the_parts_in_bold(browser, tmp_path):
+    # a sentence in the words of the checks, with only the names of the parts, models and contracts
+    # in bold; a second line with where the counterexample fails, or nothing; no file name
+    page, errors = two_problems(browser, tmp_path)
+    items = page.locator("#repair .q-item")
+    texts = [items.nth(i).locator(".t").inner_text() for i in range(2)]
+    bold = [items.nth(i).locator(".t b").all_inner_texts() for i in range(2)]
+    assert "Counter does not refine Bound" in texts and "The C function inc does not implement Inc" in texts
+    assert bold[texts.index("Counter does not refine Bound")] == ["Counter", "Bound"]
+    assert bold[texts.index("The C function inc does not implement Inc")] == ["inc", "Inc"]
+    assert page.evaluate("getComputedStyle(document.querySelector('#repair .q-item .t')).fontWeight") == "400"
+    lines = page.locator("#repair .q-item .s").all_inner_texts()
+    assert any(x.startswith("Fails at step 2 (n = 2)") for x in lines), lines
+    assert not any("θ" in x or "no constant" in x or "f.c" in x for x in lines + texts)
+    assert items.nth(0).get_attribute("title") == texts[0]          # the tooltip: the plain text
+    # the details: the same title, the names in bold
+    click(page, items.filter(has_text="refine"))
+    page.wait_for_selector("#repair .rp-head", timeout=5000)
+    assert page.locator("#repair .rp-head .t b").all_inner_texts() == ["Counter", "Bound"]
     assert errors == []
 
 

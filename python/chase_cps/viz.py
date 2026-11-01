@@ -1750,7 +1750,8 @@ _PAGE = r"""<!doctype html>
   ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
   .rp-head { display:grid; grid-template-columns:52px minmax(0,1fr); column-gap:6px; align-items:center;
              padding:9px 10px 8px 8px; border-bottom:1px solid #e3e8e8; position:sticky; top:0; background:#fff; z-index:1; }
-  .rp-head b { flex:1; font-size:12.5px; font-weight:600; min-width:0; overflow-wrap:anywhere; }
+  .rp-head .t { flex:1; font-size:12.5px; min-width:0; overflow-wrap:anywhere; }
+  .rp-head .t b, .q-item .t b { font-weight:600; }
   /* the small icons of the page: one size, one stroke, as the icons of the tools */
   .ib { display:inline-flex; align-items:center; justify-content:center; flex:none; width:24px; height:24px; padding:0;
         border:0; border-radius:5px; background:none; color:var(--soft); cursor:pointer; }
@@ -1843,7 +1844,7 @@ _PAGE = r"""<!doctype html>
   .q-item.on { background:#eef3f9; }
   .q-item:last-child { border-bottom:0; } .q-item:hover { background:var(--fill); }
   /* the title of an item as the title of its details: no jump from one to the other */
-  .q-item .t { font-weight:600; font-size:12.5px; overflow-wrap:anywhere; }
+  .q-item .t { font-size:12.5px; overflow-wrap:anywhere; }
   .q-item .s { color:var(--soft); font-size:11px; } .q-item .s.ok { color:var(--ok); } .q-item .s.old { color:var(--warn); }
   .q-item .v { font:11px Menlo, Monaco, monospace; color:var(--ink); }
   .tools #repairs { width:auto; padding:0 7px; gap:4px; display:none; color:var(--bad); font:600 11.5px Helvetica, Arial, sans-serif; }
@@ -2985,31 +2986,95 @@ function h(tag, attrs, ...kids) {
     e.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c); });
   return e;
 }
+// The title of a check, as parts: a name (of a part, a model, a contract: {b: name}) or plain text.
+// richOf draws it with the names in bold; plainOf is its text (for a tooltip).
+const B = name => ({ b: name });
+const andOf = names => names.length < 2 ? [B(names[0])]
+  : names.slice(0, -1).flatMap((x, i) => i ? [", ", B(x)] : [B(x)]).concat([" and ", B(names[names.length - 1])]);
+const plainOf = parts => parts.map(x => typeof x === "string" ? x : x.b).join("");
+const richOf = parts => parts.map(x => typeof x === "string" ? x : h("b", {}, x.b));
 function checkTitle(n, t) {
-  return (statusOf(n, t) === "unknown" ? "Not decided: " : "") + claimOf(n, t);
+  return (statusOf(n, t) === "unknown" ? ["Not decided: "] : []).concat(claimOf(n, t));
 }
-// the claim of a check, said as it is: "A refines B", or "A does not refine B" when it fails
+// the model of a check of an implementation, said as the reader knows it: the C function f, the state
+// machine of X, the RTL of X; from the argument of a repair ("heater.c:thermostat", "path/arb.smv") or the box
+function modelOf(n, arg) {
+  const src = n.model && n.model.source, file = arg ? arg.split("/").pop() : "";
+  if (src === "c" || /\.(c|h):/.test(file)) return ["The C function ", B(file ? file.split(":").pop() : n.model.name)];
+  if (src === "rtl" || /\.s?v$/.test(file)) return ["The RTL of ", B(n.title)];
+  return ["The state machine of ", B(n.title)];
+}
+// the claim of a check, said as it is: "Room and Thermostat do not refine Comfort" when it fails
 function claimOf(n, t) {
   const no = statusOf(n, t) === "invalid", r = (n.repair || {})[t];
   const v = (yes, not) => no ? not : yes;
-  if (r && r.check === "refines") return r.args[0].split("+").join(" ⊗ ") + v(" refines ", " does not refine ") + r.args[1];
-  if (r && r.check === "impl") return r.args[0].split("/").pop() + v(" implements ", " does not implement ") + r.args[1];
-  if (r && r.check === "env") return r.args[0].split("/").pop() + v(" is an environment of ", " is not an environment of ") + r.args[1];
-  if (r) return "A ∧ G of " + r.args[0] + v(" can hold", " cannot hold");
   const req = (n.contract && n.contract.name) || n.title;           // from the box: what is inside, its model
+  const refines = (names, what) => andOf(names).concat([names.length > 1 ? v(" refine ", " do not refine ")
+                                                                         : v(" refines ", " does not refine "), B(what)]);
+  const meets = (model, what) => model.concat(what === null ? [v(" meets its contract", " does not meet its contract")]
+                                                           : [v(" implements ", " does not implement "), B(what)]);
+  const conflict = what => ["The terms of ", B(what), v(" can hold together", " conflict")];
+  if (r && r.check === "refines") return refines(r.args[0].split("+"), r.args[1]);
+  if (r && r.check === "impl") {
+    const model = modelOf(n, r.args[0]);
+    return meets(model, model[1].b === r.args[1] ? null : r.args[1]);
+  }
+  if (r && r.check === "env") return [B(r.args[0].split("/").pop()), v(" is an environment of ", " is not an environment of "), B(r.args[1])];
+  if (r) return conflict(r.args[0]);
   if (t === "⪯") {
     // what is inside the box (the candidate in a hole, the parts of a decomposition), else its note
-    const inner = (n.children || []).filter(c => c.kind !== "hole").map(c => c.title).join(" ⊗ ") || n.note;
-    return inner ? inner + v(" refines ", " does not refine ") + req : n.title;
+    const inner = (n.children || []).filter(c => c.kind !== "hole").map(c => c.title);
+    const names = inner.length ? inner : (n.note ? n.note.split(" ⊗ ") : []);
+    return names.length ? refines(names, req) : [B(n.title)];
   }
-  if (t === "M ⊨ C" && n.model) return n.model.name + (n.model.name === req ? v(" meets its contract", " does not meet its contract")
-                                                                          : v(" implements ", " does not implement ") + req);
-  if (t === "safe" && n.model) return n.model.name + v(" is safe code", " is not safe code");
-  if (t === "E ⊨ A") return n.title + v(" is an environment", " is not an environment");
-  // a check of one contract, as a sentence: "EPS is not realizable"
-  if (t === "A∧G") return "A ∧ G of " + req + v(" can hold", " cannot hold");
-  if (t === "¬V") return req + v(" is not vacuous", " is vacuous");
-  return req + v(" is ", " is not ") + (WHAT[t] || t).split(":")[0].replace(/\s*\(.*\)$/, "");
+  if (t === "M ⊨ C" && n.model) {
+    const model = modelOf(n, null);
+    return n.model.name === req && n.model.source !== "c" ? [B(req), v(" meets its contract", " does not meet its contract")]
+                                                          : meets(model, model[1].b === req ? null : req);
+  }
+  if (t === "safe" && n.model) return [B(n.model.name), v(" is safe code", " is not safe code")];
+  if (t === "E ⊨ A") {                // whose environment: the contract its wires go to
+    const e = (DATA.edges || []).find(x => x.from[0] === n.id), to = e && byId[e.to[0]];
+    const of = to && ((to.contract && to.contract.name) || to.title);
+    return [B(n.title), v(" is an environment", " is not an environment")].concat(of ? [" of ", B(of)] : []);
+  }
+  if (t === "A∧G") return conflict(req);
+  if (t === "¬V") return [B(req), v(" is not vacuous", " is vacuous")];
+  return [B(req), v(" is ", " is not ") + (WHAT[t] || t).split(":")[0].replace(/\s*\(.*\)$/, "")];
+}
+// The second line of a check in the list: where its counterexample fails first and with which values,
+// how many terms are in conflict, the constants that can change; nothing when there is nothing to say.
+function factsOf(n, t, r, w) {
+  const out = [];
+  const c = (n.checks || []).find(x => x.name === t);
+  if (c && c.core && statusOf(n, t) === "invalid") {
+    const k = (c.core.A || []).length + (c.core.G || []).length, many = k > 1;
+    if (k) out.push(t === "R" ? k + (many ? " guarantees" : " guarantee") + " in conflict"
+                  : ["A", "G", "A∧G"].includes(t) ? k + (many ? " terms" : " term") + " in conflict"
+                  : k + (many ? " terms" : " term") + " involved");
+  }
+  const tr = w && w.trace;
+  if (tr && tr.steps && tr.steps.length && statusOf(n, t) === "invalid") {
+    // the values of the variables of the terms it breaks (else of the terms of the contract), two at most
+    const terms = (w.violated || []).map(i => ((n.contract || {}).G || [])[i]).filter(Boolean);
+    const text = (terms.length ? terms : [].concat((n.contract || {}).A || [], (n.contract || {}).G || [])).join(" ");
+    const named = new Set((text.match(/[A-Za-z_]\w*/g) || []));
+    const fmt = x => typeof x === "boolean" ? (x ? "true" : "false") : String(x);
+    const vals = k => tr.vars.map((x, i) => [x, i]).filter(([x]) => named.has(x)).slice(0, 2)
+                        .map(([x, i]) => x + " = " + fmt(tr.steps[k][i])).join(", ");
+    const call = n.model && n.model.source === "c" && t === "M ⊨ C";       // one call of a C function
+    const still = tr.steps.length === 1 && tr.loop === 0;                    // one state, forever
+    // a term that asks for something to happen (F, U) fails on the whole trace, not at a step
+    const ever = terms.length && terms.every(x => /^\s*(G\s*)?F\b|^\s*F\[|\bU\b/.test(x));
+    const k = w.at;
+    if (call) out.push(vals(0) ? "Fails for " + vals(0) : "");
+    else if (still) out.push(vals(0) ? vals(0) + " at every step" : "");
+    else if (!ever && k !== undefined && k !== null && tr.steps[k])
+      out.push("Fails at " + (DATA.period ? "t = " + timeOf(k) + " s" : "step " + k) + (vals(k) ? " (" + vals(k) + ")" : ""));
+  }
+  if (r && r.constants.length) out.push("Repairable: " + r.constants.map(x => x.name).join(", "));
+  if (!out.filter(Boolean).length && w && w.reason) out.push(reasonOf(w.reason).text);
+  return out.filter(Boolean).join(". ");
 }
 // the tag of a check as the diagram draws it, for a panel
 function tagSvg(t, status) {
@@ -3106,7 +3171,7 @@ function fillPanel() {
   if (!n) return;
   const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
   box.appendChild(h("div", { class: "rp-head" },
-    h("span", { class: "q-tag" }, tagSvg(t, st)), h("b", {}, checkTitle(n, t))));
+    h("span", { class: "q-tag" }, tagSvg(t, st)), h("span", { class: "t" }, richOf(checkTitle(n, t)))));
   const unsure = st === "unknown" ? ((n.badge && tagOf(n.badge.text) === t ? n.badge.reason
                                      : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
   const says = st === "valid" ? "Holds." : st === "invalid" ? null
@@ -3498,17 +3563,15 @@ function fillProblems(list) {
     const r = (n.repair || {})[t], w = n.badge && tagOf(n.badge.text) === t ? n.badge.why : null;
     const s = r && stateOf(r), sig = r && repairSig(r);
     const best = s && s.options.find(o => o.res.status === "repaired" && o.sig === sig);
-    const what = s && s.running ? "finding repairs…"
-      : best ? best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
-      : r ? "θ: " + r.constants.map(c => c.name).join(", ")
-      : t === "A∧G" ? "terms in conflict"
-      : w && w.reason ? reasonOf(w.reason).text
-      : "no constant to repair";
+    const what = s && s.running ? "Finding repairs…"
+      : best ? "Repair: " + best.names.map(k => k + " " + best.from[k] + " → " + best.res.text[k]).join(", ")
+      : factsOf(n, t, r, w);
+    const title = checkTitle(n, t);
     box.appendChild(h("div", { class: "q-item" + (panel && panel.id === n.id && panel.tag === t ? " on" : ""),
-                               onclick: () => openRepair(n, t) },
+                               title: plainOf(title), onclick: () => openRepair(n, t) },
       h("div", { class: "q-tag" }, tagSvg(t, "invalid")),
-      h("div", { class: "q-main" }, h("div", { class: "t" }, checkTitle(n, t)),
-        h("div", { class: best ? "v" : "s" }, what))));
+      h("div", { class: "q-main" }, h("div", { class: "t" }, richOf(title)),
+        what ? h("div", { class: best ? "v" : "s" }, what) : null)));
   });
 }
 // The code of a C function in the details, folded: its title says whose it is.
