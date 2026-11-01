@@ -1864,7 +1864,7 @@ _PAGE = r"""<!doctype html>
   .rp-t { grid-column:1; font-size:11.5px; }
   .rp-h.rp-hb { display:flex; align-items:center; justify-content:space-between; margin-top:-2px; }
   .rp-h.rp-hb .ib { text-transform:none; letter-spacing:0; }
-  .rp-tools { display:flex; align-items:center; gap:6px; }
+  #insp-bar .ib.wf-open { margin-left:auto; }
   .ib.wf-open { width:auto; padding:0 7px 0 5px; gap:4px; border:1px solid var(--line); border-radius:5px; color:var(--teal); }
   .ib.wf-open .wf-word { font:600 11px Helvetica, Arial, sans-serif; text-transform:none; letter-spacing:0; }
   .rp-v { font:11.5px Menlo, Monaco, monospace; overflow-wrap:anywhere; }
@@ -3258,6 +3258,11 @@ function renderInspector() {
   else bar.append("Problems", list.length ? h("span", { class: "count" }, String(list.length)) : "");
   if (inspector.tab === "problems") fillProblems(list);
   else fillPanel();
+  if (inspector.tab === "details" && panel && panel.wave) {   // the waveform: at the right of the line of the panel
+    const b = iconButton(GLYPH.wave, "Open the waveform of every step", panel.wave, "wf-open");
+    b.appendChild(h("span", { class: "wf-word" }, "Waveform"));
+    bar.append(b);
+  }
 }
 const ROLE = { part: "part", requirement: "requirement", contract: "contract" };
 // the panel drawn again keeps in the window: its height changes as repairs come
@@ -3266,6 +3271,7 @@ function fillPanel() {
   const box = document.getElementById("repair");
   const n = panel && byId[panel.id];
   box.innerHTML = "";
+  panel.wave = null;
   if (!n) return;
   const t = panel.tag, r = (n.repair || {})[t], st = statusOf(n, t), how = backend();
   box.appendChild(h("div", { class: "rp-head" },
@@ -3357,17 +3363,13 @@ function whySection(n, t, st) {
     const first = w.trace.vars.filter(v => named.has(v));
     const table = traceTable(w.trace, first, req, last > 0 ? panel.step || 0 : null, go);
     panel.goStep = last > 0 ? d => go((panel.step || 0) + d) : null;
-    if (last > 0 || table.nav) {        // on the line of the heading: the waveform, and the page back and on
-      const head = sec.firstChild, tools = h("span", { class: "rp-tools" });
+    // the waveform: every step kept, in a drawer under the diagram; its button on the line of the panel
+    if (last > 0) panel.wave = () => openWave(w.trace, first, checkTitle(n, t), go);
+    if (table.nav) {                    // on the line of the heading: the page back and on
+      const head = sec.firstChild;
       head.classList.add("rp-hb");
       head.textContent = "";
-      if (last > 0) {                   // the waveform: every step kept, in a drawer under the diagram
-        const b = iconButton(GLYPH.wave, "Open the waveform of every step", () => openWave(w.trace, first, checkTitle(n, t), go), "wf-open");
-        b.appendChild(h("span", { class: "wf-word" }, "Waveform"));
-        tools.appendChild(b);
-      }
-      if (table.nav) tools.appendChild(table.nav);
-      head.append(h("span", {}, "Counterexample"), tools);
+      head.append(h("span", {}, "Counterexample"), table.nav);
     }
     sec.appendChild(table);
   } else {

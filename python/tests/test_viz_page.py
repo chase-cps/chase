@@ -833,7 +833,7 @@ def wave_page(browser, tmp_path, trace):
     return page, errors
 
 
-OPEN_WAVE = '#repair button.ib[aria-label^="Open the waveform"]'
+OPEN_WAVE = '#insp-bar button.ib[aria-label^="Open the waveform"]'
 MIXED = {"vars": ["go", "x", "n", "mode"], "more": 0, "cut": False, "loop": 3, "at": 2,
          "steps": [[True, 0.5, 0, "idle"], [False, 0.5, 1, "run"], [True, 1.25, 2, "run"], [None, 2, 3, "stop"], [True, 2, 3, "stop"]]}
 
@@ -850,12 +850,14 @@ def wave_step_x(page, k, v=None):
 
 
 def test_the_waveform_opens_and_closes(browser, tmp_path):
-    # the button on the line of COUNTEREXAMPLE; a drawer under the diagram that leaves the details in
-    # view, with the check, a row for each variable (those of the requirement first, under their
-    # group), the cross and Esc to close
+    # the button at the right of the line of the panel (Problems at its left); a drawer under the
+    # diagram that leaves the details in view, with the check, a row for each variable (those of the
+    # requirement first, under their group), the cross and Esc to close
     page, errors = wave_page(browser, tmp_path, MIXED)
-    head = page.locator("#repair .rp-hb", has=page.locator(OPEN_WAVE[8:]))
-    assert head.inner_text().lower().startswith("counterexample")
+    bar, b = page.locator("#insp-bar").bounding_box(), page.locator(OPEN_WAVE).bounding_box()
+    assert "Problems" in page.inner_text("#insp-bar button.back")
+    assert b["x"] + b["width"] == pytest.approx(bar["x"] + bar["width"] - 10, abs=2)
+    assert not page.locator("#repair .wf-open").count()
     box, insp = page.locator("#wave").bounding_box(), page.locator("#insp").bounding_box()
     assert box["x"] == pytest.approx(16, abs=1) and box["y"] + box["height"] == pytest.approx(800 - 16, abs=1)
     assert box["x"] + box["width"] == pytest.approx(insp["x"] - 16, abs=1)       # beside the details, not over them
@@ -1135,7 +1137,7 @@ def test_the_waveform_of_a_long_trace_is_quick(browser, tmp_path):
     assert page.locator("#wave .wv-row[data-i]").count() == 40
     page.keyboard.press("Escape")
     ms = page.evaluate("""(() => { const t = performance.now();
-        document.querySelector('#repair button.ib[aria-label^="Open the waveform"]').click();
+        document.querySelector('#insp-bar button.ib[aria-label^="Open the waveform"]').click();
         for (let i = 0; i < 5; i++) document.getElementById('wave').dispatchEvent(new KeyboardEvent('keydown', { key: '+' }));
         return (performance.now() - t) / 6; })()""")
     assert ms < 250, ms
