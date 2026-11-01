@@ -1791,15 +1791,17 @@ _PAGE = r"""<!doctype html>
 <html><head><meta charset="utf-8"><title>__TITLE__</title>
 <style>
   :root { --ink:#1d2526; --soft:#667374; --faint:#97a3a4; --teal:#17393b; --line:#b6c1c1; --fill:#f5f7f7;
-          --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --grid:#d3dbdb; --ground:#fcfdfd; }
+          --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --grid:#d3dbdb; --ground:#fcfdfd;
+          --glass:rgba(255,255,255,.72); --frost:blur(6px) saturate(1.3);
+          --r:6px; }   /* one corner for every box: tags, boxes, the toolbar, the details, the drawer */
   html, body { height:100%; overflow:hidden; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--ground); }
   #top { position:fixed; top:0; left:0; right:0; z-index:10; display:flex; justify-content:space-between; align-items:flex-start;
          padding:10px 12px 0 18px; pointer-events:none; }
   #top > * { pointer-events:auto; }
-  .tools { display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e3e8e8; border-radius:8px;
+  .tools { display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e3e8e8; border-radius:var(--r);
            padding:2px; box-shadow:0 1px 4px rgba(0,0,0,.06); position:relative; margin-left:auto; }
-  .tools button { width:28px; height:26px; border:1px solid transparent; background:none; border-radius:6px;
+  .tools button { width:28px; height:26px; border:1px solid transparent; background:none; border-radius:var(--r);
                   cursor:pointer; color:var(--soft); display:flex; align-items:center; justify-content:center; padding:0; }
   .tools button:hover { background:var(--fill); color:var(--teal); }
   .tools button.on { background:#e6eeee; color:var(--teal); }
@@ -1809,20 +1811,20 @@ _PAGE = r"""<!doctype html>
   [data-box].sel > rect:first-of-type { stroke:var(--teal); stroke-width:3px; }
   .trow > .hl { display:none; } .trow.sel > .hl { display:inline; }
   #export { display:none; position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd;
-            border-radius:8px; padding:4px; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:7; }
+            border-radius:var(--r); padding:4px; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:7; }
   #export button { font:600 12px Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
-                   border-radius:6px; padding:4px 10px; cursor:pointer; color:var(--teal); }
+                   border-radius:var(--r); padding:4px 10px; cursor:pointer; color:var(--teal); }
   #export button:hover { background:var(--fill); }
   @media print { body > *:not(#print) { display:none !important; } #print { display:block !important; }
                  #print svg { width:100%; height:auto; } @page { margin:12mm; } }
-  #help { position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd; border-radius:8px;
+  #help { position:absolute; right:12px; top:46px; background:#fff; border:1px solid #d5dddd; border-radius:var(--r);
           box-shadow:0 6px 24px rgba(0,0,0,.12); padding:12px 14px; font:12px 'Arial Unicode MS', Helvetica, Arial, sans-serif;
           color:var(--soft); display:none; z-index:11; }
   #help div { display:flex; gap:10px; align-items:center; margin:6px 0; white-space:nowrap; }
   #help svg { flex:none; }
   #context { display:none; gap:8px; flex-wrap:wrap; padding-top:4px; }
   #stale { display:none; position:fixed; left:12px; bottom:12px; max-width:min(720px, 70%); z-index:6;
-           background:#fff6f4; border:1px solid var(--bad); border-radius:6px; padding:7px 10px;
+           background:#fff6f4; border:1px solid var(--bad); border-radius:var(--r); padding:7px 10px;
            font:12px/1.45 Helvetica, Arial, sans-serif; color:#7a2a20; white-space:pre-wrap; }
   #stale b { display:block; margin-bottom:2px; }
   #tip { display:none; position:fixed; z-index:20; max-width:420px; pointer-events:none;
@@ -1840,14 +1842,16 @@ _PAGE = r"""<!doctype html>
   #busy { display:none; position:fixed; right:14px; bottom:12px; z-index:6; padding:5px 12px;
           border-radius:12px; background:var(--teal); color:#fff; font:600 12px Helvetica, Arial, sans-serif;
           box-shadow:0 1px 4px rgba(0,0,0,.2); }
-  #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:6px;
+  #context span { display:inline-flex; align-items:center; gap:7px; border:1px solid #d5dddd; border-radius:var(--r);
                   padding:2px 9px 2px 2px; font:11.5px Menlo, Monaco, monospace; color:var(--ink);
                   white-space:nowrap; background:#fff; }
   #context i { font:600 9.5px -apple-system, Helvetica, Arial, sans-serif; font-style:normal; color:#fff;
                background:#6f7f80; border-radius:4px; padding:2px 5px; }
-  #view { position:fixed; inset:0; overflow:hidden; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  /* the view is the room left of the details and above the drawer (the camera fits the diagram there), but the
+     diagram goes on under them: they float over it, of frosted glass */
+  #view { position:fixed; inset:0; overflow:visible; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   #view.moving { cursor:grabbing; }
-  #view > svg { display:block; width:100%; height:100%; }
+  #view > svg { display:block; width:100vw; height:100vh; }   /* the whole window, from the corner of the view */
   svg text { font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   .f { font-family:Menlo, Monaco, monospace; font-size:11.5px; fill:var(--ink); }
   .h { font-weight:600; font-size:12.5px; fill:var(--ink); cursor:pointer; }
@@ -1856,14 +1860,14 @@ _PAGE = r"""<!doctype html>
   .halo { paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }
   .icon { cursor:pointer; }
   #pop { position:fixed; left:50%; top:12%; transform:translateX(-50%); max-width:min(860px, 90vw); max-height:72vh;
-         background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 10px 36px rgba(0,0,0,.16);
+         background:#fff; border:1px solid #d5dddd; border-radius:var(--r); box-shadow:0 10px 36px rgba(0,0,0,.16);
          display:none; flex-direction:column; z-index:10; }
   #pop header { padding:8px 8px 8px 16px; border-bottom:1px solid #e3e8e8; display:flex; gap:20px; align-items:center; }
   #pop header b { font-size:13px; font-weight:600; flex:1; }
   #popview { overflow:auto; padding:6px 18px 16px; }
   /* the waveform: a drawer under the diagram, beside the details; the names and values on the left, the steps scrolled and zoomed */
   #wave { position:fixed; left:12px; right:12px; bottom:12px; box-sizing:border-box;
-          background:#fff; border:1px solid #d5dddd; border-radius:10px; box-shadow:0 6px 28px rgba(0,0,0,.14);
+          isolation:isolate; border:1px solid rgba(213,221,221,.9); border-radius:var(--r); box-shadow:0 6px 28px rgba(0,0,0,.14);
           display:none; flex-direction:column; z-index:11; outline:none; overflow:hidden; }
   body.insp #wave { right:calc(12px + min(402px, 100vw - 22px) + 12px); }   /* the details: 400 pixels and their border; the bottoms on one line */
   .wv-grip { position:absolute; top:0; left:0; right:0; height:12px; cursor:ns-resize; z-index:4; }
@@ -1878,10 +1882,10 @@ _PAGE = r"""<!doctype html>
   .wv-where { font:12px Helvetica, Arial, sans-serif; color:var(--soft); white-space:nowrap; }
   .wv-where .wv-k { color:#2f6fb5; font-weight:700; }
   .wv-failat { font:600 12px Helvetica, Arial, sans-serif; color:#b03a2e; background:none; border:0; padding:3px 7px; margin:0 -7px;
-               border-radius:5px; cursor:pointer; white-space:nowrap; }
+               border-radius:var(--r); cursor:pointer; white-space:nowrap; }
   .wv-failat:hover { background:#fbeceb; }
   .wv-tools { display:flex; gap:2px; align-items:center; }
-  .wv-keys { display:none; position:fixed; z-index:21; background:#fff; border:1px solid #d5dddd; border-radius:8px;
+  .wv-keys { display:none; position:fixed; z-index:21; background:#fff; border:1px solid #d5dddd; border-radius:var(--r);
              box-shadow:0 6px 20px rgba(0,0,0,.12); padding:9px 14px; font-size:12px; color:var(--ink);
              grid-template-columns:auto auto; column-gap:18px; row-gap:4px; white-space:nowrap; }
   .wv-keys.on { display:grid; }
@@ -1949,10 +1953,13 @@ _PAGE = r"""<!doctype html>
   table.fsm td.when { color:var(--soft); }
   /* the inspector: docked on the right of the diagram (below it in a narrow window); it does not move with the view */
   #insp { position:fixed; top:46px; right:12px; bottom:12px; width:400px; max-width:calc(100vw - 24px); display:none;
-          flex-direction:column; background:#fff; border:1px solid #d5dddd; border-radius:10px;
-          box-shadow:0 4px 18px rgba(0,0,0,.08); z-index:9; color:var(--ink);
+          flex-direction:column; isolation:isolate;
+          border:1px solid rgba(213,221,221,.9); border-radius:var(--r); box-shadow:0 6px 24px rgba(0,0,0,.12); z-index:9; color:var(--ink);
           font:12px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   body.insp #insp { display:flex; }
+  /* the frosted glass on a layer of its own: a filter on the box would make it the frame of its fixed popups */
+  #insp::before, #wave::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+                                 background:var(--glass); -webkit-backdrop-filter:var(--frost); backdrop-filter:var(--frost); }
   body.insp #view { right:424px; }
   #insp-bar { display:flex; align-items:center; gap:6px; min-height:40px; padding:0 10px 0 14px; border-bottom:1px solid #e3e8e8; flex:none;
               font:600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--teal); }
@@ -1995,7 +2002,7 @@ _PAGE = r"""<!doctype html>
   .rp-head .t b, .q-item .t b { font-weight:600; }
   /* the small icons of the page: one size, one stroke, as the icons of the tools */
   .ib { display:inline-flex; align-items:center; justify-content:center; flex:none; width:24px; height:24px; padding:0;
-        border:0; border-radius:5px; background:none; color:var(--soft); cursor:pointer; }
+        border:0; border-radius:var(--r); background:none; color:var(--soft); cursor:pointer; }
   .ib svg, .chev svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4;
                        stroke-linecap:round; stroke-linejoin:round; }
   button.ib:hover, button.back:hover .ib { background:var(--fill); color:var(--teal); }
@@ -2023,7 +2030,7 @@ _PAGE = r"""<!doctype html>
   .rp-range { display:flex; gap:3px; align-items:center; color:var(--soft); font:11px Menlo, Monaco, monospace; }
   .rp-range input { width:54px; font:11px Menlo, Monaco, monospace; border:1px solid #d5dddd; border-radius:4px; padding:1px 4px; color:var(--ink); }
   .rp-btn { font:600 11.5px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; border:1px solid #d5dddd; background:#fff;
-            border-radius:6px; padding:3px 10px; cursor:pointer; color:var(--teal); white-space:nowrap; }
+            border-radius:var(--r); padding:3px 10px; cursor:pointer; color:var(--teal); white-space:nowrap; }
   .rp-btn:hover { background:var(--fill); }
   .rp-btn.main { background:var(--teal); border-color:var(--teal); color:#fff; }
   .rp-btn.on { background:#e6eeee; }
@@ -2031,7 +2038,7 @@ _PAGE = r"""<!doctype html>
   .rp-btn:disabled { opacity:.45; cursor:default; background:#fff; }
   .rp-btn.main:disabled { background:var(--teal); }
   .rp-run { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .rp-opt { border:1px solid #e3e8e8; border-radius:8px; padding:7px 10px; margin:6px 0 0; display:grid;
+  .rp-opt { border:1px solid #e3e8e8; border-radius:var(--r); padding:7px 10px; margin:6px 0 0; display:grid;
             grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; align-items:center; }
   .rp-opt.repaired { border-color:#b9d6c4; } .rp-opt.repaired:hover, .rp-opt.shown { border-color:var(--ok); background:#f6faf7; }
   .rp-opt.old, .rp-opt.faint { opacity:.6; } .rp-opt.faint:hover { opacity:1; }
@@ -2040,7 +2047,7 @@ _PAGE = r"""<!doctype html>
   .rp-h.rp-hb { justify-content:space-between; }
   .rp-h.rp-hb .ib { text-transform:none; letter-spacing:0; }
   #insp-bar .ib.wf-open { margin-left:auto; }
-  .ib.wf-open { width:auto; padding:0 7px 0 5px; gap:4px; border:1px solid var(--line); border-radius:5px; color:var(--teal); }
+  .ib.wf-open { width:auto; padding:0 7px 0 5px; gap:4px; border:1px solid var(--line); border-radius:var(--r); color:var(--teal); }
   .ib.wf-open .wf-word { font:600 11px Helvetica, Arial, sans-serif; text-transform:none; letter-spacing:0; }
   .rp-v { font:11.5px Menlo, Monaco, monospace; overflow-wrap:anywhere; }
   .rp-v s { color:var(--bad); } .rp-v em { font-style:normal; color:var(--ok); font-weight:600; }
@@ -2048,7 +2055,7 @@ _PAGE = r"""<!doctype html>
   .rp-b { grid-row:1 / span 3; grid-column:2; display:flex; gap:4px; align-items:center; }
   .rp-note { color:var(--soft); font-size:11px; margin-top:6px; }
   .rp-err { color:var(--bad); font-size:11px; margin-top:6px; white-space:pre-wrap; }
-  .rp-cmd { font:10.5px/1.5 Menlo, Monaco, monospace; background:var(--fill); border:1px solid #e3e8e8; border-radius:6px;
+  .rp-cmd { font:10.5px/1.5 Menlo, Monaco, monospace; background:var(--fill); border:1px solid #e3e8e8; border-radius:var(--r);
             padding:5px 7px; margin-top:6px; white-space:pre-wrap; overflow-x:auto; user-select:text; -webkit-user-select:text; }
   /* a command breaks between its words only, never inside a flag (--serve) */
   .rp-cmd > span, code.cmd { white-space:nowrap; }
@@ -2158,6 +2165,7 @@ let DATA = __DATA__;
 let busy = false;               // checks running in the editor (setBusy)
 let progressed = {};            // the results known while they run: contract name -> {tag: status}
 const LINE = 17, PAD = 10, PORT = 6, HEAD = 28, ICON = 16, INLINE_STATES = 8;
+const R = 6;          // the corner of every box, as --r in the styles
 const ctx = document.createElement("canvas").getContext("2d");
 function textWidth(s, font) { ctx.font = font; return ctx.measureText(s).width; }
 // a number in a few digits, never rounder than it is: 0.8095238095238095 is 0.8095, but 17.996 is
@@ -2344,7 +2352,7 @@ const REF = s => s.startsWith("⪯"), rest = s => s.slice(1).trim();
 const tagWidth = s => REF(s) ? 22 + (rest(s) ? textWidth(rest(s), FONT_T) + 2 : 0) : textWidth(s, FONT_T) + 12;
 function tag(g, x, y, s, status) {
   const c = COLOR[status], ink = c ? "#fff" : "var(--soft)";
-  el("rect", { x, y, width: tagWidth(s), height: 16, rx: 4, fill: c || "#fff", stroke: c || "var(--line)",
+  el("rect", { x, y, width: tagWidth(s), height: 16, rx: R, fill: c || "#fff", stroke: c || "var(--line)",
                "stroke-width": 1 }, g);
   if (REF(s)) {               // refinement as in the book: ≺, curved, over a bar
     el("path", { d: `M${x + 15.8} ${y + 2.2} C${x + 14.6} ${y + 5.6} ${x + 11} ${y + 6.9} ${x + 6} ${y + 7.1}`
@@ -2359,7 +2367,7 @@ function tag(g, x, y, s, status) {
 // A check running: a tag as wide as its result will be, with three dots.
 function pending(g, x, y, s) {
   const w = tagWidth(s), p = el("g", { class: "pending" }, g);
-  el("rect", { x, y, width: w, height: 16, rx: 4, fill: "#fff", stroke: "var(--line)", "stroke-width": 1 }, p);
+  el("rect", { x, y, width: w, height: 16, rx: R, fill: "#fff", stroke: "var(--line)", "stroke-width": 1 }, p);
   [-5, 0, 5].forEach(d => el("circle", { cx: x + w / 2 + d, cy: y + 8, r: 1.6 }, p));
   tip(p, (WHAT[s] || s) + ": being checked");
   return w;
@@ -2511,7 +2519,7 @@ function tip(parent, s) { parent.setAttribute("data-tip", s); }
 // states and a move for a model, with a spark when it was synthesized.
 function icon(g, kind, x, y, on, title, off) {
   const c = el("g", { class: off ? "" : "icon" }, g), ink = off ? "var(--line)" : "var(--teal)", fg = on ? "#fff" : ink;
-  el("rect", { x, y, width: ICON, height: ICON, rx: 4, fill: on ? ink : "#fff",
+  el("rect", { x, y, width: ICON, height: ICON, rx: R, fill: on ? ink : "#fff",
                stroke: ink, "stroke-width": 1.1 }, c);
   if (kind === "contract") {
     el("rect", { x: x + 4, y: y + 3.5, width: 8, height: 9, rx: 1.5, fill: "none", stroke: fg, "stroke-width": 1.1 }, c);
@@ -2533,10 +2541,10 @@ function icon(g, kind, x, y, on, title, off) {
 }
 
 const STYLE = {
-  contract:  { rx: 10, fill: "#fff", stroke: "var(--teal)", width: 1.2, dash: "none" },
+  contract:  { rx: R, fill: "#fff", stroke: "var(--teal)", width: 1.2, dash: "none" },
   component: { rx: 2, fill: "#fff", stroke: "var(--ink)", width: 1.8, dash: "none" },
-  group:     { rx: 10, fill: "var(--fill)", stroke: "var(--line)", width: 1, dash: "none" },
-  hole:      { rx: 10, fill: "url(#hatch)", stroke: "var(--teal)", width: 1.2, dash: "5 4" },
+  group:     { rx: R, fill: "var(--fill)", stroke: "var(--line)", width: 1, dash: "none" },
+  hole:      { rx: R, fill: "url(#hatch)", stroke: "var(--teal)", width: 1.2, dash: "5 4" },
   environment: { rx: 2, fill: "var(--fill)", stroke: "var(--soft)", width: 1.4, dash: "none" } };
 
 function drawNode(g, e, ox, oy) {
@@ -2575,7 +2583,7 @@ function drawNode(g, e, ox, oy) {
     ix += tag(t, ix, y + 6, c.name, c.status) + 4;
     tip(t, (WHAT[c.name] || c.name) + ": " + (SAYS[c.status] || "not checked") + (c.reason ? " (" + c.reason + ")" : "")
            + (fix ? ". Click: why it fails" : c.core ? (on ? ". Click: hide the core" : ". Click: show the core") : ""));
-    if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: 5,
+    if (on) el("rect", { x: ix - 4 - tagWidth(c.name) - 2, y: y + 4, width: tagWidth(c.name) + 4, height: 20, rx: R,
                          fill: "none", stroke: COLOR[c.status], "stroke-width": 1 }, t);
     if (c.core || fix) { t.setAttribute("class", "icon");
       // one that fails: its details, with its core shown; one that holds: its core on and off
@@ -2590,7 +2598,7 @@ function drawNode(g, e, ox, oy) {
   let rx = x + e.width - PAD;
   if (inside(n)) {             // fold: hide or show the boxes inside
     const f = el("g", { class: "icon" }, box), shut = folded.has(n.id), cx = rx - ICON / 2, cy = y + 14;
-    el("rect", { x: rx - ICON, y: y + 6, width: ICON, height: ICON, rx: 4, fill: shut ? "var(--teal)" : "#fff",
+    el("rect", { x: rx - ICON, y: y + 6, width: ICON, height: ICON, rx: R, fill: shut ? "var(--teal)" : "#fff",
                  stroke: "var(--teal)", "stroke-width": 1.1 }, f);
     el("path", { d: shut ? `M${cx - 3.5} ${cy - 1.5} L${cx} ${cy + 2} L${cx + 3.5} ${cy - 1.5}`
                          : `M${cx - 3.5} ${cy + 1.5} L${cx} ${cy - 2} L${cx + 3.5} ${cy + 1.5}`,
@@ -2732,7 +2740,7 @@ function drawModel(g, m, ax, ay) {
     (ed.labels || []).forEach(l => text(lg, x0 + l.x + 2, ay + l.y + 9, "w halo", l.text));
   });
   m.f.states.forEach(s => { const c = m.pos[s.id], x = x0 + c.x, y = ay + c.y;
-    el("rect", { x, y, width: c.width, height: c.height, rx: 11, fill: "#fff", stroke: "var(--teal)",
+    el("rect", { x, y, width: c.width, height: c.height, rx: R, fill: "#fff", stroke: "var(--teal)",
                  "stroke-width": s.init ? 2.2 : 1 }, lg);
     const t = text(lg, x + c.width / 2, y + 15, "w", s.label); t.setAttribute("text-anchor", "middle");
     t.setAttribute("style", "fill:var(--ink)");
@@ -3070,7 +3078,7 @@ function help() {
   [["contract", "parameters θ, assumptions A, guarantees G"], ["composed", "composed contract (⊗)"],
    ["model", "model given (RTL, JSON, SMV)"], ["synth", "model synthesized (slugs)"]].forEach(([k, t]) =>
     sample(svg => icon(svg, k, 16, 2, false, t), t));
-  sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: 4, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
+  sample(s => { el("rect", { x: 16, y: 2, width: 16, height: 16, rx: R, fill: "#fff", stroke: "#17393b", "stroke-width": 1.1 }, s);
                 el("path", { d: "M20.5 11.5 L24 8 L27.5 11.5", fill: "none", stroke: "#17393b", "stroke-width": 1.4 }, s); },
          "hide the boxes inside");
   // a check: green when it holds, red when not, grey when undecided
@@ -4602,6 +4610,7 @@ function openWave(tr, first, title, pick, reqName) {
   WAVE.ro.observe(scroll);
   WAVE.bro = new ResizeObserver(() => { if (WAVE.open) viewAboveWave(true); });   // the drawer taller or shorter
   WAVE.bro.observe(box);
+  viewAboveWave(true);                      // at once, not a frame later
   WAVE.resize = () => { fitHeight(); place(); viewAboveWave(true); };
   addEventListener("resize", WAVE.resize);
 }

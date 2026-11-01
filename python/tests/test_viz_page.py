@@ -55,6 +55,8 @@ def open_page(browser, tmp_path, d, editor=True):
     f = tmp_path / "page.html"
     f.write_text(viz.html(d, elk=os.environ.get("CHASE_TEST_ELK")))
     page.goto(f.as_uri())
+    # no frosted glass: drawn in software, the blur makes each frame slow and the timings of the tests loose
+    page.add_style_tag(content=":root { --frost: none !important; }")
     page.wait_for_selector("[data-box]", timeout=30000)
     page.wait_for_timeout(100)
     return page, errors
@@ -889,6 +891,12 @@ def test_a_repair_with_no_answer_can_try_longer(browser, tmp_path):
 
 
 # The waveform of a counterexample: a drawer under the diagram, a row for each variable
+def wait_fitted(page, cols=7):
+    """All the steps fill the drawer: the waveform has settled after a change of the window."""
+    page.wait_for_function(f"""() => {{ const s = document.querySelector('#wave .wv-scroll');
+        return Math.abs(WAVE.px() * {cols} - (s.getBoundingClientRect().width - WAVE.left() - 16)) < 1; }}""", timeout=5000)
+
+
 def wave_page(browser, tmp_path, trace):
     """Bound fails with the given trace; the waveform opened with the mouse."""
     from test_viz import COUNT
@@ -1353,7 +1361,7 @@ def test_the_waveform_fits_again_in_a_wider_window(browser, tmp_path):
     left = page.evaluate("WAVE.left()")
     width = lambda: page.locator("#wave .wv-scroll").bounding_box()["width"]
     page.set_viewport_size({"width": 1440, "height": 800})
-    page.wait_for_timeout(150)
+    wait_fitted(page)
     assert page.evaluate("WAVE.px()") * 7 == pytest.approx(width() - left - 16, abs=1)   # 5 steps and 2 faded
     page.keyboard.press("+")
     px = page.evaluate("WAVE.px()")
@@ -1435,7 +1443,7 @@ def test_an_environment_shows_the_step_and_the_assumption_it_breaks(browser, tmp
     assert page.locator("#repair table.rp-trace th.fail").inner_text() == "1"
     assert "The assumptions it breaks (red):" in page.inner_text("#repair")
     arb = page.evaluate("Object.values(byId).find(n => n.title === 'Arb').id")
-    assert page.locator(f'[data-box="{arb}"] > g rect.core-row').count() >= 1
+    page.wait_for_selector(f'[data-box="{arb}"] > g rect.core-row', state="attached", timeout=5000)   # drawn after the panel
     assert "Fails at step 1" in page.evaluate("factsOf(byId[panel.id], 'E ⊨ A', null, byId[panel.id].badge.why)")
     assert errors == []
 
@@ -1682,16 +1690,22 @@ def test_a_fitted_waveform_stays_fitted_as_the_window_changes(browser, tmp_path)
     page, errors = wave_page(browser, tmp_path, MIXED)
     sc = "document.querySelector('#wave .wv-scroll')"
     fits = lambda: page.evaluate(f"{sc}.scrollWidth <= {sc}.clientWidth + 1")
-    page.set_viewport_size({"width": 1440, "height": 800}); page.wait_for_timeout(150)
+    def width(w, fitted=True):        # the window, then the waveform settled in it (a few frames on a busy machine)
+        page.set_viewport_size({"width": w, "height": 800})
+        if fitted:
+            wait_fitted(page)
+        else:
+            page.wait_for_timeout(150)
+    width(1440)
     wide = page.evaluate("WAVE.px()")
     assert fits()
-    page.set_viewport_size({"width": 1100, "height": 800}); page.wait_for_timeout(150)
+    width(1100)
     assert fits() and page.evaluate("WAVE.px()") < wide
-    page.set_viewport_size({"width": 1440, "height": 800}); page.wait_for_timeout(150)
+    width(1440)
     assert fits() and page.evaluate("WAVE.px()") == pytest.approx(wide, abs=0.5)
     page.keyboard.press("+")
     zoomed = page.evaluate("WAVE.px()")
-    page.set_viewport_size({"width": 1100, "height": 800}); page.wait_for_timeout(150)
+    width(1100, fitted=False)
     assert page.evaluate("WAVE.px()") == zoomed
     assert errors == []
 
