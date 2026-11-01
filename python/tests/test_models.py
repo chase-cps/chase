@@ -139,7 +139,7 @@ def test_the_controller_of_fair_implements_it_and_is_receptive():
     assert m.variables["chase_node"] == (0, len(r.controller["nodes"]) - 1)
     assert is_implementation(m, fair).status == "valid"
     assert is_implementation(r, fair).status == "valid"
-    assert is_implementation(r, c["System"]).status == "valid"
+    assert is_implementation(r, c["ChargingStation"]).status == "valid"
     assert is_receptive(m, fair).status == "receptive"
     # the controller as JSON, with the contract it was synthesized from
     data = json.loads(json.dumps(r.controller))

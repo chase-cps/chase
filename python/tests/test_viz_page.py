@@ -104,6 +104,15 @@ def name_of(page, b):
         const r = t.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", b["id"])
 
 
+def body_of(page, b, x, y):
+    """A point of the body of box b, from (x, y) leftward and down, where no label of a wire lies over it."""
+    return page.evaluate("""([id, x, y, w, h, x0, y0]) => {
+        for (let dy = 0; y + dy < y0 + h - 4; dy += 6) for (let dx = 0; x - dx > x0 + 8; dx += 12) {
+          const e = document.elementFromPoint(x - dx, y + dy), at = e && e.closest('[data-box]');
+          if (at && at.getAttribute('data-box') === id && !e.closest('[data-line]')) return [x - dx, y + dy]; }
+        return [x, y]; }""", [b["id"], x, y, b["w"], b["h"], b["x"], b["y"]])
+
+
 def bring(page, b):
     """b in the window: the view moved so that its head is at the middle."""
     page.evaluate("""([id]) => {
@@ -120,7 +129,7 @@ def test_each_box_and_term_goes_to_its_line(browser, tmp_path, path, monkeypatch
     first = rows(page)
     for b in [b for b in boxes(page) if b["source"] and b["contract"]]:
         b = bring(page, b)
-        page.mouse.dblclick(b["x"] + min(b["w"], 300) - 12, b["y"] + min(b["h"] - 6, 40))   # the body
+        page.mouse.dblclick(*body_of(page, b, b["x"] + min(b["w"], 300) - 12, b["y"] + min(b["h"] - 6, 40)))
         assert posted(page) == [{"type": "chase-reveal", "line": b["source"]["line"]}], b["title"]
         page.mouse.click(*name_of(page, b))                             # the name: open
         page.wait_for_timeout(50)
@@ -246,7 +255,7 @@ def test_the_check_button_and_the_checks_running(browser, tmp_path, monkeypatch)
     assert set(widths) <= {page.evaluate("tagWidth('A∧G')"), page.evaluate("tagWidth('⪯')")}
     # results known one by one: in place of their dots at once
     for e in ({"check": "feasible", "result": "unsat", "of": "Greedy"},
-              {"check": "refines", "result": "valid", "refined": "Robot1+Robot2+Greedy", "abstract": "System"}):
+              {"check": "refines", "result": "valid", "refined": "Robot1+Robot2+Greedy", "abstract": "ChargingStation"}):
         page.evaluate("m => window.postMessage(m, '*')", {"type": "chase-progress", "event": e})
     page.wait_for_timeout(400)
     assert page.evaluate("document.querySelectorAll('.pending').length") == dots - 2
