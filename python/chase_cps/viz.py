@@ -1740,7 +1740,10 @@ _PAGE = r"""<!doctype html>
              box-shadow:0 6px 20px rgba(0,0,0,.12); padding:9px 14px; font-size:12px; color:var(--ink);
              grid-template-columns:auto auto; column-gap:18px; row-gap:4px; white-space:nowrap; }
   .wv-keys.on { display:grid; }
-  .wv-keys kbd { font:11px Menlo, Monaco, monospace; color:var(--teal); white-space:pre; }
+  .wv-keys-t { grid-column:1 / -1; font:600 12px -apple-system, Helvetica, Arial, sans-serif; color:var(--ink); margin-bottom:4px; }
+  .wv-caps { display:flex; gap:3px; align-items:center; color:var(--faint); font-size:11px; }
+  .wv-keys kbd { display:inline-block; min-width:12px; padding:0 5px; line-height:17px; text-align:center; border:1px solid #d5dddd;
+                 border-bottom-width:2px; border-radius:4px; background:#f7f9f9; font:11px -apple-system, Helvetica, Arial, sans-serif; color:var(--ink); }
   .wv-scroll { flex:0 1 auto; overflow:auto; position:relative; cursor:default; scrollbar-width:none; }
   .wv-scroll::-webkit-scrollbar { display:none; }
   .wv-scroll.pan { cursor:grabbing; }
@@ -1763,7 +1766,7 @@ _PAGE = r"""<!doctype html>
              cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .wv-plot svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linejoin:round; }
   .wv-plot:hover { color:var(--teal); background:var(--fill); }
-  .wv-plot.on { color:#fff; background:var(--teal); }
+  .wv-plot.on { color:var(--teal); background:#e1eded; }
   span.wv-plot { cursor:inherit; }
   .wv-group .wv-left { cursor:default; }
   .wv-gname { font:10.5px Helvetica, Arial, sans-serif; color:var(--faint); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1780,6 +1783,11 @@ _PAGE = r"""<!doctype html>
   .wv-loop { font:600 10px Helvetica, Arial, sans-serif; fill:var(--teal); }
   .wv-fails { font:bold 10px Helvetica, Arial, sans-serif; fill:#b03a2e; }
   .wv-v { font:11px Menlo, Monaco, monospace; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:#f7f9f9; stroke-width:4px; }
+  .wv-edge { position:absolute; z-index:4; display:flex; gap:6px; }
+  .wv-edge.r { right:22px; }
+  .wv-edge button { border:0; background:#fff; padding:2px 6px; border-radius:4px; cursor:pointer; box-shadow:0 0 0 1px #e3e8e8; }
+  .wv-edge button.wv-fails { color:#b03a2e; } .wv-edge button.wv-loop { color:var(--teal); }
+  .wv-edge button:hover { background:var(--fill); }
   #wave .wv-bar { display:block; visibility:hidden; flex:none; margin:4px 16px 0 0; }   /* its room kept: the drawer does not jump */
   #wave .wv-bar.on { visibility:visible; }
   #wave footer { display:flex; gap:16px; padding:6px 16px 8px; font-size:11.5px; color:var(--soft); border-top:1px solid #f1f4f4; }
@@ -3207,7 +3215,8 @@ function hideInspector() {
   closeRepair();
 }
 async function openRepair(n, t) {
-  closeWave();                         // the waveform is of one check
+  const waved = WAVE.open;             // the waveform is of one check: that of the new one, if it has one
+  closeWave(waved);
   const keys = keysOf(DATA.nodes);
   // the counterexample opens at the step where a term fails first, when it has one
   const w0 = n.badge && tagOf(n.badge.text) === t ? n.badge.why : ((n.checks || []).find(c => c.name === t) || {}).why;
@@ -3223,6 +3232,7 @@ async function openRepair(n, t) {
   await render();
   renderInspector();
   document.getElementById("insp").focus({ preventScroll: true });    // the arrow keys: the steps of its counterexample
+  if (waved && panel && panel.wave) panel.wave(); else if (waved) viewAboveWave(false);
   bringInto(n);
   if (r0 && backend() && statusOf(n, t) === "invalid") {   // found at once: the constants that may change already
     const s = stateOf(r0);
@@ -3832,6 +3842,7 @@ function openWave(tr, first, title, pick, reqName) {
       iconButton(GLYPH.fit, "Show all steps (0)", fitAll),
       kb,
       iconButton('<path d="M4 4l8 8M12 4l-8 8"/>', "Close (Esc)", closeWave)));
+  bar.addEventListener("click", () => { if (WAVE.open) box.focus({ preventScroll: true }); });   // the keys stay with the drawer
   const grip = h("div", { class: "wv-grip" });
   const scroll = h("div", { class: "wv-scroll" });
   const grid = h("div", { class: "wv-grid" });
@@ -3846,14 +3857,21 @@ function openWave(tr, first, title, pick, reqName) {
     h("span", { class: "wv-note" }, again + (tr.cut ? "The first " + n + " steps are kept. " : "")),
     h("span", { class: "wv-hint" }));
   const fade = h("div", { class: "wv-fade" });     // over the last row in view, when there are more rows under it
-  [["← →", "The step before or after"], ["Alt + ← →  or  [ ]", "The previous or next change of the selected row"],
-   ["Home  End", "The first or the last step"], fails ? ["F", "The step that fails"] : null,
-   loop !== null ? ["L", "The first step of the loop"] : null, ["↑ ↓", "The row above or below"],
-   ["Enter", "Draw the selected row of numbers as a line, or as values"], ["+  −  0", "Zoom in, zoom out, show all steps"],
-   ["Ctrl or ⌘ + wheel", "Zoom where the pointer is"], ["Drag, Shift + wheel", "Pan along the steps"], ["Esc", "Close"]]
-    .filter(Boolean).forEach(([k, d]) => keys.append(h("kbd", {}, k), h("span", {}, d)));
+  // the keys, as keycaps ("~" a word between them), those of a Mac on a Mac
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  keys.append(h("div", { class: "wv-keys-t" }, "Keys of the waveform"));
+  [[["←", "→"], "The step before or after"],
+   [[mac ? "⌥" : "Alt", "~+", "←", "→", "~or", "[", "]"], "The previous or next change of the selected row"],
+   [["Home", "End"], "The first or the last step"], fails ? [["F"], "The step that fails"] : null,
+   loop !== null ? [["L"], "The first step of the loop"] : null, [["↑", "↓"], "The row above or below"],
+   [["Enter"], "A row of numbers as a line, or as values again"], [["+", "−", "0"], "Zoom in, zoom out, show all steps"],
+   [[mac ? "⌘" : "Ctrl", "~+ wheel"], "Zoom where the pointer is"], [["~Drag, or", "Shift", "~+ wheel"], "Pan along the steps"],
+   [["Esc"], "Close"]]
+    .filter(Boolean).forEach(([ks, d]) => keys.append(
+      h("span", { class: "wv-caps" }, ks.map(k => k[0] === "~" ? h("span", {}, k.slice(1)) : h("kbd", {}, k))), h("span", {}, d)));
+  const edgeL = h("div", { class: "wv-edge" }), edgeR = h("div", { class: "wv-edge r" });   // the markers out of view
   box.innerHTML = "";
-  box.append(grip, bar, keys, scroll, sbar, foot, fade);
+  box.append(grip, bar, keys, scroll, sbar, foot, fade, edgeL, edgeR);
   box.style.display = "flex";
   WAVE.open = true;
   WAVE.setStep = k => { S.cur = k; draw(); show(k); };
@@ -4078,10 +4096,20 @@ function openWave(tr, first, title, pick, reqName) {
     foot.firstChild.textContent = (over ? (DATA.period ? "t " + label(a) + " to " + label(Math.min(b, n - 1)) : "steps " + a + " to " + Math.min(b, n - 1))
       + " of " + n + " in view" : n + " steps") + (below ? " · " + below + (below === 1 ? " more row" : " more rows") + " below" : "");
     fade.style.display = below ? "block" : "none";
+    edgeL.innerHTML = edgeR.innerHTML = "";
+    if (over) {                             // the step that fails or the loop out of view: a way to it at the edge
+      const go = (k, cls, word, key) => (k < a ? edgeL : edgeR).append(h("button", { class: cls, "data-tip": "Go there (" + key + ")",
+        onclick: () => { pick(k); box.focus({ preventScroll: true }); } }, k < a ? "◂ " + word : word + " ▸"));   // the keys stay
+      if (fails && (tr.at < a || tr.at > b)) go(tr.at, "wv-fails", "fails at " + label(tr.at), "F");
+      if (loop !== null && (loop > b || loop < a)) go(loop, "wv-loop", "↺ loop from " + label(loop), "L");   // its word out of view
+      edgeL.style.top = edgeR.style.top = (scroll.offsetTop + 4) + "px";
+      edgeL.style.left = (L + 6) + "px";
+    }
     if (below) fade.style.top = (scroll.offsetTop + scroll.clientHeight - 12) + "px";
     const hint = foot.lastChild;            // the ways to move, when the drawer has room for them
     hint.textContent = "Click a step · " + (over ? "drag to pan · " : "") + "Ctrl/⌘ + wheel to zoom · ? for the keys";
     hint.hidden = box.clientWidth < 800;
+    if (!hint.hidden && foot.offsetHeight > 34) hint.hidden = true;   // the note on one line first
     if (!over) return;
     const w = sbar.clientWidth, vis = avail() / (scroll.scrollWidth - L);
     thumb.style.width = Math.max(24, w * Math.min(1, vis)) + "px";
@@ -4219,7 +4247,7 @@ function viewAboveWave(on) {
   else if (!on && WAVE.fitted) { fit(); WAVE.fitted = false; }
   else place();
 }
-function closeWave() {
+function closeWave(keepView) {
   const box = document.getElementById("wave"), tip = document.getElementById("tip");
   if (!box || !WAVE.open) return;
   box.style.display = "none"; box.innerHTML = "";
@@ -4230,7 +4258,7 @@ function closeWave() {
   if (WAVE.resize) removeEventListener("resize", WAVE.resize);
   if (WAVE.ro) WAVE.ro.disconnect();
   if (WAVE.bro) WAVE.bro.disconnect();
-  viewAboveWave(false);
+  if (!keepView) viewAboveWave(false);
 }
 // The code of a C function in the details, folded: its title says whose it is.
 function codeSection(n) {

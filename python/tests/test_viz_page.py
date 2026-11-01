@@ -1017,6 +1017,9 @@ def test_the_waveform_keys_open_under_their_button(browser, tmp_path):
     assert keys["x"] + keys["width"] == pytest.approx(kb["x"] + kb["width"], abs=1)
     assert 0 <= keys["y"] and keys["y"] + keys["height"] <= 800
     assert "The previous or next change of the selected row" in page.inner_text("#wave .wv-keys")
+    assert page.inner_text("#wave .wv-keys-t") == "Keys of the waveform"
+    caps = page.locator("#wave .wv-keys kbd").all_inner_texts()        # keycaps, one key each
+    assert {"←", "→", "Home", "End", "F", "L", "Esc"} <= set(caps) and all(len(c) <= 5 for c in caps)
     page.keyboard.press("Escape")                     # Esc: the keys first, then the drawer
     assert not page.is_visible("#wave .wv-keys") and page.is_visible("#wave")
     assert errors == []
@@ -1025,6 +1028,52 @@ def test_the_waveform_keys_open_under_their_button(browser, tmp_path):
 LONG = {"vars": ["n"] + [f"v{i}" for i in range(39)], "more": 0, "cut": False, "loop": 150, "at": 120,
         "steps": [[k % 10] + [(k // (i + 1)) % 3 == 0 if i % 2 else round(k * 0.1 * i, 2) for i in range(39)]
                   for k in range(200)]}
+
+
+def test_the_markers_out_of_view_have_a_way_to_them(browser, tmp_path):
+    # zoomed in at the start: "fails at 120 ▸" and "↺ loop from 150 ▸" at the right edge; a click goes there
+    page, errors = wave_page(browser, tmp_path, LONG)
+    for _ in range(3):
+        page.keyboard.press("+")
+    page.keyboard.press("Home")
+    page.wait_for_timeout(100)
+    right = page.locator("#wave .wv-edge.r button")
+    assert right.all_inner_texts() == ["fails at 120 ▸", "↺ loop from 150 ▸"]
+    assert page.locator("#wave .wv-edge:not(.r) button").count() == 0
+    click(page, right.first)
+    page.wait_for_timeout(100)
+    assert "Step 120" in page.inner_text("#wave header")
+    assert "fails at 120" not in page.inner_text("#wave .wv-edge.r")
+    page.keyboard.press("End")
+    page.wait_for_timeout(100)
+    assert page.locator("#wave .wv-edge:not(.r) button").all_inner_texts() == ["◂ fails at 120", "◂ ↺ loop from 150"]
+    assert errors == []
+
+
+def test_another_problem_shows_its_waveform(browser, tmp_path):
+    # the drawer open on one check, a click on the red tag of another: the drawer shows that one
+    from test_viz import COUNT
+    (tmp_path / "count.ltl").write_text(COUNT + """CONTRACT Bound2:
+    output integer (0:9) variable n;
+    Assumptions:
+        true;
+    Guarantees:
+        G (n <= 2);
+""")
+    d = viz.from_spec(str(tmp_path / "count.ltl"), refines=[("Counter", "Bound"), ("Counter", "Bound2")])
+    for node, at in zip(d["nodes"], (2, 3)):
+        node["badge"].update(status="invalid", why={"failed": "guarantees", "violated": [0], "at": at, "trace": MIXED})
+    page, errors = open_page(browser, tmp_path, d)
+    click(page, page.locator('[data-check="n1|⪯"]'))
+    page.wait_for_selector("#repair table.rp-trace", timeout=5000)
+    click(page, page.locator(OPEN_WAVE))
+    page.wait_for_selector("#wave .wv-row", timeout=5000)
+    assert page.inner_text("#wave header b").endswith("Bound")
+    click(page, page.locator('[data-check="n2|⪯"]'))
+    page.wait_for_function("() => document.querySelector('#wave header b') && document.querySelector('#wave header b').textContent.endsWith('Bound2')", timeout=5000)
+    view = page.locator("#view").bounding_box()
+    assert view["y"] + view["height"] <= page.locator("#wave").bounding_box()["y"]
+    assert errors == []
 
 
 def test_the_waveform_zooms_and_moves(browser, tmp_path):
