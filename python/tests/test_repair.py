@@ -439,3 +439,14 @@ CONTRACT Room:
     h = CFunction(str(filed), "thermostat_state", result="u")
     assert "cnt" in stateless(h)
     assert is_implementation(h, c["Thermostat"].instantiate({"theta": 74})).status == "unknown"
+
+
+def test_the_cost_of_a_product_by_zero():
+    # the cost is evaluated with the operation asked only: 3 * (1 - wmax) at
+    # wmax = 1 is 0, not a division by 0
+    from fractions import Fraction
+    from chase_cps import ltl
+    from chase_cps.contract import substitute
+    from chase_cps.repair import _evaluate
+    cost = substitute(ltl.parse("(eps - 2) + 3 * (1 - wmax)"), {"eps": Fraction(5, 2), "wmax": 1})
+    assert _evaluate(cost) == Fraction(1, 2)

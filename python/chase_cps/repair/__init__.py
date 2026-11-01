@@ -266,7 +266,8 @@ def _evaluate(node):
     if isinstance(node, ltl.Unary) and node.op == "neg":
         return ltl.number(-Fraction(_evaluate(node.arg)))
     a, b = Fraction(_evaluate(node.left)), Fraction(_evaluate(node.right))
-    return ltl.number({"+": a + b, "-": a - b, "*": a * b, "/": a / b}[node.op])
+    ops = {"+": lambda: a + b, "-": lambda: a - b, "*": lambda: a * b, "/": lambda: a / b}
+    return ltl.number(ops[node.op]())      # only the one asked: a factor of 0 is not a division
 
 
 # the methods ------------------------------------------------------------------
