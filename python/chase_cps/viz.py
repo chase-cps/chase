@@ -2706,8 +2706,13 @@ function drawEdge(g, ed, ox, oy) {
       let a = pts[0], b = pts[1] || pts[0];
       for (let i = 0; i + 1 < pts.length; i++)
         if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
-      const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
-      if (Math.hypot(b.x - a.x, b.y - a.y) < 90) return;   // a short wire: the slash would sit on the labels of its ports
+      // the slash where no label of a port is: the middle, else a third, else none (the wire is thick)
+      const labels = [...document.querySelectorAll("#view text[data-var]")].map(t => t.getBBox());
+      const free = (x, y) => !labels.some(q => x + 8 > q.x && x - 8 < q.x + q.width && y + 10 > q.y && y - 10 < q.y + q.height);
+      const at = [0.5, 0.35, 0.65, 0.25, 0.75].map(t => [ox + a.x + (b.x - a.x) * t, oy + a.y + (b.y - a.y) * t])
+        .find(([x, y]) => free(x, y));
+      if (!at) return;
+      const [mx, my] = at;
       el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--wire)", "stroke-width": 1.3 }, g);
       if (!show.types) text(g, mx + 4, my - 6, "w", String(k.bus));
     } });
