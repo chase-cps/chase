@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.7.1 (2026-11-02)
+
+The diagrams after a review of every demo, and ports of two integer ranges.
+
+Added:
+
+- A variable shared as integers of two ranges (a port of 0..100 feeding one
+  of 0..9) is one integer of the union of the ranges. In each contract its
+  own range becomes a term: an assumption where it is an input, a guarantee
+  where it is an output. The checks then say whether the values fit (a
+  counterexample, the term of the range it breaks), and the wire is not
+  red. Other types that differ are still an error.
+
+Changed:
+
+- The panel and the waveform float over the diagram, of frosted glass: the
+  diagram goes on under them.
+- One corner for every box: tags, contracts, the toolbar, the panel, the
+  waveform.
+- The hole of a quotient is pale yellow, so that it shows when the diagram
+  is small.
+- A C function with no clause has the contract (⊤, ⊤): its tag is `M ⊨ C`,
+  not `safe`. The check is the same (no overflow, division by zero, or
+  access out of bounds).
+- The values of a step are written on the ports over the wires, and the
+  same value at the two ends of a short wire once.
+- The counterexample table scrolls by whole columns, its end too; long
+  lines of code wrap in the panel.
+- A quotient by a composition names its parts (`Pipeline / (Producer ⊗
+  Consumer)`); a range of one value is written `{0}`.
+- Export: the SVG has the style of each element written on it, so other
+  programs (Inkscape, Illustrator, slides) draw it as the page does, with
+  its symbols; it has no background. The PNG and the PDF are on white, and
+  the PDF is one page the size of the diagram.
+
+Fixed:
+
+- The PDF of a diagram was blank (the rules of the page for printing hid
+  it).
+- The wires from environments to what they drive could be drawn far above
+  the boxes (Deadline): the wires of the top level are placed with their
+  row.
+
 ## 0.7.0 (2026-11-02)
 
 The waveform of a counterexample, and the panel of a diagram after a try
