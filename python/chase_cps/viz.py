@@ -3562,7 +3562,7 @@ function fillPanel() {
     h("span", { class: "q-tag" }, tagSvg(t, st)), h("span", { class: "t" }, richOf(checkTitle(n, t)))));
   const unsure = st === "unknown" ? ((n.badge && tagOf(n.badge.text) === t ? n.badge.reason
                                      : ((n.checks || []).find(c => c.name === t) || {}).reason) || "") : "";
-  const says = st === "valid" ? "Holds." : st === "invalid" ? null
+  const says = st === "valid" ? holds(n, t) : st === "invalid" ? null
              : st === "unknown" ? "Not decided" + (unsure ? ": " + reasonOf(unsure).text + (reasonOf(unsure).line ? ", line " + reasonOf(unsure).line : "") : ".")
              : n.clash ? "The parts do not agree: " + Object.values(n.clash).join("; ")
                          + ". Their composition is not defined, so this cannot be checked until that is fixed."
@@ -3618,6 +3618,23 @@ function fillPanel() {
   if (!how) box.appendChild(h("div", { class: "rp-sec" },
     h("div", { class: "rp-note", style: "margin-top:0", title: "This page cannot run repairs: open the file in VS Code, or draw it with chase-cps view FILE --serve" }, "Repairs run in VS Code, or:"),
     h("div", { class: "rp-cmd" }, words(commandOf(r, s)))));
+}
+// A check that holds: what it has shown, in a sentence.
+function holds(n, t) {
+  const bare = n.model && n.model.source === "c" && !((n.contract || {}).A || []).length && !((n.contract || {}).G || []).length;
+  const said = {
+    "⪯": "Holds: every environment this contract accepts, the parts accept too, and there every behavior of the parts meets its guarantees.",
+    "M ⊨ C": bare ? "Holds: no call within the types overflows, divides by zero, or goes out of bounds."
+                  : "Holds: in an environment that meets the assumptions, every run of the model meets the guarantees.",
+    "E ⊨ A": "Holds: every run of the environment meets the assumptions.",
+    "A": "Holds: some environment meets the assumptions.",
+    "G": "Holds: some behavior meets the guarantees or breaks the assumptions (A → G).",
+    "A∧G": "Holds: the assumptions and the guarantees can hold together.",
+    "R": "Holds: a component can meet the guarantees in every environment that meets the assumptions (GR(1)); slugs can build it.",
+    "WS": "Holds: the component cannot meet the contract only by making the environment break the assumptions.",
+    "¬V": "Holds: each liveness guarantee asks something of the component.",
+    "receptive": "Holds: in every state, the model takes every input the assumptions allow." }[t];
+  return said || "Holds.";
 }
 // Why the check fails: in one line, then the counterexample (and its steps on the diagram).
 function whySection(n, t, st) {
