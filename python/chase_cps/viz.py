@@ -2653,7 +2653,7 @@ function drawNode(g, e, ox, oy) {
     else text(row, x + PAD, ty, "s", s); });
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
-    el("rect", { x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
+    el("rect", { class: "port", x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
     (p.labels || []).forEach(l => { const t = text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text);
       t.setAttribute("data-var", String(p.id).split(":").pop()); t.setAttribute("data-pbox", n.id);
       if (l.x < 0) t.setAttribute("data-side", "left"); }); });
@@ -3005,6 +3005,9 @@ async function render() {
   const g = svgIn(document.getElementById("view"), out.width, out.height);
   (out.children || []).forEach(c => drawNode(g, c, 0, 0));
   (out.edges || []).forEach(ed => drawEdge(g, ed, 0, 0));
+  // the ports over the wires: an arrow ends at its port, not on it (their places are absolute)
+  const ports = el("g", { class: "ports" }, g);
+  g.querySelectorAll("rect.port").forEach(r => ports.appendChild(r));
   select(selectedLine, false, selectedAt);
   afterRender();
 }
