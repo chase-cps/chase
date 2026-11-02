@@ -73,7 +73,7 @@ def _type(t) -> Optional[dict]:
         width, signed = w
         return {"label": ("s" if signed else "") + f"[{width - 1}:0]", "bus": width}
     if isinstance(t, tuple):
-        return {"label": _C_RANGES.get(tuple(t)) or f"{t[0]}..{t[1]}"}
+        return {"label": _C_RANGES.get(tuple(t)) or (f"{{{t[0]}}}" if t[0] == t[1] else f"{t[0]}..{t[1]}")}   # one value: {0}
     if t == "real":
         return {"label": "real"}
     return None
@@ -383,8 +383,10 @@ class _Scene:
             dividend, divisor = operands
             known = self.contract(divisor)
             known = known["children"] if known.get("op") == "composition" else [known]
+            # divided by a composition: its parts, not the name it was given in the script
+            by = known[0]["title"] if len(known) == 1 else "(" + " ⊗ ".join(k["title"] for k in known) + ")"
             hole = self.box(c, types=_types(c), kind="hole", title=c.name,
-                            note=f"{dividend.name} / {divisor.name}",
+                            note=f"{dividend.name} / {by}",
                             contract=self.terms(c), inputs=sorted(c.inputs),
                             outputs=sorted(c.outputs))
             node = self.group(dividend, operation, known + [hole], box_of=c)
@@ -611,7 +613,7 @@ def _mark_clash(edges: list, clash: dict) -> list:
 
 def _type_text(t) -> str:
     if isinstance(t, tuple):
-        return f"{t[0]}..{t[1]}"
+        return f"{{{t[0]}}}" if t[0] == t[1] else f"{t[0]}..{t[1]}"
     return str(t)
 
 
@@ -1978,7 +1980,8 @@ _PAGE = r"""<!doctype html>
     #wave .wv-back { display:flex; }
   }
   [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
-  .pv-val { fill:#2f6fb5 !important; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }   /* read over a wire */
+  .pv-plate { fill:var(--ground); fill-opacity:.92; pointer-events:none; }
+  .pv-val, .pv-up { fill:#2f6fb5 !important; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }   /* read over a wire */
   .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
   .rp-step input { flex:1; accent-color:var(--teal); }
   ul.rp-why { margin:4px 0 0; padding-left:16px; } ul.rp-why li { margin:2px 0; }
@@ -2116,7 +2119,8 @@ _PAGE = r"""<!doctype html>
   .chev { display:inline-flex; color:var(--soft); transition:transform .12s; }
   details[open] > summary .chev { transform:rotate(90deg); }
   details.rp-code[open] > summary { margin-bottom:6px; }
-  details.rp-code pre.code { margin-bottom:4px; }
+  details.rp-code pre.code { margin-bottom:4px; white-space:pre-wrap; overflow-wrap:anywhere; }   /* long lines wrap in the panel, */
+  details.rp-code pre.code span.l { padding-left:calc(2.4em + 12px); text-indent:calc(-2.4em - 12px); }   /* under their code */
   pre.code span.l { display:block; } pre.code span.l.hit { background:#fbeceb; }
   pre.code span.n { display:inline-block; width:2.4em; color:var(--faint); text-align:right; margin-right:12px;
                     user-select:none; -webkit-user-select:none; }
@@ -2698,6 +2702,7 @@ function drawEdge(g, ed, ox, oy) {
       for (let i = 0; i + 1 < pts.length; i++)
         if (Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) > Math.hypot(b.x - a.x, b.y - a.y)) { a = pts[i]; b = pts[i + 1]; }
       const mx = ox + (a.x + b.x) / 2, my = oy + (a.y + b.y) / 2;
+      if (Math.hypot(b.x - a.x, b.y - a.y) < 90) return;   // a short wire: the slash would sit on the labels of its ports
       el("line", { x1: mx - 4, y1: my + 5, x2: mx + 4, y2: my - 5, stroke: "var(--wire)", "stroke-width": 1.3 }, g);
       if (!show.types) text(g, mx + 4, my - 6, "w", String(k.bus));
     } });
@@ -3728,9 +3733,9 @@ function traceTable(tr, first, req, step, onPick, io) {
   const wrap = h("div", { class: "rp-tracewrap" }, t);
   // the table scrolls under its first column; above it, a page back or on
   // a column under the names is never cut in two: the scroll stops at the edges of the columns
-  const snap = x => { const ks = t.querySelectorAll("th[data-k]"), n = ks.length - 1;    // the width of a column, exact
+  const snap = (x, to = Math.round) => { const ks = t.querySelectorAll("th[data-k]"), n = ks.length - 1;    // the width of a column, exact
                       const w = n > 0 ? (ks[n].getBoundingClientRect().left - ks[0].getBoundingClientRect().left) / n : 0;
-                      return w > 0 ? Math.round(x / w) * w : x; };
+                      return w > 0 ? to(x / w) * w : x; };
   const turn = d => { const v = t.querySelector("th, td.v"), c = t.querySelector('th[data-k="0"]');
                       const w = c ? c.offsetWidth : 40, room = wrap.clientWidth - (v ? v.offsetWidth : 0);
                       wrap.scrollLeft = snap(wrap.scrollLeft + d * Math.max(1, Math.floor(room / w)) * w); };
@@ -3753,7 +3758,14 @@ function traceTable(tr, first, req, step, onPick, io) {
     addEventListener("mousemove", move); addEventListener("mouseup", up);
   });
   const last = tr.steps.length - 1;
+  // the end of the scroll on the edge of a column too: a margin after the table, less than a column
+  const align = () => { const ks = t.querySelectorAll("th[data-k]"), n = ks.length - 1;
+                        const w = n > 0 ? (ks[n].getBoundingClientRect().left - ks[0].getBoundingClientRect().left) / n : 0;
+                        const end = wrap.scrollWidth - wrap.clientWidth - (parseFloat(t.style.marginRight) || 0);
+                        const m = w > 0 && end > 1 ? (w - end % w) % w : 0;
+                        if (Math.abs(m - (parseFloat(t.style.marginRight) || 0)) > 0.5) t.style.marginRight = m + "px"; };
   const where = () => {
+    align();
     const over = wrap.scrollWidth > wrap.clientWidth + 1;
     top.classList.toggle("on", over);
     bar.classList.toggle("on", over);
@@ -3793,8 +3805,8 @@ function traceTable(tr, first, req, step, onPick, io) {
       const names = v ? v.offsetWidth : 0, left = th.offsetLeft - names, right = th.offsetLeft + th.offsetWidth;
       const far = left < wrap.scrollLeft - th.offsetWidth || right > wrap.scrollLeft + wrap.clientWidth + th.offsetWidth;
       if (far) wrap.scrollLeft = snap(left - (wrap.clientWidth - names - th.offsetWidth) / 2);
-      else if (left < wrap.scrollLeft) wrap.scrollLeft = left;
-      else if (right > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = right - wrap.clientWidth;
+      else if (left < wrap.scrollLeft) wrap.scrollLeft = snap(left, Math.floor);
+      else if (right > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = snap(right - wrap.clientWidth, Math.ceil);
     }
     where();
   };
@@ -4773,11 +4785,11 @@ function replay(n, tr, k) {
     if (x.getAttribute("data-side") === "left") { x.setAttribute("data-ox", x.getAttribute("x"));
       x.setAttribute("x", +x.getAttribute("x") + w0 - x.getComputedTextLength()); }
   });
-  // the two ends of a short wire say the same value: one says it
+  // the two ends of a short wire say the same value: one says it (the two on one line, or a little apart)
   const shown = [...document.querySelectorAll("#view text.pv-val")].map(x => [x, x.getBoundingClientRect()]);
   shown.forEach(([x, r], i) => {
     if (shown.slice(0, i).some(([y, q]) => !y.hasAttribute("data-hid") && y.textContent === x.textContent
-        && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
+        && r.left < q.right + 40 && q.left < r.right + 40 && r.top < q.bottom && q.top < r.bottom)) {
       x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
   });
   // a variable on a box and on the box around it, with the same value, the two near: the box around
@@ -4793,8 +4805,21 @@ function replay(n, tr, k) {
         && near(q, x.getBoundingClientRect()) && (o => o && around(o, r))(rectOf(y.getAttribute("data-pbox"))))) {
       x.setAttribute("data-hid", ""); x.style.visibility = "hidden"; }
   });
+  // each value on a plate of the ground, over the wires (drawn after the labels): a copy on the top
+  // layer, where the label is; the label itself hidden
+  const top = el("g", { class: "pv-top" }, camera), base = camera.getCTM().inverse();
+  document.querySelectorAll("#view text.pv-val:not([data-hid])").forEach(x => {
+    const b = x.getBBox(), m = base.multiply(x.getCTM());
+    const g = el("g", { transform: `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})` }, top);
+    el("rect", { class: "pv-plate", x: b.x - 2, y: b.y, width: b.width + 4, height: b.height, rx: 3 }, g);
+    const c = x.cloneNode(true); c.removeAttribute("data-var"); c.removeAttribute("data-orig");
+    c.classList.replace("pv-val", "pv-up"); g.appendChild(c);
+    x.style.visibility = "hidden"; x.setAttribute("data-up", "");
+  });
 }
 function clearReplay() {
+  document.querySelectorAll("#view g.pv-top").forEach(x => x.remove());
+  document.querySelectorAll("#view text[data-up]").forEach(x => { x.removeAttribute("data-up"); if (!x.hasAttribute("data-hid")) x.style.visibility = ""; });
   document.querySelectorAll("#view text[data-orig]").forEach(x => { x.textContent = x.getAttribute("data-orig");
     x.removeAttribute("data-orig"); x.classList.remove("pv-val");
     if (x.hasAttribute("data-hid")) { x.removeAttribute("data-hid"); x.style.visibility = ""; }
