@@ -1441,6 +1441,29 @@ def test_the_table_pages_through_every_step(browser, tmp_path):
     assert errors == []
 
 
+def test_long_names_keep_the_boxes_narrow(browser, tmp_path):
+    # names as a flow names parts (the path in the design, then words): the title keeps the end of the
+    # path, the note is broken at its ⊗ into three lines at most; the whole of each in its tip
+    from chase_cps import Component, Contract, System
+    long = lambda leaf: f"top.link_sdr_downstream.downstream.baf.{leaf} (4 of 5 properties read) [certified]"
+    parts = [Component(long(f"bapg_{i}"), Contract.from_strings(name=f"P{i}", outputs=[f"y{i}"], guarantees=[f"G y{i}"]))
+             for i in range(5)]
+    top = Contract.from_strings(name="Top", outputs=[f"y{i}" for i in range(5)])
+    d = viz.diagram(System("Top", parts, contract=top))
+    page, errors = open_page(browser, tmp_path, d)
+    facts = page.evaluate("""() => [...document.querySelectorAll('#view [data-box]')].map(b => {
+        const n = byId[b.getAttribute('data-box')];
+        return [n.title, b.querySelector('text.h').textContent, b.querySelector('rect').getBBox().width,
+                [...b.querySelectorAll(':scope > g > text.s')].map(t => t.textContent)]; })""")
+    for title, shown, width, notes in facts:
+        assert width < 760, (title, width)
+        if len(title) > 60:
+            assert shown.startswith("…") and "bapg_" + title.split("bapg_")[1][0] in shown
+    outer = next(f for f in facts if f[0] == "Top")
+    assert 1 < len(outer[3]) <= 3 and outer[3][-1].startswith("⋯")
+    assert errors == []
+
+
 @pytest.mark.skipif(not os.path.isdir(os.path.join(DEMOS, "Deadline")), reason="the demos are not checked out")
 def test_the_wires_of_the_top_level_start_at_their_ports(browser, tmp_path, monkeypatch):
     # the wires of the environments of Deadline start at the port of their source and end at the arbiter,

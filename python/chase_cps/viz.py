@@ -2310,7 +2310,8 @@ function lines(n) {
       left -= Math.min(keep, shown.length);
     });
   };
-  if (n.note) out.push(["s", "", n.note]);
+  if (n.note) { const ls = noteLines(n.note), cut = ls.length > 1 || ls[0] !== n.note;
+                out.push(...ls.map(l => ["s", "", l, null, null, null, cut ? n.note : null])); }
   if (n.contract && open.has("c:" + n.id)) {
     if (n.composed && open.has("k:" + n.id)) out.push(["s", "", "Contract " + n.contract.name]);
     part(n.contract, "contract");
@@ -2320,6 +2321,35 @@ function lines(n) {
     part(n.composed, "composed");
   }
   return out;
+}
+// Long names keep a box narrow: a title cut in its middle, a note broken at its ⊗, · and /, three
+// lines at most; the whole of each in its tip.
+const TITLE_MAX = 340, NOTE_MAX = 440, NOTE_LINES = 3;
+// A hierarchical name keeps its end (the part of the part: "…baf.bapg_rd"); words after it keep their
+// start ("(4 of 5 properties…")
+const keepEnd = (t, font, max) => { if (textWidth(t, font) <= max) return t;
+  let i = 1; while (i < t.length - 1 && textWidth("…" + t.slice(i), font) > max) i++; return "…" + t.slice(i); };
+const keepStart = (t, font, max) => { if (textWidth(t, font) <= max) return t;
+  let i = t.length - 1; while (i > 1 && textWidth(t.slice(0, i) + "…", font) > max) i--; return t.slice(0, i) + "…"; };
+function clip(t, font, max) {
+  if (textWidth(t, font) <= max) return t;
+  const [, lead, name, words] = t.match(/^((?: ⊗ | · | \/ |⊗ |· |\/ )?)(\S*)(.*)$/);
+  const room = max - textWidth(lead, font);
+  const own = textWidth(name, font) > room * 0.6 && words ? room * 0.6 : room;
+  const head = keepEnd(name, font, own);
+  return lead + head + (words ? keepStart(words, font, room - textWidth(head, font)) : "");
+}
+const shownTitle = n => clip(n.title, FONT_H, TITLE_MAX);
+function noteLines(note) {
+  const out = [];
+  note.split(/(?= ⊗ | · | \/ )/).forEach(tok => {
+    const last = out.length ? out[out.length - 1] : null;
+    if (last !== null && textWidth(last + tok, FONT_S) <= NOTE_MAX) out[out.length - 1] = last + tok;
+    else out.push(clip(last === null ? tok : tok.trimStart(), FONT_S, NOTE_MAX));
+  });
+  if (out.length <= NOTE_LINES) return out;
+  const more = out.length - NOTE_LINES + 1;
+  return out.slice(0, NOTE_LINES - 1).concat(["⋯ " + more + " more " + (more > 1 ? "lines" : "line")]);
 }
 const lineWidth = ([k, tag, t]) => (k === "f" ? 20 : 0) + textWidth(t, k === "f" ? FONT_F : FONT_S);
 function showTerms(n, c) {     // the whole contract, in the panel, with the core in focus on red
@@ -2398,7 +2428,7 @@ const MODELS = {};       // the layout of each open model drawn in its box
 const pendingTag = n => busy && show.checks && n.contract && !checks(n).some(c => c.name === "A∧G" || c.name === "A");
 function size(n) {
   const ls = lines(n);
-  const top = textWidth(n.title, FONT_H) + icons(n).length * (ICON + 4) + 14
+  const top = textWidth(shownTitle(n), FONT_H) + icons(n).length * (ICON + 4) + 14
             + checks(n).reduce((w, c) => w + tagWidth(c.name) + 4, checks(n).length ? 6 : 0)
             + (n.badge && show.checks ? tagWidth(n.badge.text) + 18 : 0) + (inside(n) ? ICON + 6 : 0)
             + (pendingTag(n) ? tagWidth("A∧G") + 4 : 0);      // the A ∧ G being checked, for a while
@@ -2411,8 +2441,9 @@ function size(n) {
 }
 
 // The label of a port: its name, its type, both, or nothing, as the two buttons say.
+const PORT_MAX = 230;
 const portText = (n, v) => { const t = show.types && n.types && n.types[v];
-  return [show.names ? v : null, t ? t.label : null].filter(x => x).join(" "); };
+  return [show.names ? keepEnd(v, FONT_W, PORT_MAX) : null, t ? t.label : null].filter(x => x).join(" "); };
 function ports(n) {
   if (n.bare) return [];
   const ps = [], lab = v => portText(n, v) ? [{ text: portText(n, v), width: textWidth(portText(n, v), FONT_W), height: 11 }] : [];
@@ -2570,17 +2601,19 @@ function drawNode(g, e, ox, oy) {
                "stroke-width": st.width, "stroke-dasharray": st.dash }, box);
   if (n.kind === "component" || n.kind === "environment") el("line", { x1: x, y1: y + HEAD - 2, x2: x + e.width, y2: y + HEAD - 2,
                                            stroke: "#e3e8e8", "stroke-width": 1 }, box);
-  const name = text(box, x + PAD, y + 18, "h", n.title);
+  const title = shownTitle(n), name = text(box, x + PAD, y + 18, "h", title);
   // drawn at the width it was measured at: small on the screen, the glyphs of a
   // browser round up and the name would run into the icons after it
-  name.setAttribute("textLength", textWidth(n.title, FONT_H)); name.setAttribute("lengthAdjust", "spacingAndGlyphs");
+  name.setAttribute("textLength", textWidth(title, FONT_H)); name.setAttribute("lengthAdjust", "spacingAndGlyphs");
+  const whole = title !== n.title ? n.title + " · " : "";
   if (n.contract) {
     const flip = toggle("c:" + n.id);
     name.onclick = e => { flip(); if (e.detail === 2) reveal(n.source && n.source.line); };   // a double click opens and closes: as it was
-    tip(name, "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
+    tip(name, whole + "Click: open or close the contract" + (n.source && typeof acquireVsCodeApi === "function"
                                                      ? " · double click: its text in the editor" : ""));
   }
-  let ix = x + PAD + textWidth(n.title, FONT_H) + 10;
+  if (!n.contract && whole) tip(name, n.title);
+  let ix = x + PAD + textWidth(title, FONT_H) + 10;
   icons(n).forEach(([kind, key, title]) => {
     const on = key && open.has(key), c = icon(box, kind, ix, y + 6, on, title, !key);
     if (key) c.onclick = (kind === "model" || kind === "synth") && !on && !inlineModel(n) ? () => showModel(n) : toggle(key);
@@ -2626,7 +2659,7 @@ function drawNode(g, e, ox, oy) {
     tip(b, plainOf(checkTitle(n, tagOf(n.badge.text))) + ". Click for the details"
            + ((n.repair || {})[tagOf(n.badge.text)] ? " and the repairs" : "") + ".");
     b.onclick = () => openRepair(n, tagOf(n.badge.text)); }
-  sz.ls.forEach(([k, label, s, core, at, term], i) => {
+  sz.ls.forEach(([k, label, s, core, at, term, whole], i) => {
     const frame = r => el("rect", { class: "hl", x: x + 4, y: ty - 12, width: e.width - 8, height: LINE, rx: 3,
                                      fill: "none", stroke: "var(--teal)", "stroke-width": 1.5 }, r);
     const ty = y + HEAD + 12 + i * LINE, row = el("g", term ? { "data-term": term } : {}, box);
@@ -2650,12 +2683,14 @@ function drawNode(g, e, ox, oy) {
       t.setAttribute("style", "fill:var(--teal);cursor:pointer;text-decoration:underline");
       tip(t, "the whole contract");
       t.onclick = () => showTerms(n, core); }
-    else text(row, x + PAD, ty, "s", s); });
+    else { const t = text(row, x + PAD, ty, "s", s); if (whole) tip(t, whole); } });
   if (sz.m) drawModel(box, sz.m, x + PAD, y + HEAD + sz.ls.length * LINE + (sz.ls.length ? 8 : 0) + 4);
   (e.ports || []).forEach(p => {
     el("rect", { class: "port", x: x + p.x, y: y + p.y, width: p.width, height: p.height, fill: "var(--teal)" }, g);
     (p.labels || []).forEach(l => { const t = text(g, x + p.x + l.x, y + p.y + l.y + 9, "w", l.text);
-      t.setAttribute("data-var", String(p.id).split(":").pop()); t.setAttribute("data-pbox", n.id);
+      const v = String(p.id).split(":").pop();
+      t.setAttribute("data-var", v); t.setAttribute("data-pbox", n.id);
+      if (l.text.startsWith("…")) tip(t, v);
       if (l.x < 0) t.setAttribute("data-side", "left"); }); });
   (e.children || []).forEach(c => drawNode(g, c, x, y));
   (e.edges || []).forEach(ed => drawEdge(g, ed, x, y));
@@ -4829,7 +4864,7 @@ function replay(n, tr, k) {
     // a label left of its port keeps its right end at the port (the value may be longer than the type)
     const w0 = x.getComputedTextLength();
     x.setAttribute("data-orig", x.textContent);
-    x.textContent = v + " = " + fmt(at[v]);
+    x.textContent = keepEnd(v, FONT_W, PORT_MAX) + " = " + fmt(at[v]);
     x.classList.add("pv-val");
     if (typeof at[v] === "number" && fmt(at[v]) !== String(at[v])) { x.setAttribute("data-otip", x.getAttribute("data-tip") || "");
       x.setAttribute("data-tip", v + " = " + at[v]); }     // the whole value in its tip
@@ -4952,12 +4987,21 @@ function exportAs(kind) {
     // editor, which cannot print, the editor writes it
     if (typeof acquireVsCodeApi === "function")
       return deliver(name + ".pdf", "application/pdf", JSON.stringify({ svg: e.text, w: e.w, h: e.h }));
+    // a page of its own, the size of the diagram, printed there: the whole diagram on one page, also from
+    // a page inside a frame (the frame would print only what shows of it) or in a browser that keeps its
+    // own paper size (the drawing is fitted to the page); else the print of this page
+    const page = "<!doctype html><html><head><meta charset='utf-8'><title>" + name + "</title><style>"
+      + `@page { size: ${e.w}px ${e.h}px; margin: 0; } html, body { margin: 0; height: 100%; }`
+      + " svg { display: block; width: 100vw; height: 100vh; }</style></head><body>"
+      + e.text.replace(/^<\?xml[^>]*>\s*/, "") + "<script>onload = () => setTimeout(print, 100);<\/script></body></html>";
+    const w = window.open(URL.createObjectURL(new Blob([page], { type: "text/html" })));
+    if (w) return;
     let p = document.getElementById("print");
     if (!p) { p = document.createElement("div"); p.id = "print"; p.style.display = "none"; document.body.appendChild(p); }
     p.innerHTML = e.text.replace(/^<\?xml[^>]*>\s*/, "");
     let size = document.getElementById("print-size");       // one page, the size of the diagram
     if (!size) { size = document.createElement("style"); size.id = "print-size"; document.head.appendChild(size); }
-    size.textContent = `@media print { @page { size: ${e.w}px ${e.h}px; margin: 0; } #print svg { width: ${e.w}px; height: ${e.h}px; } }`;
+    size.textContent = `@media print { @page { size: ${e.w}px ${e.h}px; margin: 0; } #print svg { width: 100vw; height: 100vh; } }`;
     window.print();
   };
   img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(e.text);
