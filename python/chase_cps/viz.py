@@ -1985,7 +1985,7 @@ _PAGE = r"""<!doctype html>
     #wave .wv-back { display:flex; }
   }
   [data-box].pick > rect:first-of-type { stroke:#2f6fb5; stroke-width:3px; }
-  .pv-plate { fill:var(--ground); fill-opacity:.92; pointer-events:none; }
+  .pv-plate { pointer-events:none; }
   .pv-val, .pv-up { fill:#2f6fb5 !important; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }   /* read over a wire */
   .rp-step { display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--soft); }
   .rp-step input { flex:1; accent-color:var(--teal); }
@@ -2986,8 +2986,11 @@ async function render() {
     rows.forEach((c, r) => { dx[r] = left - c.x; dy[r] = y - c.y; c.x = left; c.y = y; y += c.height + 40; });
     (out.edges || []).forEach(ed => {          // a wire from an environment moves with its row
       const r = of[ed.sources[0].split(":")[0]];
+      // given from the corner of its row (elkjs: the container of the wire), else from the root
+      const inRow = rows.indexOf(rows.find(c => c.id === ed.container));
+      const [ox, oy] = inRow >= 0 ? [rows[inRow].x, rows[inRow].y] : [dx[r], dy[r]];
       (ed.sections || []).forEach(sec => [sec.startPoint, sec.endPoint, ...(sec.bendPoints || [])]
-        .forEach(p => { p.x += dx[r]; p.y += dy[r]; }));
+        .forEach(p => { p.x += ox; p.y += oy; }));
     });
     out.height = y - 40;
   }
@@ -3229,27 +3232,45 @@ function exportMenu() {
   const m = document.getElementById("export");
   m.style.display = m.style.display === "flex" ? "none" : "flex";
 }
-function exported() {
+// The diagram as a file: each element with its computed style written on it as attributes, not the
+// styles of the page (other programs read little CSS, and the rules for printing the page would hide
+// it); what is hidden left out; no ground (the PNG and the PDF are on white).
+const PAINT = ["fill", "fill-opacity", "stroke", "stroke-width", "stroke-opacity", "stroke-dasharray",
+               "stroke-linecap", "stroke-linejoin", "opacity", "paint-order"];
+const FONT = ["font-family", "font-size", "font-weight", "font-style", "text-anchor", "letter-spacing"];
+function exported(ground) {
   const src = document.querySelector("#view > svg");
   if (!src || !camera) return null;
   const box = camera.getBBox(), pad = 16, w = Math.ceil(box.width + 2 * pad), h = Math.ceil(box.height + 2 * pad);
+  const sel = [...src.querySelectorAll(".sel")];          // the box of the cursor, and a flash: not in the file
+  sel.forEach(e => e.classList.remove("sel"));
   const svg = src.cloneNode(true);
+  sel.forEach(e => e.classList.add("sel"));
+  svg.querySelectorAll(".flash").forEach(e => e.remove());
+  const from = [...src.querySelectorAll("*")].filter(e => !e.classList.contains("flash")), to = [...svg.querySelectorAll("*")];
+  const gone = [];
+  from.forEach((e, i) => {
+    const c = getComputedStyle(e), x = to[i];
+    if (c.display === "none" || c.visibility === "hidden") { gone.push(x); return; }
+    if (e.closest("defs") && e.tagName !== "pattern" && e.parentNode.tagName !== "pattern" && e.parentNode.tagName !== "marker") return;
+    for (const k of PAINT) { const v = c.getPropertyValue(k); if (v) x.setAttribute(k, v.replace(/url\("?(#[^")]+)"?\)/, "url($1)")); }
+    if (e.tagName === "text" || e.tagName === "tspan") for (const k of FONT) { const v = c.getPropertyValue(k); if (v) x.setAttribute(k, v); }
+    x.removeAttribute("class"); x.removeAttribute("style");
+  });
+  gone.forEach(x => x.remove());
   svg.setAttribute("xmlns", NS);
   svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.removeAttribute("class"); svg.removeAttribute("style");
   [...svg.children].filter(c => c.tagName === "rect").forEach(c => c.remove());   // the dots
-  svg.querySelectorAll(".sel").forEach(e => e.classList.remove("sel"));            // the box of the cursor
   const g = [...svg.children].find(c => c.tagName === "g");
   g.setAttribute("transform", `translate(${pad - box.x},${pad - box.y})`);
-  const ground = document.createElementNS(NS, "rect");
-  ground.setAttribute("width", w); ground.setAttribute("height", h); ground.setAttribute("fill", "#fff");
-  svg.insertBefore(ground, g);
-  const style = document.createElementNS(NS, "style");
-  style.textContent = [...document.querySelectorAll("style")].map(x => x.textContent).join("\n");
-  svg.insertBefore(style, svg.firstChild);
+  if (ground) {
+    const r = document.createElementNS(NS, "rect");
+    r.setAttribute("width", w); r.setAttribute("height", h); r.setAttribute("fill", "#fff");
+    svg.insertBefore(r, g);
+  }
   svg.querySelectorAll("[data-tip]").forEach(e => e.removeAttribute("data-tip"));
-  const root = getComputedStyle(document.documentElement);
-  const text = new XMLSerializer().serializeToString(svg)
-    .replace(/var\((--[\w-]+)\)/g, (_, v) => root.getPropertyValue(v).trim() || "#000");
+  const text = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg);
   return { text, w, h };
 }
 let vscodeApi = null;
@@ -4812,11 +4833,20 @@ function replay(n, tr, k) {
   });
   // each value on a plate of the ground, over the wires (drawn after the labels): a copy on the top
   // layer, where the label is; the label itself hidden
+  // The plate has the color of what is under it: the innermost box there (its fill, the pale yellow of
+  // a hole), else the ground
+  const frames = [...document.querySelectorAll("#view [data-box] > rect:first-of-type")]
+    .map(r => [r, r.getBoundingClientRect()]).sort((a, b) => a[1].width * a[1].height - b[1].width * b[1].height);
+  const under = x => { const q = x.getBoundingClientRect(), cx = (q.left + q.right) / 2, cy = (q.top + q.bottom) / 2;
+    const hit = frames.find(([, r]) => cx > r.left && cx < r.right && cy > r.top && cy < r.bottom);
+    if (!hit) return "var(--ground)";
+    const f = hit[0].getAttribute("fill") || "";
+    return f.startsWith("url(") ? "var(--hole)" : f; };
   const top = el("g", { class: "pv-top" }, camera), base = camera.getCTM().inverse();
   document.querySelectorAll("#view text.pv-val:not([data-hid])").forEach(x => {
     const b = x.getBBox(), m = base.multiply(x.getCTM());
     const g = el("g", { transform: `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})` }, top);
-    el("rect", { class: "pv-plate", x: b.x - 2, y: b.y, width: b.width + 4, height: b.height, rx: 3 }, g);
+    el("rect", { class: "pv-plate", x: b.x - 2, y: b.y, width: b.width + 4, height: b.height, rx: 3, fill: under(x) }, g);
     const c = x.cloneNode(true); c.removeAttribute("data-var"); c.removeAttribute("data-orig");
     c.classList.replace("pv-val", "pv-up"); g.appendChild(c);
     x.style.visibility = "hidden"; x.setAttribute("data-up", "");
@@ -4883,7 +4913,7 @@ function deliver(name, mime, data) {
 }
 function exportAs(kind) {
   document.getElementById("export").style.display = "none";
-  const e = exported();
+  const e = exported(kind !== "svg");
   if (!e) return;
   const name = (DATA.title || "diagram").replace(/\.[^.]*$/, "").replace(/[^\w.-]+/g, "_");
   if (kind === "svg") return deliver(name + ".svg", "image/svg+xml", e.text);
@@ -4899,7 +4929,10 @@ function exportAs(kind) {
       return deliver(name + ".pdf", "application/pdf", JSON.stringify({ svg: e.text, w: e.w, h: e.h }));
     let p = document.getElementById("print");
     if (!p) { p = document.createElement("div"); p.id = "print"; p.style.display = "none"; document.body.appendChild(p); }
-    p.innerHTML = e.text;
+    p.innerHTML = e.text.replace(/^<\?xml[^>]*>\s*/, "");
+    let size = document.getElementById("print-size");       // one page, the size of the diagram
+    if (!size) { size = document.createElement("style"); size.id = "print-size"; document.head.appendChild(size); }
+    size.textContent = `@media print { @page { size: ${e.w}px ${e.h}px; margin: 0; } #print svg { width: ${e.w}px; height: ${e.h}px; } }`;
     window.print();
   };
   img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(e.text);

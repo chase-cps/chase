@@ -197,6 +197,13 @@ def test_the_view_moves_and_exports(browser, tmp_path, monkeypatch):
     ok = page.evaluate("""s => { const d = new DOMParser().parseFromString(s, 'image/svg+xml');
         return !d.querySelector('parsererror') && !d.querySelector('.sel') && !!d.querySelector('[data-box]'); }""", svg)
     assert ok
+    # the style written on each element (other programs read little CSS), no style sheet, no ground in the SVG
+    facts = page.evaluate("""s => { const d = new DOMParser().parseFromString(s, 'image/svg+xml');
+        const t = d.querySelector('text.f, text[font-family*="Menlo"]');
+        return [d.querySelectorAll('style').length, d.querySelectorAll('[class]').length, !!t,
+                d.querySelector('svg > rect[fill="#fff"]') === null]; }""", svg)
+    assert facts == [0, 0, True, True]
+    assert page.evaluate("() => exported(true).text").count('fill="#fff"') >= 1          # the PNG and the PDF: on white
     assert not errors, errors
 
 
@@ -1431,6 +1438,32 @@ def test_the_table_pages_through_every_step(browser, tmp_path):
         click(page, nxt)
         page.wait_for_timeout(30)
     assert seen(199)
+    assert errors == []
+
+
+@pytest.mark.skipif(not os.path.isdir(os.path.join(DEMOS, "Deadline")), reason="the demos are not checked out")
+def test_the_wires_of_the_top_level_start_at_their_ports(browser, tmp_path, monkeypatch):
+    # the wires of the environments of Deadline start at the port of their source and end at the arbiter,
+    # whichever row ELK put first (they were drawn far above when their row moved up)
+    from chase_cps import Component, Model, load_spec
+    monkeypatch.chdir(os.path.join(DEMOS, "Deadline"))
+    c = load_spec("deadline.ltl")
+    smv = lambda n: Model.from_smv(open(n + ".smv").read(), name=n)
+    both = c["Client"].compose(c["Arbiter"]).compose(c["Wait"])
+    pairs = [(both, c["MaxWait"].instantiate({"k": k}, name=f"MaxWait{k}"), None) for k in (1, 2)]
+    box = Component("Arbiter", c["Arbiter"], smv("arbiter"))
+    d = viz.diagram(box, refines=pairs, open=[b for _, b, _ in pairs] + [box],
+                    environments=[(Component(n, c["Client"], smv(n)), box, None) for n in ("client", "impatient")])
+    page, errors = open_page(browser, tmp_path, d)
+    far = page.evaluate("""() => {
+        const ports = [...document.querySelectorAll('#view rect')].filter(r => +r.getAttribute('width') <= 8 && +r.getAttribute('height') <= 8)
+          .map(r => { const b = r.getBoundingClientRect(); return [(b.left + b.right) / 2, (b.top + b.bottom) / 2]; });
+        const near = (x, y) => Math.min(...ports.map(([a, b]) => Math.hypot(a - x, b - y)));
+        return [...document.querySelectorAll('#view polyline')].map(l => {
+          const m = l.getScreenCTM(), pts = l.points;
+          const at = q => { const p = q.matrixTransform(m); return [p.x, p.y]; };
+          return Math.max(near(...at(pts[0])), near(...at(pts[pts.length - 1]))); }).filter(d => d > 6); }""")
+    assert far == []
     assert errors == []
 
 
