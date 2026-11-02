@@ -64,6 +64,14 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install ccache
 
+      # The objects of the C++ kept from one release to the next: only the Python bindings are
+      # compiled again for each version of Python.
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ matrix.os }}-${{ github.sha }}
+          restore-keys: ccache-${{ matrix.os }}-
+
       - uses: pypa/cibuildwheel@v4.3.4
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
@@ -75,14 +83,14 @@ jobs:
           # The statistics before each build show the objects found in the cache.
           CIBW_BEFORE_BUILD: "ccache --show-stats"
           CIBW_ENVIRONMENT_LINUX: >
-            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache
-            CCACHE_DIR=/tmp/ccache CCACHE_BASEDIR=/project CCACHE_NOHASHDIR=true
+            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache CCACHE_MAXSIZE=1G
+            CCACHE_DIR=/project/.ccache CCACHE_BASEDIR=/project CCACHE_NOHASHDIR=true
           CIBW_ENVIRONMENT_MACOS: >
             MACOSX_DEPLOYMENT_TARGET=11.0
-            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache
-            CCACHE_DIR=$HOME/.ccache CCACHE_BASEDIR=$GITHUB_WORKSPACE CCACHE_NOHASHDIR=true
-          CIBW_TEST_REQUIRES: "pytest"
-          CIBW_TEST_COMMAND: "pytest -q {project}/python/tests"
+            CMAKE_C_COMPILER_LAUNCHER=ccache CMAKE_CXX_COMPILER_LAUNCHER=ccache CCACHE_MAXSIZE=1G
+            CCACHE_DIR=$GITHUB_WORKSPACE/.ccache CCACHE_BASEDIR=$GITHUB_WORKSPACE CCACHE_NOHASHDIR=true
+          # the tests: in pyproject.toml (all of them on two versions of Python, a call of the
+          # library on the others)
 
       - uses: actions/upload-artifact@v4
         with:

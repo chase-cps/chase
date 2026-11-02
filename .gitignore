@@ -22,3 +22,4 @@ output.smv
 /dist/
 /wheelhouse/
 .gstack/
+.ccache/

@@ -46,10 +46,20 @@ Changelog = "https://github.com/chase-cps/chase/blob/master/CHANGELOG.md"
 cmake.version = ">=3.18"
 wheel.packages = ["python/chase_cps"]
 build-dir = "build/{wheel_tag}"
-sdist.exclude = ["legacy", ".github", "build", "install"]
+sdist.exclude = ["legacy", ".github", "build", "install", ".ccache"]
 
 [tool.scikit-build.cmake.define]
 CHASE_BUILD_TESTS = "OFF"
+
+# The wheels: all the tests on Python 3.12 and 3.15; on the other versions, the library is called
+# once (the C++ is the same, only the bindings are built for each version).
+[tool.cibuildwheel]
+test-requires = "pytest"
+test-command = "pytest -q {project}/python/tests"
+
+[[tool.cibuildwheel.overrides]]
+select = "cp310-* cp311-* cp313-* cp314-*"
+test-command = "python -c \"import chase_cps; c = chase_cps.Contract.from_strings(outputs=['y'], guarantees=['G y']); print(chase_cps.__version__, c.saturate().name)\""
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
