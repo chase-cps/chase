@@ -11,7 +11,7 @@ import re
 import sys
 import tempfile
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Iterable, Mapping, Union
 
 from . import ltl, words
@@ -453,7 +453,8 @@ class Contract:
         if set(self.outputs) & set(other.outputs):
             return False
         return all(self.variables[v] == other.variables[v]
-                   for v in set(self.variables) & set(other.variables))
+                   or isinstance(self.variables[v], tuple) and isinstance(other.variables[v], tuple)
+                   for v in set(self.variables) & set(other.variables))   # integers of two ranges: joined
 
     # Contract algebra (computed by the CHASE core library) -------------------
 
@@ -652,6 +653,7 @@ def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
     """Composition keeping the terms (see Contract.compose)."""
     from .checks import VALID, _merge_vars, remove_redundant
     from .logic import _Implications
+    c1, c2 = _ranges_joined(c1, c2)
     variables = _merge_vars(c1, c2)
 
     def refine(terms, context):
@@ -693,6 +695,7 @@ def _merge_terms(c1: Contract, c2: Contract, name: str, backend: str,
                  **options) -> Contract:
     """Merging keeping the terms (see Contract.merge)."""
     from .checks import _merge_vars, remove_redundant
+    c1, c2 = _ranges_joined(c1, c2)
     variables = _merge_vars(c1, c2)
     outputs = _outputs("merging", c1, c2)
     c = Contract(name, {v: t for v, t in variables.items() if v not in outputs},
@@ -707,6 +710,7 @@ def _divide_terms(c1: Contract, c2: Contract, name: str, backend: str,
     """The quotient c1 / c2 keeping the terms (see Contract.divide)."""
     from .checks import VALID, _merge_vars, remove_redundant
     from .logic import _Implications
+    c1, c2 = _ranges_joined(c1, c2)
     variables = _merge_vars(c1, c2)
     outputs = _outputs("quotient", c1, c2)
     # Under A1, A2 is the conjunction of its terms that A1 does not imply,
@@ -731,6 +735,7 @@ def _conjoin_terms(c1: Contract, c2: Contract, name: str, backend: str,
     """The conjunction keeping the terms (see Contract.conjoin)."""
     from .checks import VALID, _merge_vars, remove_redundant
     from .logic import _Implications
+    c1, c2 = _ranges_joined(c1, c2)
     variables = _merge_vars(c1, c2)
     outputs = _outputs("conjunction", c1, c2)
     a1, a2 = list(c1.assumptions), list(c2.assumptions)
@@ -1016,8 +1021,42 @@ def to_spec(contracts: Iterable[Contract], name: str = "chase_cps") -> str:
     return f"NAME: {name};\n\n" + "\n".join(c.to_logics() for c in contracts)
 
 
+def _ranges_joined(*contracts: Contract) -> list[Contract]:
+    """The contracts, a variable they share as integers of different ranges
+    made one integer of the union of the ranges: in a contract, the range it
+    had becomes a term, an assumption where the variable is an input (what
+    the part expects), a guarantee where it is an output (what it promises).
+    So a port of 0..100 may feed one of 0..9, and the checks say whether the
+    values fit. Other types that differ stay an error."""
+    seen: dict = {}
+    for c in contracts:
+        for v, t in c.variables.items():
+            seen.setdefault(v, set()).add(t)
+    wide = {v: (min(t[0] for t in ts), max(t[1] for t in ts)) for v, ts in seen.items()
+            if len(ts) > 1 and all(isinstance(t, tuple) for t in ts)}
+    if not wide:
+        return list(contracts)
+    out = []
+    for c in contracts:
+        ins, outs, more = dict(c.inputs), dict(c.outputs), ([], [])
+        for v, u in wide.items():
+            for side, terms in ((ins, more[0]), (outs, more[1])):
+                t = side.get(v)
+                if t is not None and t != u:
+                    side[v] = u
+                    terms.append(ltl.parse(f"G ({v} >= {t[0]} & {v} <= {t[1]})"))
+        if more[0] or more[1]:
+            c = replace(c, inputs=ins, outputs=outs, assumptions=list(c.assumptions) + more[0],
+                        guarantees=list(c.guarantees) + more[1],
+                        parametric=c.parametric and (list(c.parametric[0]) + more[0],
+                                                     list(c.parametric[1]) + more[1]))
+        out.append(c)
+    return out
+
+
 def _algebra(operation: str, c1: Contract, c2: Contract, name: str) -> Contract:
     from ._native import representation as R
+    c1, c2 = _ranges_joined(c1, c2)
     # The operations of the core library are defined on saturated contracts.
     c1 = c1.saturate()
     c2 = c2.saturate(c2.name + "_2" if c1.name == c2.name else None)

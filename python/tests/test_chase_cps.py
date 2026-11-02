@@ -402,6 +402,27 @@ def test_composition_refines_and_separation():
 
 @needs_native
 @needs_mc
+def test_integers_of_two_ranges_are_joined_and_their_ranges_become_terms():
+    # a port of 0..100 into one of 0..9: one integer of 0..100; the range of the input is an assumption
+    # of its part, that of an output a guarantee, so the checks see whether the values fit
+    from chase_cps import refines, verify
+    sensor = Contract("Sensor", outputs={"x": (0, 100)}, guarantees=[ltl.parse("G (x >= 10)")])
+    narrow = Contract("Narrow", inputs={"x": (0, 9)}, outputs={"y": "bool"}, guarantees=[ltl.parse("G (y <-> x > 5)")])
+    wide = Contract("Wide", inputs={"x": (0, 200)}, outputs={"y": "bool"}, guarantees=[ltl.parse("G (y <-> x > 5)")])
+    assert sensor.can_compose_with(narrow)
+    s = sensor.compose(narrow)
+    assert s.variables["x"] == (0, 100)
+    assert verify(s).status == "unsat"                 # the sensor gives 10 or more, the part takes up to 9
+    assert verify(sensor.compose(wide)).status == "sat"
+    assert sensor.compose(narrow, discharge=True).assumptions == [ltl.parse("G (x >= 0 & x <= 9)")]
+    assert refines(Contract("R", outputs={"x": (0, 9)}), Contract("A", outputs={"x": (0, 100)})).status == "valid"
+    r = refines(Contract("R", outputs={"x": (0, 100)}), Contract("A", outputs={"x": (0, 9)}))
+    assert r.status == "invalid" and r.violated[0]["term"] == "G (x >= 0 & x <= 9)"
+    with pytest.raises(ValueError, match="has type"):     # other types that differ: still an error
+        sensor.compose(Contract("B", inputs={"x": "bool"}))
+
+
+@needs_mc
 def test_compose_with_discharge():
     from chase_cps import refines
     c1 = Contract.from_strings(inputs=["a"], outputs=["b"], assumptions=["G a"],

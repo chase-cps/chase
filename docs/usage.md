@@ -27,7 +27,7 @@ function as its implementation), so every check works on all of them.
 | `.json` | contracts (`Contract.to_dict`) | `Contract.from_dict` | the same, without lines | the same |
 | `.sv`, `.sva` with `assume` / `assert property` | contracts in SystemVerilog Assertions | `parse_sva` | the contract of each module | the same |
 | `.v`, `.sv` with no assertion | an RTL module (a model) | Yosys (YoWASP) | the module: ports and register state machine | nuXmv (M ⊨ C) |
-| `.c` with clauses (ESBMC, CBMC, ACSL) | a contract and an implementation for each function | `load_c` | each function as a component, with its code; a function with no clause is checked as code alone (`safe`) | ESBMC or CBMC |
+| `.c` with clauses (ESBMC, CBMC, ACSL) | a contract and an implementation for each function | `load_c` | each function as a component, with its code; a function with no clause has the contract (⊤, ⊤), and its `M ⊨ C` checks the code alone | ESBMC or CBMC |
 | `FILE.c:FUNCTION` | a C function (a model): one call, or one call per step | `CFunction` | inside the box of its contract, with its code | ESBMC or CBMC |
 | `.smv` with `LTLSPEC`, `INVARSPEC` | a model and its specifications | `load_smv` | the module as a component, each specification a term | nuXmv or NuSMV |
 | `.smv`, JSON state machine, slugs controller | a model | `Model.from_smv`, `Model.from_dict`, `Model.from_controller` | inside its contract (`--implementation`) or beside it (`--environment`): the state machine | nuXmv or NuSMV (M ⊨ C, E ⊨ A) |
@@ -347,7 +347,12 @@ The console also accepts the names of its first version: `conjunction` for
 In the console, the variables of two contracts are matched by name (the
 default), by a map entered by hand (`manual` as last argument), or by a map
 read from a file (its name as last argument). In Python, variables with the
-same name are the same variable, and `c.rename({...})` renames them.
+same name are the same variable, and `c.rename({...})` renames them. A
+variable shared as integers of two ranges (a port of 0..100 feeding one of
+0..9) is one integer of the union of the ranges; in each contract, its own
+range becomes a term, an assumption where it is an input and a guarantee
+where it is an output, so the checks say whether the values fit. Other
+types that differ are an error.
 
 ### Named constants
 
@@ -612,7 +617,9 @@ bounds, failed assert).
 
 `chase-cps view FILE.c` (and the CHASE button of VS Code on a `.c` file)
 draws each function as a component with its code, checked: the tag
-`M ⊨ C` for a function with clauses, and `safe` for one with none. A
+`M ⊨ C` for each function; with no clause, the contract is (⊤, ⊤) and the
+check is that of the code alone (no overflow, division by zero, or access
+out of bounds). A
 failure shows the call that breaks it, and the term it breaks in red.
 
 ### SMV models with their specifications
@@ -1170,7 +1177,7 @@ code, and a deadline in LTL.
 - Refinement is nesting: a decomposition, or a contract, is drawn inside
   the box of the contract it refines, on as many levels as there are
   refinements. A box with boxes inside folds them away (the button at its
-  top right). A quotient is a hatched hole next to the
+  top right). A quotient is a pale yellow hole next to the
   known parts, with what refines it inside.
 - An environment is a grey box on the left of what it drives: the outside
   of the design, checked against the assumptions only. Something that has a

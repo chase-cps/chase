@@ -93,6 +93,8 @@ class RefinementResult:
 def refines(refined: Contract, abstract: Contract, backend: str = "auto",
             context=None, **options) -> RefinementResult:
     """Does ``refined`` refine ``abstract`` (can it replace it)?"""
+    from .contract import _ranges_joined
+    refined, abstract = _ranges_joined(refined, abstract)
     variables = _merge_vars(refined, abstract)
     a = implies(abstract.assumption, refined.assumption, variables, backend, context,
                 **options)

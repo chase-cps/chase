@@ -56,7 +56,9 @@ def questions(check: str, *args) -> tuple:
         return f"{check} {c.name}", [(n, asked[n]) for n in names]
     if check == "refines":
         from .checks import _merge_vars
+        from .contract import _ranges_joined
         c1, c2 = args
+        c1, c2 = _ranges_joined(c1, c2)
         v = _merge_vars(c1, c2)
         return f"{c1.name} refines {c2.name}", [
             ("assumptions", Implies(c2.assumption, c1.assumption, v)),

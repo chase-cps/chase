@@ -597,7 +597,8 @@ def _clashes(s: System, children: list) -> dict:
         for v, t in c.variables.items():
             types.setdefault(v, {}).setdefault(_type_text(t), []).append(who)
     for v, by in types.items():
-        if len(by) > 1:
+        ints = all(_RANGE.fullmatch(t) for t in by)    # integers of two ranges: one, the union (the checks see if they fit)
+        if len(by) > 1 and not ints:
             said = "; ".join(f"{t} in {', '.join(who)}" for t, who in by.items())
             out[v] = (out[v] + "; " if v in out else "") + f"{v} has two types: {said}"
     return out
@@ -609,6 +610,9 @@ def _mark_clash(edges: list, clash: dict) -> list:
         if w["var"] in clash:
             w["error"] = clash[w["var"]]
     return edges
+
+
+_RANGE = re.compile(r"-?\d+\.\.-?\d+|\{-?\d+\}")
 
 
 def _type_text(t) -> str:
@@ -1795,6 +1799,7 @@ _PAGE = r"""<!doctype html>
   :root { --ink:#1d2526; --soft:#667374; --faint:#97a3a4; --teal:#17393b; --line:#b6c1c1; --fill:#f5f7f7;
           --wire:#7d8c8d; --ok:#2f7d4f; --bad:#b03a2e; --warn:#c07a14; --grid:#d3dbdb; --ground:#fcfdfd;
           --glass:rgba(255,255,255,.72); --frost:blur(6px) saturate(1.3);
+          --hole:#fdfaef; --hole-line:#f6eed5;   /* the hole of a quotient: pale yellow, seen when the diagram is small */
           --r:6px; }   /* one corner for every box: tags, boxes, the toolbar, the details, the drawer */
   html, body { height:100%; overflow:hidden; }
   body { margin:0; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--ground); }
@@ -2864,8 +2869,8 @@ function svgIn(container, width, height) {
   el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--bad)" }, mb);
   const h = el("pattern", { id: "hatch", width: 7, height: 7, patternUnits: "userSpaceOnUse",
                             patternTransform: "rotate(45)" }, defs);
-  el("rect", { width: 7, height: 7, fill: "#fff" }, h);
-  el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "#e6ecec", "stroke-width": 2 }, h);
+  el("rect", { width: 7, height: 7, fill: "var(--hole)" }, h);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "var(--hole-line)", "stroke-width": 2 }, h);
   const d = el("pattern", { id: "dots", width: DOT, height: DOT, patternUnits: "userSpaceOnUse" }, defs);
   el("circle", { cx: 1, cy: 1, r: 1, fill: "var(--grid)" }, d);
   el("rect", { width: "100%", height: "100%", fill: "url(#dots)" }, svg);
@@ -3110,8 +3115,8 @@ function help() {
 function svgDefsHatch(s) {
   const p = el("pattern", { id: "hatchh", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
                el("defs", {}, s));
-  el("rect", { width: 6, height: 6, fill: "#fff" }, p);
-  el("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "#dfe6e6", "stroke-width": 2 }, p);
+  el("rect", { width: 6, height: 6, fill: "var(--hole)" }, p);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "var(--hole-line)", "stroke-width": 2 }, p);
 }
 
 function drawContext() {

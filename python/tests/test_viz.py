@@ -279,6 +279,15 @@ def test_signals_the_parts_do_not_agree_on_are_red_wires():
     assert all("error" not in w for w in group["edges"] if w["var"] in ("x", "z"))
 
 
+def test_integers_of_two_ranges_are_one_signal_not_a_clash():
+    # a port of 0..100 feeds one of 0..9: one integer, no red wire (the checks say whether the values fit)
+    a = Contract.from_strings(name="A", outputs={"n": (0, 100)}, guarantees=["G (n >= 0)"])
+    b = Contract.from_strings(name="B", inputs={"n": (0, 9)}, outputs={"y": "bool"}, guarantees=["G (y <-> n > 5)"])
+    group = viz.diagram(System("Top", [Component("A", a), Component("B", b)]))["nodes"][0]
+    assert "clash" not in group or "n" not in group["clash"]
+    assert all("error" not in w for w in group["edges"])
+
+
 @pytest.mark.parametrize("term, prefix, loop, at", [
     # where the failure is seen, as a waveform viewer marks it: the step of the X X, the end of F[0,3]
     ("G (p -> X X q)", [(1, 1), (0, 1), (0, 0)], [(0, 1)], 2),
