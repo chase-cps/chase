@@ -2,14 +2,28 @@
 
 ## 0.7.2 (2026-11-02)
 
+Long names in the diagrams, and the PDF of a large diagram.
+
 Changed:
 
+- Long names keep the boxes narrow: a title too long keeps the end of its
+  path (the part that tells the parts apart: `…downstream.baf.bapg_rd`)
+  and the start of the words after it; a note is broken at its ⊗, · and /
+  into three lines at most; a long port name keeps its end. The whole of
+  each name is in its tip.
 - A check that holds says in its panel what it has shown (for example,
   for `M ⊨ C`: in an environment that meets the assumptions, every run of
   the model meets the guarantees), not "Holds." alone.
-- The wheels are built faster: the compiled C++ is kept between releases,
-  and the tests run in full on Python 3.12 and 3.15 (a call of the library
-  on the other versions).
+- The wheels are built with less work repeated: the compiled C++ is kept
+  between releases, and the tests run in full on Python 3.12 and 3.15 (a
+  call of the library on the other versions).
+
+Fixed:
+
+- The PDF of a large diagram had only its top left corner when the page
+  was inside a frame, or in a browser that keeps its own paper size: the
+  diagram is printed from a page of its own, the size of the diagram, and
+  fitted to the page.
 
 ## 0.7.1 (2026-11-02)
 
