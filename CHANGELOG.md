@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.2 (2026-11-02)
+
+Changed:
+
+- A check that holds says in its panel what it has shown (for example,
+  for `M ⊨ C`: in an environment that meets the assumptions, every run of
+  the model meets the guarantees), not "Holds." alone.
+- The wheels are built faster: the compiled C++ is kept between releases,
+  and the tests run in full on Python 3.12 and 3.15 (a call of the library
+  on the other versions).
+
 ## 0.7.1 (2026-11-02)
 
 The diagrams after a review of every demo, and ports of two integer ranges.
