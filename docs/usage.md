@@ -322,6 +322,35 @@ variant uses the checks of layer 2 (one implication per test), so it needs
 nuXmv. The result is an abstraction of the composition: a refinement proved
 on it holds for the composition; a failed one may not.
 
+`c1.compose(c2, eliminate=True)` eliminates the variables that connect c1
+and c2: the result has only the inputs and outputs of the system (Incer et
+al., Pacti, ACM TCPS 9(1), 2025). The assumptions of the receiving contract
+are refined with the assumptions and guarantees of the driving one as
+context (a formula without the connecting variables that, with the context,
+implies them), and the guarantees of each contract are relaxed with those of
+the other as context (a formula without the connecting variables that they
+imply). For GR(1) terms, `chase_cps.cave` computes these two eliminations
+term by term over a finite window of steps with z3 (Narter, Zhao, Incer,
+arXiv 2610.37534, Algorithms 1 and 2): the result is GR(1) and sound, not
+always exact. It needs z3; the terms must be GR(1) (initial terms may read
+the next steps), over Booleans, reals, and integer ranges, and the two
+contracts must not feed each other. The result is an abstraction of the
+composition, as with `discharge=True`.
+
+```python
+from chase_cps import Contract
+gen = Contract.from_strings(name="Gen", inputs={"req": "bool"}, outputs={"m": "bool"},
+                            guarantees=["G (req -> X m)", "G F m"])
+use = Contract.from_strings(name="Use", inputs={"m": "bool"}, outputs={"ack": "bool"},
+                            assumptions=["G F m"], guarantees=["G (m -> ack)"])
+system = gen.compose(use, eliminate=True)    # m is gone
+print(system)    # assumes true, guarantees G (req -> X ack) and G F ack
+```
+
+`chase_cps.cave.refine(target, context, drop, types)` and
+`chase_cps.cave.relax(target, context, drop, types)` are the two
+eliminations on lists of terms.
+
 `c1.merge(c2, discharge=True)`, `c1.divide(c2, discharge=True)`, and
 `c1.conjoin(c2, discharge=True)` keep the terms too, and the result is the
 same contract as the closed form: only composition gives an abstraction.

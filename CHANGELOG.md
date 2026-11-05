@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Added:
+
+- `c1.compose(c2, eliminate=True)`: the composition of GR(1) contracts
+  with the connecting variables eliminated, so that the result has only
+  the inputs and outputs of the system (Incer et al., Pacti, ACM TCPS 2025).
+  `chase_cps.cave` computes the eliminations, by refinement for the
+  assumptions and by relaxation for the guarantees, term by term over a
+  finite window of steps with z3 (Narter, Zhao, Incer, arXiv 2610.37534,
+  Algorithms 1 and 2). The result is GR(1) and sound, not always exact.
+
 ## 0.7.2 (2026-11-02)
 
 Long names in the diagrams, and the PDF of a large diagram.
