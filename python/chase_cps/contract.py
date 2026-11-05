@@ -486,7 +486,7 @@ class Contract:
                         list(self.assumptions), guarantees)
 
     def compose(self, other: "Contract", name: str | None = None, discharge: bool = False,
-                backend: str = "auto", **options) -> "Contract":
+                backend: str = "auto", eliminate: bool = False, **options) -> "Contract":
         """Parallel composition; variables with the same name are connected.
 
         By default the closed form of the core library:
@@ -503,12 +503,27 @@ class Contract:
         NuSMV; ``backend`` and ``options`` as for the checks). The result is
         an abstraction of the composition: the closed form refines it, so a
         refinement proved on it holds for the composition.
+
+        With ``eliminate=True``, the variables that connect the two contracts
+        are eliminated, and the result has only the other variables (Incer
+        et al., Pacti, ACM TCPS 9(1), 2025, composition algorithm). The
+        assumptions of the receiving contract are refined with the
+        assumptions and guarantees of the driving one as context, and the
+        guarantees relaxed, by the GR(1) variable elimination of
+        ``chase_cps.cave`` (Narter, Zhao, Incer, arXiv 2610.37534). All the
+        terms must be GR(1), over Booleans, reals, and integer ranges, and
+        the contracts must not feed each other. The result is an abstraction
+        of the composition: the closed form refines it.
         """
         both = set(self.outputs) & set(other.outputs)
         if both:
             raise ValueError(f"cannot compose {self.name} and {other.name}: "
                              f"{sorted(both)} are outputs of both")
         name = name or f"{self.name}_{other.name}"
+        if eliminate:
+            if discharge:
+                raise ValueError("compose: discharge and eliminate are exclusive")
+            return _compose_eliminating(self, other, name)
         if discharge:
             return _compose_terms(self, other, name, backend, **options)
         out = _algebra("composition", self, other, name)
@@ -646,6 +661,47 @@ def _single_term(c: Contract, formula, assumption: bool) -> Contract:
     if assumption:
         return Contract(f"{c.name}_b", inputs, {}, [f], [])
     return Contract(f"{c.name}_b", inputs, {}, [], [f])
+
+
+def _compose_eliminating(c1: Contract, c2: Contract, name: str) -> Contract:
+    """Composition eliminating the connecting variables (see Contract.compose)."""
+    from . import cave
+    from .checks import _merge_vars
+    c1, c2 = _ranges_joined(c1, c2)
+    types = _merge_vars(c1, c2)
+    feeds12 = set(c1.outputs) & set(c2.inputs)
+    feeds21 = set(c2.outputs) & set(c1.inputs)
+    if feeds12 and feeds21:
+        raise cave.EliminationError(f"cannot eliminate the variables of a feedback: "
+                                    f"{c1.name} and {c2.name} feed each other")
+    internal = feeds12 | feeds21
+    outputs = (set(c1.outputs) | set(c2.outputs)) - internal
+
+    # The assumptions: those of the receiving contract are refined with the
+    # assumptions and guarantees of the driving one as context; they may name
+    # neither the connecting variables nor the outputs.
+    if internal:
+        driver, receiver = (c1, c2) if feeds12 else (c2, c1)
+        refined = cave.refine(receiver.assumptions, driver.assumptions + driver.guarantees,
+                              internal | outputs, types)
+        left = sorted(set().union(*map(ltl.variables, refined)) & (internal | outputs))
+        if left:
+            raise cave.EliminationError(f"cannot eliminate {left} from the assumptions "
+                                        f"of {receiver.name}")
+        assumptions = list(driver.assumptions) + refined
+    else:
+        assumptions = list(c1.assumptions) + list(c2.assumptions)
+
+    # The guarantees: those of each contract relaxed with the other's as context.
+    guarantees: list = []
+    for g in (cave.relax(c1.guarantees, c2.guarantees, internal, types)
+              + cave.relax(c2.guarantees, c1.guarantees, internal, types)):
+        if g not in guarantees and not ltl.variables(g) & internal:
+            guarantees.append(g)
+
+    keep = {v: t for v, t in types.items() if v not in internal}
+    return Contract(name, {v: t for v, t in keep.items() if v not in outputs},
+                    {v: t for v, t in keep.items() if v in outputs}, assumptions, guarantees)
 
 
 def _compose_terms(c1: Contract, c2: Contract, name: str, backend: str,
