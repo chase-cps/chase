@@ -834,6 +834,7 @@ def test_the_table_has_a_scroll_bar_always_drawn(browser, tmp_path):
     page, errors = open_page(browser, tmp_path, d)
     click(page, page.locator('[data-check$="|⪯"]'))
     page.wait_for_selector("#repair .rp-bar.on", timeout=5000)
+    page.wait_for_selector("#repair .rp-bar.on > div", state="visible", timeout=5000)   # drawn a frame later
     wrap = "document.querySelector('#repair .rp-tracewrap').scrollLeft"
     thumb = page.locator("#repair .rp-bar > div").bounding_box()
     bar = page.locator("#repair .rp-bar").bounding_box()

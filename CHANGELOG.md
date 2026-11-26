@@ -22,6 +22,9 @@ Fixed:
 - RTL: Yosys 0.71 stopped on a module whose parameter has no usable default
   (`width_p'(...)` in BaseJump STL) before the parameters were set; the
   modules are now elaborated after the parameters (`read_verilog -defer`).
+- `minimize`, `maximize`, and repair: `timeout` is the time of the whole
+  search with z3, not of each of its calls (one search took 27 minutes with
+  the default of 300 s), and the reason says when it has passed.
 - Repair: the projection of a region with z3 `qe2` no longer runs `simplify`
   first (together they gave true for a formula that is not, z3 5.1 and 5.3),
   and a result that z3 finds different from the quantified formula is not

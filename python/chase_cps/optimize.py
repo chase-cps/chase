@@ -132,10 +132,18 @@ def certified(goal, hard: list, trace_of, maximize: bool, timeout: float,
     # reached. With integers and reals in one problem, the optimizer of z3
     # (4.15 to 5.3.3) sometimes gives a value that is not the best, and one
     # that its own model contradicts; the search then goes on below it.
+    # ``timeout`` is the time of the whole search: each call of z3 has what
+    # is left of it.
+    def left() -> int:
+        return max(1, int((timeout - (time.time() - start)) * 1000))
+
+    def late(reason: str) -> str:
+        return f"z3: no answer in {timeout:g} s" if time.time() - start >= timeout else f"z3: {reason}"
+
     cuts = []
     for _ in range(ROUNDS):
         opt = z3.Optimize()
-        opt.set("timeout", int(timeout * 1000))
+        opt.set("timeout", left())
         opt.add(*hard, *cuts)
         handle = opt.maximize(goal) if maximize else opt.minimize(goal)
         answer = opt.check()
@@ -143,7 +151,7 @@ def certified(goal, hard: list, trace_of, maximize: bool, timeout: float,
             return Optimum(INFEASIBLE, backend="z3", seconds=time.time() - start)
         if answer != z3.sat:
             reason = opt.reason_unknown() if answer == z3.unknown else "no better value"
-            return Optimum(UNKNOWN, backend="z3", reason=f"z3: {reason}",
+            return Optimum(UNKNOWN, backend="z3", reason=late(reason),
                            seconds=time.time() - start)
         trace = trace_of(opt.model())
         inf, value, _ = (handle.upper_values() if maximize else handle.lower_values())
@@ -153,15 +161,16 @@ def certified(goal, hard: list, trace_of, maximize: bool, timeout: float,
         b = z3.IntVal(bound) if isinstance(bound, int) else z3.RealVal(str(bound))
         better = goal > b if maximize else goal < b
         check = z3.Solver()
-        check.set("timeout", int(timeout * 1000))
+        check.set("timeout", left())
         check.add(*hard)
         found = check.check(better)
         if found == z3.sat:
             cuts.append(better)
             continue
         if found == z3.unknown:
-            return Optimum(UNKNOWN, backend="z3", reason=f"z3: {check.reason_unknown()}",
+            return Optimum(UNKNOWN, backend="z3", reason=late(check.reason_unknown()),
                            seconds=time.time() - start)
+        check.set("timeout", left())
         if check.check(goal == b) == z3.sat:
             return Optimum(OPTIMAL, bound, trace_of(check.model()), "z3",
                            seconds=time.time() - start)
