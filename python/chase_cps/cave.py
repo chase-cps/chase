@@ -33,6 +33,8 @@ from .backends.z3 import Encoding, _z3 as z3, bounded
 from .gr1 import gr1_kind
 
 QE_TACTICS = ("qe2", "qe")
+QE_MS = 60000           # one quantifier elimination
+CHECK_MS = 10000        # one validity or satisfiability check
 SIMPLIFY_MS = 2000
 
 
@@ -149,8 +151,8 @@ def _eliminate(quantifier, xs, body, sound):
         goal = z3.Goal()
         goal.add(quantifier(xs, body))
         try:
-            result = z3.Then(qe, "simplify", "ctx-simplify")(goal)
-        except z3.Z3Exception:
+            result = z3.TryFor(z3.Then(qe, "simplify", "ctx-simplify"), QE_MS)(goal)
+        except z3.Z3Exception:      # also when QE_MS has passed
             continue
         parts = [z3.And(*g) if len(g) else z3.BoolVal(True) for g in result]
         f = parts[0] if len(parts) == 1 else z3.Or(*parts)
@@ -158,7 +160,8 @@ def _eliminate(quantifier, xs, body, sound):
             continue
         g = _simplified(f)
         return g if _valid(sound(g)) else f
-    raise EliminationError(f"z3 could not eliminate {sorted(str(x) for x in xs)}")
+    raise EliminationError(f"z3 could not eliminate {sorted(str(x) for x in xs)} "
+                           f"(within {QE_MS // 1000} s for each tactic)")
 
 
 def _simplified(f):
@@ -181,13 +184,15 @@ def _has_quantifier(f) -> bool:
 
 
 def _valid(f) -> bool:
-    s = z3.Solver()
-    s.add(z3.Not(f))
-    return s.check() == z3.unsat
+    """Whether z3 proves f within CHECK_MS. Without an answer f is not
+    taken as valid, which keeps every use sound."""
+    return _unsat(z3.Not(f))
 
 
 def _unsat(f) -> bool:
+    """Whether z3 proves that f has no model within CHECK_MS."""
     s = z3.Solver()
+    s.set("timeout", CHECK_MS)
     s.add(f)
     return s.check() == z3.unsat
 
@@ -330,16 +335,47 @@ def _consts(f) -> list:
 def _lift(init, inv, liv: list[tuple[str, object]]) -> list[ltl.Node]:
     """The GR(1) terms of the certificates, without the trivial ones."""
     out = []
-    if init is not None and not z3.is_true(init):
-        out.append(to_ltl(init))
-    if inv is not None and not z3.is_true(inv):
-        out.append(ltl.Unary("G", to_ltl(inv)))
+
+    def add(term):
+        if term not in out:
+            out.append(term)
+
+    # A conjunction is one term for each conjunct: G (a & b) is G a & G b.
+    # An initial conjunct that the invariant implies says nothing more.
+    always = inv if inv is not None else z3.BoolVal(True)
+    for f in _conjuncts(init):
+        if z3.is_false(f) or z3.is_true(always) or not _valid(z3.Implies(always, f)):
+            add(to_ltl(f))
+    for f in _conjuncts(inv):
+        add(ltl.Unary("G", to_ltl(f)))
     for op, f in liv:
         if z3.is_true(f):
             continue
-        core = to_ltl(f)
-        out.append(ltl.Unary("G", ltl.Unary("F", core)) if op == "GF" else ltl.Unary("G", core))
+        if op == "GF":
+            add(ltl.Unary("G", ltl.Unary("F", to_ltl(f))))
+        else:
+            for c in _conjuncts(f):
+                add(ltl.Unary("G", to_ltl(c)))
     return out
+
+
+def _conjuncts(f) -> list:
+    """The conjuncts of f, none for true (or None), f itself for false."""
+    if f is None or z3.is_true(f):
+        return []
+    if z3.is_and(f):
+        parts = [c for g in f.children() for c in _conjuncts(g)]
+        return [f] if any(z3.is_false(c) for c in parts) else parts
+    return [f]
+
+
+def unsatisfiable(terms: list[ltl.Node]) -> list[ltl.Node]:
+    """The terms that no trace meets by themselves: false, G false, and
+    G F false, as an elimination writes what it could not solve."""
+    false = ltl.Const(False)
+    return [t for t in terms
+            if t == false or t == ltl.Unary("G", false)
+            or t == ltl.Unary("G", ltl.Unary("F", false))]
 
 
 # Refinement (Algorithm 1) ------------------------------------------------------
@@ -422,7 +458,7 @@ def relax(target: list[ltl.Node], context: list[ltl.Node], drop, types: dict) ->
     inv = w.exists(drop, w.shifted(g_inv, depth(phi)), w.core(phi))
 
     projections = []
-    for core in g_liv + t_liv:
+    for core in dict.fromkeys(g_liv + t_liv):
         w = _Window(types)
         p = w.exists(drop, w.shifted(g_inv, depth(core)), w.core(core))
         if not _valid(p):

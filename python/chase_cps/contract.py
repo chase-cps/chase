@@ -691,15 +691,23 @@ def _compose_eliminating(c1: Contract, c2: Contract, name: str) -> Contract:
         if left:
             raise cave.EliminationError(f"cannot eliminate {left} from the assumptions "
                                         f"of {receiver.name}")
+        lost = cave.unsatisfiable(refined)
+        if lost:
+            warnings.warn(
+                f"{name}: the assumptions of {receiver.name} could not be written without "
+                f"{sorted(internal | outputs)}, and the composition assumes "
+                f"{' & '.join(ltl.to_str(t) for t in lost)}: no environment meets them. "
+                f"The elimination reads each term over a window of a few steps, which is "
+                f"not always enough; compose(discharge=True) keeps the terms.", stacklevel=3)
         assumptions = list(driver.assumptions) + refined
     else:
         assumptions = list(c1.assumptions) + list(c2.assumptions)
 
-    # The guarantees: those of each contract relaxed with the other's as
-    # context, then simplified where the assumptions hold, which does not
-    # change the contract.
-    relaxed = [g for g in (cave.relax(c1.guarantees, c2.guarantees, internal, types)
-                           + cave.relax(c2.guarantees, c1.guarantees, internal, types))
+    # The guarantees of the two contracts relaxed together (each window has
+    # the invariants of both), then simplified where the assumptions hold,
+    # which does not change the contract.
+    both = list(c1.guarantees) + list(c2.guarantees)
+    relaxed = [g for g in cave.relax(both, both, internal, types)
                if not ltl.variables(g) & internal]
     guarantees: list = []
     for g in cave.simplify(relaxed, assumptions, types):

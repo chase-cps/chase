@@ -176,6 +176,54 @@ def test_aeb_composition():
     assert implied(svd.guarantees, {**svd.variables}, inv="z' <= d & z' >= 0.8 * d - 0.5")
 
 
+def test_composition_terms_are_apart_and_not_repeated():
+    # One term for each conjunct, none twice, and no initial term that an
+    # invariant of the result already gives.
+    gen = Contract.from_strings(name="Gen", inputs={"req": B}, outputs={"m": B},
+                                guarantees=["G (req -> X m)", "G F m"])
+    use = Contract.from_strings(name="Use", inputs={"m": B}, outputs={"ack": B},
+                                assumptions=["G F m"], guarantees=["G (m -> ack)"])
+    for system in (gen.compose(use, eliminate=True), use.compose(gen, eliminate=True)):
+        assert system.assumptions == []
+        assert len(system.guarantees) == 2
+        assert same_terms(system.guarantees, terms("G (req -> X ack)", "G F ack"),
+                          {**system.variables})
+    c1 = Contract.from_strings(name="C1", inputs={"a": B}, outputs={"x": B},
+                               guarantees=["G (a -> x)", "G (x -> a)"])
+    c2 = Contract.from_strings(name="C2", inputs={"c": B}, outputs={"y": B},
+                               guarantees=["G (c -> y)", "y"])
+    apart = c1.compose(c2, eliminate=True)
+    assert len(apart.guarantees) == 4
+    assert same_terms(apart.guarantees, c1.guarantees + c2.guarantees, {**apart.variables})
+
+
+def test_assumptions_that_become_false_are_reported():
+    # The driver alternates m, which gives G F m, but no window of the
+    # elimination shows it: the composition assumes G F false, and says so.
+    c1 = Contract.from_strings(name="C1", inputs={"a": B}, outputs={"m": B},
+                               guarantees=["m", "G (m -> X !m)", "G (!m -> X m)"])
+    c2 = Contract.from_strings(name="C2", inputs={"m": B}, outputs={"b": B},
+                               assumptions=["G F m"], guarantees=["G (b <-> m)"])
+    with pytest.warns(UserWarning, match="assumes G F false"):
+        system = c1.compose(c2, eliminate=True)
+    assert cave.unsatisfiable(system.assumptions) == terms("G F false")
+    import warnings
+    gen = Contract.from_strings(name="Gen", inputs={"req": B}, outputs={"m": B},
+                                guarantees=["G F m"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        gen.compose(c2, eliminate=True)
+
+
+def test_checks_of_z3_end(monkeypatch):
+    # A check that z3 does not finish in time counts as not proved.
+    x = z3.Real("x")
+    monkeypatch.setattr(cave, "CHECK_MS", 1)
+    hard = z3.ForAll([x], x * x * x * x * x - 3 * x + 1 != z3.Real("y") * x)
+    assert cave._valid(hard) in (True, False)
+    assert cave._valid(z3.BoolVal(True))
+
+
 def test_compose_eliminate_errors():
     a = Contract.from_strings(name="A", inputs={"x": B}, outputs={"y": B},
                               guarantees=["G (x U y)"])
@@ -278,6 +326,7 @@ def test_simplification_is_equivalent_in_its_context(seed):
 
 
 @needs_all
+@pytest.mark.filterwarnings("ignore:.*could not be written without")
 @pytest.mark.parametrize("seed", range(RUNS))
 def test_composition_abstracts_the_closed_form(seed):
     # The closed form refines the composition with eliminated variables.

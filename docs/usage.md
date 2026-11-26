@@ -337,7 +337,11 @@ arXiv 2610.37534, Algorithms 1 and 2): the result is GR(1) and sound, not
 always exact. It needs z3; the terms must be GR(1) (initial terms may read
 the next steps), over Booleans, reals, and integer ranges, and the two
 contracts must not feed each other. The result is an abstraction of the
-composition, as with `discharge=True`.
+composition, as with `discharge=True`. An assumption that cannot be written
+without the connecting variables within its window becomes false (for
+example `G F false`): the composition then holds of no environment, and a
+warning says so. Each z3 call has a time limit (`chase_cps.cave.QE_MS`,
+`CHECK_MS`); a check without an answer counts as not proved.
 
 ```python
 from chase_cps import Contract

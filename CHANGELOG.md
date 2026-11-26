@@ -12,7 +12,20 @@ Added:
   finite window of steps with z3 (Narter, Zhao, Incer, arXiv 2610.37534,
   Algorithms 1 and 2). The result is GR(1) and sound, not always exact.
   Its guarantees are simplified where its assumptions hold
-  (`chase_cps.cave.simplify`), which does not change the contract.
+  (`chase_cps.cave.simplify`), which does not change the contract. The
+  guarantees of the two contracts are relaxed together, and the result has
+  one term for each conjunct, none twice. A warning says when the
+  assumptions of the result became false. The z3 calls have time limits.
+
+Fixed:
+
+- RTL: Yosys 0.71 stopped on a module whose parameter has no usable default
+  (`width_p'(...)` in BaseJump STL) before the parameters were set; the
+  modules are now elaborated after the parameters (`read_verilog -defer`).
+- Repair: the projection of a region with z3 `qe2` no longer runs `simplify`
+  first (together they gave true for a formula that is not, z3 5.1 and 5.3),
+  and a result that z3 finds different from the quantified formula is not
+  used.
 
 ## 0.7.2 (2026-11-02)
 
