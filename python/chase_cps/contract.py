@@ -670,13 +670,27 @@ def _compose_eliminating(c1: Contract, c2: Contract, name: str) -> Contract:
     """Composition eliminating the connecting variables (see Contract.compose)."""
     from . import cave
     from .checks import _merge_vars
-    c1, c2 = _ranges_joined(c1, c2)
-    types = _merge_vars(c1, c2)
+    other = "compose() and compose(discharge=True) take every contract."
     feeds12 = set(c1.outputs) & set(c2.inputs)
     feeds21 = set(c2.outputs) & set(c1.inputs)
     if feeds12 and feeds21:
-        raise cave.EliminationError(f"cannot eliminate the variables of a feedback: "
-                                    f"{c1.name} and {c2.name} feed each other")
+        raise cave.EliminationError(
+            f"compose(eliminate=True) cannot eliminate the variables of a feedback: "
+            f"{c1.name} gives {sorted(feeds12)} to {c2.name} and takes {sorted(feeds21)} "
+            f"from it. It supports two contracts of which one drives the other. {other}")
+    # Every term that is not supported, with its contract, before any work.
+    refused = []
+    for c in (c1, c2):
+        for kind, terms in (("assumption", c.assumptions), ("guarantee", c.guarantees)):
+            refused += [f"  {c.name}, {kind} {ltl.to_str(t)}: {why}"
+                        for t, why in cave.unsupported(terms, c.variables)]
+    if refused:
+        raise cave.EliminationError(
+            f"compose(eliminate=True) does not support {len(refused)} "
+            f"term{'s' if len(refused) > 1 else ''} of {c1.name} and {c2.name}:\n"
+            + "\n".join(refused) + f"\n{cave.SUPPORTED} {other}")
+    c1, c2 = _ranges_joined(c1, c2)
+    types = _merge_vars(c1, c2)
     internal = feeds12 | feeds21
     outputs = (set(c1.outputs) | set(c2.outputs)) - internal
 

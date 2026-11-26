@@ -228,8 +228,18 @@ def test_compose_eliminate_errors():
     a = Contract.from_strings(name="A", inputs={"x": B}, outputs={"y": B},
                               guarantees=["G (x U y)"])
     b = Contract.from_strings(name="B", inputs={"y": B}, outputs={"w": B}, guarantees=["G w"])
-    with pytest.raises(cave.EliminationError, match="not a GR"):
+    with pytest.raises(cave.EliminationError, match="not a GR") as e:
         a.compose(b, eliminate=True)
+    # the message says which term of which contract, and what is supported
+    assert "A, guarantee" in str(e.value) and "x U y" in str(e.value)
+    assert cave.SUPPORTED in str(e.value) and "compose(discharge=True)" in str(e.value)
+    w = Contract.from_strings(name="Word", inputs={"y": B, "n": "word[4]"}, outputs={"w": B},
+                              assumptions=["F y"], guarantees=["G (w <-> n = 3)"])
+    with pytest.raises(cave.EliminationError, match="2 terms") as e:
+        Contract.from_strings(name="D", inputs={"x": B}, outputs={"y": B},
+                              guarantees=["G y"]).compose(w, eliminate=True)
+    assert "Word, assumption F y: not a GR(1) term" in str(e.value)
+    assert "n has type" in str(e.value)
     c = Contract.from_strings(name="C", inputs={"w": B}, outputs={"x": B}, guarantees=["G x"])
     loop = Contract.from_strings(name="L", inputs={"x": B}, outputs={"w": B}, guarantees=["G w"])
     with pytest.raises(cave.EliminationError, match="feedback"):

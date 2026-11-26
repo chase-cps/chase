@@ -38,6 +38,11 @@ CHECK_MS = 10000        # one validity or satisfiability check
 SIMPLIFY_MS = 2000
 
 
+SUPPORTED = ("The variable elimination supports GR(1) terms only: an initial term "
+             "(with X; no G, F, U, R), G f, and G F f, where f has no temporal operator "
+             "but X and x', over Booleans, reals, and integer ranges (no words, no past).")
+
+
 class EliminationError(ValueError):
     """Raised when the variables cannot be eliminated: a term not GR(1), a
     type that is not supported, or a result that z3 does not give without
@@ -61,7 +66,7 @@ def split(terms: list[ltl.Node]) -> tuple[list, list, list]:
         elif kind == "justice":
             liv.append(t.arg.arg)
         else:
-            raise EliminationError(f"not a GR(1) term: {ltl.to_str(t)}")
+            raise EliminationError(f"not a GR(1) term: {ltl.to_str(t)}. {SUPPORTED}")
     for core in init + inv + liv:
         _check_core(core)
     return init, inv, liv
@@ -70,13 +75,29 @@ def split(terms: list[ltl.Node]) -> tuple[list, list, list]:
 def _check_core(node: ltl.Node) -> None:
     if isinstance(node, ltl.Unary):
         if ltl.function(node) or ltl.bits(node):
-            raise EliminationError(f"not supported in a variable elimination: {ltl.to_str(node)}")
+            raise EliminationError(f"a word operation or past in {ltl.to_str(node)}. {SUPPORTED}")
         _check_core(node.arg)
     elif isinstance(node, ltl.Binary):
         if node.op in ltl.WORD_OPS:
-            raise EliminationError(f"not supported in a variable elimination: {ltl.to_str(node)}")
+            raise EliminationError(f"a word operation or past in {ltl.to_str(node)}. {SUPPORTED}")
         _check_core(node.left)
         _check_core(node.right)
+
+
+def unsupported(terms: list[ltl.Node], types: dict) -> list[tuple[ltl.Node, str]]:
+    """The terms that the elimination does not take, each with the reason."""
+    out = []
+    for t in terms:
+        try:
+            split([t])
+        except EliminationError as e:
+            out.append((t, str(e).split(". " + SUPPORTED)[0].split(":")[0]))
+            continue
+        bad = sorted(v for v in ltl.variables(t)
+                     if types.get(v) not in ("bool", "real") and not isinstance(types.get(v), tuple))
+        if bad:
+            out.append((t, ", ".join(f"{v} has type {types.get(v)}" for v in bad)))
+    return out
 
 
 def depth(node: ltl.Node, d: int = 0) -> int:
@@ -99,8 +120,7 @@ class _Window:
     def __init__(self, types: dict):
         for v, t in types.items():
             if t not in ("bool", "real") and not isinstance(t, tuple):
-                raise EliminationError(f"variable {v} has type {t}: only Booleans, reals, "
-                                       "and integer ranges are supported")
+                raise EliminationError(f"variable {v} has type {t}. {SUPPORTED}")
         self.types = types
         self.enc = Encoding(types)
 
@@ -493,7 +513,7 @@ def simplify(terms: list[ltl.Node], context: list[ltl.Node], types: dict) -> lis
             core, wrap = t.arg.arg, "GF"
             ctx = w.shifted(g_inv, depth(core))
         else:
-            raise EliminationError(f"{ltl.to_str(t)} is not a GR(1) term")
+            raise EliminationError(f"not a GR(1) term: {ltl.to_str(t)}. {SUPPORTED}")
         f = w.core(core)
         g = _under(ctx, f)
         s = _simplified(g)

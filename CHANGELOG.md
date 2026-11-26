@@ -16,6 +16,8 @@ Added:
   guarantees of the two contracts are relaxed together, and the result has
   one term for each conjunct, none twice. A warning says when the
   assumptions of the result became false. The z3 calls have time limits.
+  A contract that it does not support is refused with every such term, its
+  contract, the reason, and what is supported (`chase_cps.cave.SUPPORTED`).
 
 Fixed:
 
