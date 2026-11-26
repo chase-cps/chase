@@ -450,3 +450,19 @@ def test_the_cost_of_a_product_by_zero():
     from chase_cps.repair import _evaluate
     cost = substitute(ltl.parse("(eps - 2) + 3 * (1 - wmax)"), {"eps": Fraction(5, 2), "wmax": 1})
     assert _evaluate(cost) == Fraction(1, 2)
+
+
+@needs_z3
+def test_the_projection_with_qe2_is_not_true_where_the_formula_is_not():
+    # z3 5.1 and 5.3 give true for simplify, then qe2, on this formula.
+    import z3
+    from chase_cps.repair import project
+    u, v, v1, d = z3.Reals("u v v@1 d")
+    m, dcl, stp = z3.Bools("MOV DCL STP")
+    body = z3.And(v == u, 0 <= v, u - z3.Q(1, 2) <= v1, v1 <= u + z3.Q(1, 2),
+                  m, z3.Not(dcl), z3.Not(stp), u == d / 10)
+    for qe in ("qe", "qe2"):
+        f = project._projection(z3, qe, [u, m, dcl, stp], body, 10)
+        s = z3.Solver()
+        s.add(f, v != d / 10)
+        assert s.check() == z3.unsat

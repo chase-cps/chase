@@ -82,18 +82,32 @@ def _eliminate(z3, xs, body, timeout):
     if not xs:
         return body
     for qe in ("qe", "qe2"):         # qe2 also eliminates integers among reals
-        goal = z3.Goal()
-        goal.add(z3.Exists(xs, body))
-        tactic = z3.TryFor(z3.Then("simplify", qe, "simplify"), int(timeout * 1000))
-        try:
-            result = tactic(goal)
-        except z3.Z3Exception:
-            continue
-        parts = [z3.And(*g) if len(g) else z3.BoolVal(True) for g in result]
-        f = z3.Or(*parts) if len(parts) != 1 else parts[0]
-        if not _has_quantifier(z3, f):
+        f = _projection(z3, qe, xs, body, timeout)
+        if f is not None:
             return f
     return None
+
+
+def _projection(z3, qe, xs, body, timeout):
+    """exists xs. body without quantifiers by the tactic ``qe``, or None.
+    ``simplify`` is not run before ``qe2``: together they have given true
+    for a formula that is not (z3 5.1 and 5.3). A result that z3 finds
+    different from the quantified formula (within 5 s) is not used."""
+    goal = z3.Goal()
+    goal.add(z3.Exists(xs, body))
+    steps = [qe, "simplify"] if qe == "qe2" else ["simplify", qe, "simplify"]
+    try:
+        result = z3.TryFor(z3.Then(*steps), int(timeout * 1000))(goal)
+    except z3.Z3Exception:
+        return None
+    parts = [z3.And(*g) if len(g) else z3.BoolVal(True) for g in result]
+    f = z3.Or(*parts) if len(parts) != 1 else parts[0]
+    if _has_quantifier(z3, f):
+        return None
+    s = z3.Solver()
+    s.set("timeout", max(1, int(min(timeout, 5) * 1000)))
+    s.add(f != z3.Exists(xs, body))
+    return None if s.check() == z3.sat else f
 
 
 def _has_quantifier(z3, f) -> bool:

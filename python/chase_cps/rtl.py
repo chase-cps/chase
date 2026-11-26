@@ -99,7 +99,7 @@ def from_rtl(files, top: str, parameters: Optional[dict] = None,
         for f in headers + files:
             shutil.copy(f, os.path.join(tmp, os.path.basename(f)))
         script = "\n".join([
-            f"read_verilog -sv -I. {defs} "
+            f"read_verilog -sv -defer -I. {defs} "
             + " ".join(f'"{os.path.basename(f)}"' for f in files),
             f"hierarchy -check -top {top} {chparam}",
             f"prep -top {top}",
