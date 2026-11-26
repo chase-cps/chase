@@ -368,8 +368,9 @@ def test_repair_of_a_c_function_holds_exactly_when_it_implements():
                                      constants={"theta": theta})
         passes = is_implementation(f, ctrl).status == "valid"
         r = repair("impl", f, ctrl, parameters={"theta": (0, 120, "int")})
-        assert (r.status == "holds") == passes == (theta == 70)
-        assert r.values == {"theta": 70}
+        said = (theta, r.status, r.method, r.rounds, r.reason, r.seconds)
+        assert (r.status == "holds") == passes == (theta == 70), said
+        assert r.values == {"theta": 70}, said
 
 
 def test_a_time_limit_stops_with_a_bound(tmp_path):
