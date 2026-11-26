@@ -27,6 +27,8 @@ Fixed:
 - `minimize`, `maximize`, and repair: `timeout` is the time of the whole
   search with z3, not of each of its calls (one search took 27 minutes with
   the default of 300 s), and the reason says when it has passed.
+- The `z3` extra asks for z3 before 5.4: on Linux, the optimizer of z3
+  5.4.1 has given no answer in 300 s on problems that 5.3.3 solves at once.
 - Repair: the projection of a region with z3 `qe2` no longer runs `simplify`
   first (together they gave true for a formula that is not, z3 5.1 and 5.3),
   and a result that z3 finds different from the quantified formula is not

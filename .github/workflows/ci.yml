@@ -85,7 +85,7 @@ jobs:
 
       - name: Python tests (with nuXmv and slugs)
         run: |
-          $PYTHON -m pip install pytest z3-solver yowasp-yosys || $PYTHON -m pip install --break-system-packages pytest z3-solver yowasp-yosys
+          $PYTHON -m pip install pytest "z3-solver>=4.12,<5.4" yowasp-yosys || $PYTHON -m pip install --break-system-packages pytest "z3-solver>=4.12,<5.4" yowasp-yosys
           CHASE_INSTALL_DIR=$RUNNER_TEMP/chase PYTHONPATH=python $PYTHON -m pytest -q python/tests
 
   # The CHASE objects are freed by their owner (the contract owns its
@@ -106,7 +106,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-dev pybind11-dev uuid-dev libboost-dev libxml2 libedit2
-          $(command -v python3) -m pip install --break-system-packages pytest z3-solver
+          $(command -v python3) -m pip install --break-system-packages pytest "z3-solver>=4.12,<5.4"
 
       - name: Build and install
         env:

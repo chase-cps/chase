@@ -102,7 +102,7 @@ RUN case "${TARGETARCH}" in arm64) f=esbmc-linux-armv8.zip ;; *) f=esbmc-linux.z
 # Ubuntu, 4.8, is older than chase-cps needs)
 COPY --from=nusmv /opt/nusmv/bin/NuSMV /usr/local/bin/NuSMV
 COPY --from=nusmv /opt/nusmv/doc /usr/local/share/doc/nusmv
-RUN pip3 install --no-cache-dir --break-system-packages yowasp-yosys "z3-solver>=4.12" \
+RUN pip3 install --no-cache-dir --break-system-packages yowasp-yosys "z3-solver>=4.12,<5.4" \
     && yowasp-yosys -V
 
 ###############################################################################

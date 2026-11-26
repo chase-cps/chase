@@ -27,8 +27,11 @@ test = ["pytest"]
 # z3 answers the formulas without temporal operators (chase_cps.backends.z3,
 # minimize, maximize) and refines the predicate abstraction of real
 # comparisons (chase_cps.predicates)
-z3 = ["z3-solver>=4.12"]
-reals = ["z3-solver>=4.12"]     # the former name of z3
+# z3 5.4.0 and 5.4.1 are left out: on Linux the optimizer of 5.4.1 has given
+# no answer in 300 s on problems that 5.3.3 solves at once (minimize,
+# maximize, repair)
+z3 = ["z3-solver>=4.12,<5.4"]
+reals = ["z3-solver>=4.12,<5.4"]     # the former name of z3
 # Yosys (compiled to WebAssembly) reads RTL as state machines (chase_cps.rtl)
 rtl = ["yowasp-yosys"]
 
